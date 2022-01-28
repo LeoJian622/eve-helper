@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.EveCharacterMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.EveCharacter">
+    <!--@mbg.generated-->
+    <!--@Table eve_character-->
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="user_id" jdbcType="INTEGER" property="userId" />
+    <result column="character_id" jdbcType="INTEGER" property="characterId" />
+    <result column="character_name" jdbcType="VARCHAR" property="characterName" />
+    <result column="corp_id" jdbcType="INTEGER" property="corpId" />
+    <result column="corp_name" jdbcType="VARCHAR" property="corpName" />
+    <result column="alliance_id" jdbcType="INTEGER" property="allianceId" />
+    <result column="alliance_name" jdbcType="VARCHAR" property="allianceName" />
+    <result column="roles" jdbcType="VARCHAR" property="roles" />
+    <result column="refresh_token_char" jdbcType="VARCHAR" property="refreshTokenChar" />
+    <result column="refresh_token_crop" jdbcType="VARCHAR" property="refreshTokenCrop" />
+    <result column="refresh_token_skill" jdbcType="VARCHAR" property="refreshTokenSkill" />
+    <result column="type" jdbcType="INTEGER" property="type" />
+    <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+    <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, user_id, character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, 
+    roles, refresh_token_char, refresh_token_crop, refresh_token_skill, `type`, gmt_create, 
+    gmt_modified
+  </sql>
+  <update id="updateBatch" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update eve_character
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="user_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.userId,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="character_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.characterId,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="character_name = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.characterName,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="corp_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.corpId,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="corp_name = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.corpName,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="alliance_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.allianceId,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="alliance_name = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.allianceName,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="roles = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.roles,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="refresh_token_char = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.refreshTokenChar,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="refresh_token_crop = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.refreshTokenCrop,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="refresh_token_skill = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.refreshTokenSkill,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="`type` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.type,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="gmt_create = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.gmtCreate,jdbcType=TIMESTAMP}
+        </foreach>
+      </trim>
+      <trim prefix="gmt_modified = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.gmtModified,jdbcType=TIMESTAMP}
+        </foreach>
+      </trim>
+    </trim>
+    where id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.id,jdbcType=INTEGER}
+    </foreach>
+  </update>
+  <insert id="batchInsert" keyColumn="id" keyProperty="id" parameterType="map" useGeneratedKeys="true">
+    <!--@mbg.generated-->
+    insert into eve_character
+    (user_id, character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, 
+      roles, refresh_token_char, refresh_token_crop, refresh_token_skill, `type`, gmt_create, 
+      gmt_modified)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.userId,jdbcType=INTEGER}, #{item.characterId,jdbcType=INTEGER}, #{item.characterName,jdbcType=VARCHAR}, 
+        #{item.corpId,jdbcType=INTEGER}, #{item.corpName,jdbcType=VARCHAR}, #{item.allianceId,jdbcType=INTEGER}, 
+        #{item.allianceName,jdbcType=VARCHAR}, #{item.roles,jdbcType=VARCHAR}, #{item.refreshTokenChar,jdbcType=VARCHAR}, 
+        #{item.refreshTokenCrop,jdbcType=VARCHAR}, #{item.refreshTokenSkill,jdbcType=VARCHAR}, 
+        #{item.type,jdbcType=INTEGER}, #{item.gmtCreate,jdbcType=TIMESTAMP}, #{item.gmtModified,jdbcType=TIMESTAMP}
+        )
+    </foreach>
+  </insert>
+</mapper>

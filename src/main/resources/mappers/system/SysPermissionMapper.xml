@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.SysPermissionMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.SysPermission">
+    <!--@mbg.generated-->
+    <!--@Table sys_permission-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="menu_id" jdbcType="BIGINT" property="menuId" />
+    <result column="url_perm" jdbcType="VARCHAR" property="urlPerm" />
+    <result column="btn_perm" jdbcType="VARCHAR" property="btnPerm" />
+    <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+    <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+    <collection property="roles" ofType="String" javaType="list">
+      <result column="code"/>
+    </collection>
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, `name`, menu_id, url_perm, btn_perm, gmt_create, gmt_modified
+  </sql>
+  <update id="updateBatch" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update sys_permission
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="`name` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.name,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="menu_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.menuId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="url_perm = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.urlPerm,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="btn_perm = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.btnPerm,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="gmt_create = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.gmtCreate,jdbcType=TIMESTAMP}
+        </foreach>
+      </trim>
+      <trim prefix="gmt_modified = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.gmtModified,jdbcType=TIMESTAMP}
+        </foreach>
+      </trim>
+    </trim>
+    where id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.id,jdbcType=BIGINT}
+    </foreach>
+  </update>
+  <update id="updateBatchSelective" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update sys_permission
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="`name` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.name != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.name,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="menu_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.menuId != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.menuId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="url_perm = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.urlPerm != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.urlPerm,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="btn_perm = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.btnPerm != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.btnPerm,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="gmt_create = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.gmtCreate != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.gmtCreate,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="gmt_modified = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.gmtModified != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.gmtModified,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+    </trim>
+    where id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.id,jdbcType=BIGINT}
+    </foreach>
+  </update>
+  <insert id="batchInsert" keyColumn="id" keyProperty="id" parameterType="map" useGeneratedKeys="true">
+    <!--@mbg.generated-->
+    insert into sys_permission
+    (`name`, menu_id, url_perm, btn_perm, gmt_create, gmt_modified)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.name,jdbcType=VARCHAR}, #{item.menuId,jdbcType=BIGINT}, #{item.urlPerm,jdbcType=VARCHAR}, 
+        #{item.btnPerm,jdbcType=VARCHAR}, #{item.gmtCreate,jdbcType=TIMESTAMP}, #{item.gmtModified,jdbcType=TIMESTAMP}
+        )
+    </foreach>
+  </insert>
+
+  <select id="listPermRoles" resultMap="BaseResultMap">
+    SELECT sp.id,
+           sp.name,
+           sp.menu_id,
+           sp.url_perm,
+           sp.btn_perm,
+           sr.code
+    FROM sys_permission sp
+                 LEFT JOIN sys_role_permission srp ON sp.id = srp.permission_id
+                 LEFT JOIN sys_role sr ON srp.role_id = sr.id
+    </select>
+</mapper>

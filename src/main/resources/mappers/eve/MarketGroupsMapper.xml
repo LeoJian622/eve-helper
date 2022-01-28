@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.foolcat.eve.evehelper.mapper.eve.MarketGroupsMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.eve.MarketGroups">
+    <!--@mbg.generated-->
+    <!--@Table marketGroups-->
+    <id column="marketGroupID" jdbcType="INTEGER" property="marketgroupid" />
+    <result column="descriptionID" jdbcType="VARCHAR" property="descriptionid" />
+    <result column="hasTypes" jdbcType="TINYINT" property="hastypes" />
+    <result column="iconID" jdbcType="INTEGER" property="iconid" />
+    <result column="nameID" jdbcType="VARCHAR" property="nameid" />
+    <result column="parentGroupID" jdbcType="INTEGER" property="parentgroupid" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    marketGroupID, descriptionID, hasTypes, iconID, nameID, parentGroupID
+  </sql>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    <!--@mbg.generated-->
+    select 
+    <include refid="Base_Column_List" />
+    from marketGroups
+    where marketGroupID = #{marketgroupid,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    <!--@mbg.generated-->
+    delete from marketGroups
+    where marketGroupID = #{marketgroupid,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="xyz.foolcat.eve.evehelper.domain.eve.MarketGroups">
+    <!--@mbg.generated-->
+    insert into marketGroups (marketGroupID, descriptionID, hasTypes, 
+      iconID, nameID, parentGroupID
+      )
+    values (#{marketgroupid,jdbcType=INTEGER}, #{descriptionid,jdbcType=VARCHAR}, #{hastypes,jdbcType=TINYINT}, 
+      #{iconid,jdbcType=INTEGER}, #{nameid,jdbcType=VARCHAR}, #{parentgroupid,jdbcType=INTEGER}
+      )
+  </insert>
+  <insert id="insertSelective" parameterType="xyz.foolcat.eve.evehelper.domain.eve.MarketGroups">
+    <!--@mbg.generated-->
+    insert into marketGroups
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="marketgroupid != null">
+        marketGroupID,
+      </if>
+      <if test="descriptionid != null">
+        descriptionID,
+      </if>
+      <if test="hastypes != null">
+        hasTypes,
+      </if>
+      <if test="iconid != null">
+        iconID,
+      </if>
+      <if test="nameid != null">
+        nameID,
+      </if>
+      <if test="parentgroupid != null">
+        parentGroupID,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="marketgroupid != null">
+        #{marketgroupid,jdbcType=INTEGER},
+      </if>
+      <if test="descriptionid != null">
+        #{descriptionid,jdbcType=VARCHAR},
+      </if>
+      <if test="hastypes != null">
+        #{hastypes,jdbcType=TINYINT},
+      </if>
+      <if test="iconid != null">
+        #{iconid,jdbcType=INTEGER},
+      </if>
+      <if test="nameid != null">
+        #{nameid,jdbcType=VARCHAR},
+      </if>
+      <if test="parentgroupid != null">
+        #{parentgroupid,jdbcType=INTEGER},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="xyz.foolcat.eve.evehelper.domain.eve.MarketGroups">
+    <!--@mbg.generated-->
+    update marketGroups
+    <set>
+      <if test="descriptionid != null">
+        descriptionID = #{descriptionid,jdbcType=VARCHAR},
+      </if>
+      <if test="hastypes != null">
+        hasTypes = #{hastypes,jdbcType=TINYINT},
+      </if>
+      <if test="iconid != null">
+        iconID = #{iconid,jdbcType=INTEGER},
+      </if>
+      <if test="nameid != null">
+        nameID = #{nameid,jdbcType=VARCHAR},
+      </if>
+      <if test="parentgroupid != null">
+        parentGroupID = #{parentgroupid,jdbcType=INTEGER},
+      </if>
+    </set>
+    where marketGroupID = #{marketgroupid,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="xyz.foolcat.eve.evehelper.domain.eve.MarketGroups">
+    <!--@mbg.generated-->
+    update marketGroups
+    set descriptionID = #{descriptionid,jdbcType=VARCHAR},
+      hasTypes = #{hastypes,jdbcType=TINYINT},
+      iconID = #{iconid,jdbcType=INTEGER},
+      nameID = #{nameid,jdbcType=VARCHAR},
+      parentGroupID = #{parentgroupid,jdbcType=INTEGER}
+    where marketGroupID = #{marketgroupid,jdbcType=INTEGER}
+  </update>
+  <update id="updateBatch" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update marketGroups
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="descriptionID = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when marketGroupID = #{item.marketgroupid,jdbcType=INTEGER} then #{item.descriptionid,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="hasTypes = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when marketGroupID = #{item.marketgroupid,jdbcType=INTEGER} then #{item.hastypes,jdbcType=TINYINT}
+        </foreach>
+      </trim>
+      <trim prefix="iconID = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when marketGroupID = #{item.marketgroupid,jdbcType=INTEGER} then #{item.iconid,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="nameID = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when marketGroupID = #{item.marketgroupid,jdbcType=INTEGER} then #{item.nameid,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="parentGroupID = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when marketGroupID = #{item.marketgroupid,jdbcType=INTEGER} then #{item.parentgroupid,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+    </trim>
+    where marketGroupID in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.marketgroupid,jdbcType=INTEGER}
+    </foreach>
+  </update>
+</mapper>
