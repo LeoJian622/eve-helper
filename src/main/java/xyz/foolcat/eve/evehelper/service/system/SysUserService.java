@@ -18,6 +18,10 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 用户服务
+ * @author Leojan
+ */
 @Service
 public class SysUserService extends ServiceImpl<SysUserMapper, SysUser> implements UserDetailsService {
 
@@ -39,15 +43,7 @@ public class SysUserService extends ServiceImpl<SysUserMapper, SysUser> implemen
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         SysUser userDetails = this.baseMapper.queryByUsername(username);
-        if (null == userDetails) {
-            throw new InternalAuthenticationServiceException("账号不存在");
-        } else if (!userDetails.isEnabled()) {
-            throw new DisabledException("该账户已被禁用!");
-        } else if (!userDetails.isAccountNonLocked()) {
-            throw new LockedException("该账号已被锁定!");
-        } else if (!userDetails.isAccountNonExpired()) {
-            throw new AccountExpiredException("该账号已过期!");
-        }
+
 
         List<String> roles = sysRoleService.queryRolesByUserId(userDetails.getId());
         List<GrantedAuthority> authorities = roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());

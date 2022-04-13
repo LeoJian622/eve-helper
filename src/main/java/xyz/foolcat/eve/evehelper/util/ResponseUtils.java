@@ -47,13 +47,12 @@ public class ResponseUtils {
         return response;
     }
 
-    public static HttpServletResponse writeTokenInfo(HttpServletResponse response, SignedJWT signedJWT) throws IOException {
+    public static HttpServletResponse writeTokenInfo(HttpServletResponse response, SignedJWT signedJwt) throws IOException {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
         response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
-//        response.setHeader(HttpHeaders.AUTHORIZATION, SecurityConstant.JWT_PREFIX + signedJWT.serialize());
-        Map<String,String> tokenObejct = new HashMap<>();
-        tokenObejct.put("access_token",signedJWT.serialize());
+        Map<String,String> tokenObejct = new HashMap<>(2);
+        tokenObejct.put("access_token",signedJwt.serialize());
         String body = JSONUtil.toJsonStr(R.success(tokenObejct));
         response.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
         return response;

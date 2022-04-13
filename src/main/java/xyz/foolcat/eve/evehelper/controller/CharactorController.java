@@ -4,9 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import xyz.foolcat.eve.evehelper.common.result.R;
-import xyz.foolcat.eve.evehelper.service.esi.EsiChApiService;
+import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
 
-import javax.annotation.Resource;
 import java.text.ParseException;
 
 /**
@@ -20,11 +19,11 @@ import java.text.ParseException;
 @RequiredArgsConstructor
 public class CharactorController {
 
-    private final EsiChApiService esiChApiService;
+    private final EsiApiService esiApiService;
 
     @PostMapping("/{type}/{code}")
     public R addCharactorAuth(@PathVariable String type, @PathVariable String code) throws ParseException {
-        System.out.println(code);
-        return R.success(esiChApiService.getAccessToken(type, code));
+        esiApiService.getAccessToken(type, code);
+        return R.success();
     }
 }

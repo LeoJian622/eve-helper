@@ -21,7 +21,6 @@ public interface SecurityConstant {
      */
     String JWT_PREFIX = "Bearer ";
 
-
     /**
      * Basic认证前缀
      */
@@ -64,5 +63,11 @@ public interface SecurityConstant {
     String GRANT_TYPE_KEY = "grant_type";
 
     String REFRESH_TOKEN = "refresh_token";
+
+    /**
+     * http method
+     */
+
+    String OPTIONS = "OPTIONS";
 
 }

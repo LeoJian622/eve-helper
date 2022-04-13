@@ -3,13 +3,16 @@ package xyz.foolcat.eve.evehelper.config.security;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.convert.Convert;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.PathMatcher;
 import xyz.foolcat.eve.evehelper.common.constant.GlobalConstants;
+import xyz.foolcat.eve.evehelper.common.constant.SecurityConstant;
 import xyz.foolcat.eve.evehelper.mapper.system.SysPermissionMapper;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,17 +34,35 @@ public class RbacPermission {
 
     private final RedisTemplate redisTemplate;
 
+    private final EveHelperSecurityConfig eveHelperSecurityConfig;
 
     public boolean hasPermission(HttpServletRequest request, Authentication authentication) {
 
+
         String method = request.getMethod();
-        if ("OPTIONS".equalsIgnoreCase(method)) {
+        if (SecurityConstant.OPTIONS.equalsIgnoreCase(method)) {
             return true;
         }
 
         String path = request.getRequestURI();
         // RESTFul接口权限设计
         String restfulPath = method + ":" + path;
+
+        /**
+         * 白名单路径
+         */
+
+        boolean isWhiteList = eveHelperSecurityConfig.getWhiteUrlList().stream()
+                .anyMatch(whilte -> {
+                    if (restfulPath.equals(whilte)) {
+                        return true;
+                    }
+                    return false;
+                });
+
+        if (isWhiteList){
+            return isWhiteList;
+        }
 
         /**
          * 鉴权

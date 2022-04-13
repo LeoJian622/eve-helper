@@ -18,8 +18,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import xyz.foolcat.eve.evehelper.common.base.BaseEntity;
 
 /**
-    * 用户信息表
-    */
+ * 用户信息表
+ * @author Leojan
+ */
 @ApiModel(value="用户信息表")
 @Data
 @EqualsAndHashCode(callSuper=true)
@@ -76,7 +77,7 @@ public class SysUser extends BaseEntity implements  UserDetails {
      */
     @TableField(value = "`status`")
     @ApiModelProperty(value="用户状态：1-正常 0-禁用")
-    private Boolean status;
+    private Boolean status = true;
 
     /**
      * 用户邮箱
@@ -90,7 +91,7 @@ public class SysUser extends BaseEntity implements  UserDetails {
      */
     @TableField(value = "deleted")
     @ApiModelProperty(value="逻辑删除标识：0-未删除；1-已删除")
-    private Boolean deleted;
+    private Boolean deleted = true;
 
     public static final String COL_ID = "id";
 

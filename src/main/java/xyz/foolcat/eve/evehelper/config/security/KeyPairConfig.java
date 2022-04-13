@@ -19,7 +19,7 @@ public class KeyPairConfig {
      */
     @Bean
     public KeyPair keyPair() {
-        KeyStoreKeyFactory factory = new KeyStoreKeyFactory(new ClassPathResource("jwt.jks"), "123456".toCharArray());
-        return factory.getKeyPair("jwt", "123456".toCharArray());
+        KeyStoreKeyFactory factory = new KeyStoreKeyFactory(new ClassPathResource("eve-jwt.jks"), "eve000".toCharArray());
+        return factory.getKeyPair("eve-jwt", "eve000".toCharArray());
     }
 }
