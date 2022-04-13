@@ -2,6 +2,7 @@ package xyz.foolcat.eve.evehelper.client;
 
 import cn.hutool.json.JSONArray;
 import com.dtflys.forest.annotation.*;
+import com.dtflys.forest.callback.OnError;
 import xyz.foolcat.eve.evehelper.dto.esi.AuthTokenResponseDTO;
 import xyz.foolcat.eve.evehelper.dto.esi.CharactorInfoResponseDTO;
 import xyz.foolcat.eve.evehelper.dto.esi.UniverseNameResponeDTO;
@@ -10,12 +11,13 @@ import xyz.foolcat.eve.evehelper.interceptor.EsiCharactorInterceptor;
 import java.util.List;
 
 /**
- * 国服ESI接口调用
+ * 国服ESI调用
+ *
+ * 用于调用网易提供的各种ESI接口
  *
  * @author Leojan
  * @date 2021-12-07 17:19
  */
-
 @BaseRequest(
         baseURL = "https://esi.evepc.163.com/latest",     // 默认域名
         headers = {
@@ -24,7 +26,7 @@ import java.util.List;
         },
         interceptor = EsiCharactorInterceptor.class
 )
-public interface EsiCharactorClient {
+public interface EsiClient {
 
         /**
          * code认证
@@ -44,7 +46,7 @@ public interface EsiCharactorClient {
         /**
          * refresh_token认证
          * @param grantType
-         * @param refresh_token
+         * @param refreshToken
          * @param clientId
          */
         @PostRequest(
@@ -54,16 +56,24 @@ public interface EsiCharactorClient {
                         "Host: login.evepc.163.com"
                 }
         )
-        String getAccessToken(@Body("grant_type") String grantType, @Body("refresh_token")String refresh_token, @Body("client_id")String clientId);
+        AuthTokenResponseDTO getAccessToken(@Body("grant_type") String grantType, @Body("refresh_token")String refreshToken, @Body("client_id")String clientId, OnError onError);
 
         /**
          *  获取角色信息
          * @param charactorId
+         * @return
+         */
+        @Get("/characters/{charactor_id}")
+        CharactorInfoResponseDTO getCharactorInfo(@Var("charactor_id") String charactorId);
+
+        /**
+         *  获取角色工业生产信息
+         * @param charactorId
          * @param accessToken
          * @return
          */
-        @Get("/characters/{charactorId}")
-        CharactorInfoResponseDTO getCharactorInfo(@Var("charactorId") String charactorId, @Header("authorization") String accessToken);
+        @Get("/characters/{character_id}/industry/jobs/")
+        JSONArray getCharactorJob(@Var("character_id") String charactorId, @Header("Authorization") String accessToken);
 
         /**
          * 获取item名称

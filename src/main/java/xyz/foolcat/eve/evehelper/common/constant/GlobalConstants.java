@@ -15,5 +15,7 @@ public interface GlobalConstants {
     String CROP = "crop";
     String SKILL = "skill";
     String ROOT_ROLE_CODE = "ADMIN";
+    String ESI_ACCESS_TOKEN_KEY = "esi_access_token:";
+    String TOKEN_PERN = "Bearer ";
 
 }

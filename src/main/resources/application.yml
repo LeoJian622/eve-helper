@@ -108,3 +108,7 @@ jwt-token:
   issuer: eve-helper.xyz
   subject: eve-helper
   expirationTime: 1800
+eve:
+  helper:
+    whiteUrlList:
+      - POST:/user

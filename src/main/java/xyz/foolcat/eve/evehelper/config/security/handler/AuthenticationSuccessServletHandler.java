@@ -62,21 +62,26 @@ public class AuthenticationSuccessServletHandler implements AuthenticationSucces
                 .claim(SecurityConstant.USER_ID_KEY, sysUser.getId())
                 .claim(SecurityConstant.USER_NAME_KEY, sysUser.getUsername())
                 .claim(SecurityConstant.JWT_AUTHORITIES_KEY, sysUser.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
-                .claim("esi-authorise", Arrays.asList("qwe", "asd", "zxc"))
+//                .claim("esi-authorise", Arrays.asList("qwe", "asd", "zxc"))
                 .expirationTime(new Date(System.currentTimeMillis() + jwtTokenConfig.getExpirationTime() * 1000))
                 .build();
 
         System.out.println(claimsSet);
-        SignedJWT signedJWT = new SignedJWT(
+        SignedJWT signedJwt = new SignedJWT(
                 new JWSHeader.Builder(JWSAlgorithm.RS256).type(JOSEObjectType.JWT).build(),
                 claimsSet);
         JWSSigner jwsSigner = new RSASSASigner(keyPair.getPrivate());
-        signedJWT.sign(jwsSigner);
+        signedJwt.sign(jwsSigner);
 
-        ResponseUtils.writeTokenInfo(response, signedJWT);
+        ResponseUtils.writeTokenInfo(response, signedJwt);
     }
 
-    //JWT 创建与校验
+    /**
+     * JWT 创建与校验测试
+     * @param args
+     * @throws JOSEException
+     * @throws ParseException
+     */
     public static void main(String[] args) throws JOSEException, ParseException {
         KeyStoreKeyFactory factory = new KeyStoreKeyFactory(new ClassPathResource("jwt.jks"), "123456".toCharArray());
         KeyPair keyPair1 = factory.getKeyPair("jwt", "123456".toCharArray());
@@ -92,20 +97,20 @@ public class AuthenticationSuccessServletHandler implements AuthenticationSucces
                 .expirationTime(new Date(System.currentTimeMillis() + 60 * 1000))
                 .build();
 
-        SignedJWT signedJWT = new SignedJWT(
+        SignedJWT signedJwt = new SignedJWT(
                 new JWSHeader.Builder(JWSAlgorithm.RS256).type(JOSEObjectType.JWT).build(),
                 claimsSet);
         JWSSigner jwsSigner = new RSASSASigner(keyPair1.getPrivate());
 
-        signedJWT.sign(jwsSigner);
+        signedJwt.sign(jwsSigner);
 
-        System.out.println(signedJWT.serialize());
+        System.out.println(signedJwt.serialize());
 
-        SignedJWT signedJWTParse = SignedJWT.parse(signedJWT.serialize());
+        SignedJWT signedJwtParse = SignedJWT.parse(signedJwt.serialize());
 
         PublicKey publicKey = keyPair1.getPublic();
         JWSVerifier verifier = new RSASSAVerifier((RSAPublicKey) publicKey);
 
-        System.out.println(signedJWTParse.verify(verifier));
+        System.out.println(signedJwtParse.verify(verifier));
     }
 }

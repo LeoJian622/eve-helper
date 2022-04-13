@@ -2,6 +2,7 @@ package xyz.foolcat.eve.evehelper.exception;
 
 
 import cn.hutool.json.JSONObject;
+import com.dtflys.forest.exceptions.ForestNetworkException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.TypeMismatchException;
@@ -148,13 +149,10 @@ public class GlobalExceptionHandler {
         return R.failed(e.getMessage());
     }
 
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(CompletionException.class)
-    public <T> R<T> processException(CompletionException e) {
-        if (e.getMessage().startsWith("feign.FeignException")) {
-            return R.failed("微服务调用异常");
-        }
-        return handleException(e);
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(ForestNetworkException.class)
+    public R processException(ForestNetworkException e){
+        return R.failed(e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
@@ -163,6 +161,8 @@ public class GlobalExceptionHandler {
         log.error("未知异常，异常原因：{}",e.getMessage(),e);
         return R.failed(e.getMessage());
     }
+
+
 
     /**
      * 传参类型错误时，用于消息转换

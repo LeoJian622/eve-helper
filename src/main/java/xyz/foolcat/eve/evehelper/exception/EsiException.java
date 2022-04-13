@@ -24,8 +24,9 @@ public class EsiException extends RuntimeException{
         this.resultCode = errorCode;
     }
 
-    public EsiException(String message) {
+    public EsiException(IResultCode errorCode, String message) {
         super(message);
+        this.resultCode = errorCode;
     }
 
     public EsiException(String message, Throwable cause) {
