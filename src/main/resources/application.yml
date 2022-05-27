@@ -7,7 +7,7 @@ spring:
       system:
         username: root
         password:
-        url: jdbc:mysql://192.168.110.18:3306/eve_helper?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
+        url: jdbc:mysql://192.168.1.1:3306/eve_helper?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
         driverClassName: com.mysql.cj.jdbc.Driver
         #初始化连接池的连接数量 大小，最小，最大
         initial-size: 5
@@ -37,7 +37,7 @@ spring:
       eve:
         username: root
         password:
-        url: jdbc:mysql://192.168.110.18:3306/eve?useUnicode=true&characterEncoding=utf8
+        url: jdbc:mysql://192.168.1.1:3306/eve?useUnicode=true&characterEncoding=utf8
         driverClassName: com.mysql.jdbc.Driver
         #初始化连接池的连接数量 大小，最小，最大
         initial-size: 5
@@ -85,7 +85,7 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
   redis:
-    host: redis.foolcat.xyz
+    host: 192.168.1.1
     port: 6379
     password:
 # 日志配置
@@ -107,8 +107,32 @@ mybatis-plus:
 jwt-token:
   issuer: eve-helper.xyz
   subject: eve-helper
-  expirationTime: 1800
+  expirationTime: 7200
 eve:
   helper:
     whiteUrlList:
       - POST:/user
+forest:
+  # 转换器配置，支持 json, xml, text, binary 四种数据类型的配置
+  converters:
+    # JSON转换器
+    json:
+      # JSON转换器设置为GSON转换器
+#      type: com.dtflys.forest.converter.json.ForestGsonConverter
+      # 同理，也可以设置成 Fastjson 或 Jackson 的转换器
+      # type: com.dtflys.forest.converter.json.ForestFastjsonConverter
+      type: com.dtflys.forest.converter.json.ForestJacksonConverter
+    # XML转换器
+    xml:
+      # 配置为JAXB转换器
+      type: com.dtflys.forest.converter.xml.ForestJaxbConverter
+
+    # 二进制转换器
+    binary:
+      # 配置为Forest默认二进制转换器
+      type: com.dtflys.forest.converter.binary.DefaultBinaryConverter
+
+    # 文本转换器
+    text:
+      # 配置为Forest默认文本转换器
+      type: com.dtflys.forest.converter.text.DefaultTextConverter

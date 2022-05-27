@@ -30,30 +30,8 @@ public class MybatisPlusConfig {
         return interceptor;
     }
 
-//    /**
-//     * 乐观锁插件
-//     *
-//     * @return
-//     */
-//    @Bean
-//    public OptimisticLockerInnerInterceptor optimisticLockerInterceptor() {
-//        OptimisticLockerInnerInterceptor optimisticLockerInnerInterceptor = new OptimisticLockerInnerInterceptor();
-//        return optimisticLockerInnerInterceptor;
-//    }
-
-//    @Bean
-//    public ConfigurationCustomizer configurationCustomizer() {
-//        return configuration -> {
-//            全局注册自定义typeHandler
-//            TypeHandlerRegistry typeHandlerRegistry = configuration.getTypeHandlerRegistry();
-//            typeHandlerRegistry.register(String[].class, JdbcType.OTHER, StringArrayJsonTypeHandler.class);
-//            typeHandlerRegistry.register(Long[].class, JdbcType.OTHER, LongArrayJsonTypeHandler.class);
-//            typeHandlerRegistry.register(Integer[].class, JdbcType.OTHER, IntegerArrayJsonTypeHandler.class);
-//        };
-//    }
-
     /**
-     * 自动填充数据库创建人、创建时间、更新人、更新时间
+     * 自动填充数据库创建时间、更新时间
      */
     @Bean
     public GlobalConfig globalConfig() {

@@ -34,10 +34,12 @@ public class EsiCharactorInterceptor<T> implements Interceptor<T> {
         log.info("add datasource and language");
         String url = req.getUrl();
         if (!PATTERN_LOGIN.matcher(url).find()){
-            url += "?datasource=serenity&language=zh";
+            if (url.indexOf("?") > 0){
+                url += "&datasource=serenity&language=zh";
+            }else {
+                url += "?datasource=serenity&language=zh";
+            }
             req.setUrl(url);
-            ForestHeaderMap header = req.getHeaders();
-
         }
 
     }

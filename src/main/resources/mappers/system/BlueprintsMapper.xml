@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.BlueprintsMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.Blueprints">
+    <!--@mbg.generated-->
+    <!--@Table blueprints-->
+    <result column="item_id" jdbcType="BIGINT" property="itemId" />
+    <result column="type_id" jdbcType="INTEGER" property="typeId" />
+    <result column="material_efficiency" jdbcType="INTEGER" property="materialEfficiency" />
+    <result column="time_efficiency" jdbcType="INTEGER" property="timeEfficiency" />
+    <result column="runs" jdbcType="INTEGER" property="runs" />
+    <result column="quantity" jdbcType="BIGINT" property="quantity" />
+    <result column="location_id" jdbcType="BIGINT" property="locationId" />
+    <result column="location_flag" jdbcType="VARCHAR" property="locationFlag" />
+    <result column="owner_id" jdbcType="BIGINT" property="ownerId" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    item_id, type_id, material_efficiency, time_efficiency, runs, quantity, location_id, 
+    location_flag, owner_id
+  </sql>
+  <insert id="batchInsert" parameterType="map">
+    <!--@mbg.generated-->
+    insert into blueprints
+    (item_id, type_id, material_efficiency, time_efficiency, runs, quantity, location_id, 
+      location_flag, owner_id)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.itemId,jdbcType=BIGINT}, #{item.typeId,jdbcType=INTEGER}, #{item.materialEfficiency,jdbcType=INTEGER}, 
+        #{item.timeEfficiency,jdbcType=INTEGER}, #{item.runs,jdbcType=INTEGER}, #{item.quantity,jdbcType=BIGINT}, 
+        #{item.locationId,jdbcType=BIGINT}, #{item.locationFlag,jdbcType=VARCHAR}, #{item.ownerId,jdbcType=BIGINT}
+        )
+    </foreach>
+  </insert>
+
+  <select id="selectBlueprintsInvtypeUniverse" resultType="xyz.foolcat.eve.evehelper.vo.BlueprintsVO">
+    select
+      bt.item_id,bt.type_id,it.type_name,bt.material_efficiency,bt.time_efficiency,bt.runs,ass.is_blueprint_copy,bt.location_id,bt.location_flag,bt.quantity,ec.character_name,bt.owner_id
+    from blueprints as bt
+           left join assets ass on bt.item_id = ass.item_id
+           left join inv_types it on bt.type_id = it.type_id
+           left join eve_character ec on bt.owner_id = ec.character_id
+    where bt.owner_id = #{id}
+  </select>
+</mapper>
