@@ -90,9 +90,15 @@ public class EveCharacter extends BaseEntity{
     @ApiModelProperty(value="军团授权")
     private String refreshTokenCrop;
 
+
     @TableField(value = "refresh_token_skill")
-    @ApiModelProperty(value="")
+    @ApiModelProperty(value="技能授权")
     private String refreshTokenSkill;
+
+
+    @TableField(value = "refresh_token_normal")
+    @ApiModelProperty(value="通用授权")
+    private String refreshTokenNormal;
 
     /**
      * CH:0 EU:1
