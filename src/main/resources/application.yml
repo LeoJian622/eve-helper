@@ -7,7 +7,7 @@ spring:
       system:
         username: root
         password:
-        url: jdbc:mysql://192.168.1.1:3306/eve_helper?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
+        url: jdbc:mysql://192.168.110.18:3306/eve_helper?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
         driverClassName: com.mysql.cj.jdbc.Driver
         #初始化连接池的连接数量 大小，最小，最大
         initial-size: 5
@@ -37,7 +37,7 @@ spring:
       eve:
         username: root
         password:
-        url: jdbc:mysql://192.168.1.1:3306/eve?useUnicode=true&characterEncoding=utf8
+        url: jdbc:mysql://192.168.110.18:3306/eve?useUnicode=true&characterEncoding=utf8
         driverClassName: com.mysql.jdbc.Driver
         #初始化连接池的连接数量 大小，最小，最大
         initial-size: 5
@@ -85,7 +85,7 @@ spring:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
   redis:
-    host: 192.168.1.1
+    host: redis.foolcat.xyz
     port: 6379
     password:
 # 日志配置
@@ -136,3 +136,4 @@ forest:
     text:
       # 配置为Forest默认文本转换器
       type: com.dtflys.forest.converter.text.DefaultTextConverter
+  log-enabled: false
