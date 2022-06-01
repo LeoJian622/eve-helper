@@ -16,6 +16,7 @@
     <result column="refresh_token_char" jdbcType="VARCHAR" property="refreshTokenChar" />
     <result column="refresh_token_crop" jdbcType="VARCHAR" property="refreshTokenCrop" />
     <result column="refresh_token_skill" jdbcType="VARCHAR" property="refreshTokenSkill" />
+    <result column="refresh_token_normal" jdbcType="VARCHAR" property="refreshTokenNormal" />
     <result column="type" jdbcType="INTEGER" property="type" />
     <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
     <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
@@ -23,7 +24,7 @@
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
     id, user_id, character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, 
-    roles, refresh_token_char, refresh_token_crop, refresh_token_skill, `type`, gmt_create, 
+    roles, refresh_token_char, refresh_token_crop, refresh_token_skill, refresh_token_normal, `type`, gmt_create,
     gmt_modified
   </sql>
   <update id="updateBatch" parameterType="java.util.List">
@@ -85,6 +86,11 @@
           when id = #{item.id,jdbcType=INTEGER} then #{item.refreshTokenSkill,jdbcType=VARCHAR}
         </foreach>
       </trim>
+      <trim prefix="refresh_token_normal = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.refreshTokenNormal,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
       <trim prefix="`type` = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
           when id = #{item.id,jdbcType=INTEGER} then #{item.type,jdbcType=INTEGER}
@@ -117,7 +123,7 @@
       (#{item.userId,jdbcType=INTEGER}, #{item.characterId,jdbcType=INTEGER}, #{item.characterName,jdbcType=VARCHAR}, 
         #{item.corpId,jdbcType=INTEGER}, #{item.corpName,jdbcType=VARCHAR}, #{item.allianceId,jdbcType=INTEGER}, 
         #{item.allianceName,jdbcType=VARCHAR}, #{item.roles,jdbcType=VARCHAR}, #{item.refreshTokenChar,jdbcType=VARCHAR}, 
-        #{item.refreshTokenCrop,jdbcType=VARCHAR}, #{item.refreshTokenSkill,jdbcType=VARCHAR}, 
+        #{item.refreshTokenCrop,jdbcType=VARCHAR}, #{item.refreshTokenSkill,jdbcType=VARCHAR},#{item.refreshTokenNormal,jdbcType=VARCHAR},
         #{item.type,jdbcType=INTEGER}, #{item.gmtCreate,jdbcType=TIMESTAMP}, #{item.gmtModified,jdbcType=TIMESTAMP}
         )
     </foreach>

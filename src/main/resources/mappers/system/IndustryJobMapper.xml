@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.IndustryJobMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.IndustryJob">
+    <!--@mbg.generated-->
+    <!--@Table industry_job-->
+    <id column="job_id" jdbcType="BIGINT" property="jobId" />
+    <result column="blueprint_id" jdbcType="BIGINT" property="blueprintId" />
+    <result column="blueprint_type_id" jdbcType="INTEGER" property="blueprintTypeId" />
+    <result column="blueprint_type" jdbcType="VARCHAR" property="blueprintType" />
+    <result column="cost" jdbcType="INTEGER" property="cost" />
+    <result column="licensed_runs" jdbcType="INTEGER" property="licensedRuns" />
+    <result column="probability" jdbcType="DECIMAL" property="probability" />
+    <result column="station_id" jdbcType="BIGINT" property="stationId" />
+    <result column="output_location_id" jdbcType="BIGINT" property="outputLocationId" />
+    <result column="product_type" jdbcType="VARCHAR" property="productType" />
+    <result column="blueprint_location_id" jdbcType="BIGINT" property="blueprintLocationId" />
+    <result column="duration" jdbcType="BIGINT" property="duration" />
+    <result column="installer" jdbcType="VARCHAR" property="installer" />
+    <result column="completed_character" jdbcType="VARCHAR" property="completedCharacter" />
+    <result column="activity" jdbcType="BIGINT" property="activity" />
+    <result column="facility_id" jdbcType="BIGINT" property="facilityId" />
+    <result column="runs" jdbcType="INTEGER" property="runs" />
+    <result column="start_date" jdbcType="TIMESTAMP" property="startDate" />
+    <result column="end_date" jdbcType="TIMESTAMP" property="endDate" />
+    <result column="status" jdbcType="VARCHAR" property="status" />
+    <result column="pause_date" jdbcType="TIMESTAMP" property="pauseDate" />
+    <result column="installer_id" jdbcType="BIGINT" property="installerId" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    job_id, blueprint_id, blueprint_type_id, blueprint_type, cost, licensed_runs, probability, 
+    station_id, output_location_id, product_type, blueprint_location_id, duration, installer, 
+    completed_character, activity, facility_id, runs, start_date, end_date, `status`, 
+    pause_date, installer_id
+  </sql>
+  <update id="updateBatch" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update industry_job
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="blueprint_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.blueprintId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="blueprint_type_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.blueprintTypeId,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="blueprint_type = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.blueprintType,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="cost = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.cost,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="licensed_runs = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.licensedRuns,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="probability = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.probability,jdbcType=DECIMAL}
+        </foreach>
+      </trim>
+      <trim prefix="station_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.stationId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="output_location_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.outputLocationId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="product_type = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.productType,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="blueprint_location_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.blueprintLocationId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="duration = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.duration,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="installer = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.installer,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="completed_character = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.completedCharacter,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="activity = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.activity,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="facility_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.facilityId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="runs = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.runs,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="start_date = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.startDate,jdbcType=TIMESTAMP}
+        </foreach>
+      </trim>
+      <trim prefix="end_date = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.endDate,jdbcType=TIMESTAMP}
+        </foreach>
+      </trim>
+      <trim prefix="`status` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.status,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="pause_date = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.pauseDate,jdbcType=TIMESTAMP}
+        </foreach>
+      </trim>
+      <trim prefix="installer_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.installerId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+    </trim>
+    where job_id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.jobId,jdbcType=BIGINT}
+    </foreach>
+  </update>
+  <update id="updateBatchSelective" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update industry_job
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="blueprint_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.blueprintId != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.blueprintId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="blueprint_type_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.blueprintTypeId != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.blueprintTypeId,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="blueprint_type = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.blueprintType != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.blueprintType,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="cost = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.cost != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.cost,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="licensed_runs = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.licensedRuns != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.licensedRuns,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="probability = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.probability != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.probability,jdbcType=DECIMAL}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="station_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.stationId != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.stationId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="output_location_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.outputLocationId != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.outputLocationId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="product_type = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.productType != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.productType,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="blueprint_location_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.blueprintLocationId != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.blueprintLocationId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="duration = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.duration != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.duration,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="installer = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.installer != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.installer,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="completed_character = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.completedCharacter != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.completedCharacter,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="activity = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.activity != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.activity,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="facility_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.facilityId != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.facilityId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="runs = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.runs != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.runs,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="start_date = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.startDate != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.startDate,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="end_date = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.endDate != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.endDate,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="`status` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.status != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.status,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="pause_date = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.pauseDate != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.pauseDate,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="installer_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.installerId != null">
+            when job_id = #{item.jobId,jdbcType=BIGINT} then #{item.installerId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+    </trim>
+    where job_id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.jobId,jdbcType=BIGINT}
+    </foreach>
+  </update>
+  <insert id="batchInsert" parameterType="map">
+    <!--@mbg.generated-->
+    insert into industry_job
+    (job_id, blueprint_id, blueprint_type_id, blueprint_type, cost, licensed_runs, probability, 
+      station_id, output_location_id, product_type, blueprint_location_id, duration, 
+      installer, completed_character, activity, facility_id, runs, start_date, end_date, 
+      `status`, pause_date, installer_id)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.jobId,jdbcType=BIGINT}, #{item.blueprintId,jdbcType=BIGINT}, #{item.blueprintTypeId,jdbcType=INTEGER}, 
+        #{item.blueprintType,jdbcType=VARCHAR}, #{item.cost,jdbcType=INTEGER}, #{item.licensedRuns,jdbcType=INTEGER}, 
+        #{item.probability,jdbcType=DECIMAL}, #{item.stationId,jdbcType=BIGINT}, #{item.outputLocationId,jdbcType=BIGINT}, 
+        #{item.productType,jdbcType=VARCHAR}, #{item.blueprintLocationId,jdbcType=BIGINT}, 
+        #{item.duration,jdbcType=BIGINT}, #{item.installer,jdbcType=VARCHAR}, #{item.completedCharacter,jdbcType=VARCHAR}, 
+        #{item.activity,jdbcType=BIGINT}, #{item.facilityId,jdbcType=BIGINT}, #{item.runs,jdbcType=INTEGER}, 
+        #{item.startDate,jdbcType=TIMESTAMP}, #{item.endDate,jdbcType=TIMESTAMP}, #{item.status,jdbcType=VARCHAR}, 
+        #{item.pauseDate,jdbcType=TIMESTAMP}, #{item.installerId,jdbcType=BIGINT})
+    </foreach>
+  </insert>
+</mapper>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.AssetsMapper">
+    <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.Assets">
+        <!--@mbg.generated-->
+        <!--@Table assets-->
+        <result column="item_id" jdbcType="BIGINT" property="itemId"/>
+        <result column="type_id" jdbcType="INTEGER" property="typeId"/>
+        <result column="location_id" jdbcType="BIGINT" property="locationId"/>
+        <result column="location_type" jdbcType="VARCHAR" property="locationType"/>
+        <result column="location_flag" jdbcType="VARCHAR" property="locationFlag"/>
+        <result column="is_singleton" jdbcType="BOOLEAN" property="isSingleton"/>
+        <result column="is_blueprint_copy" jdbcType="BOOLEAN" property="isBlueprintCopy"/>
+        <result column="quantity" jdbcType="BIGINT" property="quantity"/>
+        <result column="owner_id" jdbcType="BIGINT" property="ownerId"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        item_id, type_id, location_id, location_type, location_flag, is_singleton, is_blueprint_copy,
+        quantity, owner_id
+    </sql>
+    <insert id="batchInsert" parameterType="map">
+        <!--@mbg.generated-->
+        insert into assets
+        (item_id, type_id, location_id, location_type, location_flag, is_singleton, is_blueprint_copy,
+         quantity, owner_id)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.itemId,jdbcType=BIGINT}, #{item.typeId,jdbcType=INTEGER}, #{item.locationId,jdbcType=BIGINT},
+             #{item.locationType,jdbcType=VARCHAR}, #{item.locationFlag,jdbcType=VARCHAR},
+             #{item.isSingleton,jdbcType=BOOLEAN},
+             #{item.isBlueprintCopy,jdbcType=BOOLEAN}, #{item.quantity,jdbcType=BIGINT},
+             #{item.ownerId,jdbcType=BIGINT})
+        </foreach>
+    </insert>
+
+    <select id="selectAssetsInvtypeUniverse" resultType="xyz.foolcat.eve.evehelper.vo.AssetsVO">
+        select ass.item_id,
+               ass.type_id,
+               it.type_name,
+               ass.location_id,
+               uni.name,
+               ass.location_type,
+               ass.location_flag,
+               ass.is_singleton,
+               ass.is_blueprint_copy,
+               ass.quantity,
+               ec.character_name,
+               ass.owner_id
+        from assets as ass
+                 left join inv_types it on ass.type_id = it.type_id
+                 left join universe_name uni on ass.location_id = uni.id
+                 left join eve_character ec on ass.owner_id = ec.character_id
+        where owner_id = #{id}
+    </select>
+</mapper>
