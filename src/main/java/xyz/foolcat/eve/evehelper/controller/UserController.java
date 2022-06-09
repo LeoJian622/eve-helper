@@ -26,14 +26,11 @@ import javax.annotation.Resource;
 @RequiredArgsConstructor
 public class UserController {
 
-    @Resource
-    private SysUserService sysUserService;
+    private final SysUserService sysUserService;
 
-    @Resource
-    private UserConverter userConverter;
+    private final UserConverter userConverter;
 
-    @Resource
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     @PostMapping
     public R addUser(@RequestBody UserDTO user) {
