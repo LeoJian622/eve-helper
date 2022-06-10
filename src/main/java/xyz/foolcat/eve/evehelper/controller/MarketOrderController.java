@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import xyz.foolcat.eve.evehelper.common.result.R;
 import xyz.foolcat.eve.evehelper.domain.system.MarketOrder;
 import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
+import xyz.foolcat.eve.evehelper.service.system.MarketGroupsService;
 import xyz.foolcat.eve.evehelper.service.system.MarketOrderService;
 import xyz.foolcat.eve.evehelper.service.thread.MarketOrderAsyncService;
 
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
-@RequestMapping("/order")
+@RequestMapping("/market/order")
 @RequiredArgsConstructor
 public class MarketOrderController {
 
@@ -48,6 +49,7 @@ public class MarketOrderController {
             try {
                 List<MarketOrder> marketOrders = esiApiService.readMarketOrder(regionId, i, null);
                 ids.addAll(marketOrders.stream().map(MarketOrder::getOrderId).collect(Collectors.toList()));
+                marketOrders.forEach(marketOrder -> marketOrder.setRegionId(Long.valueOf(regionId)));
                 marketOrderAsyncService.saveAndUpdateMarketOrder(marketOrders);
                 i++;
             } catch (ForestNetworkException e) {

@@ -1,19 +1,16 @@
 package xyz.foolcat.eve.evehelper.service.system;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.dtflys.forest.exceptions.ForestNetworkException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
 import xyz.foolcat.eve.evehelper.domain.system.MarketOrder;
+import xyz.foolcat.eve.evehelper.dto.system.MarketOrderDTO;
 import xyz.foolcat.eve.evehelper.mapper.system.MarketOrderMapper;
 import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
 
@@ -48,6 +45,18 @@ public class MarketOrderService extends ServiceImpl<MarketOrderMapper, MarketOrd
         QueryWrapper<MarketOrder> marketOrderQueryWrapper = new QueryWrapper<>();
         marketOrderQueryWrapper.notIn(MarketOrder.COL_ORDER_ID, ids);
         baseMapper.delete(marketOrderQueryWrapper);
+    }
+
+
+    /**
+     * 查询物品在某个建筑的订单，
+     * @param locationId
+     * @param typeId
+     * @param buy
+     * @param sale
+     */
+    List<MarketOrderDTO> querSaleAndBuyPrice(Long locationId, Integer typeId, boolean buy, boolean sale){
+        return baseMapper.queryPrice(locationId, typeId, buy, sale);
     }
 }
 
