@@ -1,10 +1,11 @@
-package xyz.foolcat.eve.evehelper.service.eve;
+package xyz.foolcat.eve.evehelper.service.system;
 
 import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
-import xyz.foolcat.eve.evehelper.domain.eve.MarketGroups;
+import xyz.foolcat.eve.evehelper.domain.system.MarketGroups;
 import java.util.List;
-import xyz.foolcat.eve.evehelper.mapper.eve.MarketGroupsMapper;
+import xyz.foolcat.eve.evehelper.mapper.system.MarketGroupsMapper;
+import xyz.foolcat.eve.evehelper.vo.MarketGroupsTreeVO;
 
 @Service
 public class MarketGroupsService {
@@ -45,6 +46,10 @@ public class MarketGroupsService {
 
     public int updateBatch(List<MarketGroups> list) {
         return marketGroupsMapper.updateBatch(list);
+    }
+
+    public List<MarketGroupsTreeVO> selectMarketGroupTree(){
+        return marketGroupsMapper.selectGroupTree();
     }
 
 }

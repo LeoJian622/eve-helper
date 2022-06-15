@@ -1,8 +1,9 @@
-package xyz.foolcat.eve.evehelper.mapper.eve;
+package xyz.foolcat.eve.evehelper.mapper.system;
 
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
-import xyz.foolcat.eve.evehelper.domain.eve.MarketGroups;
+import xyz.foolcat.eve.evehelper.domain.system.MarketGroups;
+import xyz.foolcat.eve.evehelper.vo.MarketGroupsTreeVO;
 
 @Mapper
 public interface MarketGroupsMapper {
@@ -19,4 +20,6 @@ public interface MarketGroupsMapper {
     int updateByPrimaryKey(MarketGroups record);
 
     int updateBatch(List<MarketGroups> list);
+
+    List<MarketGroupsTreeVO> selectGroupTree();
 }

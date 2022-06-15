@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.domain.eve;
+package xyz.foolcat.eve.evehelper.domain.system;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import io.swagger.annotations.ApiModel;
