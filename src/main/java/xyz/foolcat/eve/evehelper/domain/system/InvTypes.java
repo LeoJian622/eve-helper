@@ -81,7 +81,7 @@ public class InvTypes  implements Serializable {
      */
     @TableField(value = "race_id")
     @ApiModelProperty(value="")
-    private Byte raceId;
+    private Integer raceId;
 
     /**
      * 基准价格
