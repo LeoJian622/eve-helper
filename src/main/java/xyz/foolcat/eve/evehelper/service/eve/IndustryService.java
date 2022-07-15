@@ -2,9 +2,8 @@ package xyz.foolcat.eve.evehelper.service.eve;
 
 import com.fasterxml.jackson.databind.util.JSONPObject;
 import org.springframework.stereotype.Service;
-import xyz.foolcat.eve.evehelper.domain.eve.InvTypes;
 import xyz.foolcat.eve.evehelper.mapper.eve.IndustryActivityMaterialsMapper;
-import xyz.foolcat.eve.evehelper.mapper.eve.InvTypesMapper;
+import xyz.foolcat.eve.evehelper.mapper.system.InvTypesMapper;
 
 import javax.annotation.Resource;
 
@@ -24,9 +23,4 @@ public class IndustryService {
     @Resource
     private IndustryActivityMaterialsMapper industryActivityMaterialsMapper;
 
-    public JSONPObject queryMaterialNeedAndPrice(String name){
-        Integer typeId = invTypesMapper.selectIdByTypeName(name);
-
-        return null;
-    }
 }

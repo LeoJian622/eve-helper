@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.common.constant.GlobalConstants;
 import xyz.foolcat.eve.evehelper.domain.system.SysPermission;
 import xyz.foolcat.eve.evehelper.mapper.system.SysPermissionMapper;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
+@Transactional(rollbackFor = RuntimeException.class)
 public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPermission> {
 
     private final RedisTemplate redisTemplate;

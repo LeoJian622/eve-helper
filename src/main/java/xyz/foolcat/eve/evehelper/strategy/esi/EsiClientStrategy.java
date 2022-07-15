@@ -1,11 +1,13 @@
 package xyz.foolcat.eve.evehelper.strategy.esi;
 
 import cn.hutool.json.JSONArray;
-import com.dtflys.forest.annotation.Body;
 import xyz.foolcat.eve.evehelper.domain.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.system.Blueprints;
+import xyz.foolcat.eve.evehelper.domain.system.MiningDetail;
+import xyz.foolcat.eve.evehelper.domain.system.Observer;
 import xyz.foolcat.eve.evehelper.dto.esi.IndustryJobDTO;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -46,6 +48,34 @@ public interface EsiClientStrategy {
      * @return
      */
     List<Blueprints> getBlueprintsList(String id, int page, String accessToken);
+
+    /**
+     *
+     * 返回开采观察者列表
+     * 只对公司有效
+     *
+     * @param id
+     * @param page
+     * @param accessToken
+     * @return
+     */
+    default List<Observer> getCropObeserverList(Long id, Integer page, String accessToken){
+        return new ArrayList<>();
+    }
+
+    /**
+     *
+     * 返回对应公司的观察者所记录的采矿明细
+     *
+     * @param id
+     * @param observerId
+     * @param page
+     * @param accessToken
+     * @return
+     */
+    default List<MiningDetail> getMiningDetailListByObserver(Long id, Long observerId, Integer page, String accessToken) {
+        return new ArrayList<>();
+    }
 
 
 }

@@ -136,4 +136,4 @@ forest:
     text:
       # 配置为Forest默认文本转换器
       type: com.dtflys.forest.converter.text.DefaultTextConverter
-  log-enabled: false
+  log-enabled: true

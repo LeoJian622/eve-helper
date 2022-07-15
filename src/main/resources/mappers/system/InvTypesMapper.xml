@@ -27,6 +27,10 @@
     <result column="meta_group_id" jdbcType="INTEGER" property="metaGroupId" />
     <result column="variationparent_type_id" jdbcType="INTEGER" property="variationparentTypeId" />
   </resultMap>
+  <resultMap id="MarketTreeResultMap" type="xyz.foolcat.eve.evehelper.vo.InvTypesVO">
+    <result column="type_Id" jdbcType="INTEGER" property="typeId"/>
+    <result column="type_name" jdbcType="VARCHAR" property="typeName"/>
+  </resultMap>
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
     type_id, group_id, type_name, description, mass, volume, packaged_volume, capacity, 
@@ -326,4 +330,9 @@
         )
     </foreach>
   </insert>
+  <select id="selcetByMarketGroupId" resultMap="MarketTreeResultMap">
+    select type_id,type_name
+    from inv_types
+    where market_group_id = #{marketGroupID}
+  </select>
 </mapper>

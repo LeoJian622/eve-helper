@@ -8,30 +8,30 @@ import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.Serializable;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import xyz.foolcat.eve.evehelper.common.base.BaseEntity;
 
 /**
-    * universe_name  ids_names
-    */
-@ApiModel(value="universe_name  ids_names")
+ * universe_name  ids_names
+ */
+@ApiModel(value = "universe_name  ids_names")
 @Data
 @TableName(value = "universe_name")
 public class UniverseName implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
-    @ApiModelProperty(value="")
-    private Long id;
+    @ApiModelProperty(value = "")
+    private Integer id;
 
     @TableField(value = "`name`")
-    @ApiModelProperty(value="")
+    @ApiModelProperty(value = "")
     private String name;
 
     /**
      * alliance, character, constellation, corporation, inventory_type, region, solar_system, station, faction
      */
     @TableField(value = "category")
-    @ApiModelProperty(value="alliance, character, constellation, corporation, inventory_type, region, solar_system, station, faction")
+    @ApiModelProperty(value = "alliance, character, constellation, corporation, inventory_type, region, solar_system, station, faction")
     private String category;
+
+    private static final long serialVersionUID = 1L;
 
     public static final String COL_ID = "id";
 

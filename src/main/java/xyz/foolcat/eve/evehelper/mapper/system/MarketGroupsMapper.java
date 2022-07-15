@@ -22,4 +22,6 @@ public interface MarketGroupsMapper {
     int updateBatch(List<MarketGroups> list);
 
     List<MarketGroupsTreeVO> selectGroupTree();
+
+    List<MarketGroupsTreeVO> selectChildren(Integer marketgroupid );
 }

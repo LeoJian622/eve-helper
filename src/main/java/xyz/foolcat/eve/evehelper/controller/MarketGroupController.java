@@ -3,6 +3,7 @@ package xyz.foolcat.eve.evehelper.controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import xyz.foolcat.eve.evehelper.common.result.R;
@@ -22,8 +23,10 @@ public class MarketGroupController {
     private final MarketGroupsService marketGroupsService;
 
 
-    @GetMapping
-    public R getMarketGrouptTree(){
-        return R.success(marketGroupsService.selectMarketGroupTree());
+    @GetMapping("/{parent}")
+    public R getMarketGrouptTree(@PathVariable Integer parent){
+
+        return R.success(marketGroupsService.selectMarketGroupByParent(parent)
+        );
     }
 }

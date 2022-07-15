@@ -11,7 +11,6 @@ import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.client.EsiNormalClient;
 import xyz.foolcat.eve.evehelper.client.constant.EsiConstant;
@@ -132,8 +131,8 @@ public class EsiApiService {
         String redisKey = GlobalConstants.ESI_ACCESS_TOKEN_KEY + charactorId + ":" + type;
         redisTemplate.opsForValue().set(redisKey, GlobalConstants.TOKEN_PERN + accessToken, 19 * 60, TimeUnit.SECONDS);
 
-        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
+//        Long userId = (Long) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Long userId = 1L;
         EveCharacter eveCharacter = new EveCharacter();
         eveCharacter.setUserId(userId.intValue());
         eveCharacter.setCharacterId(Integer.valueOf(charactorId));
@@ -148,7 +147,7 @@ public class EsiApiService {
         LambdaUpdateWrapper<EveCharacter> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
         lambdaUpdateWrapper.eq(EveCharacter::getCharacterId, eveCharacter.getCharacterId());
 
-        eveCharacterService.update(eveCharacter, lambdaUpdateWrapper);
+        eveCharacterService.saveOrUpdate(eveCharacter, lambdaUpdateWrapper);
     }
 
     /**
@@ -212,6 +211,15 @@ public class EsiApiService {
      */
     public List<MarketOrder> readMarketOrder(String regionId , Integer page, Integer typeId) {
         return esiNormalClient.getMarketOrder(regionId, page, typeId);
+    }
+
+    /**
+     * 获取Universe信息
+     * @param items
+     * @return
+     */
+    public List getUniverseName(List items){
+        return esiNormalClient.getUniverseName(items);
     }
 
     /**

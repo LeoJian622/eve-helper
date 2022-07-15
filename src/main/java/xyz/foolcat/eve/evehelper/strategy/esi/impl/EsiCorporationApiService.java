@@ -1,15 +1,15 @@
 package xyz.foolcat.eve.evehelper.strategy.esi.impl;
 
 import cn.hutool.json.JSONArray;
-import com.dtflys.forest.annotation.Body;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.client.EsiCorporationClient;
 import xyz.foolcat.eve.evehelper.domain.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.system.Blueprints;
+import xyz.foolcat.eve.evehelper.domain.system.MiningDetail;
+import xyz.foolcat.eve.evehelper.domain.system.Observer;
 import xyz.foolcat.eve.evehelper.dto.esi.IndustryJobDTO;
-import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.strategy.esi.EsiClientStrategy;
 
 import java.util.List;
@@ -51,4 +51,13 @@ public class EsiCorporationApiService implements EsiClientStrategy {
         return blueprintsList;
     }
 
+    @Override
+    public List<Observer> getCropObeserverList(Long id, Integer page, String accessToken) {
+        return esiCorporationClient.getObserverList(id, page, accessToken);
+    }
+
+    @Override
+    public List<MiningDetail> getMiningDetailListByObserver(Long id, Long observerId, Integer page, String accessToken) {
+        return esiCorporationClient.getMinigDetail(id, observerId, page, accessToken);
+    }
 }

@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
+import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.system.MarketOrder;
 import xyz.foolcat.eve.evehelper.dto.system.MarketOrderDTO;
 import xyz.foolcat.eve.evehelper.mapper.system.MarketOrderMapper;
@@ -17,6 +18,7 @@ import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(rollbackFor = RuntimeException.class)
 public class MarketOrderService extends ServiceImpl<MarketOrderMapper, MarketOrder> {
 
     private final EsiApiService esiApiService;

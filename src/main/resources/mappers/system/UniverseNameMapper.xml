@@ -4,7 +4,7 @@
   <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.UniverseName">
     <!--@mbg.generated-->
     <!--@Table universe_name-->
-    <id column="id" jdbcType="BIGINT" property="id" />
+    <id column="id" jdbcType="INTEGER" property="id" />
     <result column="name" jdbcType="VARCHAR" property="name" />
     <result column="category" jdbcType="VARCHAR" property="category" />
   </resultMap>
@@ -18,18 +18,18 @@
     <trim prefix="set" suffixOverrides=",">
       <trim prefix="`name` = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=BIGINT} then #{item.name,jdbcType=VARCHAR}
+          when id = #{item.id,jdbcType=INTEGER} then #{item.name,jdbcType=VARCHAR}
         </foreach>
       </trim>
       <trim prefix="category = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=BIGINT} then #{item.category,jdbcType=VARCHAR}
+          when id = #{item.id,jdbcType=INTEGER} then #{item.category,jdbcType=VARCHAR}
         </foreach>
       </trim>
     </trim>
     where id in
     <foreach close=")" collection="list" item="item" open="(" separator=", ">
-      #{item.id,jdbcType=BIGINT}
+      #{item.id,jdbcType=INTEGER}
     </foreach>
   </update>
   <update id="updateBatchSelective" parameterType="java.util.List">
@@ -39,21 +39,21 @@
       <trim prefix="`name` = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
           <if test="item.name != null">
-            when id = #{item.id,jdbcType=BIGINT} then #{item.name,jdbcType=VARCHAR}
+            when id = #{item.id,jdbcType=INTEGER} then #{item.name,jdbcType=VARCHAR}
           </if>
         </foreach>
       </trim>
       <trim prefix="category = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
           <if test="item.category != null">
-            when id = #{item.id,jdbcType=BIGINT} then #{item.category,jdbcType=VARCHAR}
+            when id = #{item.id,jdbcType=INTEGER} then #{item.category,jdbcType=VARCHAR}
           </if>
         </foreach>
       </trim>
     </trim>
     where id in
     <foreach close=")" collection="list" item="item" open="(" separator=", ">
-      #{item.id,jdbcType=BIGINT}
+      #{item.id,jdbcType=INTEGER}
     </foreach>
   </update>
   <insert id="batchInsert" parameterType="map">
@@ -62,7 +62,7 @@
     (id, `name`, category)
     values
     <foreach collection="list" item="item" separator=",">
-      (#{item.id,jdbcType=BIGINT}, #{item.name,jdbcType=VARCHAR}, #{item.category,jdbcType=VARCHAR}
+      (#{item.id,jdbcType=INTEGER}, #{item.name,jdbcType=VARCHAR}, #{item.category,jdbcType=VARCHAR}
         )
     </foreach>
   </insert>

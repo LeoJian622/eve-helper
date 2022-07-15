@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.ObserverMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.Observer">
+    <!--@mbg.generated-->
+    <!--@Table observer-->
+    <id column="observer_id" jdbcType="BIGINT" property="observerId" />
+    <result column="observer_type" jdbcType="BIGINT" property="observerType" />
+    <result column="last_updated" jdbcType="TIMESTAMP" property="lastUpdated" />
+    <result column="croporation_id" jdbcType="BIGINT" property="croporationId" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    observer_id, observer_type, last_updated, croporation_id
+  </sql>
+  <update id="updateBatch" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update observer
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="observer_type = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when observer_id = #{item.observerId,jdbcType=BIGINT} then #{item.observerType,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="last_updated = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when observer_id = #{item.observerId,jdbcType=BIGINT} then #{item.lastUpdated,jdbcType=TIMESTAMP}
+        </foreach>
+      </trim>
+      <trim prefix="croporation_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when observer_id = #{item.observerId,jdbcType=BIGINT} then #{item.croporationId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+    </trim>
+    where observer_id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.observerId,jdbcType=BIGINT}
+    </foreach>
+  </update>
+  <update id="updateBatchSelective" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update observer
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="observer_type = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.observerType != null">
+            when observer_id = #{item.observerId,jdbcType=BIGINT} then #{item.observerType,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="last_updated = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.lastUpdated != null">
+            when observer_id = #{item.observerId,jdbcType=BIGINT} then #{item.lastUpdated,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="croporation_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.croporationId != null">
+            when observer_id = #{item.observerId,jdbcType=BIGINT} then #{item.croporationId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+    </trim>
+    where observer_id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.observerId,jdbcType=BIGINT}
+    </foreach>
+  </update>
+  <insert id="batchInsert" parameterType="map">
+    <!--@mbg.generated-->
+    insert into observer
+    (observer_id, observer_type, last_updated, croporation_id)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.observerId,jdbcType=BIGINT}, #{item.observerType,jdbcType=BIGINT}, #{item.lastUpdated,jdbcType=TIMESTAMP}, 
+        #{item.croporationId,jdbcType=BIGINT})
+    </foreach>
+  </insert>
+</mapper>

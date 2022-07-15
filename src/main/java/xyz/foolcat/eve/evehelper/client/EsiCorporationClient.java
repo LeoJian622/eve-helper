@@ -4,6 +4,8 @@ import cn.hutool.json.JSONArray;
 import com.dtflys.forest.annotation.*;
 import xyz.foolcat.eve.evehelper.domain.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.system.Blueprints;
+import xyz.foolcat.eve.evehelper.domain.system.MiningDetail;
+import xyz.foolcat.eve.evehelper.domain.system.Observer;
 import xyz.foolcat.eve.evehelper.dto.esi.IndustryJobDTO;
 import xyz.foolcat.eve.evehelper.interceptor.EsiCharactorInterceptor;
 
@@ -35,7 +37,7 @@ public interface EsiCorporationClient {
      * @param accessToken
      * @return
      */
-    @Get(url = "/characters/{corporation_id}/industry/jobs/", dataType = "json")
+    @Get(url = "/corporations/{corporation_id}/industry/jobs/", dataType = "json")
     List<IndustryJobDTO> getCorporationJobs(@Var("corporation_id") String corporationId, @Header("Authorization") String accessToken);
 
     /**
@@ -46,7 +48,7 @@ public interface EsiCorporationClient {
      * @param accessToken
      * @return
      */
-    @Get(url = "/characters/{corporation_id}/assets/", dataType = "json")
+    @Get(url = "/corporations/{corporation_id}/assets/", dataType = "json")
     List<Assets> getCorporationAssets(@Var("corporation_id") String corporationId, @Query("page") int page, @Header("Authorization") String accessToken);
 
     /**
@@ -57,7 +59,7 @@ public interface EsiCorporationClient {
      * @param accessToken
      * @return
      */
-    @Post(url = "/characters/{corporation_id}/assets/names/", dataType = "json")
+    @Post(url = "/corporations/{corporation_id}/assets/names/", dataType = "json")
     JSONArray getCorporationAssetsNames(@Var("corporation_id") String corporationId, @JSONBody("item_ids") List itemIds, @Header("Authorization") String accessToken);
 
     /**
@@ -71,4 +73,24 @@ public interface EsiCorporationClient {
     @Get(url = "/corporations/{corporation_id}/blueprints/", dataType = "json")
     List<Blueprints> getCharactorBlueprints(@Var("corporation_id") String corporationId, @Query("page") int page, @Header("Authorization") String accessToken);
 
+    /**
+     * 获取采矿观察者列表
+     * @param corporationId
+     * @param page
+     * @param accessToken
+     * @return
+     */
+    @Get(url = "/corporation/{corporation_id}/mining/observers/",dataType = "json")
+    List<Observer> getObserverList(@Var("corporation_id") Long corporationId, @Query("page") Integer page, @Header("Authorization") String accessToken);
+
+    /**
+     * 某一观察者获取的采矿数据
+     * @param corporationId
+     * @param observerId
+     * @param page
+     * @param accessToken
+     * @return
+     */
+    @Get(url = "/corporation/{corporation_id}/mining/observers/{observer_id}/",dataType = "json")
+    List<MiningDetail> getMinigDetail(@Var("corporation_id") Long corporationId , @Var("observer_id") Long observerId, @Query("page") Integer page, @Header("Authorization") String accessToken);
 }

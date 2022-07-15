@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.system.SysUser;
 import xyz.foolcat.eve.evehelper.mapper.system.SysUserMapper;
 
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
  * @author Leojan
  */
 @Service
+@Transactional(rollbackFor = RuntimeException.class)
 public class SysUserService extends ServiceImpl<SysUserMapper, SysUser> implements UserDetailsService {
 
     @Resource
