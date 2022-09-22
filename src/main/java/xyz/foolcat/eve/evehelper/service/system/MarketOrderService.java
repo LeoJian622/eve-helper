@@ -1,24 +1,25 @@
 package xyz.foolcat.eve.evehelper.service.system;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.system.MarketOrder;
 import xyz.foolcat.eve.evehelper.dto.system.MarketOrderDTO;
 import xyz.foolcat.eve.evehelper.mapper.system.MarketOrderMapper;
 import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(rollbackFor = RuntimeException.class)
+@CacheConfig(cacheNames = "MarkerOrderCache")
 public class MarketOrderService extends ServiceImpl<MarketOrderMapper, MarketOrder> {
 
     private final EsiApiService esiApiService;
@@ -33,10 +34,6 @@ public class MarketOrderService extends ServiceImpl<MarketOrderMapper, MarketOrd
 
     public int batchInsert(List<MarketOrder> list) {
         return baseMapper.batchInsert(list);
-    }
-
-    public void saveAndUpdateMarketOrder(String type,String id) {
-
     }
 
     /**
@@ -54,11 +51,15 @@ public class MarketOrderService extends ServiceImpl<MarketOrderMapper, MarketOrd
      * 查询物品在某个建筑的订单，
      * @param locationId
      * @param typeId
-     * @param buy
-     * @param sale
      */
-    List<MarketOrderDTO> querSaleAndBuyPrice(Long locationId, Integer typeId, boolean buy, boolean sale){
-        return baseMapper.queryPrice(locationId, typeId, buy, sale);
+    @Cacheable
+    public List<MarketOrderDTO> querySaleAndBuyPrice(Long locationId, Integer typeId){
+        return baseMapper.queryPrice(locationId, typeId);
     }
+
+
+
+
+
 }
 

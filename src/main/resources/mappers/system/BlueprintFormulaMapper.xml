@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.BlueprintFormulaMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.BlueprintFormula">
+    <!--@mbg.generated-->
+    <!--@Table blueprint_formula-->
+    <result column="blueprint_id" jdbcType="INTEGER" property="blueprintId" />
+    <result column="material_type_id" jdbcType="INTEGER" property="materialTypeId" />
+    <result column="type_name" jdbcType="VARCHAR" property="typeName" />
+    <result column="activity_id" jdbcType="TINYINT" property="activityId" />
+    <result column="quantity" jdbcType="INTEGER" property="quantity" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    blueprint_id, material_type_id, type_name, activity_id, quantity
+  </sql>
+  <insert id="batchInsert" parameterType="map">
+    <!--@mbg.generated-->
+    insert into blueprint_formula
+    (blueprint_id, material_type_id, type_name, activity_id, quantity)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.blueprintId,jdbcType=INTEGER}, #{item.materialTypeId,jdbcType=INTEGER}, #{item.typeName,jdbcType=VARCHAR}, 
+        #{item.activityId,jdbcType=TINYINT}, #{item.quantity,jdbcType=INTEGER})
+    </foreach>
+  </insert>
+</mapper>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.BlueprintsDataMapper">
+    <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.BlueprintsData">
+        <!--@mbg.generated-->
+        <!--@Table blueprints_data-->
+        <result column="type_id" jdbcType="INTEGER" property="typeId"/>
+        <result column="type_name" jdbcType="VARCHAR" property="typeName"/>
+        <result column="blueprint_type_id" jdbcType="INTEGER" property="blueprintTypeId"/>
+        <result column="blueprint_name" jdbcType="VARCHAR" property="blueprintName"/>
+        <result column="activity_id" jdbcType="TINYINT" property="activityId"/>
+        <result column="quantity" jdbcType="INTEGER" property="quantity"/>
+        <result column="probability" jdbcType="FLOAT" property="probability"/>
+        <result column="time" jdbcType="INTEGER" property="time"/>
+        <result column="max_production_limit" jdbcType="INTEGER" property="maxProductionLimit"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        type_id,
+        type_name,
+        blueprint_type_id,
+        blueprint_name,
+        activity_id,
+        quantity,
+        probability,
+        `time`,
+        max_production_limit
+    </sql>
+    <insert id="batchInsert" parameterType="map">
+        <!--@mbg.generated-->
+        insert into blueprints_data
+        (type_id, type_name, blueprint_type_id, blueprint_name, activity_id, quantity, probability,
+         `time`, max_production_limit)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.typeId,jdbcType=INTEGER}, #{item.typeName,jdbcType=VARCHAR},
+             #{item.blueprintTypeId,jdbcType=INTEGER},
+             #{item.blueprintName,jdbcType=VARCHAR}, #{item.activityId,jdbcType=TINYINT},
+             #{item.quantity,jdbcType=INTEGER},
+             #{item.probability,jdbcType=FLOAT}, #{item.time,jdbcType=INTEGER},
+             #{item.maxProductionLimit,jdbcType=INTEGER})
+        </foreach>
+    </insert>
+
+    <select id="calcluateCost" resultType="xyz.foolcat.eve.evehelper.dto.system.BlueprintCostDTO">
+        select bf.type_id,
+               bf.type_name,
+               sale_price.sale                             sale,
+               buy_price.buy                               buy,
+               sum(bf.sale_price * material_type_quantity) cost_sale,
+               sum(bf.buy_price * material_type_quantity)  cost_buy
+
+        from (select distinct bd.type_id,
+                              bd.type_name,
+                              bd.activity_id,
+                              formula.quantity as material_type_quantity,
+                              formula.sale_price,
+                              formula.buy_price
+              from blueprints_data bd
+                       left join (
+                  select blueprint_id, material_type_id, type_name, activity_id, quantity, sale_price, buy_price
+                  from blueprint_formula
+                           left join (select type_id, min(price) as sale_price
+                                      from market_order
+                                      where is_buy_order = 0
+                                      group by type_id) sale_price on material_type_id = sale_price.type_id
+                           left join (select type_id, max(price) as buy_price
+                                      from market_order
+                                      where is_buy_order = 1
+                                      group by type_id) buy_price on material_type_id = buy_price.type_id
+              ) formula on bd.blueprint_type_id = formula.blueprint_id) as bf
+                 left join (select type_id, min(price) as sale
+                            from market_order
+                            where is_buy_order = 0
+                            group by type_id) sale_price on bf.type_id = sale_price.type_id
+                 left join (select type_id, max(price) as buy
+                            from market_order
+                            where is_buy_order = 1
+                            group by type_id) buy_price on bf.type_id = buy_price.type_id
+        where activity_id = 1
+        <if test="type_id != null">
+            and bf.type_id = #{type_id}
+        </if>
+        group by type_id, type_name, activity_id
+    </select>
+
+<!--    <select id="queryDetailList" resultType=""-->
+</mapper>

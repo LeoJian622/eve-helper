@@ -209,14 +209,7 @@
                       on mo.type_id = it.type_id
             left join (
                 select type_id,
-                <choose>
-                    <when test="isMaxSale">
-                        max(price) as price
-                    </when>
-                    <otherwise>
                         min(price) as price
-                    </otherwise>
-                </choose>
                 from market_order
                 where location_id = #{locationId}
                   and is_buy_order = false
@@ -225,14 +218,7 @@
                         on mo.type_id = price_sale.type_id
             left join (
                 select type_id,
-                <choose>
-                    <when test="isMaxBuy">
                         max(price) as price
-                    </when>
-                    <otherwise>
-                        min(price) as price
-                    </otherwise>
-                </choose>
                 from market_order
                 where location_id = #{locationId}
                   and is_buy_order = true

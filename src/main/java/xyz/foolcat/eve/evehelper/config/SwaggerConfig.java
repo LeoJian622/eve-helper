@@ -3,14 +3,19 @@ package xyz.foolcat.eve.evehelper.config;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import springfox.documentation.builders.ApiInfoBuilder;
+import springfox.documentation.builders.OAuthBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.service.Contact;
+import springfox.documentation.service.*;
 import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spi.service.contexts.SecurityContext;
 import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.swagger2.annotations.EnableSwagger2WebMvc;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * @author Leojan
@@ -18,16 +23,42 @@ import springfox.documentation.spring.web.plugins.Docket;
  */
 
 @Configuration
-@EnableWebMvc
+@EnableSwagger2WebMvc
 public class SwaggerConfig {
     @Bean
     public Docket createRestApi() {
-        return new Docket(DocumentationType.OAS_30)
+
+        //schema
+        List<GrantType> grantTypes = new ArrayList<>();
+        //密码模式
+        String passwordTokenUrl = "http://localhost:18010/oauth/token";
+        ResourceOwnerPasswordCredentialsGrant resourceOwnerPasswordCredentialsGrant = new ResourceOwnerPasswordCredentialsGrant(passwordTokenUrl);
+        grantTypes.add(resourceOwnerPasswordCredentialsGrant);
+        OAuth oAuth = new OAuthBuilder().name("oauth2")
+                .grantTypes(grantTypes).build();
+        //context
+        //scope方位
+        List<AuthorizationScope> scopes = new ArrayList<>();
+        scopes.add(new AuthorizationScope("read", "read  resources"));
+        scopes.add(new AuthorizationScope("write", "write resources"));
+        scopes.add(new AuthorizationScope("reads", "read all resources"));
+        scopes.add(new AuthorizationScope("writes", "write all resources"));
+
+        SecurityReference securityReference = new SecurityReference("oauth2", scopes.toArray(new AuthorizationScope[]{}));
+        SecurityContext securityContext = new SecurityContext(Collections.singletonList(securityReference), PathSelectors.ant("/api/**"));
+        //schemas
+        List<SecurityScheme> securitySchemes = Collections.singletonList(oAuth);
+        //securyContext
+        List<SecurityContext> securityContexts = Collections.singletonList(securityContext);
+
+        return new Docket(DocumentationType.SWAGGER_2)
                 .apiInfo(apiInfo())
                 .select()
                 .apis(RequestHandlerSelectors.withMethodAnnotation(ApiOperation.class))
                 .paths(PathSelectors.any())
-                .build();
+                .build()
+                .securityContexts(securityContexts)
+                .securitySchemes(securitySchemes);
     }
 
     private ApiInfo apiInfo() {

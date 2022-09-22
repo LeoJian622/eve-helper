@@ -34,9 +34,6 @@ public class MiningDetailService extends ServiceImpl<MiningDetailMapper, MiningD
         return baseMapper.batchInsert(list);
     }
 
-    public void saveAllObserverMining(Long corporationId) {
-    }
-
     public void saveObserverMining(Long corporationId, Long observerId) throws ParseException {
         String accessToken = esiApiService.getAccessToken(GlobalConstants.CHAR, corporationId.toString());
         int i = 1;

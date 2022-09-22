@@ -7,18 +7,17 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 物品买卖单对象
+ * 蓝图成本
  *
  * @author Leojan
- * @date 2022-06-09 11:29
+ * @date 2022-09-09 17:15
  */
 
-@ApiModel(value="买卖单最高或最低售价")
+@ApiModel(value = "制造成本")
 @Data
-public class MarketOrderDTO implements Serializable {
+public class BlueprintCostDTO implements Serializable {
 
-    private static final long serialVersionUID = 4187181620195980282L;
-
+    private static final long serialVersionUID = -1321213174703409278L;
     /**
      * 物品类型ID
      */
@@ -36,12 +35,25 @@ public class MarketOrderDTO implements Serializable {
      * 销售价
      */
     @ApiModelProperty(value="销售价")
-    private Long salePrice;
+    private Long sale;
 
     /**
      * 收购价
      */
     @ApiModelProperty(value="收购价")
-    private Long buyPrice;
+    private Long buy;
+
+
+    /**
+     * 卖单成本
+     */
+    @ApiModelProperty(value = "卖单成本")
+    private Long costSale;
+
+    /**
+     * 收单成本
+     */
+    @ApiModelProperty(value = "收单成本")
+    private Long costBuy;
 
 }

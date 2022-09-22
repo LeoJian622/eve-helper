@@ -1,5 +1,8 @@
 package xyz.foolcat.eve.evehelper.controller;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +21,7 @@ import java.text.ParseException;
  * @date 2022-07-06 22:26
  */
 
+@Api(tags = "月矿采掘")
 @RestController
 @Slf4j
 @RequestMapping("/observer")
@@ -26,6 +30,8 @@ public class ObserverController {
 
         private final ObserverService observerService;
 
+        @ApiImplicitParam(name = "corporationId", value = "军团ID", required = true)
+        @ApiOperation(value = "月矿采掘-月矿堡读取")
         @PutMapping("/{corporationId}")
         public R saveObserverByCorporationId(@PathVariable Long corporationId) throws ParseException {
                 observerService.saveObserverFromEsi(corporationId);

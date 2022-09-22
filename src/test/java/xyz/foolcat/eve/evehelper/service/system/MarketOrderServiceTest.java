@@ -5,15 +5,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.web.bind.annotation.RequestMapping;
 import xyz.foolcat.eve.evehelper.dto.system.MarketOrderDTO;
 
 import javax.annotation.Resource;
 
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -29,7 +25,7 @@ class MarketOrderServiceTest {
 
     @Test
     void querSaleAndBuyPrice() {
-        List<MarketOrderDTO> marketOrderDTOS= marketOrderService.querSaleAndBuyPrice(60003760L, 28844, true, false);
+        List<MarketOrderDTO> marketOrderDTOS= marketOrderService.querySaleAndBuyPrice(60003760L, 28844);
 
         System.out.println(marketOrderDTOS);
     }

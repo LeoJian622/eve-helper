@@ -1,5 +1,8 @@
 package xyz.foolcat.eve.evehelper.controller;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiImplicitParam;
+import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -13,13 +16,12 @@ import xyz.foolcat.eve.evehelper.domain.system.SysUser;
 import xyz.foolcat.eve.evehelper.dto.system.UserDTO;
 import xyz.foolcat.eve.evehelper.service.system.SysUserService;
 
-import javax.annotation.Resource;
-
 /**
  * @author Leojan
  * @date 2022-03-01 14:36
  */
 
+@Api(tags = "用户")
 @RestController
 @Slf4j
 @RequestMapping("/user")
@@ -32,8 +34,10 @@ public class UserController {
 
     private final PasswordEncoder passwordEncoder;
 
+    @ApiImplicitParam(name = "user",value = "用户对象",required = true)
+    @ApiOperation(value = "用户服务-用户注册")
     @PostMapping
-    public R addUser(@RequestBody UserDTO user) {
+    public R<String> addUser(@RequestBody UserDTO user) {
 
         SysUser sysUser = userConverter.userDto2SysUser(user);
 
