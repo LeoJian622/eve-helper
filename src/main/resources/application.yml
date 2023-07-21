@@ -2,9 +2,6 @@ server:
   port: 9999
 
 spring:
-  mvc:
-    pathmatch:
-      matching-strategy: ant-path-matcher
   datasource:
     druid:
       system:
@@ -118,28 +115,15 @@ eve:
   helper:
     whiteUrlList:
       - POST:/user
-forest:
-  # 转换器配置，支持 json, xml, text, binary 四种数据类型的配置
-  converters:
-    # JSON转换器
-    json:
-      # JSON转换器设置为GSON转换器
-#      type: com.dtflys.forest.converter.json.ForestGsonConverter
-      # 同理，也可以设置成 Fastjson 或 Jackson 的转换器
-      # type: com.dtflys.forest.converter.json.ForestFastjsonConverter
-      type: com.dtflys.forest.converter.json.ForestJacksonConverter
-    # XML转换器
-    xml:
-      # 配置为JAXB转换器
-      type: com.dtflys.forest.converter.xml.ForestJaxbConverter
-
-    # 二进制转换器
-    binary:
-      # 配置为Forest默认二进制转换器
-      type: com.dtflys.forest.converter.binary.DefaultBinaryConverter
-
-    # 文本转换器
-    text:
-      # 配置为Forest默认文本转换器
-      type: com.dtflys.forest.converter.text.DefaultTextConverter
-  log-enabled: true
+# springdoc-openapi项目配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: ''
+      paths-to-match: '/**'
+      packages-to-scan: xyz.foolcat.eve.evehelper

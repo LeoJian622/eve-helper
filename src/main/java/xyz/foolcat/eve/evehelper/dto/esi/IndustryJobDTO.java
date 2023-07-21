@@ -1,9 +1,7 @@
 package xyz.foolcat.eve.evehelper.dto.esi;
 
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableName;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import xyz.foolcat.eve.evehelper.common.base.BaseEntity;
@@ -18,129 +16,129 @@ import java.util.Date;
  * @date 2022-04-15 16:23
  */
 
-@ApiModel(value="制造作业表")
+@Schema(title="制造作业表")
 @Data
 @EqualsAndHashCode(callSuper=true)
 public class IndustryJobDTO extends BaseEntity implements Serializable {
     /**
      * 作业ID
      */
-    @ApiModelProperty(value="作业ID")
+    @Schema(name="作业ID")
     private String jobId;
 
     /**
      * 蓝图名称
      */
-    @ApiModelProperty(value="蓝图ID")
+    @Schema(name="蓝图ID")
     private String blueprintId;
 
     /**
      * 蓝图类型
      */
-    @ApiModelProperty(value="蓝图类型ID")
+    @Schema(name="蓝图类型ID")
     private String blueprintTypeId;
 
     /**
      * 花费
      */
-    @ApiModelProperty(value="花费")
+    @Schema(name="花费")
     private String cost;
 
     /**
      * 可用流程数
      */
-    @ApiModelProperty(value="可用流程数")
+    @Schema(name="可用流程数")
     private String licensedRuns;
 
     /**
      * 发明成功几率
      */
-    @ApiModelProperty(value="发明成功几率")
+    @Schema(name="发明成功几率")
     private String probability;
 
     /**
      * 建筑ID
      */
-    @ApiModelProperty(value="建筑ID")
+    @Schema(name="建筑ID")
     private String stationId;
 
     /**
      * 产出存放ID
      */
-    @ApiModelProperty(value="产出存放ID")
+    @Schema(name="产出存放ID")
     private String outputLocationId;
 
     /**
      * 产出物品类型
      */
-    @ApiModelProperty(value="产出物品类型")
+    @Schema(name="产出物品类型")
     private String productTypeId;
 
     /**
      * 蓝图位置ID
      */
-    @ApiModelProperty(value="蓝图位置ID")
+    @Schema(name="蓝图位置ID")
     private String blueprintLocationId;
 
     /**
      * 作业时间
      */
-    @ApiModelProperty(value="作业时间")
+    @Schema(name="作业时间")
     private String duration;
 
     /**
      * 启动角色
      */
-    @ApiModelProperty(value="启动角色")
+    @Schema(name="启动角色")
     private String installerId;
 
     /**
      * 完成角色
      */
-    @ApiModelProperty(value="完成角色")
+    @Schema(name="完成角色")
     private String completedCharacterId;
 
     /**
      * 活动ID
      */
-    @ApiModelProperty(value="活动ID")
+    @Schema(name="活动ID")
     private String activityId;
 
     /**
      * 作业设施ID
      */
-    @ApiModelProperty(value="作业设施ID")
+    @Schema(name="作业设施ID")
     private String facilityId;
 
     /**
      * 作业次数
      */
-    @ApiModelProperty(value="作业次数")
+    @Schema(name="作业次数")
     private String runs;
 
     /**
      * 开始日期
      */
-    @ApiModelProperty(value="开始日期")
+    @Schema(name="开始日期")
     private Date startDate;
 
     /**
      * 开始日期
      */
-    @ApiModelProperty(value="暂停日期")
+    @Schema(name="暂停日期")
     private Date pauseDate;
 
     /**
      * 结束日期
      */
-    @ApiModelProperty(value="结束日期")
+    @Schema(name="结束日期")
     private Date endDate;
 
     /**
      * active-活动 cancelled-取消 delivered-交付 paused-暂停 ready-准备好 reverted-恢复
      */
     @TableField(value = "`status`")
-    @ApiModelProperty(value="active-活动 cancelled-取消 delivered-交付 paused-暂停 ready-准备好 reverted-恢复")
+    @Schema(name="active-活动 cancelled-取消 delivered-交付 paused-暂停 ready-准备好 reverted-恢复")
     private String status;
 
     public static final String COL_JOB_ID = "job_id";

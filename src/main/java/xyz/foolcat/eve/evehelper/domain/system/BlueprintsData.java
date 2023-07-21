@@ -2,8 +2,7 @@ package xyz.foolcat.eve.evehelper.domain.system;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -11,7 +10,7 @@ import java.io.Serializable;
 /**
     * 蓝图生产相关数据
     */
-@ApiModel(value="蓝图生产相关数据")
+@Schema(title="蓝图生产相关数据")
 @Data
 @TableName(value = "blueprints_data")
 public class BlueprintsData implements Serializable {
@@ -19,63 +18,63 @@ public class BlueprintsData implements Serializable {
      * 产物typeId
      */
     @TableField(value = "type_id")
-    @ApiModelProperty(value="产物typeId")
+    @Schema(name="产物typeId")
     private Integer typeId;
 
     /**
      * 产物名称
      */
     @TableField(value = "type_name")
-    @ApiModelProperty(value="产物名称")
+    @Schema(name="产物名称")
     private String typeName;
 
     /**
      * 蓝图typeId
      */
     @TableField(value = "blueprint_type_id")
-    @ApiModelProperty(value="蓝图typeId")
+    @Schema(name="蓝图typeId")
     private Integer blueprintTypeId;
 
     /**
      * 蓝图名称
      */
     @TableField(value = "blueprint_name")
-    @ApiModelProperty(value="蓝图名称")
+    @Schema(name="蓝图名称")
     private String blueprintName;
 
     /**
      * 生产类型
      */
     @TableField(value = "activity_id")
-    @ApiModelProperty(value="生产类型")
+    @Schema(name="生产类型")
     private Byte activityId;
 
     /**
      * 单流程产量
      */
     @TableField(value = "quantity")
-    @ApiModelProperty(value="单流程产量")
+    @Schema(name="单流程产量")
     private Integer quantity;
 
     /**
      * 基础成功率
      */
     @TableField(value = "probability")
-    @ApiModelProperty(value="基础成功率")
+    @Schema(name="基础成功率")
     private Double probability;
 
     /**
      * 生产基础时间
      */
     @TableField(value = "`time`")
-    @ApiModelProperty(value="生产基础时间")
+    @Schema(name="生产基础时间")
     private Integer time;
 
     /**
      * 最大单次产量
      */
     @TableField(value = "max_production_limit")
-    @ApiModelProperty(value="最大单次产量")
+    @Schema(name="最大单次产量")
     private Integer maxProductionLimit;
 
     private static final long serialVersionUID = 1L;

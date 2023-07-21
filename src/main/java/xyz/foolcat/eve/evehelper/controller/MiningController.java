@@ -1,16 +1,16 @@
 package xyz.foolcat.eve.evehelper.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import xyz.foolcat.eve.evehelper.common.result.R;
+import xyz.foolcat.eve.evehelper.common.result.Result;
 import xyz.foolcat.eve.evehelper.service.system.MiningDetailService;
 
 import java.text.ParseException;
@@ -20,7 +20,7 @@ import java.text.ParseException;
  * @date 2022-07-06 21:58
  */
 
-@Api(tags = "月矿采掘")
+@Tag(name ="月矿采掘")
 @RestController
 @Slf4j
 @RequestMapping("/mining")
@@ -29,15 +29,15 @@ public class MiningController {
 
     private final MiningDetailService miningDetailService;
 
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "corporationId",value = "军团ID" ,required = true),
-            @ApiImplicitParam(name = "observerId",value = "月矿堡ID" ,required = true)
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID" ,required = true),
+            @Parameter(name = "observerId", description = "月矿堡ID" ,required = true)
     })
-    @ApiOperation(value = "月矿采掘-开采明细读取")
-    @PutMapping("/{corporationId}/{observerId}")
-    public R readMinigDetail(@PathVariable Long corporationId, @PathVariable Long observerId) throws ParseException {
+    @Operation(summary = "月矿采掘-开采明细读取")
+    @GetMapping("/{corporationId}/{observerId}")
+    public Result readMinigDetail(@PathVariable Long corporationId, @PathVariable Long observerId) throws ParseException {
         miningDetailService.saveObserverMining(corporationId, observerId);
-        return R.success();
+        return Result.success();
     }
 
 }

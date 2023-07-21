@@ -1,14 +1,11 @@
 package xyz.foolcat.eve.evehelper.config.security.handler;
 
 import cn.hutool.core.lang.UUID;
-import cn.hutool.jwt.signers.JWTSigner;
-import cn.hutool.jwt.signers.JWTSignerUtil;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import io.lettuce.core.output.StatusOutput;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -16,9 +13,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
-import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.common.constant.SecurityConstant;
-import xyz.foolcat.eve.evehelper.common.result.ResultCode;
 import xyz.foolcat.eve.evehelper.config.security.JwtTokenConfig;
 import xyz.foolcat.eve.evehelper.config.security.KeyStoreKeyFactory;
 import xyz.foolcat.eve.evehelper.domain.system.SysUser;
@@ -42,7 +37,6 @@ import java.util.stream.Collectors;
  */
 
 @Slf4j
-@Component
 @RequiredArgsConstructor
 public class AuthenticationSuccessServletHandler implements AuthenticationSuccessHandler {
 

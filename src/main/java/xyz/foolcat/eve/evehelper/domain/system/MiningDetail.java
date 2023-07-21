@@ -4,69 +4,68 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
 
-@ApiModel(value="mining_detail")
+@Schema(title="挖矿明细")
 @Data
 @TableName(value = "mining_detail")
 public class MiningDetail implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private String id;
 
     /**
      * 角色ID
      */
     @TableField(value = "character_id")
-    @ApiModelProperty(value="角色ID")
+    @Schema(name="角色ID")
     private Integer characterId;
 
     @TableField(value = "character_name")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private String characterName;
 
     /**
      * 开采时该角色所属公司
      */
     @TableField(value = "recorded_corporation_id")
-    @ApiModelProperty(value="开采时该角色所属公司")
+    @Schema(name="开采时该角色所属公司")
     private Integer recordedCorporationId;
 
     @TableField(value = "recorded_corporation_name")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private String recordedCorporationName;
 
     /**
      * 物品类型ID
      */
     @TableField(value = "type_id")
-    @ApiModelProperty(value="物品类型ID")
+    @Schema(name="物品类型ID")
     private Integer typeId;
 
     /**
      * 开采数量
      */
     @TableField(value = "quantity")
-    @ApiModelProperty(value="开采数量")
+    @Schema(name="开采数量")
     private Long quantity;
 
     /**
      * observer id
      */
     @TableField(value = "observer_id")
-    @ApiModelProperty(value="observer id")
+    @Schema(name="observer id")
     private Long observerId;
 
     /**
      * 上次更新时间
      */
     @TableField(value = "last_updated")
-    @ApiModelProperty(value="上次更新时间")
+    @Schema(name="上次更新时间")
     private Date lastUpdated;
 
     private static final long serialVersionUID = 1L;

@@ -1,29 +1,28 @@
 package xyz.foolcat.eve.evehelper.domain.eve;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import java.io.Serializable;
-import lombok.Builder;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-@ApiModel(value="industryActivityProducts")
+import java.io.Serializable;
+
+@Schema(title="industryActivityProducts",hidden = true)
 @Data
 @Accessors(chain = true)
 public class IndustryActivityProducts implements Serializable {
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Integer blueprinttypeid;
 
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Byte activityid;
 
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Integer producttypeid;
 
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Integer quantity;
 
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Double probability;
 
     private static final long serialVersionUID = 1L;

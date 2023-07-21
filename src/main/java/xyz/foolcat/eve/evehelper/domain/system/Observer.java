@@ -4,36 +4,36 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import java.io.Serializable;
-import java.util.Date;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
-@ApiModel(value="observer")
+import java.io.Serializable;
+import java.util.Date;
+
+@Schema(title="observer",hidden = true)
 @Data
 @TableName(value = "observer")
 public class Observer implements Serializable {
     @TableId(value = "observer_id", type = IdType.AUTO)
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Long observerId;
 
     /**
      * 观察者类型  枚举：structure 
      */
     @TableField(value = "observer_type")
-    @ApiModelProperty(value="观察者类型  枚举：structure ")
+    @Schema(name="观察者类型  枚举：structure ")
     private String observerType;
 
     /**
      * 上次更新时间
      */
     @TableField(value = "last_updated")
-    @ApiModelProperty(value="上次更新时间")
+    @Schema(name="上次更新时间")
     private Date lastUpdated;
 
     @TableField(value = "croporation_id")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Long croporationId;
 
     private static final long serialVersionUID = 1L;

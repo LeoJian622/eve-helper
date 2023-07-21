@@ -15,14 +15,13 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import xyz.foolcat.eve.evehelper.common.result.R;
+import xyz.foolcat.eve.evehelper.common.result.Result;
 import xyz.foolcat.eve.evehelper.common.result.ResultCode;
 
 import javax.servlet.ServletException;
 import javax.validation.ConstraintViolationException;
 import javax.validation.ValidationException;
 import java.rmi.ServerException;
-import java.util.concurrent.CompletionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,7 +39,7 @@ public class GlobalExceptionHandler {
      */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(BindException.class)
-    public <T> R<T> processException(BindException e) {
+    public <T> Result<T> processException(BindException e) {
         log.error(e.getMessage(), e);
         JSONObject msg = new JSONObject();
         e.getAllErrors().forEach(error -> {
@@ -53,7 +52,7 @@ public class GlobalExceptionHandler {
                         error.getDefaultMessage());
             }
         });
-        return R.failed(ResultCode.PARAM_ERROR, msg.toString());
+        return Result.failed(ResultCode.PARAM_ERROR, msg.toString());
     }
 
     /**
@@ -61,7 +60,7 @@ public class GlobalExceptionHandler {
      */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ConstraintViolationException.class)
-    public <T> R<T> processException(ConstraintViolationException e) {
+    public <T> Result<T> processException(ConstraintViolationException e) {
         log.error(e.getMessage(), e);
         JSONObject msg = new JSONObject();
         e.getConstraintViolations().forEach(constraintViolation -> {
@@ -69,14 +68,14 @@ public class GlobalExceptionHandler {
             String path = constraintViolation.getPropertyPath().toString();
             msg.set(path, template);
         });
-        return R.failed(ResultCode.PARAM_ERROR, msg.toString());
+        return Result.failed(ResultCode.PARAM_ERROR, msg.toString());
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ValidationException.class)
-    public <T> R<T> processException(ValidationException e) {
+    public <T> Result<T> processException(ValidationException e) {
         log.error(e.getMessage(), e);
-        return R.failed(ResultCode.PARAM_ERROR, "参数校验失败");
+        return Result.failed(ResultCode.PARAM_ERROR, "参数校验失败");
     }
 
 
@@ -85,9 +84,9 @@ public class GlobalExceptionHandler {
      */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MissingServletRequestParameterException.class)
-    public <T> R<T> processException(MissingServletRequestParameterException e) {
+    public <T> Result<T> processException(MissingServletRequestParameterException e) {
         log.error(e.getMessage(), e);
-        return R.failed(ResultCode.PARAM_IS_NULL);
+        return Result.failed(ResultCode.PARAM_IS_NULL);
     }
 
     /**
@@ -95,9 +94,9 @@ public class GlobalExceptionHandler {
      */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public <T> R<T> processException(MethodArgumentTypeMismatchException e) {
+    public <T> Result<T> processException(MethodArgumentTypeMismatchException e) {
         log.error(e.getMessage(), e);
-        return R.failed(ResultCode.PARAM_ERROR, "类型错误");
+        return Result.failed(ResultCode.PARAM_ERROR, "类型错误");
     }
 
     /**
@@ -105,23 +104,23 @@ public class GlobalExceptionHandler {
      */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ServerException.class)
-    public <T> R<T> processException(ServletException e) {
+    public <T> Result<T> processException(ServletException e) {
         log.error(e.getMessage(), e);
-        return R.failed(e.getMessage());
+        return Result.failed(e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler({IllegalArgumentException.class})
-    public R handlerIllegalArgumentException(IllegalArgumentException e){
+    public Result handlerIllegalArgumentException(IllegalArgumentException e){
         log.error("非法参数异常，异常原因：{}",e.getMessage(),e);
-        return R.failed(e.getMessage());
+        return Result.failed(e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(JsonProcessingException.class)
-    public R handleJsonProcessingException(JsonProcessingException e) {
+    public Result handleJsonProcessingException(JsonProcessingException e) {
         log.error("Json转换异常，异常原因：{}",e.getMessage(),e);
-        return R.failed(e.getMessage());
+        return Result.failed(e.getMessage());
     }
 
     /**
@@ -129,14 +128,14 @@ public class GlobalExceptionHandler {
      */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public <T> R<T> processException(HttpMessageNotReadableException e) {
+    public <T> Result<T> processException(HttpMessageNotReadableException e) {
         log.error(e.getMessage(), e);
         String errorMessage = "请求体不可为空";
         Throwable cause = e.getCause();
         if (cause != null) {
             errorMessage = convertMessage(cause);
         }
-        return R.failed(errorMessage);
+        return Result.failed(errorMessage);
     }
 
     /**
@@ -144,22 +143,22 @@ public class GlobalExceptionHandler {
      */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(TypeMismatchException.class)
-    public <T> R<T> processException(TypeMismatchException e) {
+    public <T> Result<T> processException(TypeMismatchException e) {
         log.error(e.getMessage(), e);
-        return R.failed(e.getMessage());
+        return Result.failed(e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     @ExceptionHandler(ForestNetworkException.class)
-    public R processException(ForestNetworkException e){
-        return R.failed(e.getMessage());
+    public Result processException(ForestNetworkException e){
+        return Result.failed(e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(Exception.class)
-    public R handleException(Exception e) {
+    public Result handleException(Exception e) {
         log.error("未知异常，异常原因：{}",e.getMessage(),e);
-        return R.failed(e.getMessage());
+        return Result.failed(e.getMessage());
     }
 
 

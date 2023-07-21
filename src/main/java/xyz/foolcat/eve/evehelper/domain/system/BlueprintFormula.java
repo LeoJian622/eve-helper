@@ -2,8 +2,7 @@ package xyz.foolcat.eve.evehelper.domain.system;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -11,7 +10,7 @@ import java.io.Serializable;
 /**
     * 蓝图材料配方基础数据
     */
-@ApiModel(value="蓝图材料配方基础数据")
+@Schema(title="蓝图材料配方基础数据")
 @Data
 @TableName(value = "blueprint_formula")
 public class BlueprintFormula implements Serializable {
@@ -19,35 +18,35 @@ public class BlueprintFormula implements Serializable {
      * 蓝图ID
      */
     @TableField(value = "blueprint_id")
-    @ApiModelProperty(value="蓝图ID")
+    @Schema(name="蓝图ID")
     private Integer blueprintId;
 
     /**
      * 原材料typeid
      */
     @TableField(value = "material_type_id")
-    @ApiModelProperty(value="原材料typeid")
+    @Schema(name="原材料typeid")
     private Integer materialTypeId;
 
     /**
      * 名称
      */
     @TableField(value = "type_name")
-    @ApiModelProperty(value="名称")
+    @Schema(name="名称")
     private String typeName;
 
     /**
      * 活动类型
      */
     @TableField(value = "activity_id")
-    @ApiModelProperty(value="活动类型")
+    @Schema(name="活动类型")
     private Byte activityId;
 
     /**
      * 需求数量
      */
     @TableField(value = "quantity")
-    @ApiModelProperty(value="需求数量")
+    @Schema(name="需求数量")
     private Integer quantity;
 
     private static final long serialVersionUID = 1L;

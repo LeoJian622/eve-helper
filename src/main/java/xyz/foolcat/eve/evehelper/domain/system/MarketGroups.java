@@ -1,35 +1,34 @@
 package xyz.foolcat.eve.evehelper.domain.system;
 
 import com.baomidou.mybatisplus.annotation.TableId;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import java.io.Serializable;
-import lombok.Builder;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-@ApiModel(value = "marketGroups")
+import java.io.Serializable;
+
+@Schema(title="市场组")
 @Data
 @Accessors(chain = true)
 public class MarketGroups implements Serializable {
 
     @TableId
-    @ApiModelProperty(value = "")
+    @Schema(name="")
     private Integer marketgroupid;
 
-    @ApiModelProperty(value = "")
+    @Schema(name="")
     private String descriptionid;
 
-    @ApiModelProperty(value = "")
+    @Schema(name="")
     private Byte hastypes;
 
-    @ApiModelProperty(value = "")
+    @Schema(name="")
     private Integer iconid;
 
-    @ApiModelProperty(value = "")
+    @Schema(name="")
     private String nameid;
 
-    @ApiModelProperty(value = "")
+    @Schema(name="")
     private Integer parentgroupid;
 
     private static final long serialVersionUID = 1L;

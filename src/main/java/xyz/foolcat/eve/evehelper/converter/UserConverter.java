@@ -1,10 +1,8 @@
 package xyz.foolcat.eve.evehelper.converter;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
 import xyz.foolcat.eve.evehelper.domain.system.SysUser;
 import xyz.foolcat.eve.evehelper.dto.system.UserDTO;
-import xyz.foolcat.eve.evehelper.vo.UserVO;
 
 /**
  * @author Leojan

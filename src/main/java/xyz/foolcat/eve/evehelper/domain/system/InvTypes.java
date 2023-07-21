@@ -4,142 +4,140 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import java.io.Serializable;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import xyz.foolcat.eve.evehelper.common.base.BaseEntity;
+
+import java.io.Serializable;
 
 /**
     * 物品表
     */
-@ApiModel(value="物品表")
+@Schema(title="物品表")
 @Data
 @TableName(value = "inv_types")
 public class InvTypes  implements Serializable {
     @TableId(value = "type_id", type = IdType.AUTO)
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Integer typeId;
 
     @TableField(value = "group_id")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Integer groupId;
 
     @TableField(value = "type_name")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private String typeName;
 
     @TableField(value = "description")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private String description;
 
     /**
      * 质量
      */
     @TableField(value = "mass")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Double mass;
 
     /**
      * 体积
      */
     @TableField(value = "volume")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Double volume;
 
     /**
      * 打包体积
      */
     @TableField(value = "packaged_volume")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Double packagedVolume;
 
     /**
      * 容量
      */
     @TableField(value = "capacity")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Double capacity;
 
     /**
      * 单位数量
      */
     @TableField(value = "portion_size")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Integer portionSize;
 
     /**
      * 势力ID
      */
     @TableField(value = "faction_id")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Integer factionId;
 
     /**
      * 种族ID
      */
     @TableField(value = "race_id")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Integer raceId;
 
     /**
      * 基准价格
      */
     @TableField(value = "base_price")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Double basePrice;
 
     @TableField(value = "published")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Byte published;
 
     /**
      * 市场组ID
      */
     @TableField(value = "market_group_id")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Integer marketGroupId;
 
     /**
      * 模型ID
      */
     @TableField(value = "graphic_id")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Integer graphicId;
 
     /**
      * 半径
      */
     @TableField(value = "radius")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Double radius;
 
     /**
      * 图标ID
      */
     @TableField(value = "icon_id")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Integer iconId;
 
     @TableField(value = "sound_id")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Integer soundId;
 
     @TableField(value = "sof_faction_name")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private String sofFactionName;
 
     @TableField(value = "sof_material_set_id")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Integer sofMaterialSetId;
 
     @TableField(value = "meta_group_id")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Integer metaGroupId;
 
     @TableField(value = "variationparent_type_id")
-    @ApiModelProperty(value="")
+    @Schema(name="")
     private Integer variationparentTypeId;
 
     public static final String COL_TYPE_ID = "type_id";

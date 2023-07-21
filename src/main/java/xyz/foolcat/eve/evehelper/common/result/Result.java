@@ -13,7 +13,7 @@ import java.io.Serializable;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class R<T> implements Serializable {
+public class Result<T> implements Serializable {
 
     private String code;
 
@@ -23,11 +23,11 @@ public class R<T> implements Serializable {
 
     private Integer total;
 
-    public static <T> R<T> success() {
+    public static <T> Result<T> success() {
         return success(null);
     }
 
-    public static <T> R<T> success(T data) {
+    public static <T> Result<T> success(T data) {
         ResultCode rce = ResultCode.SUCCESS;
         if (data instanceof Boolean && Boolean.FALSE.equals(data)) {
             rce = ResultCode.SYSTEM_EXECUTION_ERROR;
@@ -36,24 +36,24 @@ public class R<T> implements Serializable {
     }
 
 
-    public static <T> R<T> success(T data, Long total) {
-        R<T> R = new R();
-        R.setCode(ResultCode.SUCCESS.getCode());
-        R.setMsg(ResultCode.SUCCESS.getMsg());
-        R.setData(data);
-        R.setTotal(total.intValue());
-        return R;
+    public static <T> Result<T> success(T data, Long total) {
+        Result<T> result = new Result<>();
+        result.setCode(ResultCode.SUCCESS.getCode());
+        result.setMsg(ResultCode.SUCCESS.getMsg());
+        result.setData(data);
+        result.setTotal(total.intValue());
+        return result;
     }
 
-    public static <T> R<T> failed() {
+    public static <T> Result<T> failed() {
         return result(ResultCode.SYSTEM_EXECUTION_ERROR.getCode(), ResultCode.SYSTEM_EXECUTION_ERROR.getMsg(), null);
     }
 
-    public static <T> R<T> failed(String msg) {
+    public static <T> Result<T> failed(String msg) {
         return result(ResultCode.SYSTEM_EXECUTION_ERROR.getCode(), msg, null);
     }
 
-    public static <T> R<T> judge(boolean status) {
+    public static <T> Result<T> judge(boolean status) {
         if (status) {
             return success();
         } else {
@@ -61,35 +61,28 @@ public class R<T> implements Serializable {
         }
     }
 
-    public static <T> R<T> failed(IResultCode resultCode) {
+    public static <T> Result<T> failed(IResultCode resultCode) {
         return result(resultCode.getCode(), resultCode.getMsg(), null);
     }
 
-    private static <T> R<T> R(IResultCode resultCode, T data) {
+    private static <T> Result<T> R(IResultCode resultCode, T data) {
         return result(resultCode.getCode(), resultCode.getMsg(), data);
     }
 
-    public static <T> R<T> failed(IResultCode resultCode, String msg) {
+    public static <T> Result<T> failed(IResultCode resultCode, String msg) {
         return result(resultCode.getCode(), msg, null);
     }
 
-    private static <T> R<T> result(IResultCode resultCode, T data) {
+    private static <T> Result<T> result(IResultCode resultCode, T data) {
         return result(resultCode.getCode(), resultCode.getMsg(), data);
     }
 
-    private static <T> R<T> result(String code, String msg, T data) {
-        R<T> result = new R<>();
+    private static <T> Result<T> result(String code, String msg, T data) {
+        Result<T> result = new Result<>();
         result.setCode(code);
         result.setData(data);
         result.setMsg(msg);
         return result;
     }
 
-
-    public static boolean isSuccess(R R) {
-        if(R!=null&& ResultCode.SUCCESS.getCode().equals(R.getCode())){
-            return true;
-        }
-        return false;
-    }
 }

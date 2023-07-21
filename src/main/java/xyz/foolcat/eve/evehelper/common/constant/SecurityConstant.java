@@ -1,7 +1,5 @@
 package xyz.foolcat.eve.evehelper.common.constant;
 
-import sun.security.util.SecurityConstants;
-
 /**
  * 安全认证权限
  *

@@ -84,5 +84,8 @@
         group by type_id, type_name, activity_id
     </select>
 
-<!--    <select id="queryDetailList" resultType=""-->
+    <select id="queryBlueprintFormulaByTypeId" resultType="xyz.foolcat.eve.evehelper.dto.system.BlueprintFormulaDTO">
+    </select>
+
+    <!--    <select id="queryDetailList" resultType=""-->
 </mapper>

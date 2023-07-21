@@ -1,17 +1,17 @@
 package xyz.foolcat.eve.evehelper.controller;
 
 import com.dtflys.forest.exceptions.ForestNetworkException;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import xyz.foolcat.eve.evehelper.common.result.R;
+import xyz.foolcat.eve.evehelper.common.result.Result;
 import xyz.foolcat.eve.evehelper.domain.system.MarketOrder;
 import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.service.system.MarketOrderService;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  * @date 2022-04-20 10:24
  */
 
-@Api(tags = "市场订单")
+@Tag(name ="市场订单")
 @RestController
 @Slf4j
 @RequestMapping("/market/order")
@@ -47,10 +47,10 @@ public class MarketOrderController {
      * @return
      * @throws ParseException
      */
-    @ApiImplicitParam(name = "regionId", value = "星系ID", required = true)
-    @ApiOperation(value = "市场订单-订单读取")
+    @Parameter(name = "regionId", description = "星系ID", required = true)
+    @Operation(summary = "市场订单-订单读取")
     @GetMapping("/{regionId}")
-    public R saveAndUpdateMarketOrder(@PathVariable String regionId) {
+    public Result saveAndUpdateMarketOrder(@PathVariable String regionId) {
         List<Long> ids = new ArrayList<>();
         int i = 1;
         while (true) {
@@ -65,22 +65,22 @@ public class MarketOrderController {
             }
         }
         marketOrderService.deleteNotInIds(ids);
-        return R.success();
+        return Result.success();
     }
 
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "locationId",value = "星系ID" ,required = true),
-            @ApiImplicitParam(name = "typeId",value = "物品ID" ,required = true)
+    @Parameters({
+            @Parameter(name = "locationId", description = "星系ID" ,required = true),
+            @Parameter(name = "typeId", description = "物品ID" ,required = true)
     })
-    @ApiOperation(value = "市场订单-订单查询")
+    @Operation(summary = "市场订单-订单查询")
     @GetMapping("/{locationId}/{typeId}")
-    public R<List<MarketOrder>> queryLocationIdAndTypeId(@PathVariable String locationId, @PathVariable String typeId) {
+    public Result queryLocationIdAndTypeId(@PathVariable String locationId, @PathVariable String typeId) {
         List<MarketOrder> orders = marketOrderService.lambdaQuery()
                 .eq(MarketOrder::getLocationId, locationId)
                 .eq(MarketOrder::getTypeId, typeId)
                 .orderByDesc(MarketOrder::getPrice)
                 .list();
-        return R.success(orders);
+        return Result.success(orders);
     }
 
 

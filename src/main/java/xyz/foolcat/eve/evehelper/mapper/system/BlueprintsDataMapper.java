@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import xyz.foolcat.eve.evehelper.domain.system.BlueprintsData;
 import xyz.foolcat.eve.evehelper.dto.system.BlueprintCostDTO;
+import xyz.foolcat.eve.evehelper.dto.system.BlueprintFormulaDTO;
 
 import java.util.List;
 
@@ -13,6 +14,7 @@ public interface BlueprintsDataMapper extends BaseMapper<BlueprintsData> {
 
     int batchInsert(@Param("list") List<BlueprintsData> list);
 
-    List<BlueprintCostDTO> calcluateCost(@Param("type_id") Integer typeID);
+    List<BlueprintCostDTO> calcluateCost(@Param("type_id") Integer typeId);
 
+    List<BlueprintFormulaDTO> queryBlueprintFormulaByTypeId(@Param("type_id") Integer typeId);
 }

@@ -1,12 +1,15 @@
 package xyz.foolcat.eve.evehelper.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.*;
-import xyz.foolcat.eve.evehelper.common.result.R;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import xyz.foolcat.eve.evehelper.common.result.Result;
 import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
 
 import java.text.ParseException;
@@ -16,7 +19,7 @@ import java.text.ParseException;
  * @date 2021-12-10 17:02
  */
 
-@Api(tags = "角色")
+@Tag(name ="角色")
 @RestController
 @Slf4j
 @RequestMapping("/charactor")
@@ -25,13 +28,13 @@ public class CharactorController {
 
     private final EsiApiService esiApiService;
 
-    @ApiImplicitParams({
-            @ApiImplicitParam(name = "type",value = "枚举值，角色：char; 军团：crop; 技能：skill; 基础：normal" ,required = true),
-            @ApiImplicitParam(name = "code",value = "授权code" ,required = true)
+    @Parameters({
+            @Parameter(name = "type", description = "枚举值，角色：char; 军团：crop; 技能：skill; 基础：normal" ,required = true),
+            @Parameter(name = "code", description = "授权code" ,required = true)
     })
     @PostMapping("/{type}/{code}")
-    public R addCharactorAuth(@PathVariable String type, @PathVariable String code) throws ParseException {
+    public Result addCharactorAuth(@PathVariable String type, @PathVariable String code) throws ParseException {
         esiApiService.getAccessToken(type, code);
-        return R.success();
+        return Result.success();
     }
 }

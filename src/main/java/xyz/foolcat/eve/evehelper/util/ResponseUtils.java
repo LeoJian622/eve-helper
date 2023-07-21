@@ -2,15 +2,10 @@ package xyz.foolcat.eve.evehelper.util;
 
 import cn.hutool.json.JSONUtil;
 import com.nimbusds.jwt.SignedJWT;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.server.reactive.ServerHttpResponse;
-import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.common.constant.SecurityConstant;
-import xyz.foolcat.eve.evehelper.common.result.R;
+import xyz.foolcat.eve.evehelper.common.result.Result;
 import xyz.foolcat.eve.evehelper.common.result.ResultCode;
 
 import javax.servlet.http.HttpServletResponse;
@@ -42,7 +37,7 @@ public class ResponseUtils {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Cache-Control", "no-cache");
-        String body = JSONUtil.toJsonStr(R.failed(resultCode));
+        String body = JSONUtil.toJsonStr(Result.failed(resultCode));
         response.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
         return response;
     }
@@ -53,7 +48,7 @@ public class ResponseUtils {
         response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
         Map<String,String> tokenObejct = new HashMap<>(2);
         tokenObejct.put("access_token",signedJwt.serialize());
-        String body = JSONUtil.toJsonStr(R.success(tokenObejct));
+        String body = JSONUtil.toJsonStr(Result.success(tokenObejct));
         response.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
         return response;
     }

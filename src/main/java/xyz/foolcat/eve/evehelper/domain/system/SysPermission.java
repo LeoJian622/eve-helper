@@ -4,20 +4,17 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import java.io.Serializable;
-import java.util.Date;
-import java.util.List;
-
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import xyz.foolcat.eve.evehelper.common.base.BaseEntity;
 
+import java.util.List;
+
 /**
     * 权限表
     */
-@ApiModel(value="权限表")
+@Schema(title="权限表")
 @Data
 @EqualsAndHashCode(callSuper=true)
 @TableName(value = "sys_permission")
@@ -27,14 +24,14 @@ public class SysPermission extends BaseEntity {
      * 主键
      */
     @TableId(value = "id", type = IdType.AUTO)
-    @ApiModelProperty(value="主键")
+    @Schema(name="主键")
     private Long id;
 
     /**
      * 权限名称
      */
     @TableField(value = "`name`")
-    @ApiModelProperty(value="权限名称")
+    @Schema(name="权限名称")
     private String name;
 
     /**
@@ -42,25 +39,25 @@ public class SysPermission extends BaseEntity {
 
      */
     @TableField(value = "menu_id")
-    @ApiModelProperty(value="菜单模块ID,")
+    @Schema(name="菜单模块ID,")
     private Long menuId;
 
     /**
      * URL权限标识
      */
     @TableField(value = "url_perm")
-    @ApiModelProperty(value="URL权限标识")
+    @Schema(name="URL权限标识")
     private String urlPerm;
 
     /**
      * 按钮权限标识
      */
     @TableField(value = "btn_perm")
-    @ApiModelProperty(value="按钮权限标识")
+    @Schema(name="按钮权限标识")
     private String btnPerm;
 
     @TableField(exist = false)
-    @ApiModelProperty(value="角色列表")
+    @Schema(name="角色列表")
     private List<String> roles;
 
     public static final String COL_ID = "id";

@@ -1,82 +1,77 @@
 package xyz.foolcat.eve.evehelper.vo;
 
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import xyz.foolcat.eve.evehelper.domain.system.EveCharacter;
 
 import java.io.Serializable;
 
-@ApiModel(value = "资产视图")
+@Schema(title="资产视图")
 @Data
 public class AssetsVO implements Serializable {
     /**
      * 物品ID
      */
-    @ApiModelProperty(value = "物品ID")
+    @Schema(name="物品ID")
     private Long itemId;
 
     /**
      * invTypeID
      */
-    @ApiModelProperty(value = "invTypeID")
+    @Schema(name="invTypeID")
     private Integer typeId;
 
     /**
      * TypeName
      */
-    @ApiModelProperty(value = "TypeName")
+    @Schema(name="TypeName")
     private String typeName;
 
     /**
      * 建筑ID
      */
-    @ApiModelProperty(value = "建筑ID")
+    @Schema(name="建筑ID")
     private Long locationId;
 
     /**
      * 建筑ID
      */
-    @ApiModelProperty(value = "建筑名")
+    @Schema(name="建筑名")
     private Long name;
 
     /**
      * 类型station, solar_system, item, other
      */
-    @ApiModelProperty(value = "类型station, solar_system, item, other")
+    @Schema(name="类型station, solar_system, item, other")
     private String locationType;
 
-    @ApiModelProperty(value = "")
+    @Schema(name="")
     private String locationFlag;
 
-    @ApiModelProperty(value = "")
+    @Schema(name="")
     private Boolean isSingleton;
 
     /**
      * 蓝图拷贝
      */
-    @ApiModelProperty(value = "蓝图拷贝")
+    @Schema(name="蓝图拷贝")
     private Boolean isBlueprintCopy;
 
     /**
      * 数量
      */
-    @ApiModelProperty(value = "数量")
+    @Schema(name="数量")
     private Long quantity;
 
     /**
      * 所有者
      */
-    @ApiModelProperty(value = "所有者")
+    @Schema(name="所有者")
     private String owner;
 
     /**
      * 所有者ID
      */
-    @ApiModelProperty(value = "所有者ID")
+    @Schema(name="所有者ID")
     private String ownerId;
 
 }
