@@ -34,9 +34,7 @@ class SysPermissionServiceTest {
 
         Map<String, Object> urlPermRolesRules = redisTemplate.opsForHash().entries(GlobalConstants.URL_PERM_ROLES_KEY);
         for (Map.Entry<String, Object> permRoles : urlPermRolesRules.entrySet()){
-            System.out.println(permRoles.getKey() + "XXXXXXXXX" + permRoles.getValue());
             List<String> roles = Convert.toList(String.class,permRoles.getValue());
-            System.out.println(roles);
         }
 
     }

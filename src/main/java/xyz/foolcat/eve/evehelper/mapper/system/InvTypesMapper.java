@@ -14,4 +14,6 @@ public interface InvTypesMapper extends BaseMapper<InvTypes> {
     int updateBatchSelective(List<InvTypes> list);
 
     int batchInsert(@Param("list") List<InvTypes> list);
+
+    List<InvTypes> selcetByMarketGroupId(@Param("marketGroupID") Long marketGroupID);
 }

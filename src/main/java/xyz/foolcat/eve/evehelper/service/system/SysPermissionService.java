@@ -3,8 +3,10 @@ package xyz.foolcat.eve.evehelper.service.system;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.common.constant.GlobalConstants;
 import xyz.foolcat.eve.evehelper.domain.system.SysPermission;
 import xyz.foolcat.eve.evehelper.mapper.system.SysPermissionMapper;
@@ -16,10 +18,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 @Service
+@RequiredArgsConstructor
+@Transactional(rollbackFor = RuntimeException.class)
 public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPermission> {
 
-    @Resource
-    private RedisTemplate redisTemplate;
+    private final RedisTemplate redisTemplate;
     
     public int updateBatch(List<SysPermission> list) {
         return baseMapper.updateBatch(list);

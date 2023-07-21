@@ -5,9 +5,12 @@ import javax.annotation.Resource;
 import java.util.List;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import java.util.List;
+
+import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.system.InvTypes;
 import xyz.foolcat.eve.evehelper.mapper.system.InvTypesMapper;
 @Service
+@Transactional(rollbackFor = RuntimeException.class)
 public class InvTypesService extends ServiceImpl<InvTypesMapper, InvTypes> {
 
     

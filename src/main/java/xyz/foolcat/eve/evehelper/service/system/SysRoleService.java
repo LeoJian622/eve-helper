@@ -1,13 +1,15 @@
 package xyz.foolcat.eve.evehelper.service.system;
 
-import org.springframework.stereotype.Service;
-import javax.annotation.Resource;
-import java.util.List;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.system.SysRole;
 import xyz.foolcat.eve.evehelper.mapper.system.SysRoleMapper;
+
+import java.util.List;
+
 @Service
+@Transactional(rollbackFor = RuntimeException.class)
 public class SysRoleService extends ServiceImpl<SysRoleMapper, SysRole> {
 
     

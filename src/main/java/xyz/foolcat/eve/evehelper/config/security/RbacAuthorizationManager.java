@@ -3,11 +3,12 @@ package xyz.foolcat.eve.evehelper.config.security;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.convert.Convert;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.http.HttpMethod;
+import org.springframework.security.authorization.AuthorizationDecision;
+import org.springframework.security.authorization.AuthorizationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.PathMatcher;
@@ -20,28 +21,32 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
+ * 权限验证器
+ *
  * @author Leojan
- * @date 2021-12-28 11:32
+ * @date 2023-07-20 16:23
  */
 
 @Component
 @RequiredArgsConstructor
-public class RbacPermission {
+public class RbacAuthorizationManager implements AuthorizationManager<RequestAuthorizationContext> {
 
-    private final SysPermissionMapper sysPermissionMapper;
+    final SysPermissionMapper sysPermissionMapper;
 
-    private final RedisTemplate redisTemplate;
+    final RedisTemplate redisTemplate;
 
-    private final EveHelperSecurityConfig eveHelperSecurityConfig;
+    final EveHelperSecurityConfig eveHelperSecurityConfig;
 
-    public boolean hasPermission(HttpServletRequest request, Authentication authentication) {
+    @Override
+    public AuthorizationDecision check(Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext requestAuthorizationContext) {
 
-
+        HttpServletRequest request = requestAuthorizationContext.getRequest();
         String method = request.getMethod();
         if (SecurityConstant.OPTIONS.equalsIgnoreCase(method)) {
-            return true;
+            return new AuthorizationDecision(true);
         }
 
         String path = request.getRequestURI();
@@ -51,7 +56,6 @@ public class RbacPermission {
         /**
          * 白名单路径
          */
-
         boolean isWhiteList = eveHelperSecurityConfig.getWhiteUrlList().stream()
                 .anyMatch(whilte -> {
                     if (restfulPath.equals(whilte)) {
@@ -60,9 +64,10 @@ public class RbacPermission {
                     return false;
                 });
 
-        if (isWhiteList){
-            return isWhiteList;
+        if (isWhiteList) {
+            return new AuthorizationDecision(true);
         }
+
 
         /**
          * 鉴权
@@ -89,8 +94,8 @@ public class RbacPermission {
         }
 
         boolean hasPermission = false;
+        Authentication authentication = authenticationSupplier.get();
         if (authentication.isAuthenticated() && requireCheck) {
-
             Collection<? extends GrantedAuthority> authentications = authentication.getAuthorities();
             hasPermission = authentications.stream()
                     .map(GrantedAuthority::getAuthority)
@@ -101,10 +106,11 @@ public class RbacPermission {
                         return CollectionUtil.isNotEmpty(authorizedRoles) && authorizedRoles.contains(authority);
                     });
         }
-
-//        return hasPermission;
-        return true;
+        return new AuthorizationDecision(hasPermission);
     }
 
-
+    @Override
+    public void verify(Supplier<Authentication> authentication, RequestAuthorizationContext object) {
+        AuthorizationManager.super.verify(authentication, object);
+    }
 }

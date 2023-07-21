@@ -30,9 +30,8 @@ class CharactorControllerTest {
 
     @Test
     void addCharactorAuth() throws Exception {
-        String url = "https://esi.evepc.163.com/ui/oauth2-redirect.html?code=2DlJ1amI3Uu6u-SxP_M_pA&state=T";
         final String result = mockMvc.perform(MockMvcRequestBuilders.post(
-                        "/charactor/2DlJ1amI3Uu6u-SxP_M_pA")
+                        "/charactor/crop/GAUu5McvqEi40KY5ytn3CQ")
                 )
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andDo(MockMvcResultHandlers.print())

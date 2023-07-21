@@ -4,10 +4,12 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.util.List;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.mapper.system.SysRoleMenuMapper;
 import java.util.List;
 import xyz.foolcat.eve.evehelper.domain.system.SysRoleMenu;
 @Service
+@Transactional(rollbackFor = RuntimeException.class)
 public class SysRoleMenuService extends ServiceImpl<SysRoleMenuMapper, SysRoleMenu> {
 
     
