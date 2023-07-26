@@ -1,10 +1,8 @@
 package xyz.foolcat.eve.evehelper.config.security;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -22,8 +20,6 @@ import xyz.foolcat.eve.evehelper.config.security.handler.AccessDeniedServletHand
 import xyz.foolcat.eve.evehelper.config.security.handler.AuthenticationSuccessServletHandler;
 import xyz.foolcat.eve.evehelper.service.system.SysUserService;
 
-import java.security.KeyPair;
-
 /**
  * @author Leojan
  * @date 2023-07-20 15:05
@@ -36,9 +32,13 @@ public class SecurityConfig {
 
     final RbacAuthorizationManager authorizationManager;
 
+    final AuthenticationSuccessServletHandler authenticationSuccessServletHandler;
+
     final AccessDeniedServletHandler accessDeniedServletHandler;
 
     final AuthenticationServletEntryPoint authenticationServletEntryPoint;
+
+    final JwtAuthorizationTokenFilter jwtAuthorizationTokenFilter;
 
     final SysUserService sysUserService;
 
@@ -49,44 +49,20 @@ public class SecurityConfig {
                 , "/v3/api-docs/**");
     }
 
-    /**
-     * 密钥库中获取密钥对(公钥+私钥)
-     */
-    @Bean
-    public KeyPair keyPair() {
-        KeyStoreKeyFactory factory = new KeyStoreKeyFactory(new ClassPathResource("eve-jwt.jks"), "eve000".toCharArray());
-        return factory.getKeyPair("eve-jwt", "eve000".toCharArray());
-    }
-
-    @Bean
-    JwtAuthorizationTokenFilter jwtAuthorizationTokenFilter(KeyPair keyPair) {
-        JwtAuthorizationTokenFilter jwtAuthorizationTokenFilter = new JwtAuthorizationTokenFilter(keyPair);
-        jwtAuthorizationTokenFilter.setAuthenticationManager(authenticationManager());
-        return jwtAuthorizationTokenFilter;
-    }
-
-    @Bean
-    @ConfigurationProperties(prefix = "jwt-token")
-    JwtTokenConfig jwtTokenConfig() {
-        return new JwtTokenConfig();
-    }
-
-    @Bean
-    AuthenticationSuccessServletHandler authenticationSuccessServletHandler(KeyPair keyPair, JwtTokenConfig jwtTokenConfig) {
-        return new AuthenticationSuccessServletHandler(keyPair, jwtTokenConfig);
-    }
-
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth.anyRequest().access(authorizationManager))
-                .formLogin(form -> form.permitAll().successHandler(authenticationSuccessServletHandler(keyPair(),jwtTokenConfig())))
-                .exceptionHandling(except -> except.accessDeniedHandler(accessDeniedServletHandler).authenticationEntryPoint(authenticationServletEntryPoint))
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest()
+                        .access(authorizationManager))
+                .formLogin(form -> form.permitAll()
+                        .successHandler(authenticationSuccessServletHandler))
+                .exceptionHandling(except -> except.accessDeniedHandler(accessDeniedServletHandler)
+                        .authenticationEntryPoint(authenticationServletEntryPoint))
                 .logout(LogoutConfigurer::permitAll)
                 .csrf(CsrfConfigurer::disable);
         httpSecurity.authenticationManager(authenticationManager());
-        httpSecurity.addFilterBefore(jwtAuthorizationTokenFilter(keyPair()), UsernamePasswordAuthenticationFilter.class);
-
+        httpSecurity.addFilterBefore(jwtAuthorizationTokenFilter, UsernamePasswordAuthenticationFilter.class);
         return httpSecurity.build();
     }
 

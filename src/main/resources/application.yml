@@ -114,6 +114,7 @@ jwt-token:
 eve:
   helper:
     whiteUrlList:
+#      - GET:/
       - POST:/user
 # springdoc-openapi项目配置
 springdoc:
