@@ -78,7 +78,6 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
 
         //根据请求路径判断有访问权限的角色列表
         List<String> authorizedRoles = new ArrayList<>();
-        boolean requireCheck = Boolean.FALSE;
 
         PathMatcher pathMatcher = new AntPathMatcher();
 
@@ -87,15 +86,12 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
             if (pathMatcher.match(perm, restfulPath)) {
                 List<String> roles = Convert.toList(String.class, permRoles.getValue());
                 authorizedRoles.addAll(roles);
-                if (!requireCheck) {
-                    requireCheck = Boolean.TRUE;
-                }
             }
         }
 
         boolean hasPermission = false;
         Authentication authentication = authenticationSupplier.get();
-        if (authentication.isAuthenticated() && requireCheck) {
+        if (authentication.isAuthenticated()) {
             Collection<? extends GrantedAuthority> authentications = authentication.getAuthorities();
             hasPermission = authentications.stream()
                     .map(GrantedAuthority::getAuthority)

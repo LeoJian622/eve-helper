@@ -13,6 +13,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.common.constant.SecurityConstant;
 import xyz.foolcat.eve.evehelper.config.security.JwtTokenConfig;
 import xyz.foolcat.eve.evehelper.config.security.KeyStoreKeyFactory;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
  */
 
 @Slf4j
+@Component
 @RequiredArgsConstructor
 public class AuthenticationSuccessServletHandler implements AuthenticationSuccessHandler {
 
