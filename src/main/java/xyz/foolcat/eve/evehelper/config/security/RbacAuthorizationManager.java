@@ -40,6 +40,8 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
 
     final EveHelperSecurityConfig eveHelperSecurityConfig;
 
+    final PathMatcher pathMatcher = new AntPathMatcher();
+
     @Override
     public AuthorizationDecision check(Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext requestAuthorizationContext) {
 
@@ -68,6 +70,13 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
             return new AuthorizationDecision(true);
         }
 
+        Authentication authentication = authenticationSupplier.get();
+
+        Collection<? extends GrantedAuthority> authentications = authentication.getAuthorities();
+
+        /**
+         * 具有超级管理员权限用户直接放过
+         */
 
         /**
          * 鉴权
@@ -79,27 +88,38 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
         //根据请求路径判断有访问权限的角色列表
         List<String> authorizedRoles = new ArrayList<>();
 
-        PathMatcher pathMatcher = new AntPathMatcher();
+        boolean personSourceVery = true;
 
         for (Map.Entry<String, Object> permRoles : urlPermRolesRules.entrySet()) {
             String perm = permRoles.getKey();
             if (pathMatcher.match(perm, restfulPath)) {
                 List<String> roles = Convert.toList(String.class, permRoles.getValue());
                 authorizedRoles.addAll(roles);
+
+                /**
+                 * 私人资源鉴权
+                 * 非ADMIN角色要判断访问的用户和访问的用户资源是否一致
+                 */
+
+                if (pathMatcher.isPattern(perm)) {
+                    String id = pathMatcher.extractUriTemplateVariables(perm, restfulPath).get("id");
+                    personSourceVery = authentication.getPrincipal().toString().equals(id);
+                }
+
             }
         }
-
         boolean hasPermission = false;
-        Authentication authentication = authenticationSupplier.get();
+
         if (authentication.isAuthenticated()) {
-            Collection<? extends GrantedAuthority> authentications = authentication.getAuthorities();
+
+            boolean finalPersonSourceVery = personSourceVery;
             hasPermission = authentications.stream()
                     .map(GrantedAuthority::getAuthority)
                     .anyMatch(authority -> {
                         if (GlobalConstants.ROOT_ROLE_CODE.equals(authority)) {
                             return true;
                         }
-                        return CollectionUtil.isNotEmpty(authorizedRoles) && authorizedRoles.contains(authority);
+                        return CollectionUtil.isNotEmpty(authorizedRoles) && authorizedRoles.contains(authority) && finalPersonSourceVery;
                     });
         }
         return new AuthorizationDecision(hasPermission);

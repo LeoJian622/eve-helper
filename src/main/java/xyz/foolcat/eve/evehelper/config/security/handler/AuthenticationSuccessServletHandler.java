@@ -62,7 +62,6 @@ public class AuthenticationSuccessServletHandler implements AuthenticationSucces
                 .expirationTime(new Date(System.currentTimeMillis() + jwtTokenConfig.getExpirationTime() * 1000))
                 .build();
 
-        System.out.println(claimsSet);
         SignedJWT signedJwt = new SignedJWT(
                 new JWSHeader.Builder(JWSAlgorithm.RS256).type(JOSEObjectType.JWT).build(),
                 claimsSet);
@@ -100,13 +99,11 @@ public class AuthenticationSuccessServletHandler implements AuthenticationSucces
 
         signedJwt.sign(jwsSigner);
 
-        System.out.println(signedJwt.serialize());
 
         SignedJWT signedJwtParse = SignedJWT.parse(signedJwt.serialize());
 
         PublicKey publicKey = keyPair1.getPublic();
         JWSVerifier verifier = new RSASSAVerifier((RSAPublicKey) publicKey);
 
-        System.out.println(signedJwtParse.verify(verifier));
     }
 }
