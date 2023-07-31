@@ -1,46 +1,151 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.BlueprintsDataMapper">
-    <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.BlueprintsData">
-        <!--@mbg.generated-->
-        <!--@Table blueprints_data-->
-        <result column="type_id" jdbcType="INTEGER" property="typeId"/>
-        <result column="type_name" jdbcType="VARCHAR" property="typeName"/>
-        <result column="blueprint_type_id" jdbcType="INTEGER" property="blueprintTypeId"/>
-        <result column="blueprint_name" jdbcType="VARCHAR" property="blueprintName"/>
-        <result column="activity_id" jdbcType="TINYINT" property="activityId"/>
-        <result column="quantity" jdbcType="INTEGER" property="quantity"/>
-        <result column="probability" jdbcType="FLOAT" property="probability"/>
-        <result column="time" jdbcType="INTEGER" property="time"/>
-        <result column="max_production_limit" jdbcType="INTEGER" property="maxProductionLimit"/>
-    </resultMap>
-    <sql id="Base_Column_List">
-        <!--@mbg.generated-->
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.BlueprintsData">
+    <!--@mbg.generated-->
+    <!--@Table blueprints_data-->
+    <result column="type_id" jdbcType="INTEGER" property="typeId" />
+    <result column="type_name" jdbcType="VARCHAR" property="typeName" />
+    <result column="blueprint_type_id" jdbcType="INTEGER" property="blueprintTypeId" />
+    <result column="blueprint_name" jdbcType="VARCHAR" property="blueprintName" />
+    <result column="activity_id" jdbcType="TINYINT" property="activityId" />
+    <result column="quantity" jdbcType="INTEGER" property="quantity" />
+    <result column="probability" jdbcType="FLOAT" property="probability" />
+    <result column="time" jdbcType="INTEGER" property="time" />
+    <result column="max_production_limit" jdbcType="INTEGER" property="maxProductionLimit" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    type_id, type_name, blueprint_type_id, blueprint_name, activity_id, quantity, probability, 
+    `time`, max_production_limit
+  </sql>
+  <insert id="batchInsert" parameterType="map">
+    <!--@mbg.generated-->
+    insert into blueprints_data
+    (type_id, type_name, blueprint_type_id, blueprint_name, activity_id, quantity, probability, 
+      `time`, max_production_limit)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.typeId,jdbcType=INTEGER}, #{item.typeName,jdbcType=VARCHAR}, #{item.blueprintTypeId,jdbcType=INTEGER}, 
+        #{item.blueprintName,jdbcType=VARCHAR}, #{item.activityId,jdbcType=TINYINT}, #{item.quantity,jdbcType=INTEGER}, 
+        #{item.probability,jdbcType=FLOAT}, #{item.time,jdbcType=INTEGER}, #{item.maxProductionLimit,jdbcType=INTEGER}
+        )
+    </foreach>
+  </insert>
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.BlueprintsData">
+    <!--@mbg.generated-->
+    insert into blueprints_data
+    (type_id, type_name, blueprint_type_id, blueprint_name, activity_id, quantity, probability, 
+      `time`, max_production_limit)
+    values
+    (#{typeId,jdbcType=INTEGER}, #{typeName,jdbcType=VARCHAR}, #{blueprintTypeId,jdbcType=INTEGER}, 
+      #{blueprintName,jdbcType=VARCHAR}, #{activityId,jdbcType=TINYINT}, #{quantity,jdbcType=INTEGER}, 
+      #{probability,jdbcType=FLOAT}, #{time,jdbcType=INTEGER}, #{maxProductionLimit,jdbcType=INTEGER}
+      )
+    on duplicate key update 
+    type_id = #{typeId,jdbcType=INTEGER}, 
+    type_name = #{typeName,jdbcType=VARCHAR}, 
+    blueprint_type_id = #{blueprintTypeId,jdbcType=INTEGER}, 
+    blueprint_name = #{blueprintName,jdbcType=VARCHAR}, 
+    activity_id = #{activityId,jdbcType=TINYINT}, 
+    quantity = #{quantity,jdbcType=INTEGER}, 
+    probability = #{probability,jdbcType=FLOAT}, 
+    `time` = #{time,jdbcType=INTEGER}, 
+    max_production_limit = #{maxProductionLimit,jdbcType=INTEGER}
+  </insert>
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.BlueprintsData">
+    <!--@mbg.generated-->
+    insert into blueprints_data
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="typeId != null">
         type_id,
+      </if>
+      <if test="typeName != null">
         type_name,
+      </if>
+      <if test="blueprintTypeId != null">
         blueprint_type_id,
+      </if>
+      <if test="blueprintName != null">
         blueprint_name,
+      </if>
+      <if test="activityId != null">
         activity_id,
+      </if>
+      <if test="quantity != null">
         quantity,
+      </if>
+      <if test="probability != null">
         probability,
+      </if>
+      <if test="time != null">
         `time`,
-        max_production_limit
-    </sql>
-    <insert id="batchInsert" parameterType="map">
-        <!--@mbg.generated-->
-        insert into blueprints_data
-        (type_id, type_name, blueprint_type_id, blueprint_name, activity_id, quantity, probability,
-         `time`, max_production_limit)
-        values
-        <foreach collection="list" item="item" separator=",">
-            (#{item.typeId,jdbcType=INTEGER}, #{item.typeName,jdbcType=VARCHAR},
-             #{item.blueprintTypeId,jdbcType=INTEGER},
-             #{item.blueprintName,jdbcType=VARCHAR}, #{item.activityId,jdbcType=TINYINT},
-             #{item.quantity,jdbcType=INTEGER},
-             #{item.probability,jdbcType=FLOAT}, #{item.time,jdbcType=INTEGER},
-             #{item.maxProductionLimit,jdbcType=INTEGER})
-        </foreach>
-    </insert>
+      </if>
+      <if test="maxProductionLimit != null">
+        max_production_limit,
+      </if>
+    </trim>
+    values
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="typeId != null">
+        #{typeId,jdbcType=INTEGER},
+      </if>
+      <if test="typeName != null">
+        #{typeName,jdbcType=VARCHAR},
+      </if>
+      <if test="blueprintTypeId != null">
+        #{blueprintTypeId,jdbcType=INTEGER},
+      </if>
+      <if test="blueprintName != null">
+        #{blueprintName,jdbcType=VARCHAR},
+      </if>
+      <if test="activityId != null">
+        #{activityId,jdbcType=TINYINT},
+      </if>
+      <if test="quantity != null">
+        #{quantity,jdbcType=INTEGER},
+      </if>
+      <if test="probability != null">
+        #{probability,jdbcType=FLOAT},
+      </if>
+      <if test="time != null">
+        #{time,jdbcType=INTEGER},
+      </if>
+      <if test="maxProductionLimit != null">
+        #{maxProductionLimit,jdbcType=INTEGER},
+      </if>
+    </trim>
+    on duplicate key update 
+    <trim suffixOverrides=",">
+      <if test="typeId != null">
+        type_id = #{typeId,jdbcType=INTEGER},
+      </if>
+      <if test="typeName != null">
+        type_name = #{typeName,jdbcType=VARCHAR},
+      </if>
+      <if test="blueprintTypeId != null">
+        blueprint_type_id = #{blueprintTypeId,jdbcType=INTEGER},
+      </if>
+      <if test="blueprintName != null">
+        blueprint_name = #{blueprintName,jdbcType=VARCHAR},
+      </if>
+      <if test="activityId != null">
+        activity_id = #{activityId,jdbcType=TINYINT},
+      </if>
+      <if test="quantity != null">
+        quantity = #{quantity,jdbcType=INTEGER},
+      </if>
+      <if test="probability != null">
+        probability = #{probability,jdbcType=FLOAT},
+      </if>
+      <if test="time != null">
+        `time` = #{time,jdbcType=INTEGER},
+      </if>
+      <if test="maxProductionLimit != null">
+        max_production_limit = #{maxProductionLimit,jdbcType=INTEGER},
+      </if>
+    </trim>
+  </insert>
 
     <select id="calcluateCost" resultType="xyz.foolcat.eve.evehelper.dto.system.BlueprintCostDTO">
         select bf.type_id,
@@ -87,5 +192,5 @@
     <select id="queryBlueprintFormulaByTypeId" resultType="xyz.foolcat.eve.evehelper.dto.system.BlueprintFormulaDTO">
     </select>
 
-    <!--    <select id="queryDetailList" resultType=""-->
+    <!--    &amp;lt;select id="queryDetailList" resultType=""-->
 </mapper>

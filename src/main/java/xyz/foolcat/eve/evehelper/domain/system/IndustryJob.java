@@ -1,13 +1,10 @@
 package xyz.foolcat.eve.evehelper.domain.system;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import xyz.foolcat.eve.evehelper.common.base.BaseEntity;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -15,164 +12,165 @@ import java.util.Date;
 /**
  * 制造作业表
  */
-@Schema(title="制造作业表")
+@Schema(description = "制造作业表")
 @Data
-@EqualsAndHashCode(callSuper = true)
 @TableName(value = "industry_job")
-public class IndustryJob extends BaseEntity implements Serializable {
+public class IndustryJob implements Serializable {
     /**
      * 作业ID
      */
-    @TableId(value = "job_id", type = IdType.AUTO)
-    @Schema(name="作业ID")
+    @TableId(value = "job_id")
+    @Schema(description = "作业ID")
     private Long jobId;
 
     /**
      * 蓝图itemID
      */
     @TableField(value = "blueprint_id")
-    @Schema(name="蓝图itemID")
+    @Schema(description = "蓝图itemID")
     private Long blueprintId;
 
     /**
      * 蓝图invType ID
      */
     @TableField(value = "blueprint_type_id")
-    @Schema(name="蓝图invType ID")
+    @Schema(description = "蓝图invType ID")
     private Integer blueprintTypeId;
 
     /**
      * 蓝图名称
      */
     @TableField(value = "blueprint_type")
-    @Schema(name="蓝图名称")
+    @Schema(description = "蓝图名称")
     private String blueprintType;
 
     /**
      * 花费
      */
     @TableField(value = "cost")
-    @Schema(name="花费")
+    @Schema(description = "花费")
     private Integer cost;
 
     /**
      * 可用流程数
      */
     @TableField(value = "licensed_runs")
-    @Schema(name="可用流程数")
+    @Schema(description = "可用流程数")
     private Integer licensedRuns;
 
     /**
      * 发明成功几率
      */
     @TableField(value = "probability")
-    @Schema(name="发明成功几率")
+    @Schema(description = "发明成功几率")
     private Long probability;
 
     /**
      * 建筑ID
      */
     @TableField(value = "station_id")
-    @Schema(name="建筑ID")
+    @Schema(description = "建筑ID")
     private Long stationId;
 
     /**
      * 产出存放ID
      */
     @TableField(value = "output_location_id")
-    @Schema(name="产出存放ID")
+    @Schema(description = "产出存放ID")
     private Long outputLocationId;
 
     /**
      * 产出物品类型
      */
     @TableField(value = "product_type")
-    @Schema(name="产出物品类型")
+    @Schema(description = "产出物品类型")
     private String productType;
 
     /**
      * 蓝图位置ID
      */
     @TableField(value = "blueprint_location_id")
-    @Schema(name="蓝图位置ID")
+    @Schema(description = "蓝图位置ID")
     private Long blueprintLocationId;
 
     /**
      * 作业时间
      */
     @TableField(value = "duration")
-    @Schema(name="作业时间")
+    @Schema(description = "作业时间")
     private Long duration;
 
     /**
      * 启动角色
      */
     @TableField(value = "installer")
-    @Schema(name="启动角色")
+    @Schema(description = "启动角色")
     private String installer;
 
     /**
      * 完成角色
      */
     @TableField(value = "completed_character")
-    @Schema(name="完成角色")
+    @Schema(description = "完成角色")
     private String completedCharacter;
 
     /**
      * 活动ID
      */
     @TableField(value = "activity")
-    @Schema(name="活动ID")
+    @Schema(description = "活动ID")
     private Long activity;
 
     /**
      * 作业设施ID
      */
     @TableField(value = "facility_id")
-    @Schema(name="作业设施ID")
+    @Schema(description = "作业设施ID")
     private Long facilityId;
 
     /**
      * 作业次数
      */
     @TableField(value = "runs")
-    @Schema(name="作业次数")
+    @Schema(description = "作业次数")
     private Integer runs;
 
     /**
      * 开始日期
      */
     @TableField(value = "start_date")
-    @Schema(name="开始日期")
+    @Schema(description = "开始日期")
     private Date startDate;
 
     /**
      * 结束日期
      */
     @TableField(value = "end_date")
-    @Schema(name="结束日期")
+    @Schema(description = "结束日期")
     private Date endDate;
 
     /**
      * active-活动 cancelled-取消 delivered-交付 paused-暂停 ready-准备好 reverted-恢复
      */
     @TableField(value = "`status`")
-    @Schema(name="active-活动 cancelled-取消 delivered-交付 paused-暂停 ready-准备好 reverted-恢复")
+    @Schema(description = "active-活动 cancelled-取消 delivered-交付 paused-暂停 ready-准备好 reverted-恢复")
     private String status;
 
     /**
      * 该建筑服务下线时间
      */
     @TableField(value = "pause_date")
-    @Schema(name="该建筑服务下线时间")
+    @Schema(description = "该建筑服务下线时间")
     private Date pauseDate;
 
     /**
      * 启动角色ID
      */
     @TableField(value = "installer_id")
-    @Schema(name="启动角色ID")
+    @Schema(description = "启动角色ID")
     private Long installerId;
+
+    private static final long serialVersionUID = 1L;
 
     public static final String COL_JOB_ID = "job_id";
 

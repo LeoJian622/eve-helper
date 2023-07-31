@@ -44,7 +44,7 @@ public class UniverseNameService extends ServiceImpl<UniverseNameMapper, Univers
         List<Integer> noInItems = items.stream().filter(item -> !inItems.contains(item)).collect(Collectors.toList());
 
         List<UniverseName> newUnivereName = new ArrayList<>();
-        if (!noInItems.isEmpty()){
+        if (!noInItems.isEmpty()) {
             List<UniverseNameResponeDTO> newItems = esiNormalClient.getUniverseName(noInItems);
             newUnivereName = newItems.stream().map(universeNameConverter::universeNameResponeDTO2UniverseName).collect(Collectors.toList());
             saveBatch(newUnivereName);
@@ -58,5 +58,14 @@ public class UniverseNameService extends ServiceImpl<UniverseNameMapper, Univers
         return universeNameMap;
 
     }
+
+    public int insertOrUpdate(UniverseName record) {
+        return baseMapper.insertOrUpdate(record);
+    }
+
+    public int insertOrUpdateSelective(UniverseName record) {
+        return baseMapper.insertOrUpdateSelective(record);
+    }
 }
+
 

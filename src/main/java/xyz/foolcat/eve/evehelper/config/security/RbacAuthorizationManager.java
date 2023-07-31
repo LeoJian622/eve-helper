@@ -102,8 +102,10 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
                  */
 
                 if (pathMatcher.isPattern(perm)) {
-                    String id = pathMatcher.extractUriTemplateVariables(perm, restfulPath).get("id");
-                    personSourceVery = authentication.getPrincipal().toString().equals(id);
+                    String uid = pathMatcher.extractUriTemplateVariables(perm, restfulPath).get("uid");
+                    if (uid != null) {
+                        personSourceVery = authentication.getPrincipal().toString().equals(uid);
+                    }
                 }
 
             }
@@ -123,6 +125,7 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
                     });
         }
         return new AuthorizationDecision(hasPermission);
+//        return new AuthorizationDecision(true);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package xyz.foolcat.eve.evehelper.strategy.esi;
 
 import cn.hutool.json.JSONArray;
+import com.dtflys.forest.http.ForestResponse;
 import xyz.foolcat.eve.evehelper.domain.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.system.Blueprints;
 import xyz.foolcat.eve.evehelper.domain.system.MiningDetail;
@@ -31,7 +32,7 @@ public interface EsiClientStrategy {
      * @param id
      * @return
      */
-    List<Assets> getAssetsList(String id,int page, String accessToken);
+    ForestResponse<List<Assets>> getAssetsList(String id, int page, String accessToken);
 
     /**
      * 获取物品自定义名称
@@ -59,7 +60,7 @@ public interface EsiClientStrategy {
      * @param accessToken
      * @return
      */
-    default List<Observer> getCropObeserverList(Long id, Integer page, String accessToken){
+    default List<Observer> getCropObserverList(Long id, Integer page, String accessToken){
         return new ArrayList<>();
     }
 

@@ -12,23 +12,23 @@ import java.io.Serializable;
 /**
  * universe_name  ids_names
  */
-@Schema(title="ID名称对照")
+@Schema(description = "universe_name  ids_names")
 @Data
 @TableName(value = "universe_name")
 public class UniverseName implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
-    @Schema(name="")
+    @Schema(description = "")
     private Integer id;
 
     @TableField(value = "`name`")
-    @Schema(name="")
+    @Schema(description = "")
     private String name;
 
     /**
      * alliance, character, constellation, corporation, inventory_type, region, solar_system, station, faction
      */
     @TableField(value = "category")
-    @Schema(name="alliance, character, constellation, corporation, inventory_type, region, solar_system, station, faction")
+    @Schema(description = "alliance, character, constellation, corporation, inventory_type, region, solar_system, station, faction")
     private String category;
 
     private static final long serialVersionUID = 1L;

@@ -72,7 +72,16 @@ public class MiningDetailService extends ServiceImpl<MiningDetailMapper, MiningD
     public int updateBatchSelective(List<MiningDetail> list) {
         return baseMapper.updateBatchSelective(list);
     }
+
+    public int insertOrUpdate(MiningDetail record) {
+        return baseMapper.insertOrUpdate(record);
+    }
+
+    public int insertOrUpdateSelective(MiningDetail record) {
+        return baseMapper.insertOrUpdateSelective(record);
+    }
 }
+
 
 
 

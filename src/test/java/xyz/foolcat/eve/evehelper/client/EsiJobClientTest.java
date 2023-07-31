@@ -7,6 +7,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class EsiJobClientTest {
 
     @Test
-    void getCharactorJob() {
+    void getCharacterJob() {
     }
 }

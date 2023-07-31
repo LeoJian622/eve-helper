@@ -4,9 +4,9 @@ import com.dtflys.forest.annotation.*;
 import com.dtflys.forest.callback.OnError;
 import xyz.foolcat.eve.evehelper.domain.system.MarketOrder;
 import xyz.foolcat.eve.evehelper.dto.esi.AuthTokenResponseDTO;
-import xyz.foolcat.eve.evehelper.dto.esi.CharactorInfoResponseDTO;
+import xyz.foolcat.eve.evehelper.dto.esi.CharacterInfoResponseDTO;
 import xyz.foolcat.eve.evehelper.dto.esi.UniverseNameResponeDTO;
-import xyz.foolcat.eve.evehelper.interceptor.EsiCharactorInterceptor;
+import xyz.foolcat.eve.evehelper.interceptor.EsiClentInterceptor;
 
 import java.util.List;
 
@@ -24,7 +24,7 @@ import java.util.List;
                 "Accept:application/json; charset=UTF-8",// 默认请求头
                 "Cache-Control: no-cache",
         },
-        interceptor = EsiCharactorInterceptor.class
+        interceptor = EsiClentInterceptor.class
 )
 public interface EsiNormalClient {
 
@@ -42,7 +42,7 @@ public interface EsiNormalClient {
                     "Host: login.evepc.163.com",
             }
     )
-    AuthTokenResponseDTO addCharactorAuth(@Body("grant_type") String grantType, @Body("code") String code, @Body("client_id") String clientId);
+    AuthTokenResponseDTO addCharacterAuth(@Body("grant_type") String grantType, @Body("code") String code, @Body("client_id") String clientId);
 
     /**
      * refresh_token认证
@@ -64,11 +64,11 @@ public interface EsiNormalClient {
     /**
      * 获取角色信息
      *
-     * @param charactorId
+     * @param characterId
      * @return
      */
-    @Get("/characters/{charactor_id}")
-    CharactorInfoResponseDTO getCharactorInfo(@Var("charactor_id") String charactorId);
+    @Get("/characters/{character_id}")
+    CharacterInfoResponseDTO getCharacterInfo(@Var("character_id") String characterId);
 
     /**
      * 获取军团信息
@@ -77,7 +77,7 @@ public interface EsiNormalClient {
      * @return
      */
     @Get("/corporations/{corporation_id}")
-    CharactorInfoResponseDTO getCorporationInfo(@Var("corporation_id") String corporationId);
+    CharacterInfoResponseDTO getCorporationInfo(@Var("corporation_id") String corporationId);
 
     /**
      * 获取item名称

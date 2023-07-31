@@ -8,66 +8,68 @@ import lombok.Data;
 
 import java.io.Serializable;
 
-@Schema(title = "资产")
+@Schema
 @Data
 @TableName(value = "assets")
-public class Assets  implements Serializable {
+public class Assets implements Serializable {
     /**
      * 物品ID
      */
     @TableId(value = "item_id")
-    @Schema(name="物品ID")
+    @Schema(description = "物品ID")
     private Long itemId;
 
     /**
      * invTypeID
      */
     @TableField(value = "type_id")
-    @Schema(name="invTypeID")
+    @Schema(description = "invTypeID")
     private Integer typeId;
 
     /**
      * 建筑ID
      */
     @TableField(value = "location_id")
-    @Schema(name="建筑ID")
+    @Schema(description = "建筑ID")
     private Long locationId;
 
     /**
      * 类型station, solar_system, item, other
      */
     @TableField(value = "location_type")
-    @Schema(name="类型station, solar_system, item, other")
+    @Schema(description = "类型station, solar_system, item, other")
     private String locationType;
 
     @TableField(value = "location_flag")
-    @Schema(name="")
+    @Schema(description = "")
     private String locationFlag;
 
     @TableField(value = "is_singleton")
-    @Schema(name="")
+    @Schema(description = "")
     private Boolean isSingleton;
 
     /**
      * 蓝图拷贝
      */
     @TableField(value = "is_blueprint_copy")
-    @Schema(name="蓝图拷贝")
+    @Schema(description = "蓝图拷贝")
     private Boolean isBlueprintCopy;
 
     /**
      * 数量
      */
     @TableField(value = "quantity")
-    @Schema(name="数量")
+    @Schema(description = "数量")
     private Long quantity;
 
     /**
      * 所有者ID
      */
     @TableField(value = "owner_id")
-    @Schema(name="所有者ID")
+    @Schema(description = "所有者ID")
     private Long ownerId;
+
+    private static final long serialVersionUID = 1L;
 
     public static final String COL_ITEM_ID = "item_id";
 

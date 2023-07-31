@@ -23,7 +23,7 @@ import java.text.ParseException;
 @Tag(name ="月矿采掘")
 @RestController
 @Slf4j
-@RequestMapping("/mining")
+@RequestMapping("/*/mining")
 @RequiredArgsConstructor
 public class MiningController {
 

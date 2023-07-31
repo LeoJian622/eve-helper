@@ -1,10 +1,11 @@
 package xyz.foolcat.eve.evehelper.mapper.system;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import xyz.foolcat.eve.evehelper.domain.system.SysMenu;
+
+import java.util.List;
 
 @Mapper
 public interface SysMenuMapper extends BaseMapper<SysMenu> {
@@ -13,4 +14,8 @@ public interface SysMenuMapper extends BaseMapper<SysMenu> {
     int updateBatchSelective(List<SysMenu> list);
 
     int batchInsert(@Param("list") List<SysMenu> list);
+
+    int insertOrUpdate(SysMenu record);
+
+    int insertOrUpdateSelective(SysMenu record);
 }

@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 /**
  * 用户服务
+ *
  * @author Leojan
  */
 @Service
@@ -53,4 +54,13 @@ public class SysUserService extends ServiceImpl<SysUserMapper, SysUser> implemen
 
         return userDetails;
     }
+
+    public int insertOrUpdate(SysUser record) {
+        return baseMapper.insertOrUpdate(record);
+    }
+
+    public int insertOrUpdateSelective(SysUser record) {
+        return baseMapper.insertOrUpdateSelective(record);
+    }
 }
+

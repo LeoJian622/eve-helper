@@ -27,7 +27,7 @@ import java.util.List;
 @Tag(name ="工业制造")
 @RestController
 @Slf4j
-@RequestMapping("/job")
+@RequestMapping("/*/job")
 @RequiredArgsConstructor
 public class JobController {
 

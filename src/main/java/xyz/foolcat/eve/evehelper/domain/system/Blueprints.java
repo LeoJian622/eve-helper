@@ -9,74 +9,76 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
-    * 蓝图属性
-    */
-@Schema(title="蓝图属性")
+ * 蓝图属性
+ */
+@Schema(description = "蓝图属性")
 @Data
 @TableName(value = "blueprints")
-public class Blueprints  implements Serializable {
+public class Blueprints implements Serializable {
     /**
      * 唯一item id
      */
     @TableId(value = "item_id")
-    @Schema(name="唯一item id")
+    @Schema(description = "唯一item id")
     private Long itemId;
 
     /**
      * invType id
      */
     @TableField(value = "type_id")
-    @Schema(name="invType id")
+    @Schema(description = "invType id")
     private Integer typeId;
 
     /**
      * 材料效率
      */
     @TableField(value = "material_efficiency")
-    @Schema(name="材料效率")
+    @Schema(description = "材料效率")
     private Integer materialEfficiency;
 
     /**
      * 时间效率
      */
     @TableField(value = "time_efficiency")
-    @Schema(name="时间效率")
+    @Schema(description = "时间效率")
     private Integer timeEfficiency;
 
     /**
      * 流程数
      */
     @TableField(value = "runs")
-    @Schema(name="流程数")
+    @Schema(description = "流程数")
     private Integer runs;
 
     /**
      * 数量
      */
     @TableField(value = "quantity")
-    @Schema(name="数量")
+    @Schema(description = "数量")
     private Long quantity;
 
     /**
      * 建筑ID
      */
     @TableField(value = "location_id")
-    @Schema(name="建筑ID")
+    @Schema(description = "建筑ID")
     private Long locationId;
 
     /**
      * 位置
      */
     @TableField(value = "location_flag")
-    @Schema(name="位置")
+    @Schema(description = "位置")
     private String locationFlag;
 
     /**
      * 所有者ID
      */
     @TableField(value = "owner_id")
-    @Schema(name="所有者ID")
+    @Schema(description = "所有者ID")
     private Long ownerId;
+
+    private static final long serialVersionUID = 1L;
 
     public static final String COL_ITEM_ID = "item_id";
 

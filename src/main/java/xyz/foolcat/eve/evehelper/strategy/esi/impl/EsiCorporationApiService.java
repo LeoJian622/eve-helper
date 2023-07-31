@@ -1,6 +1,7 @@
 package xyz.foolcat.eve.evehelper.strategy.esi.impl;
 
 import cn.hutool.json.JSONArray;
+import com.dtflys.forest.http.ForestResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,9 +36,8 @@ public class EsiCorporationApiService implements EsiClientStrategy {
     }
 
     @Override
-    public List<Assets> getAssetsList(String id,int page, String accessToken) {
-        List<Assets> assetsList = esiCorporationClient.getCorporationAssets(id,page, accessToken);
-        return assetsList;
+    public ForestResponse<List<Assets>> getAssetsList(String id, int page, String accessToken) {
+        return esiCorporationClient.getCorporationAssets(id,page, accessToken);
     }
 
     @Override
@@ -47,12 +47,11 @@ public class EsiCorporationApiService implements EsiClientStrategy {
 
     @Override
     public List<Blueprints> getBlueprintsList(String id, int page, String accessToken) {
-        List<Blueprints> blueprintsList = esiCorporationClient.getCharactorBlueprints(id,page, accessToken);
-        return blueprintsList;
+        return esiCorporationClient.getCorporationBlueprints(id,page, accessToken);
     }
 
     @Override
-    public List<Observer> getCropObeserverList(Long id, Integer page, String accessToken) {
+    public List<Observer> getCropObserverList(Long id, Integer page, String accessToken) {
         return esiCorporationClient.getObserverList(id, page, accessToken);
     }
 

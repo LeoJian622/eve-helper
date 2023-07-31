@@ -2,12 +2,13 @@ package xyz.foolcat.eve.evehelper.client;
 
 import cn.hutool.json.JSONArray;
 import com.dtflys.forest.annotation.*;
+import com.dtflys.forest.http.ForestResponse;
 import xyz.foolcat.eve.evehelper.domain.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.system.Blueprints;
 import xyz.foolcat.eve.evehelper.domain.system.MiningDetail;
 import xyz.foolcat.eve.evehelper.domain.system.Observer;
 import xyz.foolcat.eve.evehelper.dto.esi.IndustryJobDTO;
-import xyz.foolcat.eve.evehelper.interceptor.EsiCharactorInterceptor;
+import xyz.foolcat.eve.evehelper.interceptor.EsiClentInterceptor;
 
 import java.util.List;
 
@@ -25,7 +26,7 @@ import java.util.List;
                 "Accept:application/json; charset=UTF-8",// 默认请求头
                 "Cache-Control: no-cache",
         },
-        interceptor = EsiCharactorInterceptor.class
+        interceptor = EsiClentInterceptor.class
 )
 public interface EsiCorporationClient {
 
@@ -49,7 +50,7 @@ public interface EsiCorporationClient {
      * @return
      */
     @Get(url = "/corporations/{corporation_id}/assets/", dataType = "json")
-    List<Assets> getCorporationAssets(@Var("corporation_id") String corporationId, @Query("page") int page, @Header("Authorization") String accessToken);
+    ForestResponse<List<Assets>> getCorporationAssets(@Var("corporation_id") String corporationId, @Query("page") int page, @Header("Authorization") String accessToken);
 
     /**
      * 获取公司资产信息名称
@@ -71,7 +72,7 @@ public interface EsiCorporationClient {
      * @return
      */
     @Get(url = "/corporations/{corporation_id}/blueprints/", dataType = "json")
-    List<Blueprints> getCharactorBlueprints(@Var("corporation_id") String corporationId, @Query("page") int page, @Header("Authorization") String accessToken);
+    List<Blueprints> getCorporationBlueprints(@Var("corporation_id") String corporationId, @Query("page") int page, @Header("Authorization") String accessToken);
 
     /**
      * 获取采矿观察者列表

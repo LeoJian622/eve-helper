@@ -1,38 +1,267 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.AssetsMapper">
-    <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.Assets">
-        <!--@mbg.generated-->
-        <!--@Table assets-->
-        <result column="item_id" jdbcType="BIGINT" property="itemId"/>
-        <result column="type_id" jdbcType="INTEGER" property="typeId"/>
-        <result column="location_id" jdbcType="BIGINT" property="locationId"/>
-        <result column="location_type" jdbcType="VARCHAR" property="locationType"/>
-        <result column="location_flag" jdbcType="VARCHAR" property="locationFlag"/>
-        <result column="is_singleton" jdbcType="BOOLEAN" property="isSingleton"/>
-        <result column="is_blueprint_copy" jdbcType="BOOLEAN" property="isBlueprintCopy"/>
-        <result column="quantity" jdbcType="BIGINT" property="quantity"/>
-        <result column="owner_id" jdbcType="BIGINT" property="ownerId"/>
-    </resultMap>
-    <sql id="Base_Column_List">
-        <!--@mbg.generated-->
-        item_id, type_id, location_id, location_type, location_flag, is_singleton, is_blueprint_copy,
-        quantity, owner_id
-    </sql>
-    <insert id="batchInsert" parameterType="map">
-        <!--@mbg.generated-->
-        insert into assets
-        (item_id, type_id, location_id, location_type, location_flag, is_singleton, is_blueprint_copy,
-         quantity, owner_id)
-        values
-        <foreach collection="list" item="item" separator=",">
-            (#{item.itemId,jdbcType=BIGINT}, #{item.typeId,jdbcType=INTEGER}, #{item.locationId,jdbcType=BIGINT},
-             #{item.locationType,jdbcType=VARCHAR}, #{item.locationFlag,jdbcType=VARCHAR},
-             #{item.isSingleton,jdbcType=BOOLEAN},
-             #{item.isBlueprintCopy,jdbcType=BOOLEAN}, #{item.quantity,jdbcType=BIGINT},
-             #{item.ownerId,jdbcType=BIGINT})
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.Assets">
+    <!--@mbg.generated-->
+    <!--@Table assets-->
+    <id column="item_id" jdbcType="BIGINT" property="itemId" />
+    <result column="type_id" jdbcType="INTEGER" property="typeId" />
+    <result column="location_id" jdbcType="BIGINT" property="locationId" />
+    <result column="location_type" jdbcType="VARCHAR" property="locationType" />
+    <result column="location_flag" jdbcType="VARCHAR" property="locationFlag" />
+    <result column="is_singleton" jdbcType="BOOLEAN" property="isSingleton" />
+    <result column="is_blueprint_copy" jdbcType="BOOLEAN" property="isBlueprintCopy" />
+    <result column="quantity" jdbcType="BIGINT" property="quantity" />
+    <result column="owner_id" jdbcType="BIGINT" property="ownerId" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    item_id, type_id, location_id, location_type, location_flag, is_singleton, is_blueprint_copy, 
+    quantity, owner_id
+  </sql>
+  <update id="updateBatch" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update assets
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="type_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.typeId,jdbcType=INTEGER}
         </foreach>
-    </insert>
+      </trim>
+      <trim prefix="location_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.locationId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="location_type = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.locationType,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="location_flag = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.locationFlag,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="is_singleton = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.isSingleton,jdbcType=BOOLEAN}
+        </foreach>
+      </trim>
+      <trim prefix="is_blueprint_copy = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.isBlueprintCopy,jdbcType=BOOLEAN}
+        </foreach>
+      </trim>
+      <trim prefix="quantity = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.quantity,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="owner_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.ownerId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+    </trim>
+    where item_id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.itemId,jdbcType=BIGINT}
+    </foreach>
+  </update>
+  <update id="updateBatchSelective" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update assets
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="type_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.typeId != null">
+            when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.typeId,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="location_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.locationId != null">
+            when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.locationId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="location_type = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.locationType != null">
+            when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.locationType,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="location_flag = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.locationFlag != null">
+            when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.locationFlag,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="is_singleton = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.isSingleton != null">
+            when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.isSingleton,jdbcType=BOOLEAN}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="is_blueprint_copy = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.isBlueprintCopy != null">
+            when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.isBlueprintCopy,jdbcType=BOOLEAN}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="quantity = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.quantity != null">
+            when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.quantity,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="owner_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.ownerId != null">
+            when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.ownerId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+    </trim>
+    where item_id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.itemId,jdbcType=BIGINT}
+    </foreach>
+  </update>
+  <insert id="batchInsert" parameterType="map">
+    <!--@mbg.generated-->
+    insert into assets
+    (item_id, type_id, location_id, location_type, location_flag, is_singleton, is_blueprint_copy, 
+      quantity, owner_id)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.itemId,jdbcType=BIGINT}, #{item.typeId,jdbcType=INTEGER}, #{item.locationId,jdbcType=BIGINT}, 
+        #{item.locationType,jdbcType=VARCHAR}, #{item.locationFlag,jdbcType=VARCHAR}, #{item.isSingleton,jdbcType=BOOLEAN}, 
+        #{item.isBlueprintCopy,jdbcType=BOOLEAN}, #{item.quantity,jdbcType=BIGINT}, #{item.ownerId,jdbcType=BIGINT}
+        )
+    </foreach>
+  </insert>
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.Assets">
+    <!--@mbg.generated-->
+    insert into assets
+    (item_id, type_id, location_id, location_type, location_flag, is_singleton, is_blueprint_copy, 
+      quantity, owner_id)
+    values
+    (#{itemId,jdbcType=BIGINT}, #{typeId,jdbcType=INTEGER}, #{locationId,jdbcType=BIGINT}, 
+      #{locationType,jdbcType=VARCHAR}, #{locationFlag,jdbcType=VARCHAR}, #{isSingleton,jdbcType=BOOLEAN}, 
+      #{isBlueprintCopy,jdbcType=BOOLEAN}, #{quantity,jdbcType=BIGINT}, #{ownerId,jdbcType=BIGINT}
+      )
+    on duplicate key update 
+    item_id = #{itemId,jdbcType=BIGINT}, 
+    type_id = #{typeId,jdbcType=INTEGER}, 
+    location_id = #{locationId,jdbcType=BIGINT}, 
+    location_type = #{locationType,jdbcType=VARCHAR}, 
+    location_flag = #{locationFlag,jdbcType=VARCHAR}, 
+    is_singleton = #{isSingleton,jdbcType=BOOLEAN}, 
+    is_blueprint_copy = #{isBlueprintCopy,jdbcType=BOOLEAN}, 
+    quantity = #{quantity,jdbcType=BIGINT}, 
+    owner_id = #{ownerId,jdbcType=BIGINT}
+  </insert>
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.Assets">
+    <!--@mbg.generated-->
+    insert into assets
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="itemId != null">
+        item_id,
+      </if>
+      <if test="typeId != null">
+        type_id,
+      </if>
+      <if test="locationId != null">
+        location_id,
+      </if>
+      <if test="locationType != null">
+        location_type,
+      </if>
+      <if test="locationFlag != null">
+        location_flag,
+      </if>
+      <if test="isSingleton != null">
+        is_singleton,
+      </if>
+      <if test="isBlueprintCopy != null">
+        is_blueprint_copy,
+      </if>
+      <if test="quantity != null">
+        quantity,
+      </if>
+      <if test="ownerId != null">
+        owner_id,
+      </if>
+    </trim>
+    values
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="itemId != null">
+        #{itemId,jdbcType=BIGINT},
+      </if>
+      <if test="typeId != null">
+        #{typeId,jdbcType=INTEGER},
+      </if>
+      <if test="locationId != null">
+        #{locationId,jdbcType=BIGINT},
+      </if>
+      <if test="locationType != null">
+        #{locationType,jdbcType=VARCHAR},
+      </if>
+      <if test="locationFlag != null">
+        #{locationFlag,jdbcType=VARCHAR},
+      </if>
+      <if test="isSingleton != null">
+        #{isSingleton,jdbcType=BOOLEAN},
+      </if>
+      <if test="isBlueprintCopy != null">
+        #{isBlueprintCopy,jdbcType=BOOLEAN},
+      </if>
+      <if test="quantity != null">
+        #{quantity,jdbcType=BIGINT},
+      </if>
+      <if test="ownerId != null">
+        #{ownerId,jdbcType=BIGINT},
+      </if>
+    </trim>
+    on duplicate key update 
+    <trim suffixOverrides=",">
+      <if test="itemId != null">
+        item_id = #{itemId,jdbcType=BIGINT},
+      </if>
+      <if test="typeId != null">
+        type_id = #{typeId,jdbcType=INTEGER},
+      </if>
+      <if test="locationId != null">
+        location_id = #{locationId,jdbcType=BIGINT},
+      </if>
+      <if test="locationType != null">
+        location_type = #{locationType,jdbcType=VARCHAR},
+      </if>
+      <if test="locationFlag != null">
+        location_flag = #{locationFlag,jdbcType=VARCHAR},
+      </if>
+      <if test="isSingleton != null">
+        is_singleton = #{isSingleton,jdbcType=BOOLEAN},
+      </if>
+      <if test="isBlueprintCopy != null">
+        is_blueprint_copy = #{isBlueprintCopy,jdbcType=BOOLEAN},
+      </if>
+      <if test="quantity != null">
+        quantity = #{quantity,jdbcType=BIGINT},
+      </if>
+      <if test="ownerId != null">
+        owner_id = #{ownerId,jdbcType=BIGINT},
+      </if>
+    </trim>
+  </insert>
 
     <select id="selectAssetsInvtypeUniverse" resultType="xyz.foolcat.eve.evehelper.vo.AssetsVO">
         select ass.item_id,

@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import java.text.ParseException;
 import java.util.List;
+
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +40,16 @@ public class IndustryJobService extends ServiceImpl<IndustryJobMapper, IndustryJ
 
         return null;
     }
+
+    public int insertOrUpdate(IndustryJob record) {
+        return baseMapper.insertOrUpdate(record);
+    }
+
+    public int insertOrUpdateSelective(IndustryJob record) {
+        return baseMapper.insertOrUpdateSelective(record);
+    }
 }
+
 
 
 

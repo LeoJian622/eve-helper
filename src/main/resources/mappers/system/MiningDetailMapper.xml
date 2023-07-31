@@ -12,7 +12,7 @@
     <result column="type_id" jdbcType="INTEGER" property="typeId" />
     <result column="quantity" jdbcType="BIGINT" property="quantity" />
     <result column="observer_id" jdbcType="BIGINT" property="observerId" />
-    <result column="last_updated" jdbcType="TIMESTAMP" property="lastUpdated" />
+    <result column="last_updated" jdbcType="DATE" property="lastUpdated" />
   </resultMap>
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
@@ -60,7 +60,7 @@
       </trim>
       <trim prefix="last_updated = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=VARCHAR} then #{item.lastUpdated,jdbcType=TIMESTAMP}
+          when id = #{item.id,jdbcType=VARCHAR} then #{item.lastUpdated,jdbcType=DATE}
         </foreach>
       </trim>
     </trim>
@@ -125,7 +125,7 @@
       <trim prefix="last_updated = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
           <if test="item.lastUpdated != null">
-            when id = #{item.id,jdbcType=VARCHAR} then #{item.lastUpdated,jdbcType=TIMESTAMP}
+            when id = #{item.id,jdbcType=VARCHAR} then #{item.lastUpdated,jdbcType=DATE}
           </if>
         </foreach>
       </trim>
@@ -145,7 +145,121 @@
       (#{item.id,jdbcType=VARCHAR}, #{item.characterId,jdbcType=INTEGER}, #{item.characterName,jdbcType=VARCHAR}, 
         #{item.recordedCorporationId,jdbcType=INTEGER}, #{item.recordedCorporationName,jdbcType=VARCHAR}, 
         #{item.typeId,jdbcType=INTEGER}, #{item.quantity,jdbcType=BIGINT}, #{item.observerId,jdbcType=BIGINT}, 
-        #{item.lastUpdated,jdbcType=TIMESTAMP})
+        #{item.lastUpdated,jdbcType=DATE})
     </foreach>
+  </insert>
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.MiningDetail">
+    <!--@mbg.generated-->
+    insert into mining_detail
+    (id, character_id, character_name, recorded_corporation_id, recorded_corporation_name, 
+      type_id, quantity, observer_id, last_updated)
+    values
+    (#{id,jdbcType=VARCHAR}, #{characterId,jdbcType=INTEGER}, #{characterName,jdbcType=VARCHAR}, 
+      #{recordedCorporationId,jdbcType=INTEGER}, #{recordedCorporationName,jdbcType=VARCHAR}, 
+      #{typeId,jdbcType=INTEGER}, #{quantity,jdbcType=BIGINT}, #{observerId,jdbcType=BIGINT}, 
+      #{lastUpdated,jdbcType=DATE})
+    on duplicate key update 
+    id = #{id,jdbcType=VARCHAR}, 
+    character_id = #{characterId,jdbcType=INTEGER}, 
+    character_name = #{characterName,jdbcType=VARCHAR}, 
+    recorded_corporation_id = #{recordedCorporationId,jdbcType=INTEGER}, 
+    recorded_corporation_name = #{recordedCorporationName,jdbcType=VARCHAR}, 
+    type_id = #{typeId,jdbcType=INTEGER}, 
+    quantity = #{quantity,jdbcType=BIGINT}, 
+    observer_id = #{observerId,jdbcType=BIGINT}, 
+    last_updated = #{lastUpdated,jdbcType=DATE}
+  </insert>
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.MiningDetail">
+    <!--@mbg.generated-->
+    insert into mining_detail
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="characterId != null">
+        character_id,
+      </if>
+      <if test="characterName != null">
+        character_name,
+      </if>
+      <if test="recordedCorporationId != null">
+        recorded_corporation_id,
+      </if>
+      <if test="recordedCorporationName != null">
+        recorded_corporation_name,
+      </if>
+      <if test="typeId != null">
+        type_id,
+      </if>
+      <if test="quantity != null">
+        quantity,
+      </if>
+      <if test="observerId != null">
+        observer_id,
+      </if>
+      <if test="lastUpdated != null">
+        last_updated,
+      </if>
+    </trim>
+    values
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="characterId != null">
+        #{characterId,jdbcType=INTEGER},
+      </if>
+      <if test="characterName != null">
+        #{characterName,jdbcType=VARCHAR},
+      </if>
+      <if test="recordedCorporationId != null">
+        #{recordedCorporationId,jdbcType=INTEGER},
+      </if>
+      <if test="recordedCorporationName != null">
+        #{recordedCorporationName,jdbcType=VARCHAR},
+      </if>
+      <if test="typeId != null">
+        #{typeId,jdbcType=INTEGER},
+      </if>
+      <if test="quantity != null">
+        #{quantity,jdbcType=BIGINT},
+      </if>
+      <if test="observerId != null">
+        #{observerId,jdbcType=BIGINT},
+      </if>
+      <if test="lastUpdated != null">
+        #{lastUpdated,jdbcType=DATE},
+      </if>
+    </trim>
+    on duplicate key update 
+    <trim suffixOverrides=",">
+      <if test="id != null">
+        id = #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="characterId != null">
+        character_id = #{characterId,jdbcType=INTEGER},
+      </if>
+      <if test="characterName != null">
+        character_name = #{characterName,jdbcType=VARCHAR},
+      </if>
+      <if test="recordedCorporationId != null">
+        recorded_corporation_id = #{recordedCorporationId,jdbcType=INTEGER},
+      </if>
+      <if test="recordedCorporationName != null">
+        recorded_corporation_name = #{recordedCorporationName,jdbcType=VARCHAR},
+      </if>
+      <if test="typeId != null">
+        type_id = #{typeId,jdbcType=INTEGER},
+      </if>
+      <if test="quantity != null">
+        quantity = #{quantity,jdbcType=BIGINT},
+      </if>
+      <if test="observerId != null">
+        observer_id = #{observerId,jdbcType=BIGINT},
+      </if>
+      <if test="lastUpdated != null">
+        last_updated = #{lastUpdated,jdbcType=DATE},
+      </if>
+    </trim>
   </insert>
 </mapper>

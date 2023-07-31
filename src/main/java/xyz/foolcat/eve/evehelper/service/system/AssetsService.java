@@ -1,29 +1,26 @@
 package xyz.foolcat.eve.evehelper.service.system;
 
-import cn.hutool.json.JSONArray;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.injector.methods.SelectPage;
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.dtflys.forest.exceptions.ForestNetworkException;
-import org.springframework.stereotype.Service;
-
-import javax.annotation.Resource;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
+import com.dtflys.forest.http.ForestResponse;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.system.Assets;
 import xyz.foolcat.eve.evehelper.mapper.system.AssetsMapper;
 import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.vo.AssetsVO;
 
+import javax.annotation.Resource;
+import java.text.ParseException;
+import java.util.List;
+import java.util.concurrent.Flow;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.SubmissionPublisher;
+
 @Service
+@Slf4j
 @Transactional(rollbackFor = RuntimeException.class)
 public class AssetsService extends ServiceImpl<AssetsMapper, Assets> {
 
@@ -42,28 +39,65 @@ public class AssetsService extends ServiceImpl<AssetsMapper, Assets> {
      * @return
      * @throws ParseException
      */
-    public void saveAndUpdateAssets(String type, String id) throws ParseException {
-        List<Assets> assetsList;
-        int page = 1;
+    public void saveAndUpdateAssets(String type, String id) throws Throwable {
+
+        ForkJoinPool forkJoinPool = new ForkJoinPool(4);
+
+        SubmissionPublisher<Integer> submissionPublisher = new SubmissionPublisher<>(forkJoinPool, 4);
+        Flow.Subscriber<Integer> subscriber = new Flow.Subscriber<>() {
+
+            private Flow.Subscription subscription;
+
+            @Override
+            public void onSubscribe(Flow.Subscription subscription) {
+                this.subscription = subscription;
+                log.info("向数据发布者请求一个数据");
+                this.subscription.request(1);
+            }
+
+            @SneakyThrows
+            @Override
+            public void onNext(Integer item) {
+                log.info("处理页数：" + item);
+                //请求数据
+                ForestResponse<List<Assets>> forestResponse = null;
+                forestResponse = esiApiService.getAssetsList(type, item, id);
+                List<Assets> assetsList1 = forestResponse.getResult();
+                Long ownId = Long.valueOf(id);
+                assetsList1.forEach(assets -> {
+                    assets.setOwnerId(ownId);
+                });
+                saveOrUpdateBatch(assetsList1);
+                log.info("进行下一条处理");
+                this.subscription.request(1);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                log.info("取消订阅");
+                this.subscription.cancel();
+            }
+
+            @Override
+            public void onComplete() {
+            }
+        };
+
+        submissionPublisher.subscribe(subscriber);
+
+        int i = 1;
         do {
             try {
-
-                assetsList = esiApiService.getAssetsList(type, page, id);
-            }catch (ForestNetworkException e){
-                if (e.getMessage().indexOf("Requested page does not exist") > 0) {
-                    break;
-                } else {
-                    log.error("ESI请求失败", e);
-                    break;
-                }
+            log.info("发送消息" + i);
+            submissionPublisher.submit(i++);
+            }catch (Exception e){
+                log.info("订阅者取消订阅");
             }
-            Long ownId = Long.valueOf(id);
-            assetsList.forEach(assets -> {
-                assets.setOwnerId(ownId);
-            });
-            this.saveOrUpdateBatch(assetsList);
-            page++;
-        } while (assetsList.size() != 0);
+
+        } while (submissionPublisher.isSubscribed(subscriber));
+
+        submissionPublisher.close();
+
     }
 
     /**
@@ -75,5 +109,22 @@ public class AssetsService extends ServiceImpl<AssetsMapper, Assets> {
     public IPage<AssetsVO> getAssertsListById(IPage<AssetsVO> page, String id) {
         return baseMapper.selectAssetsInvtypeUniverse(page, id);
     }
+
+    public int updateBatch(List<Assets> list) {
+        return baseMapper.updateBatch(list);
+    }
+
+    public int updateBatchSelective(List<Assets> list) {
+        return baseMapper.updateBatchSelective(list);
+    }
+
+    public int insertOrUpdate(Assets record) {
+        return baseMapper.insertOrUpdate(record);
+    }
+
+    public int insertOrUpdateSelective(Assets record) {
+        return baseMapper.insertOrUpdateSelective(record);
+    }
 }
+
 

@@ -9,7 +9,7 @@ import lombok.Data;
 import java.io.Serializable;
 import java.util.Date;
 
-@Schema(title="市场订单")
+@Schema
 @Data
 @TableName(value = "market_order")
 public class MarketOrder implements Serializable {
@@ -17,91 +17,91 @@ public class MarketOrder implements Serializable {
      * 订单编号
      */
     @TableId(value = "order_id")
-    @Schema(name="订单编号")
+    @Schema(description = "订单编号")
     private Long orderId;
 
     /**
      * 持续时间
      */
     @TableField(value = "duration")
-    @Schema(name="持续时间")
+    @Schema(description = "持续时间")
     private Long duration;
 
     /**
      * 是否买单
      */
     @TableField(value = "is_buy_order")
-    @Schema(name="是否买单")
+    @Schema(description = "是否买单")
     private Boolean isBuyOrder;
 
     /**
      * 发布时间
      */
     @TableField(value = "issued")
-    @Schema(name="发布时间")
+    @Schema(description = "发布时间")
     private Date issued;
 
     /**
      * 建筑ID
      */
     @TableField(value = "location_id")
-    @Schema(name="建筑ID")
+    @Schema(description = "建筑ID")
     private Long locationId;
 
     /**
      * 最小交易数量
      */
     @TableField(value = "min_volume")
-    @Schema(name="最小交易数量")
+    @Schema(description = "最小交易数量")
     private Long minVolume;
 
     /**
      * 价格
      */
     @TableField(value = "price")
-    @Schema(name="价格")
+    @Schema(description = "价格")
     private Long price;
 
     /**
      * 订单范围
      */
     @TableField(value = "order_range")
-    @Schema(name="订单范围")
+    @Schema(description = "订单范围")
     private String orderRange;
 
     /**
      * 星系ID
      */
     @TableField(value = "system_id")
-    @Schema(name="星系ID")
+    @Schema(description = "星系ID")
     private Long systemId;
 
     /**
      * 物品类型ID
      */
     @TableField(value = "type_id")
-    @Schema(name="物品类型ID")
+    @Schema(description = "物品类型ID")
     private Long typeId;
 
     /**
      * 剩余数量
      */
     @TableField(value = "volume_remain")
-    @Schema(name="剩余数量")
+    @Schema(description = "剩余数量")
     private Long volumeRemain;
 
     /**
      * 总数量
      */
     @TableField(value = "volume_total")
-    @Schema(name="总数量")
+    @Schema(description = "总数量")
     private Long volumeTotal;
 
     /**
      * 星域ID
      */
     @TableField(value = "region_id")
-    @Schema(name="星域ID")
+    @Schema(description = "星域ID")
     private Long regionId;
 
     private static final long serialVersionUID = 1L;

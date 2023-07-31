@@ -4,7 +4,7 @@
   <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.Blueprints">
     <!--@mbg.generated-->
     <!--@Table blueprints-->
-    <result column="item_id" jdbcType="BIGINT" property="itemId" />
+    <id column="item_id" jdbcType="BIGINT" property="itemId" />
     <result column="type_id" jdbcType="INTEGER" property="typeId" />
     <result column="material_efficiency" jdbcType="INTEGER" property="materialEfficiency" />
     <result column="time_efficiency" jdbcType="INTEGER" property="timeEfficiency" />
@@ -19,6 +19,122 @@
     item_id, type_id, material_efficiency, time_efficiency, runs, quantity, location_id, 
     location_flag, owner_id
   </sql>
+  <update id="updateBatch" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update blueprints
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="type_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.typeId,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="material_efficiency = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.materialEfficiency,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="time_efficiency = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.timeEfficiency,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="runs = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.runs,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="quantity = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.quantity,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="location_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.locationId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="location_flag = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.locationFlag,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="owner_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.ownerId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+    </trim>
+    where item_id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.itemId,jdbcType=BIGINT}
+    </foreach>
+  </update>
+  <update id="updateBatchSelective" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update blueprints
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="type_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.typeId != null">
+            when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.typeId,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="material_efficiency = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.materialEfficiency != null">
+            when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.materialEfficiency,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="time_efficiency = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.timeEfficiency != null">
+            when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.timeEfficiency,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="runs = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.runs != null">
+            when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.runs,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="quantity = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.quantity != null">
+            when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.quantity,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="location_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.locationId != null">
+            when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.locationId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="location_flag = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.locationFlag != null">
+            when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.locationFlag,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="owner_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.ownerId != null">
+            when item_id = #{item.itemId,jdbcType=BIGINT} then #{item.ownerId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+    </trim>
+    where item_id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.itemId,jdbcType=BIGINT}
+    </foreach>
+  </update>
   <insert id="batchInsert" parameterType="map">
     <!--@mbg.generated-->
     insert into blueprints
@@ -31,6 +147,120 @@
         #{item.locationId,jdbcType=BIGINT}, #{item.locationFlag,jdbcType=VARCHAR}, #{item.ownerId,jdbcType=BIGINT}
         )
     </foreach>
+  </insert>
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.Blueprints">
+    <!--@mbg.generated-->
+    insert into blueprints
+    (item_id, type_id, material_efficiency, time_efficiency, runs, quantity, location_id, 
+      location_flag, owner_id)
+    values
+    (#{itemId,jdbcType=BIGINT}, #{typeId,jdbcType=INTEGER}, #{materialEfficiency,jdbcType=INTEGER}, 
+      #{timeEfficiency,jdbcType=INTEGER}, #{runs,jdbcType=INTEGER}, #{quantity,jdbcType=BIGINT}, 
+      #{locationId,jdbcType=BIGINT}, #{locationFlag,jdbcType=VARCHAR}, #{ownerId,jdbcType=BIGINT}
+      )
+    on duplicate key update 
+    item_id = #{itemId,jdbcType=BIGINT}, 
+    type_id = #{typeId,jdbcType=INTEGER}, 
+    material_efficiency = #{materialEfficiency,jdbcType=INTEGER}, 
+    time_efficiency = #{timeEfficiency,jdbcType=INTEGER}, 
+    runs = #{runs,jdbcType=INTEGER}, 
+    quantity = #{quantity,jdbcType=BIGINT}, 
+    location_id = #{locationId,jdbcType=BIGINT}, 
+    location_flag = #{locationFlag,jdbcType=VARCHAR}, 
+    owner_id = #{ownerId,jdbcType=BIGINT}
+  </insert>
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.Blueprints">
+    <!--@mbg.generated-->
+    insert into blueprints
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="itemId != null">
+        item_id,
+      </if>
+      <if test="typeId != null">
+        type_id,
+      </if>
+      <if test="materialEfficiency != null">
+        material_efficiency,
+      </if>
+      <if test="timeEfficiency != null">
+        time_efficiency,
+      </if>
+      <if test="runs != null">
+        runs,
+      </if>
+      <if test="quantity != null">
+        quantity,
+      </if>
+      <if test="locationId != null">
+        location_id,
+      </if>
+      <if test="locationFlag != null">
+        location_flag,
+      </if>
+      <if test="ownerId != null">
+        owner_id,
+      </if>
+    </trim>
+    values
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="itemId != null">
+        #{itemId,jdbcType=BIGINT},
+      </if>
+      <if test="typeId != null">
+        #{typeId,jdbcType=INTEGER},
+      </if>
+      <if test="materialEfficiency != null">
+        #{materialEfficiency,jdbcType=INTEGER},
+      </if>
+      <if test="timeEfficiency != null">
+        #{timeEfficiency,jdbcType=INTEGER},
+      </if>
+      <if test="runs != null">
+        #{runs,jdbcType=INTEGER},
+      </if>
+      <if test="quantity != null">
+        #{quantity,jdbcType=BIGINT},
+      </if>
+      <if test="locationId != null">
+        #{locationId,jdbcType=BIGINT},
+      </if>
+      <if test="locationFlag != null">
+        #{locationFlag,jdbcType=VARCHAR},
+      </if>
+      <if test="ownerId != null">
+        #{ownerId,jdbcType=BIGINT},
+      </if>
+    </trim>
+    on duplicate key update 
+    <trim suffixOverrides=",">
+      <if test="itemId != null">
+        item_id = #{itemId,jdbcType=BIGINT},
+      </if>
+      <if test="typeId != null">
+        type_id = #{typeId,jdbcType=INTEGER},
+      </if>
+      <if test="materialEfficiency != null">
+        material_efficiency = #{materialEfficiency,jdbcType=INTEGER},
+      </if>
+      <if test="timeEfficiency != null">
+        time_efficiency = #{timeEfficiency,jdbcType=INTEGER},
+      </if>
+      <if test="runs != null">
+        runs = #{runs,jdbcType=INTEGER},
+      </if>
+      <if test="quantity != null">
+        quantity = #{quantity,jdbcType=BIGINT},
+      </if>
+      <if test="locationId != null">
+        location_id = #{locationId,jdbcType=BIGINT},
+      </if>
+      <if test="locationFlag != null">
+        location_flag = #{locationFlag,jdbcType=VARCHAR},
+      </if>
+      <if test="ownerId != null">
+        owner_id = #{ownerId,jdbcType=BIGINT},
+      </if>
+    </trim>
   </insert>
 
   <select id="selectBlueprintsInvtypeUniverse" resultType="xyz.foolcat.eve.evehelper.vo.BlueprintsVO">

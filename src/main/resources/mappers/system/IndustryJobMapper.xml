@@ -325,4 +325,254 @@
         #{item.pauseDate,jdbcType=TIMESTAMP}, #{item.installerId,jdbcType=BIGINT})
     </foreach>
   </insert>
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.IndustryJob">
+    <!--@mbg.generated-->
+    insert into industry_job
+    (job_id, blueprint_id, blueprint_type_id, blueprint_type, cost, licensed_runs, probability, 
+      station_id, output_location_id, product_type, blueprint_location_id, duration, 
+      installer, completed_character, activity, facility_id, runs, start_date, end_date, 
+      `status`, pause_date, installer_id)
+    values
+    (#{jobId,jdbcType=BIGINT}, #{blueprintId,jdbcType=BIGINT}, #{blueprintTypeId,jdbcType=INTEGER}, 
+      #{blueprintType,jdbcType=VARCHAR}, #{cost,jdbcType=INTEGER}, #{licensedRuns,jdbcType=INTEGER}, 
+      #{probability,jdbcType=DECIMAL}, #{stationId,jdbcType=BIGINT}, #{outputLocationId,jdbcType=BIGINT}, 
+      #{productType,jdbcType=VARCHAR}, #{blueprintLocationId,jdbcType=BIGINT}, #{duration,jdbcType=BIGINT}, 
+      #{installer,jdbcType=VARCHAR}, #{completedCharacter,jdbcType=VARCHAR}, #{activity,jdbcType=BIGINT}, 
+      #{facilityId,jdbcType=BIGINT}, #{runs,jdbcType=INTEGER}, #{startDate,jdbcType=TIMESTAMP}, 
+      #{endDate,jdbcType=TIMESTAMP}, #{status,jdbcType=VARCHAR}, #{pauseDate,jdbcType=TIMESTAMP}, 
+      #{installerId,jdbcType=BIGINT})
+    on duplicate key update 
+    job_id = #{jobId,jdbcType=BIGINT}, 
+    blueprint_id = #{blueprintId,jdbcType=BIGINT}, 
+    blueprint_type_id = #{blueprintTypeId,jdbcType=INTEGER}, 
+    blueprint_type = #{blueprintType,jdbcType=VARCHAR}, 
+    cost = #{cost,jdbcType=INTEGER}, 
+    licensed_runs = #{licensedRuns,jdbcType=INTEGER}, 
+    probability = #{probability,jdbcType=DECIMAL}, 
+    station_id = #{stationId,jdbcType=BIGINT}, 
+    output_location_id = #{outputLocationId,jdbcType=BIGINT}, 
+    product_type = #{productType,jdbcType=VARCHAR}, 
+    blueprint_location_id = #{blueprintLocationId,jdbcType=BIGINT}, 
+    duration = #{duration,jdbcType=BIGINT}, 
+    installer = #{installer,jdbcType=VARCHAR}, 
+    completed_character = #{completedCharacter,jdbcType=VARCHAR}, 
+    activity = #{activity,jdbcType=BIGINT}, 
+    facility_id = #{facilityId,jdbcType=BIGINT}, 
+    runs = #{runs,jdbcType=INTEGER}, 
+    start_date = #{startDate,jdbcType=TIMESTAMP}, 
+    end_date = #{endDate,jdbcType=TIMESTAMP}, 
+    `status` = #{status,jdbcType=VARCHAR}, 
+    pause_date = #{pauseDate,jdbcType=TIMESTAMP}, 
+    installer_id = #{installerId,jdbcType=BIGINT}
+  </insert>
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.IndustryJob">
+    <!--@mbg.generated-->
+    insert into industry_job
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="jobId != null">
+        job_id,
+      </if>
+      <if test="blueprintId != null">
+        blueprint_id,
+      </if>
+      <if test="blueprintTypeId != null">
+        blueprint_type_id,
+      </if>
+      <if test="blueprintType != null">
+        blueprint_type,
+      </if>
+      <if test="cost != null">
+        cost,
+      </if>
+      <if test="licensedRuns != null">
+        licensed_runs,
+      </if>
+      <if test="probability != null">
+        probability,
+      </if>
+      <if test="stationId != null">
+        station_id,
+      </if>
+      <if test="outputLocationId != null">
+        output_location_id,
+      </if>
+      <if test="productType != null">
+        product_type,
+      </if>
+      <if test="blueprintLocationId != null">
+        blueprint_location_id,
+      </if>
+      <if test="duration != null">
+        duration,
+      </if>
+      <if test="installer != null">
+        installer,
+      </if>
+      <if test="completedCharacter != null">
+        completed_character,
+      </if>
+      <if test="activity != null">
+        activity,
+      </if>
+      <if test="facilityId != null">
+        facility_id,
+      </if>
+      <if test="runs != null">
+        runs,
+      </if>
+      <if test="startDate != null">
+        start_date,
+      </if>
+      <if test="endDate != null">
+        end_date,
+      </if>
+      <if test="status != null">
+        `status`,
+      </if>
+      <if test="pauseDate != null">
+        pause_date,
+      </if>
+      <if test="installerId != null">
+        installer_id,
+      </if>
+    </trim>
+    values
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="jobId != null">
+        #{jobId,jdbcType=BIGINT},
+      </if>
+      <if test="blueprintId != null">
+        #{blueprintId,jdbcType=BIGINT},
+      </if>
+      <if test="blueprintTypeId != null">
+        #{blueprintTypeId,jdbcType=INTEGER},
+      </if>
+      <if test="blueprintType != null">
+        #{blueprintType,jdbcType=VARCHAR},
+      </if>
+      <if test="cost != null">
+        #{cost,jdbcType=INTEGER},
+      </if>
+      <if test="licensedRuns != null">
+        #{licensedRuns,jdbcType=INTEGER},
+      </if>
+      <if test="probability != null">
+        #{probability,jdbcType=DECIMAL},
+      </if>
+      <if test="stationId != null">
+        #{stationId,jdbcType=BIGINT},
+      </if>
+      <if test="outputLocationId != null">
+        #{outputLocationId,jdbcType=BIGINT},
+      </if>
+      <if test="productType != null">
+        #{productType,jdbcType=VARCHAR},
+      </if>
+      <if test="blueprintLocationId != null">
+        #{blueprintLocationId,jdbcType=BIGINT},
+      </if>
+      <if test="duration != null">
+        #{duration,jdbcType=BIGINT},
+      </if>
+      <if test="installer != null">
+        #{installer,jdbcType=VARCHAR},
+      </if>
+      <if test="completedCharacter != null">
+        #{completedCharacter,jdbcType=VARCHAR},
+      </if>
+      <if test="activity != null">
+        #{activity,jdbcType=BIGINT},
+      </if>
+      <if test="facilityId != null">
+        #{facilityId,jdbcType=BIGINT},
+      </if>
+      <if test="runs != null">
+        #{runs,jdbcType=INTEGER},
+      </if>
+      <if test="startDate != null">
+        #{startDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="endDate != null">
+        #{endDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="status != null">
+        #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="pauseDate != null">
+        #{pauseDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="installerId != null">
+        #{installerId,jdbcType=BIGINT},
+      </if>
+    </trim>
+    on duplicate key update 
+    <trim suffixOverrides=",">
+      <if test="jobId != null">
+        job_id = #{jobId,jdbcType=BIGINT},
+      </if>
+      <if test="blueprintId != null">
+        blueprint_id = #{blueprintId,jdbcType=BIGINT},
+      </if>
+      <if test="blueprintTypeId != null">
+        blueprint_type_id = #{blueprintTypeId,jdbcType=INTEGER},
+      </if>
+      <if test="blueprintType != null">
+        blueprint_type = #{blueprintType,jdbcType=VARCHAR},
+      </if>
+      <if test="cost != null">
+        cost = #{cost,jdbcType=INTEGER},
+      </if>
+      <if test="licensedRuns != null">
+        licensed_runs = #{licensedRuns,jdbcType=INTEGER},
+      </if>
+      <if test="probability != null">
+        probability = #{probability,jdbcType=DECIMAL},
+      </if>
+      <if test="stationId != null">
+        station_id = #{stationId,jdbcType=BIGINT},
+      </if>
+      <if test="outputLocationId != null">
+        output_location_id = #{outputLocationId,jdbcType=BIGINT},
+      </if>
+      <if test="productType != null">
+        product_type = #{productType,jdbcType=VARCHAR},
+      </if>
+      <if test="blueprintLocationId != null">
+        blueprint_location_id = #{blueprintLocationId,jdbcType=BIGINT},
+      </if>
+      <if test="duration != null">
+        duration = #{duration,jdbcType=BIGINT},
+      </if>
+      <if test="installer != null">
+        installer = #{installer,jdbcType=VARCHAR},
+      </if>
+      <if test="completedCharacter != null">
+        completed_character = #{completedCharacter,jdbcType=VARCHAR},
+      </if>
+      <if test="activity != null">
+        activity = #{activity,jdbcType=BIGINT},
+      </if>
+      <if test="facilityId != null">
+        facility_id = #{facilityId,jdbcType=BIGINT},
+      </if>
+      <if test="runs != null">
+        runs = #{runs,jdbcType=INTEGER},
+      </if>
+      <if test="startDate != null">
+        start_date = #{startDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="endDate != null">
+        end_date = #{endDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="status != null">
+        `status` = #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="pauseDate != null">
+        pause_date = #{pauseDate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="installerId != null">
+        installer_id = #{installerId,jdbcType=BIGINT},
+      </if>
+    </trim>
+  </insert>
 </mapper>

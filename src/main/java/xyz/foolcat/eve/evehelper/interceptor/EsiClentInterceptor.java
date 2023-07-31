@@ -1,7 +1,6 @@
 package xyz.foolcat.eve.evehelper.interceptor;
 
 import com.dtflys.forest.exceptions.ForestRuntimeException;
-import com.dtflys.forest.http.ForestHeaderMap;
 import com.dtflys.forest.http.ForestRequest;
 import com.dtflys.forest.http.ForestResponse;
 import com.dtflys.forest.interceptor.Interceptor;
@@ -18,7 +17,7 @@ import java.util.regex.Pattern;
 
 @Component
 @Slf4j
-public class EsiCharactorInterceptor<T> implements Interceptor<T> {
+public class EsiClentInterceptor<T> implements Interceptor<T> {
 
     private final static Pattern PATTERN_LOGIN = Pattern.compile("^https://login.evepc.163.com");
 
@@ -31,7 +30,7 @@ public class EsiCharactorInterceptor<T> implements Interceptor<T> {
     @Override
     public void onInvokeMethod(ForestRequest req, ForestMethod method, Object[] args) {
 
-        log.info("add datasource and language");
+        log.debug("add datasource and language");
         String url = req.getUrl();
         if (!PATTERN_LOGIN.matcher(url).find()){
             if (url.indexOf("?") > 0){
@@ -40,8 +39,15 @@ public class EsiCharactorInterceptor<T> implements Interceptor<T> {
                 url += "?datasource=serenity&language=zh";
             }
             req.setUrl(url);
-        }
 
+        }
+    }
+
+    /**
+     * 设置请求的access_token
+     * @param req
+     */
+    private void setAccessToken(ForestRequest req){
     }
 
     /**
@@ -50,6 +56,7 @@ public class EsiCharactorInterceptor<T> implements Interceptor<T> {
      */
     @Override
     public boolean beforeExecute(ForestRequest req) {
+
         return true;
     }
 
@@ -58,7 +65,7 @@ public class EsiCharactorInterceptor<T> implements Interceptor<T> {
      */
     @Override
     public void onSuccess(T data, ForestRequest req, ForestResponse res) {
-        log.info("invoke Simple onSuccess");
+        //执行请求成功后代码
     }
 
     /**

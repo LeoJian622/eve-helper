@@ -14,4 +14,8 @@ public interface UniverseNameMapper extends BaseMapper<UniverseName> {
     int updateBatchSelective(List<UniverseName> list);
 
     int batchInsert(@Param("list") List<UniverseName> list);
+
+    int insertOrUpdate(UniverseName record);
+
+    int insertOrUpdateSelective(UniverseName record);
 }

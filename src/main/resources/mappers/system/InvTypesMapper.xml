@@ -14,7 +14,7 @@
     <result column="capacity" jdbcType="FLOAT" property="capacity" />
     <result column="portion_size" jdbcType="INTEGER" property="portionSize" />
     <result column="faction_id" jdbcType="INTEGER" property="factionId" />
-    <result column="race_id" jdbcType="TINYINT" property="raceId" />
+    <result column="race_id" jdbcType="INTEGER" property="raceId" />
     <result column="base_price" jdbcType="FLOAT" property="basePrice" />
     <result column="published" jdbcType="TINYINT" property="published" />
     <result column="market_group_id" jdbcType="INTEGER" property="marketGroupId" />
@@ -26,10 +26,6 @@
     <result column="sof_material_set_id" jdbcType="INTEGER" property="sofMaterialSetId" />
     <result column="meta_group_id" jdbcType="INTEGER" property="metaGroupId" />
     <result column="variationparent_type_id" jdbcType="INTEGER" property="variationparentTypeId" />
-  </resultMap>
-  <resultMap id="MarketTreeResultMap" type="xyz.foolcat.eve.evehelper.vo.InvTypesVO">
-    <result column="type_Id" jdbcType="INTEGER" property="typeId"/>
-    <result column="type_name" jdbcType="VARCHAR" property="typeName"/>
   </resultMap>
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
@@ -89,7 +85,7 @@
       </trim>
       <trim prefix="race_id = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when type_id = #{item.typeId,jdbcType=INTEGER} then #{item.raceId,jdbcType=TINYINT}
+          when type_id = #{item.typeId,jdbcType=INTEGER} then #{item.raceId,jdbcType=INTEGER}
         </foreach>
       </trim>
       <trim prefix="base_price = case" suffix="end,">
@@ -223,7 +219,7 @@
       <trim prefix="race_id = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
           <if test="item.raceId != null">
-            when type_id = #{item.typeId,jdbcType=INTEGER} then #{item.raceId,jdbcType=TINYINT}
+            when type_id = #{item.typeId,jdbcType=INTEGER} then #{item.raceId,jdbcType=INTEGER}
           </if>
         </foreach>
       </trim>
@@ -322,7 +318,7 @@
       (#{item.typeId,jdbcType=INTEGER}, #{item.groupId,jdbcType=INTEGER}, #{item.typeName,jdbcType=VARCHAR}, 
         #{item.description,jdbcType=LONGVARCHAR}, #{item.mass,jdbcType=FLOAT}, #{item.volume,jdbcType=FLOAT}, 
         #{item.packagedVolume,jdbcType=FLOAT}, #{item.capacity,jdbcType=FLOAT}, #{item.portionSize,jdbcType=INTEGER}, 
-        #{item.factionId,jdbcType=INTEGER}, #{item.raceId,jdbcType=TINYINT}, #{item.basePrice,jdbcType=FLOAT}, 
+        #{item.factionId,jdbcType=INTEGER}, #{item.raceId,jdbcType=INTEGER}, #{item.basePrice,jdbcType=FLOAT}, 
         #{item.published,jdbcType=TINYINT}, #{item.marketGroupId,jdbcType=INTEGER}, #{item.graphicId,jdbcType=INTEGER}, 
         #{item.radius,jdbcType=FLOAT}, #{item.iconId,jdbcType=INTEGER}, #{item.soundId,jdbcType=INTEGER}, 
         #{item.sofFactionName,jdbcType=VARCHAR}, #{item.sofMaterialSetId,jdbcType=INTEGER}, 
@@ -330,6 +326,260 @@
         )
     </foreach>
   </insert>
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.InvTypes">
+    <!--@mbg.generated-->
+    insert into inv_types
+    (type_id, group_id, type_name, description, mass, volume, packaged_volume, capacity, 
+      portion_size, faction_id, race_id, base_price, published, market_group_id, graphic_id, 
+      radius, icon_id, sound_id, sof_faction_name, sof_material_set_id, meta_group_id, 
+      variationparent_type_id)
+    values
+    (#{typeId,jdbcType=INTEGER}, #{groupId,jdbcType=INTEGER}, #{typeName,jdbcType=VARCHAR}, 
+      #{description,jdbcType=LONGVARCHAR}, #{mass,jdbcType=FLOAT}, #{volume,jdbcType=FLOAT}, 
+      #{packagedVolume,jdbcType=FLOAT}, #{capacity,jdbcType=FLOAT}, #{portionSize,jdbcType=INTEGER}, 
+      #{factionId,jdbcType=INTEGER}, #{raceId,jdbcType=INTEGER}, #{basePrice,jdbcType=FLOAT}, 
+      #{published,jdbcType=TINYINT}, #{marketGroupId,jdbcType=INTEGER}, #{graphicId,jdbcType=INTEGER}, 
+      #{radius,jdbcType=FLOAT}, #{iconId,jdbcType=INTEGER}, #{soundId,jdbcType=INTEGER}, 
+      #{sofFactionName,jdbcType=VARCHAR}, #{sofMaterialSetId,jdbcType=INTEGER}, #{metaGroupId,jdbcType=INTEGER}, 
+      #{variationparentTypeId,jdbcType=INTEGER})
+    on duplicate key update 
+    type_id = #{typeId,jdbcType=INTEGER}, 
+    group_id = #{groupId,jdbcType=INTEGER}, 
+    type_name = #{typeName,jdbcType=VARCHAR}, 
+    description = #{description,jdbcType=LONGVARCHAR}, 
+    mass = #{mass,jdbcType=FLOAT}, 
+    volume = #{volume,jdbcType=FLOAT}, 
+    packaged_volume = #{packagedVolume,jdbcType=FLOAT}, 
+    capacity = #{capacity,jdbcType=FLOAT}, 
+    portion_size = #{portionSize,jdbcType=INTEGER}, 
+    faction_id = #{factionId,jdbcType=INTEGER}, 
+    race_id = #{raceId,jdbcType=INTEGER}, 
+    base_price = #{basePrice,jdbcType=FLOAT}, 
+    published = #{published,jdbcType=TINYINT}, 
+    market_group_id = #{marketGroupId,jdbcType=INTEGER}, 
+    graphic_id = #{graphicId,jdbcType=INTEGER}, 
+    radius = #{radius,jdbcType=FLOAT}, 
+    icon_id = #{iconId,jdbcType=INTEGER}, 
+    sound_id = #{soundId,jdbcType=INTEGER}, 
+    sof_faction_name = #{sofFactionName,jdbcType=VARCHAR}, 
+    sof_material_set_id = #{sofMaterialSetId,jdbcType=INTEGER}, 
+    meta_group_id = #{metaGroupId,jdbcType=INTEGER}, 
+    variationparent_type_id = #{variationparentTypeId,jdbcType=INTEGER}
+  </insert>
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.InvTypes">
+    <!--@mbg.generated-->
+    insert into inv_types
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="typeId != null">
+        type_id,
+      </if>
+      <if test="groupId != null">
+        group_id,
+      </if>
+      <if test="typeName != null">
+        type_name,
+      </if>
+      <if test="description != null">
+        description,
+      </if>
+      <if test="mass != null">
+        mass,
+      </if>
+      <if test="volume != null">
+        volume,
+      </if>
+      <if test="packagedVolume != null">
+        packaged_volume,
+      </if>
+      <if test="capacity != null">
+        capacity,
+      </if>
+      <if test="portionSize != null">
+        portion_size,
+      </if>
+      <if test="factionId != null">
+        faction_id,
+      </if>
+      <if test="raceId != null">
+        race_id,
+      </if>
+      <if test="basePrice != null">
+        base_price,
+      </if>
+      <if test="published != null">
+        published,
+      </if>
+      <if test="marketGroupId != null">
+        market_group_id,
+      </if>
+      <if test="graphicId != null">
+        graphic_id,
+      </if>
+      <if test="radius != null">
+        radius,
+      </if>
+      <if test="iconId != null">
+        icon_id,
+      </if>
+      <if test="soundId != null">
+        sound_id,
+      </if>
+      <if test="sofFactionName != null">
+        sof_faction_name,
+      </if>
+      <if test="sofMaterialSetId != null">
+        sof_material_set_id,
+      </if>
+      <if test="metaGroupId != null">
+        meta_group_id,
+      </if>
+      <if test="variationparentTypeId != null">
+        variationparent_type_id,
+      </if>
+    </trim>
+    values
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="typeId != null">
+        #{typeId,jdbcType=INTEGER},
+      </if>
+      <if test="groupId != null">
+        #{groupId,jdbcType=INTEGER},
+      </if>
+      <if test="typeName != null">
+        #{typeName,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null">
+        #{description,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="mass != null">
+        #{mass,jdbcType=FLOAT},
+      </if>
+      <if test="volume != null">
+        #{volume,jdbcType=FLOAT},
+      </if>
+      <if test="packagedVolume != null">
+        #{packagedVolume,jdbcType=FLOAT},
+      </if>
+      <if test="capacity != null">
+        #{capacity,jdbcType=FLOAT},
+      </if>
+      <if test="portionSize != null">
+        #{portionSize,jdbcType=INTEGER},
+      </if>
+      <if test="factionId != null">
+        #{factionId,jdbcType=INTEGER},
+      </if>
+      <if test="raceId != null">
+        #{raceId,jdbcType=INTEGER},
+      </if>
+      <if test="basePrice != null">
+        #{basePrice,jdbcType=FLOAT},
+      </if>
+      <if test="published != null">
+        #{published,jdbcType=TINYINT},
+      </if>
+      <if test="marketGroupId != null">
+        #{marketGroupId,jdbcType=INTEGER},
+      </if>
+      <if test="graphicId != null">
+        #{graphicId,jdbcType=INTEGER},
+      </if>
+      <if test="radius != null">
+        #{radius,jdbcType=FLOAT},
+      </if>
+      <if test="iconId != null">
+        #{iconId,jdbcType=INTEGER},
+      </if>
+      <if test="soundId != null">
+        #{soundId,jdbcType=INTEGER},
+      </if>
+      <if test="sofFactionName != null">
+        #{sofFactionName,jdbcType=VARCHAR},
+      </if>
+      <if test="sofMaterialSetId != null">
+        #{sofMaterialSetId,jdbcType=INTEGER},
+      </if>
+      <if test="metaGroupId != null">
+        #{metaGroupId,jdbcType=INTEGER},
+      </if>
+      <if test="variationparentTypeId != null">
+        #{variationparentTypeId,jdbcType=INTEGER},
+      </if>
+    </trim>
+    on duplicate key update 
+    <trim suffixOverrides=",">
+      <if test="typeId != null">
+        type_id = #{typeId,jdbcType=INTEGER},
+      </if>
+      <if test="groupId != null">
+        group_id = #{groupId,jdbcType=INTEGER},
+      </if>
+      <if test="typeName != null">
+        type_name = #{typeName,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null">
+        description = #{description,jdbcType=LONGVARCHAR},
+      </if>
+      <if test="mass != null">
+        mass = #{mass,jdbcType=FLOAT},
+      </if>
+      <if test="volume != null">
+        volume = #{volume,jdbcType=FLOAT},
+      </if>
+      <if test="packagedVolume != null">
+        packaged_volume = #{packagedVolume,jdbcType=FLOAT},
+      </if>
+      <if test="capacity != null">
+        capacity = #{capacity,jdbcType=FLOAT},
+      </if>
+      <if test="portionSize != null">
+        portion_size = #{portionSize,jdbcType=INTEGER},
+      </if>
+      <if test="factionId != null">
+        faction_id = #{factionId,jdbcType=INTEGER},
+      </if>
+      <if test="raceId != null">
+        race_id = #{raceId,jdbcType=INTEGER},
+      </if>
+      <if test="basePrice != null">
+        base_price = #{basePrice,jdbcType=FLOAT},
+      </if>
+      <if test="published != null">
+        published = #{published,jdbcType=TINYINT},
+      </if>
+      <if test="marketGroupId != null">
+        market_group_id = #{marketGroupId,jdbcType=INTEGER},
+      </if>
+      <if test="graphicId != null">
+        graphic_id = #{graphicId,jdbcType=INTEGER},
+      </if>
+      <if test="radius != null">
+        radius = #{radius,jdbcType=FLOAT},
+      </if>
+      <if test="iconId != null">
+        icon_id = #{iconId,jdbcType=INTEGER},
+      </if>
+      <if test="soundId != null">
+        sound_id = #{soundId,jdbcType=INTEGER},
+      </if>
+      <if test="sofFactionName != null">
+        sof_faction_name = #{sofFactionName,jdbcType=VARCHAR},
+      </if>
+      <if test="sofMaterialSetId != null">
+        sof_material_set_id = #{sofMaterialSetId,jdbcType=INTEGER},
+      </if>
+      <if test="metaGroupId != null">
+        meta_group_id = #{metaGroupId,jdbcType=INTEGER},
+      </if>
+      <if test="variationparentTypeId != null">
+        variationparent_type_id = #{variationparentTypeId,jdbcType=INTEGER},
+      </if>
+    </trim>
+  </insert>
+  <resultMap id="MarketTreeResultMap" type="xyz.foolcat.eve.evehelper.vo.InvTypesVO">
+    <result column="type_Id" jdbcType="INTEGER" property="typeId" />
+    <result column="type_name" jdbcType="VARCHAR" property="typeName" />
+  </resultMap>
   <select id="selcetByMarketGroupId" resultMap="MarketTreeResultMap">
     select type_id,type_name
     from inv_types

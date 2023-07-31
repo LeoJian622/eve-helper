@@ -22,9 +22,9 @@ import java.text.ParseException;
 @Tag(name ="角色")
 @RestController
 @Slf4j
-@RequestMapping("/charactor")
+@RequestMapping("/character")
 @RequiredArgsConstructor
-public class CharactorController {
+public class CharacterController {
 
     private final EsiApiService esiApiService;
 
@@ -33,7 +33,7 @@ public class CharactorController {
             @Parameter(name = "code", description = "授权code" ,required = true)
     })
     @PostMapping("/{type}/{code}")
-    public Result addCharactorAuth(@PathVariable String type, @PathVariable String code) throws ParseException {
+    public Result addCharacterAuth(@PathVariable String type, @PathVariable String code) throws ParseException {
         esiApiService.getAccessToken(type, code);
         return Result.success();
     }
