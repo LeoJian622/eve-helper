@@ -1,15 +1,11 @@
 package xyz.foolcat.eve.evehelper.strategy.esi.impl;
 
 import cn.hutool.json.JSONArray;
-import com.dtflys.forest.http.ForestResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.client.EsiCorporationClient;
-import xyz.foolcat.eve.evehelper.domain.system.Assets;
-import xyz.foolcat.eve.evehelper.domain.system.Blueprints;
-import xyz.foolcat.eve.evehelper.domain.system.MiningDetail;
-import xyz.foolcat.eve.evehelper.domain.system.Observer;
+import xyz.foolcat.eve.evehelper.domain.system.*;
 import xyz.foolcat.eve.evehelper.dto.esi.IndustryJobDTO;
 import xyz.foolcat.eve.evehelper.strategy.esi.EsiClientStrategy;
 
@@ -36,8 +32,13 @@ public class EsiCorporationApiService implements EsiClientStrategy {
     }
 
     @Override
-    public ForestResponse<List<Assets>> getAssetsList(String id, int page, String accessToken) {
+    public List<Asserts> getAssetsList(String id, int page, String accessToken) {
         return esiCorporationClient.getCorporationAssets(id,page, accessToken);
+    }
+
+    @Override
+    public List<WalletJournal> getWalletJournalList(String id, int page, String accessToken) {
+        return null;
     }
 
     @Override

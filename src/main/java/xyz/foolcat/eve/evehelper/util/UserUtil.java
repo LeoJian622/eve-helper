@@ -2,6 +2,7 @@ package xyz.foolcat.eve.evehelper.util;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import xyz.foolcat.eve.evehelper.domain.system.SysUser;
 
 /**
  * 用户信息工具包
@@ -14,7 +15,11 @@ public class UserUtil {
 
     public static Integer getUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return ((Long) authentication.getPrincipal()).intValue();
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof SysUser) {
+            return ((SysUser) principal).getId();
+        }
+        return ((Long) principal).intValue();
     }
 
 }

@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import xyz.foolcat.eve.evehelper.common.result.Result;
-import xyz.foolcat.eve.evehelper.service.system.AssetsService;
+import xyz.foolcat.eve.evehelper.service.system.AssertsService;
 import xyz.foolcat.eve.evehelper.vo.AssetsVO;
 
 /**
@@ -24,7 +24,7 @@ import xyz.foolcat.eve.evehelper.vo.AssetsVO;
 @RequiredArgsConstructor
 public class AssetsController {
 
-    private final AssetsService assetsService;
+    private final AssertsService assertsService;
 
     @Parameters({
             @Parameter(name = "type",description = "枚举值，角色：char; 军团：crop" ,required = true),
@@ -33,7 +33,7 @@ public class AssetsController {
     @Operation(summary = "游戏资产-资产读取")
     @GetMapping("/{type}/{cid}")
     public Result addAssertsList(@PathVariable String type, @PathVariable String cid) throws Throwable {
-        assetsService.saveAndUpdateAssets(type, cid);
+        assertsService.saveAndUpdateAsserts(type, cid);
         return Result.success();
     }
 
@@ -48,7 +48,7 @@ public class AssetsController {
         IPage<AssetsVO> page = new Page<>();
         page.setCurrent(current);
         page.setSize(size);
-        page = assetsService.getAssertsListById(page,cid);
+        page = assertsService.getAssertsListById(page,cid);
         return Result.success(page);
     }
 

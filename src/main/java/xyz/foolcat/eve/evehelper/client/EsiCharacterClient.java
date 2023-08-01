@@ -2,10 +2,9 @@ package xyz.foolcat.eve.evehelper.client;
 
 import cn.hutool.json.JSONArray;
 import com.dtflys.forest.annotation.*;
-import com.dtflys.forest.http.ForestResponse;
-import xyz.foolcat.eve.evehelper.domain.system.Assets;
+import xyz.foolcat.eve.evehelper.domain.system.Asserts;
 import xyz.foolcat.eve.evehelper.domain.system.Blueprints;
-import xyz.foolcat.eve.evehelper.domain.system.CharacterWalletJournal;
+import xyz.foolcat.eve.evehelper.domain.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.dto.esi.CharacterInfoResponseDTO;
 import xyz.foolcat.eve.evehelper.dto.esi.IndustryJobDTO;
 import xyz.foolcat.eve.evehelper.interceptor.EsiClentInterceptor;
@@ -58,7 +57,18 @@ public interface EsiCharacterClient {
      * @return
      */
     @Get(url = "/characters/{character_id}/assets/", dataType = "json")
-    ForestResponse<List<Assets>> getCharacterAssets(@Var("character_id") String characterId, @Query("page") int page, @Header("Authorization") String accessToken);
+    List<Asserts> getCharacterAssets(@Var("character_id") String characterId, @Query("page") int page, @Header("Authorization") String accessToken);
+
+    /**
+     * 获取角色钱包交易记录
+     *
+     * @param characterId
+     * @param page
+     * @param accessToken
+     * @return
+     */
+    @Get(url = "/characters/{character_id}/wallet/journal/", dataType = "json")
+    List<WalletJournal> getCharacterWalletJournal(@Var("character_id") String characterId, @Query("page") int page, @Header("Authorization") String accessToken);
 
     /**
      * 获取角色资产信息名称
@@ -82,14 +92,4 @@ public interface EsiCharacterClient {
     @Get(url = "/characters/{character_id}/blueprints/", dataType = "json")
     List<Blueprints> getCharacterBlueprints(@Var("character_id") String characterId, @Query("page") int page, @Header("Authorization") String accessToken);
 
-
-    /**
-     * 获取角色的交易记录
-     * @param characterId
-     * @param page
-     * @param accessToken
-     * @return
-     */
-    @Get(url = "/characters/{character_id}/wallet/journal/", dataType = "json")
-    List<CharacterWalletJournal> getCharacterWalletJournal(@Var("character_id") String characterId, @Query("page") int page, @Header("Authorization") String accessToken);
 }

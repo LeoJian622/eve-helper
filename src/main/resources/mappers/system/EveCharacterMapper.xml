@@ -12,11 +12,9 @@
     <result column="corp_name" jdbcType="VARCHAR" property="corpName" />
     <result column="alliance_id" jdbcType="INTEGER" property="allianceId" />
     <result column="alliance_name" jdbcType="VARCHAR" property="allianceName" />
-    <result column="roles" jdbcType="VARCHAR" property="roles" />
+    <result column="refresh_token" jdbcType="VARCHAR" property="refreshToken" />
     <result column="refresh_token_char" jdbcType="VARCHAR" property="refreshTokenChar" />
     <result column="refresh_token_crop" jdbcType="VARCHAR" property="refreshTokenCrop" />
-    <result column="refresh_token_skill" jdbcType="VARCHAR" property="refreshTokenSkill" />
-    <result column="refresh_token_normal" jdbcType="VARCHAR" property="refreshTokenNormal" />
     <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
     <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
     <result column="type" jdbcType="INTEGER" property="type" />
@@ -24,8 +22,8 @@
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
     id, user_id, character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, 
-    roles, refresh_token_char, refresh_token_crop, refresh_token_skill, refresh_token_normal, 
-    gmt_create, gmt_modified, `type`
+    refresh_token, refresh_token_char, refresh_token_crop, gmt_create, gmt_modified, 
+    `type`
   </sql>
   <update id="updateBatch" parameterType="java.util.List">
     <!--@mbg.generated-->
@@ -66,9 +64,9 @@
           when id = #{item.id,jdbcType=INTEGER} then #{item.allianceName,jdbcType=VARCHAR}
         </foreach>
       </trim>
-      <trim prefix="roles = case" suffix="end,">
+      <trim prefix="refresh_token = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=INTEGER} then #{item.roles,jdbcType=VARCHAR}
+          when id = #{item.id,jdbcType=INTEGER} then #{item.refreshToken,jdbcType=VARCHAR}
         </foreach>
       </trim>
       <trim prefix="refresh_token_char = case" suffix="end,">
@@ -79,16 +77,6 @@
       <trim prefix="refresh_token_crop = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
           when id = #{item.id,jdbcType=INTEGER} then #{item.refreshTokenCrop,jdbcType=VARCHAR}
-        </foreach>
-      </trim>
-      <trim prefix="refresh_token_skill = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=INTEGER} then #{item.refreshTokenSkill,jdbcType=VARCHAR}
-        </foreach>
-      </trim>
-      <trim prefix="refresh_token_normal = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=INTEGER} then #{item.refreshTokenNormal,jdbcType=VARCHAR}
         </foreach>
       </trim>
       <trim prefix="gmt_create = case" suffix="end,">
@@ -112,134 +100,18 @@
       #{item.id,jdbcType=INTEGER}
     </foreach>
   </update>
-  <update id="updateBatchSelective" parameterType="java.util.List">
-    <!--@mbg.generated-->
-    update eve_character
-    <trim prefix="set" suffixOverrides=",">
-      <trim prefix="user_id = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.userId != null">
-            when id = #{item.id,jdbcType=INTEGER} then #{item.userId,jdbcType=INTEGER}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="character_id = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.characterId != null">
-            when id = #{item.id,jdbcType=INTEGER} then #{item.characterId,jdbcType=INTEGER}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="character_name = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.characterName != null">
-            when id = #{item.id,jdbcType=INTEGER} then #{item.characterName,jdbcType=VARCHAR}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="corp_id = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.corpId != null">
-            when id = #{item.id,jdbcType=INTEGER} then #{item.corpId,jdbcType=INTEGER}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="corp_name = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.corpName != null">
-            when id = #{item.id,jdbcType=INTEGER} then #{item.corpName,jdbcType=VARCHAR}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="alliance_id = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.allianceId != null">
-            when id = #{item.id,jdbcType=INTEGER} then #{item.allianceId,jdbcType=INTEGER}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="alliance_name = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.allianceName != null">
-            when id = #{item.id,jdbcType=INTEGER} then #{item.allianceName,jdbcType=VARCHAR}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="roles = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.roles != null">
-            when id = #{item.id,jdbcType=INTEGER} then #{item.roles,jdbcType=VARCHAR}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="refresh_token_char = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.refreshTokenChar != null">
-            when id = #{item.id,jdbcType=INTEGER} then #{item.refreshTokenChar,jdbcType=VARCHAR}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="refresh_token_crop = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.refreshTokenCrop != null">
-            when id = #{item.id,jdbcType=INTEGER} then #{item.refreshTokenCrop,jdbcType=VARCHAR}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="refresh_token_skill = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.refreshTokenSkill != null">
-            when id = #{item.id,jdbcType=INTEGER} then #{item.refreshTokenSkill,jdbcType=VARCHAR}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="refresh_token_normal = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.refreshTokenNormal != null">
-            when id = #{item.id,jdbcType=INTEGER} then #{item.refreshTokenNormal,jdbcType=VARCHAR}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="gmt_create = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.gmtCreate != null">
-            when id = #{item.id,jdbcType=INTEGER} then #{item.gmtCreate,jdbcType=TIMESTAMP}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="gmt_modified = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.gmtModified != null">
-            when id = #{item.id,jdbcType=INTEGER} then #{item.gmtModified,jdbcType=TIMESTAMP}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="`type` = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.type != null">
-            when id = #{item.id,jdbcType=INTEGER} then #{item.type,jdbcType=INTEGER}
-          </if>
-        </foreach>
-      </trim>
-    </trim>
-    where id in
-    <foreach close=")" collection="list" item="item" open="(" separator=", ">
-      #{item.id,jdbcType=INTEGER}
-    </foreach>
-  </update>
   <insert id="batchInsert" keyColumn="id" keyProperty="id" parameterType="map" useGeneratedKeys="true">
     <!--@mbg.generated-->
     insert into eve_character
     (user_id, character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, 
-      roles, refresh_token_char, refresh_token_crop, refresh_token_skill, refresh_token_normal, 
-      gmt_create, gmt_modified, `type`)
+      refresh_token, refresh_token_char, refresh_token_crop, gmt_create, gmt_modified, 
+      `type`)
     values
     <foreach collection="list" item="item" separator=",">
       (#{item.userId,jdbcType=INTEGER}, #{item.characterId,jdbcType=INTEGER}, #{item.characterName,jdbcType=VARCHAR}, 
         #{item.corpId,jdbcType=INTEGER}, #{item.corpName,jdbcType=VARCHAR}, #{item.allianceId,jdbcType=INTEGER}, 
-        #{item.allianceName,jdbcType=VARCHAR}, #{item.roles,jdbcType=VARCHAR}, #{item.refreshTokenChar,jdbcType=VARCHAR}, 
-        #{item.refreshTokenCrop,jdbcType=VARCHAR}, #{item.refreshTokenSkill,jdbcType=VARCHAR}, 
-        #{item.refreshTokenNormal,jdbcType=VARCHAR}, #{item.gmtCreate,jdbcType=TIMESTAMP}, 
+        #{item.allianceName,jdbcType=VARCHAR}, #{item.refreshToken,jdbcType=VARCHAR}, #{item.refreshTokenChar,jdbcType=VARCHAR}, 
+        #{item.refreshTokenCrop,jdbcType=VARCHAR}, #{item.gmtCreate,jdbcType=TIMESTAMP}, 
         #{item.gmtModified,jdbcType=TIMESTAMP}, #{item.type,jdbcType=INTEGER})
     </foreach>
   </insert>
@@ -257,11 +129,9 @@
       corp_name,
       alliance_id,
       alliance_name,
-      roles,
+      refresh_token,
       refresh_token_char,
       refresh_token_crop,
-      refresh_token_skill,
-      refresh_token_normal,
       gmt_create,
       gmt_modified,
       `type`,
@@ -278,11 +148,9 @@
       #{corpName,jdbcType=VARCHAR},
       #{allianceId,jdbcType=INTEGER},
       #{allianceName,jdbcType=VARCHAR},
-      #{roles,jdbcType=VARCHAR},
+      #{refreshToken,jdbcType=VARCHAR},
       #{refreshTokenChar,jdbcType=VARCHAR},
       #{refreshTokenCrop,jdbcType=VARCHAR},
-      #{refreshTokenSkill,jdbcType=VARCHAR},
-      #{refreshTokenNormal,jdbcType=VARCHAR},
       #{gmtCreate,jdbcType=TIMESTAMP},
       #{gmtModified,jdbcType=TIMESTAMP},
       #{type,jdbcType=INTEGER},
@@ -299,11 +167,9 @@
       corp_name = #{corpName,jdbcType=VARCHAR},
       alliance_id = #{allianceId,jdbcType=INTEGER},
       alliance_name = #{allianceName,jdbcType=VARCHAR},
-      roles = #{roles,jdbcType=VARCHAR},
+      refresh_token = #{refreshToken,jdbcType=VARCHAR},
       refresh_token_char = #{refreshTokenChar,jdbcType=VARCHAR},
       refresh_token_crop = #{refreshTokenCrop,jdbcType=VARCHAR},
-      refresh_token_skill = #{refreshTokenSkill,jdbcType=VARCHAR},
-      refresh_token_normal = #{refreshTokenNormal,jdbcType=VARCHAR},
       gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
       gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
       `type` = #{type,jdbcType=INTEGER},
@@ -337,20 +203,14 @@
       <if test="allianceName != null">
         alliance_name,
       </if>
-      <if test="roles != null">
-        roles,
+      <if test="refreshToken != null">
+        refresh_token,
       </if>
       <if test="refreshTokenChar != null">
         refresh_token_char,
       </if>
       <if test="refreshTokenCrop != null">
         refresh_token_crop,
-      </if>
-      <if test="refreshTokenSkill != null">
-        refresh_token_skill,
-      </if>
-      <if test="refreshTokenNormal != null">
-        refresh_token_normal,
       </if>
       <if test="gmtCreate != null">
         gmt_create,
@@ -388,20 +248,14 @@
       <if test="allianceName != null">
         #{allianceName,jdbcType=VARCHAR},
       </if>
-      <if test="roles != null">
-        #{roles,jdbcType=VARCHAR},
+      <if test="refreshToken != null">
+        #{refreshToken,jdbcType=VARCHAR},
       </if>
       <if test="refreshTokenChar != null">
         #{refreshTokenChar,jdbcType=VARCHAR},
       </if>
       <if test="refreshTokenCrop != null">
         #{refreshTokenCrop,jdbcType=VARCHAR},
-      </if>
-      <if test="refreshTokenSkill != null">
-        #{refreshTokenSkill,jdbcType=VARCHAR},
-      </if>
-      <if test="refreshTokenNormal != null">
-        #{refreshTokenNormal,jdbcType=VARCHAR},
       </if>
       <if test="gmtCreate != null">
         #{gmtCreate,jdbcType=TIMESTAMP},
@@ -439,20 +293,14 @@
       <if test="allianceName != null">
         alliance_name = #{allianceName,jdbcType=VARCHAR},
       </if>
-      <if test="roles != null">
-        roles = #{roles,jdbcType=VARCHAR},
+      <if test="refreshToken != null">
+        refresh_token = #{refreshToken,jdbcType=VARCHAR},
       </if>
       <if test="refreshTokenChar != null">
         refresh_token_char = #{refreshTokenChar,jdbcType=VARCHAR},
       </if>
       <if test="refreshTokenCrop != null">
         refresh_token_crop = #{refreshTokenCrop,jdbcType=VARCHAR},
-      </if>
-      <if test="refreshTokenSkill != null">
-        refresh_token_skill = #{refreshTokenSkill,jdbcType=VARCHAR},
-      </if>
-      <if test="refreshTokenNormal != null">
-        refresh_token_normal = #{refreshTokenNormal,jdbcType=VARCHAR},
       </if>
       <if test="gmtCreate != null">
         gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},

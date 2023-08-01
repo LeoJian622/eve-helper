@@ -11,7 +11,7 @@ import java.io.Serializable;
 @Schema
 @Data
 @TableName(value = "assets")
-public class Assets implements Serializable {
+public class Asserts implements Serializable {
     /**
      * 物品ID
      */

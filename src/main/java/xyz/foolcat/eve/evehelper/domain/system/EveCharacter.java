@@ -5,10 +5,9 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-
 import java.io.Serializable;
 import java.util.Date;
+import lombok.Data;
 
 /**
  * 游戏角色表
@@ -70,15 +69,18 @@ public class EveCharacter implements Serializable {
     @Schema(description = "联盟名称")
     private String allianceName;
 
-    @TableField(value = "roles")
-    @Schema(description = "")
-    private String roles;
+    /**
+     * 角色授权
+     */
+    @TableField(value = "refresh_token")
+    @Schema(description = "角色授权")
+    private String refreshToken;
 
     /**
-     * 人物授权
+     * 个人授权
      */
     @TableField(value = "refresh_token_char")
-    @Schema(description = "人物授权")
+    @Schema(description = "个人授权")
     private String refreshTokenChar;
 
     /**
@@ -87,20 +89,6 @@ public class EveCharacter implements Serializable {
     @TableField(value = "refresh_token_crop")
     @Schema(description = "军团授权")
     private String refreshTokenCrop;
-
-    /**
-     * 技能列表授权
-     */
-    @TableField(value = "refresh_token_skill")
-    @Schema(description = "技能列表授权")
-    private String refreshTokenSkill;
-
-    /**
-     * 通用授权
-     */
-    @TableField(value = "refresh_token_normal")
-    @Schema(description = "通用授权")
-    private String refreshTokenNormal;
 
     @TableField(value = "gmt_create")
     @Schema(description = "")
@@ -135,15 +123,11 @@ public class EveCharacter implements Serializable {
 
     public static final String COL_ALLIANCE_NAME = "alliance_name";
 
-    public static final String COL_ROLES = "roles";
+    public static final String COL_REFRESH_TOKEN = "refresh_token";
 
     public static final String COL_REFRESH_TOKEN_CHAR = "refresh_token_char";
 
     public static final String COL_REFRESH_TOKEN_CROP = "refresh_token_crop";
-
-    public static final String COL_REFRESH_TOKEN_SKILL = "refresh_token_skill";
-
-    public static final String COL_REFRESH_TOKEN_NORMAL = "refresh_token_normal";
 
     public static final String COL_GMT_CREATE = "gmt_create";
 

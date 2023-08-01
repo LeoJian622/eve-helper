@@ -6,7 +6,6 @@ import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
-import com.dtflys.forest.http.ForestResponse;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
@@ -17,10 +16,7 @@ import xyz.foolcat.eve.evehelper.client.EsiNormalClient;
 import xyz.foolcat.eve.evehelper.client.constant.EsiConstant;
 import xyz.foolcat.eve.evehelper.common.constant.GlobalConstants;
 import xyz.foolcat.eve.evehelper.common.result.ResultCode;
-import xyz.foolcat.eve.evehelper.domain.system.Assets;
-import xyz.foolcat.eve.evehelper.domain.system.Blueprints;
-import xyz.foolcat.eve.evehelper.domain.system.EveCharacter;
-import xyz.foolcat.eve.evehelper.domain.system.MarketOrder;
+import xyz.foolcat.eve.evehelper.domain.system.*;
 import xyz.foolcat.eve.evehelper.dto.esi.AuthTokenResponseDTO;
 import xyz.foolcat.eve.evehelper.dto.esi.CharacterInfoResponseDTO;
 import xyz.foolcat.eve.evehelper.dto.esi.IndustryJobDTO;
@@ -85,7 +81,7 @@ public class EsiApiService {
             authTokenResponseDTO = esiNormalClient.addCharacterAuth(EsiConstant.GRANT_TYPE_AUTHORIZATION_CODE, code, EsiConstant.CLIENT_ID);
         } else {
             String refreshToken = null;
-            refreshToken = getAccesstokenByType(type, character);
+            refreshToken = character.getRefreshToken();
             authTokenResponseDTO = esiNormalClient.getAccessToken(EsiConstant.GRANT_TYPE_REFRESH_TOKEN, refreshToken, EsiConstant.CLIENT_ID, (ex, request, response) -> {
                 String content = response.getContent();
                 JSONObject result = JSONUtil.parseObj(content);
@@ -142,8 +138,7 @@ public class EsiApiService {
         eveCharacter.setCorpName(universeNameMap.get(characterInfoResponseDTO.getCorporation_id()));
         eveCharacter.setAllianceId(characterInfoResponseDTO.getAlliance_id());
         eveCharacter.setAllianceName(universeNameMap.get(characterInfoResponseDTO.getAlliance_id()));
-
-        setAccessTokenByType(type, characterRefreshToken, eveCharacter);
+        eveCharacter.setRefreshToken(characterRefreshToken);
 
         LambdaUpdateWrapper<EveCharacter> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
         lambdaUpdateWrapper.eq(EveCharacter::getCharacterId, eveCharacter.getCharacterId());
@@ -172,9 +167,22 @@ public class EsiApiService {
      * @return
      * @throws ParseException
      */
-    public ForestResponse<List<Assets>> getAssetsList(String type, int page, String id) throws ParseException {
+    public List<Asserts> getAssetsList(String type, int page, String id) throws ParseException {
         String accessToken = getAccessToken(type, id);
         return strategyContext.getResource(type).getAssetsList(id, page, accessToken);
+    }
+
+    /**
+     * 获取钱包记录
+     *
+     * @param type
+     * @param page
+     * @param cid
+     * @return
+     */
+    public List<WalletJournal> getWalletJournalList(String type, Integer page, String cid) throws ParseException {
+        String accessToken = getAccessToken(type, cid);
+        return strategyContext.getResource(type).getWalletJournalList(cid, page, accessToken);
     }
 
     /**
@@ -210,80 +218,18 @@ public class EsiApiService {
      * @param page
      * @return
      */
-    public List<MarketOrder> readMarketOrder(String regionId , Integer page, Integer typeId) {
+    public List<MarketOrder> readMarketOrder(String regionId, Integer page, Integer typeId) {
         return esiNormalClient.getMarketOrder(regionId, page, typeId);
     }
 
     /**
      * 获取Universe信息
+     *
      * @param items
      * @return
      */
-    public List getUniverseName(List items){
+    public List getUniverseName(List items) {
         return esiNormalClient.getUniverseName(items);
     }
-
-    /**
-     * 根据请求类型，进行token保存
-     *
-     * @param type
-     * @param characterRefreshToken
-     * @param eveCharacter
-     */
-    private void setAccessTokenByType(String type, String characterRefreshToken, EveCharacter eveCharacter) {
-        switch (type) {
-            case GlobalConstants.CHAR: {
-                eveCharacter.setRefreshTokenChar(characterRefreshToken);
-                break;
-            }
-            case GlobalConstants.CROP: {
-                eveCharacter.setRefreshTokenCrop(characterRefreshToken);
-                break;
-            }
-            case GlobalConstants.SKILL: {
-                eveCharacter.setRefreshTokenSkill(characterRefreshToken);
-                break;
-            }
-            case GlobalConstants.NORMAL: {
-                eveCharacter.setRefreshTokenNormal(characterRefreshToken);
-                break;
-            }
-            default:
-                throw new EsiException(ResultCode.COMMON_FAIL, "添加游戏角色失败");
-        }
-    }
-
-    /**
-     * 根据请求类型type 获取对应的refreshtoken
-     *
-     * @param type
-     * @param character
-     * @return
-     */
-    private String getAccesstokenByType(String type, EveCharacter character) {
-        String refreshToken;
-        switch (type) {
-            case GlobalConstants.CHAR: {
-                refreshToken = character.getRefreshTokenChar();
-                break;
-            }
-            case GlobalConstants.CROP: {
-                refreshToken = character.getRefreshTokenCrop();
-                break;
-            }
-            case GlobalConstants.SKILL: {
-                refreshToken = character.getRefreshTokenSkill();
-                break;
-            }
-            case GlobalConstants.NORMAL: {
-                refreshToken = character.getRefreshTokenNormal();
-                break;
-            }
-            default:
-                refreshToken = "";
-        }
-        return refreshToken;
-    }
-
 
 }

@@ -12,8 +12,6 @@ import xyz.foolcat.eve.evehelper.domain.system.EveCharacter;
 public interface EveCharacterMapper extends BaseMapper<EveCharacter> {
     int updateBatch(List<EveCharacter> list);
 
-    int updateBatchSelective(List<EveCharacter> list);
-
     int batchInsert(@Param("list") List<EveCharacter> list);
 
     int insertOrUpdate(EveCharacter record);

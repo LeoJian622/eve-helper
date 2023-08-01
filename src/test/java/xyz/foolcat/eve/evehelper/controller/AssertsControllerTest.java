@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets;
 @DisplayName("资产接口测试")
 @AutoConfigureMockMvc
 @WithUserDetails("admin")
-class AssetsControllerTest {
+class AssertsControllerTest {
 
     @Autowired
     MockMvc mockMvc;

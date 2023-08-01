@@ -1,19 +1,16 @@
 package xyz.foolcat.eve.evehelper.service.system;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.dtflys.forest.http.ForestResponse;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.domain.system.Assets;
-import xyz.foolcat.eve.evehelper.mapper.system.AssetsMapper;
+import xyz.foolcat.eve.evehelper.domain.system.WalletJournal;
+import xyz.foolcat.eve.evehelper.mapper.system.WalletJournalMapper;
 import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
-import xyz.foolcat.eve.evehelper.vo.AssetsVO;
 
 import javax.annotation.Resource;
-import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ForkJoinPool;
@@ -22,28 +19,36 @@ import java.util.concurrent.SubmissionPublisher;
 @Service
 @Slf4j
 @Transactional(rollbackFor = RuntimeException.class)
-public class AssetsService extends ServiceImpl<AssetsMapper, Assets> {
+public class WalletJournalService extends ServiceImpl<WalletJournalMapper, WalletJournal> {
 
     @Resource
     private EsiApiService esiApiService;
 
-    public int batchInsert(List<Assets> list) {
+    public int batchInsert(List<WalletJournal> list) {
         return baseMapper.batchInsert(list);
     }
 
+    public int insertOrUpdate(WalletJournal record) {
+        return baseMapper.insertOrUpdate(record);
+    }
+
+    public int insertOrUpdateSelective(WalletJournal record) {
+        return baseMapper.insertOrUpdateSelective(record);
+    }
+
     /**
-     * 与ESI资产数据进行同步并返回
+     * 与ESI钱包交易数据进行同步并返回
      *
      * @param type
-     * @param id
+     * @param cid
      * @return
-     * @throws ParseException
      */
-    public void saveAndUpdateAssets(String type, String id) throws Throwable {
+    public void saveAndUpdateWalletJournal(String type, String cid) {
 
-        ForkJoinPool forkJoinPool = new ForkJoinPool(4);
+        List<WalletJournal> walletJournals = new ArrayList<>();
 
-        SubmissionPublisher<Integer> submissionPublisher = new SubmissionPublisher<>(forkJoinPool, 4);
+
+        SubmissionPublisher<Integer> submissionPublisher = new SubmissionPublisher<>(new ForkJoinPool(4), 4);
         Flow.Subscriber<Integer> subscriber = new Flow.Subscriber<>() {
 
             private Flow.Subscription subscription;
@@ -60,14 +65,12 @@ public class AssetsService extends ServiceImpl<AssetsMapper, Assets> {
             public void onNext(Integer item) {
                 log.info("处理页数：" + item);
                 //请求数据
-                ForestResponse<List<Assets>> forestResponse = null;
-                forestResponse = esiApiService.getAssetsList(type, item, id);
-                List<Assets> assetsList1 = forestResponse.getResult();
-                Long ownId = Long.valueOf(id);
-                assetsList1.forEach(assets -> {
+                List<WalletJournal> walletJournalPageList = esiApiService.getWalletJournalList(type, item, cid);
+                Long ownId = Long.valueOf(cid);
+                walletJournalPageList.forEach(assets -> {
                     assets.setOwnerId(ownId);
                 });
-                saveOrUpdateBatch(assetsList1);
+                walletJournals.addAll(walletJournalPageList);
                 log.info("进行下一条处理");
                 this.subscription.request(1);
             }
@@ -75,6 +78,7 @@ public class AssetsService extends ServiceImpl<AssetsMapper, Assets> {
             @Override
             public void onError(Throwable throwable) {
                 log.info("取消订阅");
+                log.error("错误信息：" + throwable.getMessage());
                 this.subscription.cancel();
             }
 
@@ -87,44 +91,12 @@ public class AssetsService extends ServiceImpl<AssetsMapper, Assets> {
 
         int i = 1;
         do {
-            try {
-            log.info("发送消息" + i);
             submissionPublisher.submit(i++);
-            }catch (Exception e){
-                log.info("订阅者取消订阅");
-            }
-
         } while (submissionPublisher.isSubscribed(subscriber));
 
         submissionPublisher.close();
 
-    }
-
-    /**
-     * 获取资产列表
-     *
-     * @param id
-     * @return
-     */
-    public IPage<AssetsVO> getAssertsListById(IPage<AssetsVO> page, String id) {
-        return baseMapper.selectAssetsInvtypeUniverse(page, id);
-    }
-
-    public int updateBatch(List<Assets> list) {
-        return baseMapper.updateBatch(list);
-    }
-
-    public int updateBatchSelective(List<Assets> list) {
-        return baseMapper.updateBatchSelective(list);
-    }
-
-    public int insertOrUpdate(Assets record) {
-        return baseMapper.insertOrUpdate(record);
-    }
-
-    public int insertOrUpdateSelective(Assets record) {
-        return baseMapper.insertOrUpdateSelective(record);
+        saveBatch(walletJournals);
     }
 }
-
 

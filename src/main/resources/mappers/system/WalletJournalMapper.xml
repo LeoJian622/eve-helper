@@ -1,71 +1,74 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.CharacterWalletJournalMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.CharacterWalletJournal">
+<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.WalletJournalMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.WalletJournal">
     <!--@mbg.generated-->
-    <!--@Table character_wallet_journal-->
-    <result column="id" jdbcType="INTEGER" property="id" />
+    <!--@Table wallet_journal-->
+    <result column="id" jdbcType="BIGINT" property="id" />
     <result column="amount" jdbcType="DOUBLE" property="amount" />
     <result column="balance" jdbcType="DOUBLE" property="balance" />
-    <result column="context_id" jdbcType="INTEGER" property="contextId" />
-    <result column="context_id_type" jdbcType="INTEGER" property="contextIdType" />
+    <result column="context_id" jdbcType="BIGINT" property="contextId" />
+    <result column="context_id_type" jdbcType="VARCHAR" property="contextIdType" />
     <result column="date" jdbcType="TIMESTAMP" property="date" />
     <result column="description" jdbcType="LONGVARCHAR" property="description" />
     <result column="first_party_id" jdbcType="INTEGER" property="firstPartyId" />
     <result column="reason" jdbcType="LONGVARCHAR" property="reason" />
     <result column="ref_type" jdbcType="LONGVARCHAR" property="refType" />
     <result column="second_party_id" jdbcType="INTEGER" property="secondPartyId" />
-    <result column="tax" jdbcType="INTEGER" property="tax" />
+    <result column="tax" jdbcType="DOUBLE" property="tax" />
     <result column="tax_receiver_id" jdbcType="INTEGER" property="taxReceiverId" />
+    <result column="owner_id" jdbcType="BIGINT" property="ownerId" />
   </resultMap>
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
     id, amount, balance, context_id, context_id_type, `date`, description, first_party_id, 
-    reason, ref_type, second_party_id, tax, tax_receiver_id
+    reason, ref_type, second_party_id, tax, tax_receiver_id, owner_id
   </sql>
   <insert id="batchInsert" parameterType="map">
     <!--@mbg.generated-->
-    insert into character_wallet_journal
+    insert into wallet_journal
     (id, amount, balance, context_id, context_id_type, `date`, description, first_party_id, 
-      reason, ref_type, second_party_id, tax, tax_receiver_id)
+      reason, ref_type, second_party_id, tax, tax_receiver_id, owner_id)
     values
     <foreach collection="list" item="item" separator=",">
-      (#{item.id,jdbcType=INTEGER}, #{item.amount,jdbcType=DOUBLE}, #{item.balance,jdbcType=DOUBLE}, 
-        #{item.contextId,jdbcType=INTEGER}, #{item.contextIdType,jdbcType=INTEGER}, #{item.date,jdbcType=TIMESTAMP}, 
+      (#{item.id,jdbcType=BIGINT}, #{item.amount,jdbcType=DOUBLE}, #{item.balance,jdbcType=DOUBLE}, 
+        #{item.contextId,jdbcType=BIGINT}, #{item.contextIdType,jdbcType=VARCHAR}, #{item.date,jdbcType=TIMESTAMP}, 
         #{item.description,jdbcType=LONGVARCHAR}, #{item.firstPartyId,jdbcType=INTEGER}, 
         #{item.reason,jdbcType=LONGVARCHAR}, #{item.refType,jdbcType=LONGVARCHAR}, #{item.secondPartyId,jdbcType=INTEGER}, 
-        #{item.tax,jdbcType=INTEGER}, #{item.taxReceiverId,jdbcType=INTEGER})
+        #{item.tax,jdbcType=DOUBLE}, #{item.taxReceiverId,jdbcType=INTEGER}, #{item.ownerId,jdbcType=BIGINT}
+        )
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.CharacterWalletJournal">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.WalletJournal">
     <!--@mbg.generated-->
-    insert into character_wallet_journal
+    insert into wallet_journal
     (id, amount, balance, context_id, context_id_type, `date`, description, first_party_id, 
-      reason, ref_type, second_party_id, tax, tax_receiver_id)
+      reason, ref_type, second_party_id, tax, tax_receiver_id, owner_id)
     values
-    (#{id,jdbcType=INTEGER}, #{amount,jdbcType=DOUBLE}, #{balance,jdbcType=DOUBLE}, #{contextId,jdbcType=INTEGER}, 
-      #{contextIdType,jdbcType=INTEGER}, #{date,jdbcType=TIMESTAMP}, #{description,jdbcType=LONGVARCHAR}, 
+    (#{id,jdbcType=BIGINT}, #{amount,jdbcType=DOUBLE}, #{balance,jdbcType=DOUBLE}, #{contextId,jdbcType=BIGINT}, 
+      #{contextIdType,jdbcType=VARCHAR}, #{date,jdbcType=TIMESTAMP}, #{description,jdbcType=LONGVARCHAR}, 
       #{firstPartyId,jdbcType=INTEGER}, #{reason,jdbcType=LONGVARCHAR}, #{refType,jdbcType=LONGVARCHAR}, 
-      #{secondPartyId,jdbcType=INTEGER}, #{tax,jdbcType=INTEGER}, #{taxReceiverId,jdbcType=INTEGER}
-      )
+      #{secondPartyId,jdbcType=INTEGER}, #{tax,jdbcType=DOUBLE}, #{taxReceiverId,jdbcType=INTEGER}, 
+      #{ownerId,jdbcType=BIGINT})
     on duplicate key update 
-    id = #{id,jdbcType=INTEGER}, 
+    id = #{id,jdbcType=BIGINT}, 
     amount = #{amount,jdbcType=DOUBLE}, 
     balance = #{balance,jdbcType=DOUBLE}, 
-    context_id = #{contextId,jdbcType=INTEGER}, 
-    context_id_type = #{contextIdType,jdbcType=INTEGER}, 
+    context_id = #{contextId,jdbcType=BIGINT}, 
+    context_id_type = #{contextIdType,jdbcType=VARCHAR}, 
     `date` = #{date,jdbcType=TIMESTAMP}, 
     description = #{description,jdbcType=LONGVARCHAR}, 
     first_party_id = #{firstPartyId,jdbcType=INTEGER}, 
     reason = #{reason,jdbcType=LONGVARCHAR}, 
     ref_type = #{refType,jdbcType=LONGVARCHAR}, 
     second_party_id = #{secondPartyId,jdbcType=INTEGER}, 
-    tax = #{tax,jdbcType=INTEGER}, 
-    tax_receiver_id = #{taxReceiverId,jdbcType=INTEGER}
+    tax = #{tax,jdbcType=DOUBLE}, 
+    tax_receiver_id = #{taxReceiverId,jdbcType=INTEGER}, 
+    owner_id = #{ownerId,jdbcType=BIGINT}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.CharacterWalletJournal">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.WalletJournal">
     <!--@mbg.generated-->
-    insert into character_wallet_journal
+    insert into wallet_journal
     <trim prefix="(" suffix=")" suffixOverrides=",">
       <if test="id != null">
         id,
@@ -106,11 +109,14 @@
       <if test="taxReceiverId != null">
         tax_receiver_id,
       </if>
+      <if test="ownerId != null">
+        owner_id,
+      </if>
     </trim>
     values
     <trim prefix="(" suffix=")" suffixOverrides=",">
       <if test="id != null">
-        #{id,jdbcType=INTEGER},
+        #{id,jdbcType=BIGINT},
       </if>
       <if test="amount != null">
         #{amount,jdbcType=DOUBLE},
@@ -119,10 +125,10 @@
         #{balance,jdbcType=DOUBLE},
       </if>
       <if test="contextId != null">
-        #{contextId,jdbcType=INTEGER},
+        #{contextId,jdbcType=BIGINT},
       </if>
       <if test="contextIdType != null">
-        #{contextIdType,jdbcType=INTEGER},
+        #{contextIdType,jdbcType=VARCHAR},
       </if>
       <if test="date != null">
         #{date,jdbcType=TIMESTAMP},
@@ -143,16 +149,19 @@
         #{secondPartyId,jdbcType=INTEGER},
       </if>
       <if test="tax != null">
-        #{tax,jdbcType=INTEGER},
+        #{tax,jdbcType=DOUBLE},
       </if>
       <if test="taxReceiverId != null">
         #{taxReceiverId,jdbcType=INTEGER},
+      </if>
+      <if test="ownerId != null">
+        #{ownerId,jdbcType=BIGINT},
       </if>
     </trim>
     on duplicate key update 
     <trim suffixOverrides=",">
       <if test="id != null">
-        id = #{id,jdbcType=INTEGER},
+        id = #{id,jdbcType=BIGINT},
       </if>
       <if test="amount != null">
         amount = #{amount,jdbcType=DOUBLE},
@@ -161,10 +170,10 @@
         balance = #{balance,jdbcType=DOUBLE},
       </if>
       <if test="contextId != null">
-        context_id = #{contextId,jdbcType=INTEGER},
+        context_id = #{contextId,jdbcType=BIGINT},
       </if>
       <if test="contextIdType != null">
-        context_id_type = #{contextIdType,jdbcType=INTEGER},
+        context_id_type = #{contextIdType,jdbcType=VARCHAR},
       </if>
       <if test="date != null">
         `date` = #{date,jdbcType=TIMESTAMP},
@@ -185,10 +194,13 @@
         second_party_id = #{secondPartyId,jdbcType=INTEGER},
       </if>
       <if test="tax != null">
-        tax = #{tax,jdbcType=INTEGER},
+        tax = #{tax,jdbcType=DOUBLE},
       </if>
       <if test="taxReceiverId != null">
         tax_receiver_id = #{taxReceiverId,jdbcType=INTEGER},
+      </if>
+      <if test="ownerId != null">
+        owner_id = #{ownerId,jdbcType=BIGINT},
       </if>
     </trim>
   </insert>

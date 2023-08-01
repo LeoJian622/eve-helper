@@ -1,43 +1,37 @@
 package xyz.foolcat.eve.evehelper.domain.system;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-
 import java.io.Serializable;
 import java.util.Date;
+import lombok.Data;
 
 @Schema
 @Data
-@TableName(value = "corporation_wallet_journal")
-public class CorporationWalletJournal implements Serializable {
-    @TableId(value = "id")
+@TableName(value = "wallet_journal")
+public class WalletJournal implements Serializable {
+    @TableField(value = "id")
     @Schema(description = "")
-    private Integer id;
+    private Long id;
 
-    /**
-     * 金额
-     */
     @TableField(value = "amount")
-    @Schema(description = "金额")
+    @Schema(description = "")
     private Double amount;
 
-    /**
-     * 余额
-     */
     @TableField(value = "balance")
-    @Schema(description = "余额")
+    @Schema(description = "")
     private Double balance;
 
     @TableField(value = "context_id")
     @Schema(description = "")
-    private Integer contextId;
+    private Long contextId;
 
     @TableField(value = "context_id_type")
     @Schema(description = "")
-    private Integer contextIdType;
+    private String contextIdType;
 
     @TableField(value = "`date`")
     @Schema(description = "")
@@ -55,11 +49,8 @@ public class CorporationWalletJournal implements Serializable {
     @Schema(description = "")
     private String reason;
 
-    /**
-     * 交易类型
-     */
     @TableField(value = "ref_type")
-    @Schema(description = "交易类型")
+    @Schema(description = "")
     private String refType;
 
     @TableField(value = "second_party_id")
@@ -68,11 +59,15 @@ public class CorporationWalletJournal implements Serializable {
 
     @TableField(value = "tax")
     @Schema(description = "")
-    private Integer tax;
+    private Double tax;
 
     @TableField(value = "tax_receiver_id")
     @Schema(description = "")
     private Integer taxReceiverId;
+
+    @TableField(value = "owner_id")
+    @Schema(description = "")
+    private Long ownerId;
 
     private static final long serialVersionUID = 1L;
 
@@ -101,4 +96,6 @@ public class CorporationWalletJournal implements Serializable {
     public static final String COL_TAX = "tax";
 
     public static final String COL_TAX_RECEIVER_ID = "tax_receiver_id";
+
+    public static final String COL_OWNER_ID = "owner_id";
 }
