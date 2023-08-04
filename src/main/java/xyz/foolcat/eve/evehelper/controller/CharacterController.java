@@ -34,7 +34,7 @@ public class CharacterController {
     })
     @PostMapping("/{type}/{code}")
     public Result addCharacterAuth(@PathVariable String type, @PathVariable String code) throws ParseException {
-        esiApiService.getAccessToken(type, code);
+        esiApiService.getAccessToken(code);
         return Result.success();
     }
 }

@@ -1,8 +1,6 @@
-package xyz.foolcat.eve.evehelper.client;
+package xyz.foolcat.eve.evehelper.esiclient;
 
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class EsiJobClientTest {
 

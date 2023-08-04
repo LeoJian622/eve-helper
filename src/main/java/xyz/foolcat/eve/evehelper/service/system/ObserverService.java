@@ -37,7 +37,7 @@ public class ObserverService extends ServiceImpl<ObserverMapper, Observer> {
     }
 
     public void saveObserverFromEsi(Long corporationId) throws ParseException {
-        String accessToken = esiApiService.getAccessToken(GlobalConstants.CROP, corporationId.toString());
+        String accessToken = esiApiService.getAccessToken(corporationId.toString());
         List<Observer> observerList = new ArrayList<>();
         int i = 1;
         while (true) {

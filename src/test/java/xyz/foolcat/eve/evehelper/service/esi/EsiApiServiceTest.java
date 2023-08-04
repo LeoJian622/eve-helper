@@ -24,7 +24,7 @@ class EsiApiServiceTest {
 //        esiChApiService.getAccessToken("char","61BJRObV/ku0XlWb1xzJ9g==");
 //        esiChApiService.getAccessToken("char","2112832425");
 //        https://esi.evepc.163.com/ui/oauth2-redirect.html?code=30tZ00ssVkGDthezjQo7lA&state=T
-        esiApiService.getAccessToken("","30tZ00ssVkGDthezjQo7lA");
+        esiApiService.getAccessToken("30tZ00ssVkGDthezjQo7lA");
     }
 
     @Test

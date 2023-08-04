@@ -15,7 +15,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.common.constant.SecurityConstant;
-import xyz.foolcat.eve.evehelper.config.security.JwtTokenConfig;
+import xyz.foolcat.eve.evehelper.config.security.JwtTokenProperties;
 import xyz.foolcat.eve.evehelper.config.security.KeyStoreKeyFactory;
 import xyz.foolcat.eve.evehelper.domain.system.SysUser;
 import xyz.foolcat.eve.evehelper.util.ResponseUtils;
@@ -44,7 +44,7 @@ public class AuthenticationSuccessServletHandler implements AuthenticationSucces
 
     private final KeyPair keyPair;
 
-    private final JwtTokenConfig jwtTokenConfig;
+    private final JwtTokenProperties jwtTokenProperties;
 
     @SneakyThrows
     @Override
@@ -52,14 +52,14 @@ public class AuthenticationSuccessServletHandler implements AuthenticationSucces
         SysUser sysUser = (SysUser) authentication.getPrincipal();
 
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-                .subject(jwtTokenConfig.getSubject())
-                .issuer(jwtTokenConfig.getIssuer())
+                .subject(jwtTokenProperties.getSubject())
+                .issuer(jwtTokenProperties.getIssuer())
                 .jwtID(UUID.randomUUID().toString())
                 .claim(SecurityConstant.USER_ID_KEY, sysUser.getId())
                 .claim(SecurityConstant.USER_NAME_KEY, sysUser.getUsername())
                 .claim(SecurityConstant.JWT_AUTHORITIES_KEY, sysUser.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
 //                .claim("esi-authorise", Arrays.asList("qwe", "asd", "zxc"))
-                .expirationTime(new Date(System.currentTimeMillis() + jwtTokenConfig.getExpirationTime() * 1000))
+                .expirationTime(new Date(System.currentTimeMillis() + jwtTokenProperties.getExpirationTime() * 1000))
                 .build();
 
         SignedJWT signedJwt = new SignedJWT(

@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.client;
+package xyz.foolcat.eve.evehelper.esiclient;
 
 import cn.hutool.json.JSONArray;
 import com.dtflys.forest.annotation.*;

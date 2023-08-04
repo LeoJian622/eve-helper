@@ -1,9 +1,9 @@
-package xyz.foolcat.eve.evehelper.client;
+package xyz.foolcat.eve.evehelper.esiclient;
 
 import com.dtflys.forest.annotation.*;
 import com.dtflys.forest.callback.OnError;
 import xyz.foolcat.eve.evehelper.domain.system.MarketOrder;
-import xyz.foolcat.eve.evehelper.dto.esi.AuthTokenResponseDTO;
+import xyz.foolcat.eve.evehelper.esiclient.Model.AuthTokenResponse;
 import xyz.foolcat.eve.evehelper.dto.esi.CharacterInfoResponseDTO;
 import xyz.foolcat.eve.evehelper.dto.esi.UniverseNameResponeDTO;
 import xyz.foolcat.eve.evehelper.interceptor.EsiClentInterceptor;
@@ -42,7 +42,7 @@ public interface EsiNormalClient {
                     "Host: login.evepc.163.com",
             }
     )
-    AuthTokenResponseDTO addCharacterAuth(@Body("grant_type") String grantType, @Body("code") String code, @Body("client_id") String clientId);
+    AuthTokenResponse addCharacterAuth(@Body("grant_type") String grantType, @Body("code") String code, @Body("client_id") String clientId);
 
     /**
      * refresh_token认证
@@ -58,7 +58,7 @@ public interface EsiNormalClient {
                     "Host: login.evepc.163.com"
             }
     )
-    AuthTokenResponseDTO getAccessToken(@Body("grant_type") String grantType, @Body("refresh_token") String refreshToken, @Body("client_id") String clientId, OnError onError);
+    AuthTokenResponse getAccessToken(@Body("grant_type") String grantType, @Body("refresh_token") String refreshToken, @Body("client_id") String clientId, OnError onError);
 
 
     /**

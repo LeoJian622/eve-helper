@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
 @Data
 @Configuration
 @ConfigurationProperties(prefix = "jwt-token")
-public class JwtTokenConfig {
+public class JwtTokenProperties {
 
     private String subject;
 
