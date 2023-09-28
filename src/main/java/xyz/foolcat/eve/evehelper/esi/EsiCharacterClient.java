@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.esiclient;
+package xyz.foolcat.eve.evehelper.esi;
 
 import cn.hutool.json.JSONArray;
 import com.dtflys.forest.annotation.*;
@@ -27,6 +27,7 @@ import java.util.List;
         },
         interceptor = EsiClentInterceptor.class
 )
+@Deprecated
 public interface EsiCharacterClient {
 
     /**

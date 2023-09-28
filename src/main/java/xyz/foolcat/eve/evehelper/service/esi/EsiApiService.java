@@ -16,11 +16,11 @@ import xyz.foolcat.eve.evehelper.domain.system.*;
 import xyz.foolcat.eve.evehelper.dto.esi.CharacterInfoResponseDTO;
 import xyz.foolcat.eve.evehelper.dto.esi.IndustryJobDTO;
 import xyz.foolcat.eve.evehelper.dto.esi.UniverseNameResponeDTO;
-import xyz.foolcat.eve.evehelper.esiclient.EsiNormalClient;
-import xyz.foolcat.eve.evehelper.esiclient.Model.AuthTokenResponse;
-import xyz.foolcat.eve.evehelper.esiclient.auth.AuthorizeOAuth;
-import xyz.foolcat.eve.evehelper.esiclient.auth.GrantType;
-import xyz.foolcat.eve.evehelper.service.system.EveCharacterService;
+import xyz.foolcat.eve.evehelper.esi.EsiNormalClient;
+import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
+import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
+import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
+import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.strategy.esi.EsiClientStrategyContext;
 import xyz.foolcat.eve.evehelper.util.UserUtil;
 
@@ -49,7 +49,7 @@ public class EsiApiService {
 
     private final RedisTemplate redisTemplate;
 
-    private final EveCharacterService eveCharacterService;
+    private final EveAccountService eveAccountService;
 
     private final AuthorizeOAuth authorizeOAuth;
 
@@ -75,7 +75,7 @@ public class EsiApiService {
             return accessToken;
         }
 
-        EveCharacter character = eveCharacterService.lambdaQuery().eq(EveCharacter::getCharacterId, code).eq(EveCharacter::getUserId, UserUtil.getUserId()).one();
+        EveAccount character = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, code).eq(EveAccount::getUserId, UserUtil.getUserId()).one();
 
         GrantType grantType = GrantType.AUTHORIZATION_CODE;
         if (ObjectUtil.isNull(character)) {
@@ -85,7 +85,7 @@ public class EsiApiService {
 
         AuthTokenResponse authToken = authorizeOAuth.updateAccessToken(grantType, code).block();
         assert authToken != null;
-        accessToken = authToken.getAccess_token();
+        accessToken = authToken.getAccessToken();
         updateRefreshToken(authToken);
 
         return GlobalConstants.TOKEN_PERN + accessToken;
@@ -102,8 +102,8 @@ public class EsiApiService {
     @SneakyThrows
     private void updateRefreshToken(AuthTokenResponse authTokenResponse) {
         //获取refresh_token
-        String characterRefreshToken = authTokenResponse.getRefresh_token();
-        String accessToken = authTokenResponse.getAccess_token();
+        String characterRefreshToken = authTokenResponse.getRefreshToken();
+        String accessToken = authTokenResponse.getAccessToken();
         //解析token
         SignedJWT signedJwt = SignedJWT.parse(accessToken);
         JWTClaimsSet jwtClaimsSet = signedJwt.getJWTClaimsSet();
@@ -119,20 +119,20 @@ public class EsiApiService {
         String redisKey = GlobalConstants.ESI_ACCESS_TOKEN_KEY + characterId;
         redisTemplate.opsForValue().set(redisKey, GlobalConstants.TOKEN_PERN + accessToken, 19 * 60, TimeUnit.SECONDS);
 
-        EveCharacter eveCharacter = new EveCharacter();
-        eveCharacter.setUserId(UserUtil.getUserId());
-        eveCharacter.setCharacterId(Integer.valueOf(characterId));
-        eveCharacter.setCharacterName(characterName);
-        eveCharacter.setCorpId(characterInfoResponseDTO.getCorporation_id());
-        eveCharacter.setCorpName(universeNameMap.get(characterInfoResponseDTO.getCorporation_id()));
-        eveCharacter.setAllianceId(characterInfoResponseDTO.getAlliance_id());
-        eveCharacter.setAllianceName(universeNameMap.get(characterInfoResponseDTO.getAlliance_id()));
-        eveCharacter.setRefreshToken(characterRefreshToken);
+        EveAccount eveAccount = new EveAccount();
+        eveAccount.setUserId(UserUtil.getUserId());
+        eveAccount.setCharacterId(Integer.valueOf(characterId));
+        eveAccount.setCharacterName(characterName);
+        eveAccount.setCorpId(characterInfoResponseDTO.getCorporation_id());
+        eveAccount.setCorpName(universeNameMap.get(characterInfoResponseDTO.getCorporation_id()));
+        eveAccount.setAllianceId(characterInfoResponseDTO.getAlliance_id());
+        eveAccount.setAllianceName(universeNameMap.get(characterInfoResponseDTO.getAlliance_id()));
+        eveAccount.setRefreshToken(characterRefreshToken);
 
-        LambdaUpdateWrapper<EveCharacter> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
-        lambdaUpdateWrapper.eq(EveCharacter::getCharacterId, eveCharacter.getCharacterId());
+        LambdaUpdateWrapper<EveAccount> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
+        lambdaUpdateWrapper.eq(EveAccount::getCharacterId, eveAccount.getCharacterId());
 
-        eveCharacterService.saveOrUpdate(eveCharacter, lambdaUpdateWrapper);
+        eveAccountService.saveOrUpdate(eveAccount, lambdaUpdateWrapper);
     }
 
     /**

@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.esiclient;
+package xyz.foolcat.eve.evehelper.esi;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -22,9 +22,12 @@ public class EsiClientProperties {
 
     private String host = "login.evepc.163.com";
 
-    private String authUrl = "https://login.evepc.163.com/v2/oauth/token";
+    private String authUrl = "https://login.evepc.163.com/v2/oauth";
 
     private String basePath = "https://esi.evepc.163.com/latest";
 
-    private String callBackUrl = "";
+    private String callBackUrl = "https://esi.evepc.163.com/ui/oauth2-redirect.html";
+
+    private String datasource = "serenity";
+
 }

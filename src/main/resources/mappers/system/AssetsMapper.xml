@@ -279,7 +279,7 @@
         from assets as ass
                  left join inv_types it on ass.type_id = it.type_id
                  left join universe_name uni on ass.location_id = uni.id
-                 left join eve_character ec on ass.owner_id = ec.character_id
+                 left join eve_account ec on ass.owner_id = ec.character_id
         where owner_id = #{id}
     </select>
 </mapper>

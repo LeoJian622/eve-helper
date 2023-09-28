@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.esiclient;
+package xyz.foolcat.eve.evehelper.esi;
 
 import org.junit.jupiter.api.Test;
 

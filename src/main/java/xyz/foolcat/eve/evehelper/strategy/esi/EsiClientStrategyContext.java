@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@Deprecated
 public class EsiClientStrategyContext {
 
     @Resource

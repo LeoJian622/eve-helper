@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.esiclient.auth;
+package xyz.foolcat.eve.evehelper.esi.auth;
 
 import java.util.*;
 

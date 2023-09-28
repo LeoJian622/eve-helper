@@ -1,8 +1,9 @@
-package xyz.foolcat.eve.evehelper.esiclient;
+package xyz.foolcat.eve.evehelper.esi;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.client.WebClient;
 
 /**
@@ -22,6 +23,7 @@ public class EsiClient {
      WebClient authClient() {
         return WebClient.builder().clone().baseUrl(esiClientProperties.getAuthUrl())
                 .defaultHeader("Host", esiClientProperties.getHost())
+                .defaultHeader("Content-Type", MediaType.APPLICATION_FORM_URLENCODED_VALUE)
                 .build();
     }
 

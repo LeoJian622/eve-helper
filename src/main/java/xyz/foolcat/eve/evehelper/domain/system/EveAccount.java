@@ -5,17 +5,18 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
 import java.io.Serializable;
 import java.util.Date;
-import lombok.Data;
 
 /**
  * 游戏角色表
  */
-@Schema(description = "游戏角色表")
+@Schema(description = "游戏账户表")
 @Data
-@TableName(value = "eve_character")
-public class EveCharacter implements Serializable {
+@TableName(value = "eve_account")
+public class EveAccount implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     @Schema(description = "")
     private Integer id;
@@ -75,20 +76,6 @@ public class EveCharacter implements Serializable {
     @TableField(value = "refresh_token")
     @Schema(description = "角色授权")
     private String refreshToken;
-
-    /**
-     * 个人授权
-     */
-    @TableField(value = "refresh_token_char")
-    @Schema(description = "个人授权")
-    private String refreshTokenChar;
-
-    /**
-     * 军团授权
-     */
-    @TableField(value = "refresh_token_crop")
-    @Schema(description = "军团授权")
-    private String refreshTokenCrop;
 
     @TableField(value = "gmt_create")
     @Schema(description = "")

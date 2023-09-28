@@ -1,9 +1,9 @@
-package xyz.foolcat.eve.evehelper.esiclient;
+package xyz.foolcat.eve.evehelper.esi;
 
 import com.dtflys.forest.annotation.*;
 import com.dtflys.forest.callback.OnError;
 import xyz.foolcat.eve.evehelper.domain.system.MarketOrder;
-import xyz.foolcat.eve.evehelper.esiclient.Model.AuthTokenResponse;
+import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
 import xyz.foolcat.eve.evehelper.dto.esi.CharacterInfoResponseDTO;
 import xyz.foolcat.eve.evehelper.dto.esi.UniverseNameResponeDTO;
 import xyz.foolcat.eve.evehelper.interceptor.EsiClentInterceptor;
@@ -14,6 +14,7 @@ import java.util.List;
  * 国服ESI调用
  * <p>
  * 用于调用网易提供的各种ESI接口
+ *
  *
  * @author Leojan
  * @date 2021-12-07 17:19
@@ -26,6 +27,7 @@ import java.util.List;
         },
         interceptor = EsiClentInterceptor.class
 )
+@Deprecated
 public interface EsiNormalClient {
 
     /**

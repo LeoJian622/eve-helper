@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.esiclient.EsiNormalClient;
+import xyz.foolcat.eve.evehelper.esi.EsiNormalClient;
 import xyz.foolcat.eve.evehelper.converter.UniverseNameConverter;
 import xyz.foolcat.eve.evehelper.domain.system.UniverseName;
 import xyz.foolcat.eve.evehelper.dto.esi.UniverseNameResponeDTO;

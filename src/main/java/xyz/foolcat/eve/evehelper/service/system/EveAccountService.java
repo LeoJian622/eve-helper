@@ -2,27 +2,27 @@ package xyz.foolcat.eve.evehelper.service.system;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
-import xyz.foolcat.eve.evehelper.domain.system.EveCharacter;
-import xyz.foolcat.eve.evehelper.mapper.system.EveCharacterMapper;
+import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
+import xyz.foolcat.eve.evehelper.mapper.system.EveAccountMapper;
 
 import java.util.List;
 @Service
-public class EveCharacterService extends ServiceImpl<EveCharacterMapper, EveCharacter> {
+public class EveAccountService extends ServiceImpl<EveAccountMapper, EveAccount> {
 
     
-    public int updateBatch(List<EveCharacter> list) {
+    public int updateBatch(List<EveAccount> list) {
         return baseMapper.updateBatch(list);
     }
     
-    public int batchInsert(List<EveCharacter> list) {
+    public int batchInsert(List<EveAccount> list) {
         return baseMapper.batchInsert(list);
     }
     
-    public int insertOrUpdate(EveCharacter record) {
+    public int insertOrUpdate(EveAccount record) {
         return baseMapper.insertOrUpdate(record);
     }
     
-    public int insertOrUpdateSelective(EveCharacter record) {
+    public int insertOrUpdateSelective(EveAccount record) {
         return baseMapper.insertOrUpdateSelective(record);
     }
 }

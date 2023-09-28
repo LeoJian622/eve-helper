@@ -4,7 +4,7 @@ import cn.hutool.json.JSONArray;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import xyz.foolcat.eve.evehelper.esiclient.EsiCharacterClient;
+import xyz.foolcat.eve.evehelper.esi.EsiCharacterClient;
 import xyz.foolcat.eve.evehelper.domain.system.Asserts;
 import xyz.foolcat.eve.evehelper.domain.system.Blueprints;
 import xyz.foolcat.eve.evehelper.domain.system.WalletJournal;

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.text.ParseException;
@@ -12,19 +13,16 @@ import java.text.ParseException;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @DisplayName("ESI 请求服务测试")
+@WithUserDetails("user1")
 class EsiApiServiceTest {
 
     @Autowired
     EsiApiService esiApiService;
 
-
-
     @Test
-    void testGetAccessToken() throws ParseException {
-//        esiChApiService.getAccessToken("char","61BJRObV/ku0XlWb1xzJ9g==");
-//        esiChApiService.getAccessToken("char","2112832425");
-//        https://esi.evepc.163.com/ui/oauth2-redirect.html?code=30tZ00ssVkGDthezjQo7lA&state=T
-        esiApiService.getAccessToken("30tZ00ssVkGDthezjQo7lA");
+    void getAccessToken() throws ParseException {
+        String accessToken = esiApiService.getAccessToken("odZ2dRCzHUOJCa9KZqILQQ==");
+        System.out.println(accessToken);
     }
 
     @Test
