@@ -341,3 +341,5 @@ create table if not exists wallet_journal
 create index character_wallet_journal_owner_id_index
     on wallet_journal (owner_id);
 
+
+

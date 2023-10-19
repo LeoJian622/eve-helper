@@ -11,9 +11,11 @@ import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
 import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
+import xyz.foolcat.eve.evehelper.esi.enums.CalendarEventEnum;
 import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
-import xyz.foolcat.eve.evehelper.esi.model.BookmarkFoldersResponse;
-import xyz.foolcat.eve.evehelper.esi.model.BookmarksResponse;
+import xyz.foolcat.eve.evehelper.esi.model.CalendarEventAttendeesResponse;
+import xyz.foolcat.eve.evehelper.esi.model.CalendarResponse;
+import xyz.foolcat.eve.evehelper.esi.model.CalendarEventResponse;
 import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
 
 import java.util.List;
@@ -21,11 +23,12 @@ import java.util.Objects;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
-@DisplayName("ESI Bookmarks Api Test")
-class BookmarksApiTest {
+@DisplayName("ESI Calendar Api Test")
+class CalendarApiTest {
+
 
     @Autowired
-    BookmarksApi bookmarksApi;
+    CalendarApi calendarApi;
 
     @Autowired
     EveAccountService eveAccountService;
@@ -44,26 +47,26 @@ class BookmarksApiTest {
     }
 
     @Test
-    void queryCharactersBookmarks() {
-        List<BookmarksResponse> bookmarksResponseList = bookmarksApi.queryCharactersBookmarks(2112818290L, "serenity", 1, at).collectList().block();
-        System.out.println("bookmarksResponseList = " + bookmarksResponseList);
+    void queryCharactersCalendar() {
+        List<CalendarResponse> calendarResponses = calendarApi.queryCharactersCalendar(2112818290L, "serenity", null, at).collectList().block();
+        System.out.println("calendarResponses = " + calendarResponses);
     }
 
     @Test
-    void queryCharactersBookmarksFolders() {
-        List<BookmarkFoldersResponse> bookmarkFoldersResponseList = bookmarksApi.queryCharactersBookmarksFolders(2112818290L, "serenity", 1, at).collectList().block();
-        System.out.println("bookmarkFoldersResponseList = " + bookmarkFoldersResponseList);
+    void queryCharactersCalendarEventId() {
+        CalendarEventResponse calendarEventResponse = calendarApi.queryCharactersCalendarEventId(2112818290L, "serenity", 604077, at).block();
+        System.out.println("eventResponse = " + calendarEventResponse);
     }
 
     @Test
-    void queryCorporationsBookmarks() {
-        List<BookmarksResponse> bookmarksResponseList = bookmarksApi.queryCorporationsBookmarks(656880659L, "serenity", 1, at).collectList().block();
-        System.out.println("bookmarksResponseList = " + bookmarksResponseList);
+    void updateCharactersCalendarEventId() {
+        Object o = calendarApi.updateCharactersCalendarEventId(2112818290L, "serenity", 604077, CalendarEventEnum.ACCEPTED, at).block();
+        System.out.println("o = " + o);
     }
 
     @Test
-    void queryCorporationsBookmarksFolders() {
-        List<BookmarkFoldersResponse> bookmarkFoldersResponseList = bookmarksApi.queryCorporationsBookmarksFolders(656880659L, "serenity", 1, at).collectList().block();
-        System.out.println("bookmarkFoldersResponseList = " + bookmarkFoldersResponseList);
+    void queryCharactersCalendarEventIdAttendees() {
+        List<CalendarEventAttendeesResponse> calendarEventAttendeesResponses = calendarApi.queryCharactersCalendarEventIdAttendees(2112818290L, "serenity", 604077, at).collectList().block();
+        System.out.println("calendarEventAttendeesResponses = " + calendarEventAttendeesResponses);
     }
 }

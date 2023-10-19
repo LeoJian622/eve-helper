@@ -44,7 +44,7 @@ public class AssetsApi {
      */
     @Parameters({
             @Parameter(name = "characterId",description = "角色ID" ,required = true),
-            @Parameter(name = "datasource",description = "serenity" ,required = true),
+            @Parameter(name = "datasource",description = "服务器数据源" ,required = true),
             @Parameter(name = "page",description = "页码" ,required = true),
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
@@ -72,7 +72,7 @@ public class AssetsApi {
      */
     @Parameters({
             @Parameter(name = "characterId",description = "角色ID" ,required = true),
-            @Parameter(name = "datasource",description = "serenity" ,required = true),
+            @Parameter(name = "datasource",description = "服务器数据源" ,required = true),
             @Parameter(name = "itemIds",description = "物品ID清单" ,required = true),
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
@@ -102,7 +102,7 @@ public class AssetsApi {
      */
     @Parameters({
             @Parameter(name = "characterId",description = "角色ID" ,required = true),
-            @Parameter(name = "datasource",description = "serenity" ,required = true),
+            @Parameter(name = "datasource",description = "服务器数据源" ,required = true),
             @Parameter(name = "itemIds",description = "物品ID清单" ,required = true),
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
@@ -132,7 +132,7 @@ public class AssetsApi {
      */
     @Parameters({
             @Parameter(name = "corporationId",description = "军团ID" ,required = true),
-            @Parameter(name = "datasource",description = "serenity" ,required = true),
+            @Parameter(name = "datasource",description = "服务器数据源" ,required = true),
             @Parameter(name = "page",description = "页码" ,required = true),
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
@@ -160,7 +160,7 @@ public class AssetsApi {
      */
     @Parameters({
             @Parameter(name = "corporationId",description = "军团ID" ,required = true),
-            @Parameter(name = "datasource",description = "serenity" ,required = true),
+            @Parameter(name = "datasource",description = "服务器数据源" ,required = true),
             @Parameter(name = "itemIds",description = "物品ID清单" ,required = true),
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
@@ -190,7 +190,7 @@ public class AssetsApi {
      */
     @Parameters({
             @Parameter(name = "corporationId",description = "军团ID" ,required = true),
-            @Parameter(name = "datasource",description = "serenity" ,required = true),
+            @Parameter(name = "datasource",description = "服务器数据源" ,required = true),
             @Parameter(name = "itemIds",description = "物品ID清单" ,required = true),
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })

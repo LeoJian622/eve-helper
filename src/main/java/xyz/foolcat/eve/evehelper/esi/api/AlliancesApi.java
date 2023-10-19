@@ -34,7 +34,7 @@ public class AlliancesApi {
      * @return Flux<Long>
      */
     @Parameters({
-            @Parameter(name = "datasource",description = "serenity" ,required = true),
+            @Parameter(name = "datasource",description = "服务器数据源" ,required = true),
     })
     @Operation(summary = "ESI-活跃联盟ID列表")
     public Flux<Long> queryAllActivePlayerAlliances(String datasource) {
@@ -55,7 +55,7 @@ public class AlliancesApi {
      */
     @Parameters({
             @Parameter(name = "allianceId",description = "联盟ID" ,required = true),
-            @Parameter(name = "datasource",description = "serenity" ,required = true),
+            @Parameter(name = "datasource",description = "服务器数据源" ,required = true),
     })
     @Operation(summary = "ESI-联盟公开信息")
     public Mono<AlliancesResponse> queryAlliancesPublicInformation(Long allianceId, String datasource) {
@@ -76,7 +76,7 @@ public class AlliancesApi {
      */
     @Parameters({
             @Parameter(name = "allianceId",description = "联盟ID" ,required = true),
-            @Parameter(name = "datasource",description = "serenity" ,required = true),
+            @Parameter(name = "datasource",description = "服务器数据源" ,required = true),
     })
     @Operation(summary = "ESI-联盟名下全部军团ID")
     public Flux<Long> queryAlliancesCorporations(Long allianceId, String datasource) {
@@ -97,7 +97,7 @@ public class AlliancesApi {
      */
     @Parameters({
             @Parameter(name = "allianceId",description = "联盟ID" ,required = true),
-            @Parameter(name = "datasource",description = "serenity" ,required = true),
+            @Parameter(name = "datasource",description = "服务器数据源" ,required = true),
     })
     @Operation(summary = "ESI-联盟图标地址")
     public Mono<AlliancesIconResponse> queryAlliancesIcon(Long allianceId, String datasource) {
