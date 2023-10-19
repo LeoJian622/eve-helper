@@ -63,7 +63,6 @@ public class CalendarApi {
     }
 
     /**
-     *
      * 日程事件详情
      *
      * @param characterId   角色ID
@@ -92,14 +91,13 @@ public class CalendarApi {
 
 
     /**
-     *
      * 回复事件确认
      *
-     * @param characterId      角色ID
-     * @param datasource       服务器
-     * @param eventId          事件码
+     * @param characterId       角色ID
+     * @param datasource        服务器
+     * @param eventId           事件码
      * @param calendarEventEnum 回复值
-     * @param accessesToken    授权Token
+     * @param accessesToken     授权Token
      * @return
      */
     @Parameters({
@@ -127,7 +125,6 @@ public class CalendarApi {
     }
 
     /**
-     *
      * 查询受邀请人的回复情况
      *
      * @param characterId   角色ID

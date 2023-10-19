@@ -11,11 +11,10 @@ import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
 import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
-import xyz.foolcat.eve.evehelper.esi.model.AgentsResearchResponse;
-import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
-import xyz.foolcat.eve.evehelper.esi.model.CharacterPublicInfoResponse;
+import xyz.foolcat.eve.evehelper.esi.model.*;
 import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -53,5 +52,23 @@ class CharacterApiTest {
     void queryCharacterAgentsResearch() {
         List<AgentsResearchResponse> agentsResearchResponses = characterApi.queryCharacterAgentsResearch(2112818290L, "serenity", at).collectList().block();
         System.out.println("agentsResearchResponses = " + agentsResearchResponses);
+    }
+
+    @Test
+    void queryCharacterBlueprint() {
+        List<BlueprintResponse> blueprintResponses = characterApi.queryCharacterBlueprint(2112818290L, "serenity", 1, at).collectList().block();
+        System.out.println("blueprintResponses = " + blueprintResponses);
+    }
+
+    @Test
+    void queryCharacterCorporationHistory() {
+        List<CorporationHistoryResponse> corporationHistoryResponses = characterApi.queryCharacterCorporationHistory(2112818290L, "serenity", at).collectList().block();
+        System.out.println("corporationHistoryResponses = " + corporationHistoryResponses);
+    }
+
+    @Test
+    void queryCharacterCspa() {
+        Float aFloat = characterApi.queryCharacterCspa(2112818290L, "serenity", Arrays.asList(2112832425, 2112965519, 91424410), at).block();
+        System.out.println("aFloat = " + aFloat);
     }
 }
