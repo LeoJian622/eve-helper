@@ -1,25 +1,18 @@
 package xyz.foolcat.eve.evehelper.service.system;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.dtflys.forest.exceptions.ForestNetworkException;
-import org.apache.http.protocol.HTTP;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import xyz.foolcat.eve.evehelper.domain.system.Blueprints;
+import xyz.foolcat.eve.evehelper.mapper.system.BlueprintsMapper;
+import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
+import xyz.foolcat.eve.evehelper.vo.BlueprintsVO;
 
 import javax.annotation.Resource;
 import java.text.ParseException;
 import java.util.List;
-
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-
-import java.util.List;
-
-import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.domain.system.Assets;
-import xyz.foolcat.eve.evehelper.domain.system.Blueprints;
-import xyz.foolcat.eve.evehelper.mapper.system.BlueprintsMapper;
-import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
-import xyz.foolcat.eve.evehelper.vo.AssetsVO;
-import xyz.foolcat.eve.evehelper.vo.BlueprintsVO;
 
 @Service
 @Transactional(rollbackFor = RuntimeException.class)
@@ -73,4 +66,21 @@ public class BlueprintsService extends ServiceImpl<BlueprintsMapper, Blueprints>
     public IPage<BlueprintsVO> getBlueprintsListById(IPage<BlueprintsVO> page, String id) {
         return baseMapper.selectBlueprintsInvtypeUniverse(page, id);
     }
+
+    public int updateBatch(List<Blueprints> list) {
+        return baseMapper.updateBatch(list);
+    }
+
+    public int updateBatchSelective(List<Blueprints> list) {
+        return baseMapper.updateBatchSelective(list);
+    }
+
+    public int insertOrUpdate(Blueprints record) {
+        return baseMapper.insertOrUpdate(record);
+    }
+
+    public int insertOrUpdateSelective(Blueprints record) {
+        return baseMapper.insertOrUpdateSelective(record);
+    }
 }
+

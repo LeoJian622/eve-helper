@@ -38,6 +38,7 @@ public class MarketOrderService extends ServiceImpl<MarketOrderMapper, MarketOrd
 
     /**
      * 删除ID不在列表内的记录
+     *
      * @param ids
      */
     public void deleteNotInIds(List<Long> ids) {
@@ -49,17 +50,23 @@ public class MarketOrderService extends ServiceImpl<MarketOrderMapper, MarketOrd
 
     /**
      * 查询物品在某个建筑的订单，
+     *
      * @param locationId
      * @param typeId
      */
     @Cacheable
-    public List<MarketOrderDTO> querySaleAndBuyPrice(Long locationId, Integer typeId){
+    public List<MarketOrderDTO> querySaleAndBuyPrice(Long locationId, Integer typeId) {
         return baseMapper.queryPrice(locationId, typeId);
     }
 
 
+    public int insertOrUpdate(MarketOrder record) {
+        return baseMapper.insertOrUpdate(record);
+    }
 
-
-
+    public int insertOrUpdateSelective(MarketOrder record) {
+        return baseMapper.insertOrUpdateSelective(record);
+    }
 }
+
 

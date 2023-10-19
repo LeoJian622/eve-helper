@@ -10,10 +10,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import xyz.foolcat.eve.evehelper.common.result.Result;
-import xyz.foolcat.eve.evehelper.service.system.AssetsService;
+import xyz.foolcat.eve.evehelper.service.system.AssertsService;
 import xyz.foolcat.eve.evehelper.vo.AssetsVO;
-
-import java.text.ParseException;
 
 /**
  * @author Leojan
@@ -22,20 +20,20 @@ import java.text.ParseException;
 @Tag(name = "游戏资产")
 @RestController
 @Slf4j
-@RequestMapping("/assets")
+@RequestMapping("/*/assert")
 @RequiredArgsConstructor
 public class AssetsController {
 
-    private final AssetsService assetsService;
+    private final AssertsService assertsService;
 
     @Parameters({
             @Parameter(name = "type",description = "枚举值，角色：char; 军团：crop" ,required = true),
-            @Parameter(name = "id",description = "角色或军团的ID" ,required = true)
+            @Parameter(name = "cid",description = "角色或军团的ID" ,required = true)
     })
     @Operation(summary = "游戏资产-资产读取")
-    @GetMapping("/{type}/{id}")
-    public Result addAssetsList(@PathVariable String type, @PathVariable String id) throws ParseException {
-        assetsService.saveAndUpdateAssets(type, id);
+    @GetMapping("/{type}/{cid}")
+    public Result addAssertsList(@PathVariable String type, @PathVariable String cid) throws Throwable {
+        assertsService.saveAndUpdateAsserts(type, cid);
         return Result.success();
     }
 
@@ -45,12 +43,12 @@ public class AssetsController {
             @Parameter(name = "size", description = "每页行数")
     })
     @Operation(summary = "游戏资产-资产清单")
-    @GetMapping("/{id}")
-    public Result getAssetsList(@PathVariable String id, @RequestParam(defaultValue = "0") Integer current, @RequestParam(defaultValue = "30") Integer size){
+    @GetMapping("/{cid}")
+    public Result getAssetsList(@PathVariable String cid, @RequestParam(defaultValue = "0") Integer current, @RequestParam(defaultValue = "30") Integer size){
         IPage<AssetsVO> page = new Page<>();
         page.setCurrent(current);
         page.setSize(size);
-        page = assetsService.getAssertsListById(page,id);
+        page = assertsService.getAssertsListById(page,cid);
         return Result.success(page);
     }
 

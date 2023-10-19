@@ -14,4 +14,8 @@ public interface MiningDetailMapper extends BaseMapper<MiningDetail> {
     int updateBatchSelective(List<MiningDetail> list);
 
     int batchInsert(@Param("list") List<MiningDetail> list);
+
+    int insertOrUpdate(MiningDetail record);
+
+    int insertOrUpdateSelective(MiningDetail record);
 }

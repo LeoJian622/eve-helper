@@ -48,6 +48,11 @@ public enum ResultCode implements IResultCode, Serializable {
     RESOURCE_NOT_FOUND("SYS00401", "请求资源不存在"),
     PARAM_IS_NULL("SYS00410", "请求必填参数为空"),
 
+    /**
+     * ESI登录异常
+     */
+    ESI_AUTHORIZATION_FAILUE("ESI00403","ESI 未授权或授权过期，请重新登录"),
+
     ;
 
     @Override

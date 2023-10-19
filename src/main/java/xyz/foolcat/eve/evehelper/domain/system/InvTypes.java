@@ -10,135 +10,101 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
-    * 物品表
-    */
-@Schema(title="物品表")
+ * 物品表
+ */
+@Schema(description = "物品表")
 @Data
 @TableName(value = "inv_types")
-public class InvTypes  implements Serializable {
-    @TableId(value = "type_id", type = IdType.AUTO)
-    @Schema(name="")
+public class InvTypes implements Serializable {
+    @TableId(value = "type_id")
+    @Schema(description = "")
     private Integer typeId;
 
     @TableField(value = "group_id")
-    @Schema(name="")
+    @Schema(description = "")
     private Integer groupId;
 
     @TableField(value = "type_name")
-    @Schema(name="")
+    @Schema(description = "")
     private String typeName;
 
     @TableField(value = "description")
-    @Schema(name="")
+    @Schema(description = "")
     private String description;
 
-    /**
-     * 质量
-     */
     @TableField(value = "mass")
-    @Schema(name="")
+    @Schema(description = "")
     private Double mass;
 
-    /**
-     * 体积
-     */
     @TableField(value = "volume")
-    @Schema(name="")
+    @Schema(description = "")
     private Double volume;
 
-    /**
-     * 打包体积
-     */
     @TableField(value = "packaged_volume")
-    @Schema(name="")
+    @Schema(description = "")
     private Double packagedVolume;
 
-    /**
-     * 容量
-     */
     @TableField(value = "capacity")
-    @Schema(name="")
+    @Schema(description = "")
     private Double capacity;
 
-    /**
-     * 单位数量
-     */
     @TableField(value = "portion_size")
-    @Schema(name="")
+    @Schema(description = "")
     private Integer portionSize;
 
-    /**
-     * 势力ID
-     */
     @TableField(value = "faction_id")
-    @Schema(name="")
+    @Schema(description = "")
     private Integer factionId;
 
-    /**
-     * 种族ID
-     */
     @TableField(value = "race_id")
-    @Schema(name="")
+    @Schema(description = "")
     private Integer raceId;
 
-    /**
-     * 基准价格
-     */
     @TableField(value = "base_price")
-    @Schema(name="")
+    @Schema(description = "")
     private Double basePrice;
 
     @TableField(value = "published")
-    @Schema(name="")
+    @Schema(description = "")
     private Byte published;
 
-    /**
-     * 市场组ID
-     */
     @TableField(value = "market_group_id")
-    @Schema(name="")
+    @Schema(description = "")
     private Integer marketGroupId;
 
-    /**
-     * 模型ID
-     */
     @TableField(value = "graphic_id")
-    @Schema(name="")
+    @Schema(description = "")
     private Integer graphicId;
 
-    /**
-     * 半径
-     */
     @TableField(value = "radius")
-    @Schema(name="")
+    @Schema(description = "")
     private Double radius;
 
-    /**
-     * 图标ID
-     */
     @TableField(value = "icon_id")
-    @Schema(name="")
+    @Schema(description = "")
     private Integer iconId;
 
     @TableField(value = "sound_id")
-    @Schema(name="")
+    @Schema(description = "")
     private Integer soundId;
 
     @TableField(value = "sof_faction_name")
-    @Schema(name="")
+    @Schema(description = "")
     private String sofFactionName;
 
     @TableField(value = "sof_material_set_id")
-    @Schema(name="")
+    @Schema(description = "")
     private Integer sofMaterialSetId;
 
     @TableField(value = "meta_group_id")
-    @Schema(name="")
+    @Schema(description = "")
     private Integer metaGroupId;
 
     @TableField(value = "variationparent_type_id")
-    @Schema(name="")
+    @Schema(description = "")
     private Integer variationparentTypeId;
+
+    private static final long serialVersionUID = 1L;
 
     public static final String COL_TYPE_ID = "type_id";
 

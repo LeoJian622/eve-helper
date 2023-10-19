@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.SysUserMapper">
-    <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.SysUser">
-        <!--@mbg.generated-->
-        <!--@Table sys_user-->
-        <id column="id" jdbcType="INTEGER" property="id"/>
-        <result column="username" jdbcType="VARCHAR" property="username"/>
-        <result column="nickname" jdbcType="VARCHAR" property="nickname"/>
-        <result column="gender" jdbcType="BOOLEAN" property="gender"/>
-        <result column="password" jdbcType="VARCHAR" property="password"/>
-        <result column="avatar" jdbcType="VARCHAR" property="avatar"/>
-        <result column="mobile" jdbcType="VARCHAR" property="mobile"/>
-        <result column="status" jdbcType="BOOLEAN" property="status"/>
-        <result column="email" jdbcType="VARCHAR" property="email"/>
-        <result column="deleted" jdbcType="BOOLEAN" property="deleted"/>
-        <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate"/>
-        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified"/>
-    </resultMap>
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.SysUser">
+    <!--@mbg.generated-->
+    <!--@Table sys_user-->
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="username" jdbcType="VARCHAR" property="username" />
+    <result column="nickname" jdbcType="VARCHAR" property="nickname" />
+    <result column="gender" jdbcType="BOOLEAN" property="gender" />
+    <result column="password" jdbcType="VARCHAR" property="password" />
+    <result column="avatar" jdbcType="VARCHAR" property="avatar" />
+    <result column="mobile" jdbcType="VARCHAR" property="mobile" />
+    <result column="status" jdbcType="BOOLEAN" property="status" />
+    <result column="email" jdbcType="VARCHAR" property="email" />
+    <result column="deleted" jdbcType="BOOLEAN" property="deleted" />
+    <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+    <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+  </resultMap>
     <resultMap id="AuthResultMap" type="xyz.foolcat.eve.evehelper.domain.system.SysUser">
         <!--@mbg.generated-->
         <!--@Table sys_user-->
@@ -26,178 +26,352 @@
         <result column="status" jdbcType="BOOLEAN" property="status"/>
         <result column="deleted" jdbcType="BOOLEAN" property="deleted"/>
     </resultMap>
-    <sql id="Base_Column_List">
-        <!--@mbg.generated-->
-        id, username, nickname, gender, `password`, avatar, mobile, `status`, email, deleted,
-        gmt_create, gmt_modified
-    </sql>
-    <update id="updateBatch" parameterType="java.util.List">
-        <!--@mbg.generated-->
-        update sys_user
-        <trim prefix="set" suffixOverrides=",">
-            <trim prefix="username = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when id = #{item.id,jdbcType=INTEGER} then #{item.username,jdbcType=VARCHAR}
-                </foreach>
-            </trim>
-            <trim prefix="nickname = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when id = #{item.id,jdbcType=INTEGER} then #{item.nickname,jdbcType=VARCHAR}
-                </foreach>
-            </trim>
-            <trim prefix="gender = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when id = #{item.id,jdbcType=INTEGER} then #{item.gender,jdbcType=BOOLEAN}
-                </foreach>
-            </trim>
-            <trim prefix="`password` = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when id = #{item.id,jdbcType=INTEGER} then #{item.password,jdbcType=VARCHAR}
-                </foreach>
-            </trim>
-            <trim prefix="avatar = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when id = #{item.id,jdbcType=INTEGER} then #{item.avatar,jdbcType=VARCHAR}
-                </foreach>
-            </trim>
-            <trim prefix="mobile = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when id = #{item.id,jdbcType=INTEGER} then #{item.mobile,jdbcType=VARCHAR}
-                </foreach>
-            </trim>
-            <trim prefix="`status` = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when id = #{item.id,jdbcType=INTEGER} then #{item.status,jdbcType=BOOLEAN}
-                </foreach>
-            </trim>
-            <trim prefix="email = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when id = #{item.id,jdbcType=INTEGER} then #{item.email,jdbcType=VARCHAR}
-                </foreach>
-            </trim>
-            <trim prefix="deleted = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when id = #{item.id,jdbcType=INTEGER} then #{item.deleted,jdbcType=BOOLEAN}
-                </foreach>
-            </trim>
-            <trim prefix="gmt_create = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when id = #{item.id,jdbcType=INTEGER} then #{item.gmtCreate,jdbcType=TIMESTAMP}
-                </foreach>
-            </trim>
-            <trim prefix="gmt_modified = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when id = #{item.id,jdbcType=INTEGER} then #{item.gmtModified,jdbcType=TIMESTAMP}
-                </foreach>
-            </trim>
-        </trim>
-        where id in
-        <foreach close=")" collection="list" item="item" open="(" separator=", ">
-            #{item.id,jdbcType=INTEGER}
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, username, nickname, gender, `password`, avatar, mobile, `status`, email, deleted, 
+    gmt_create, gmt_modified
+  </sql>
+  <update id="updateBatch" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update sys_user
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="username = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.username,jdbcType=VARCHAR}
         </foreach>
-    </update>
-    <update id="updateBatchSelective" parameterType="java.util.List">
-        <!--@mbg.generated-->
-        update sys_user
-        <trim prefix="set" suffixOverrides=",">
-            <trim prefix="username = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.username != null">
-                        when id = #{item.id,jdbcType=INTEGER} then #{item.username,jdbcType=VARCHAR}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="nickname = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.nickname != null">
-                        when id = #{item.id,jdbcType=INTEGER} then #{item.nickname,jdbcType=VARCHAR}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="gender = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.gender != null">
-                        when id = #{item.id,jdbcType=INTEGER} then #{item.gender,jdbcType=BOOLEAN}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="`password` = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.password != null">
-                        when id = #{item.id,jdbcType=INTEGER} then #{item.password,jdbcType=VARCHAR}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="avatar = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.avatar != null">
-                        when id = #{item.id,jdbcType=INTEGER} then #{item.avatar,jdbcType=VARCHAR}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="mobile = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.mobile != null">
-                        when id = #{item.id,jdbcType=INTEGER} then #{item.mobile,jdbcType=VARCHAR}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="`status` = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.status != null">
-                        when id = #{item.id,jdbcType=INTEGER} then #{item.status,jdbcType=BOOLEAN}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="email = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.email != null">
-                        when id = #{item.id,jdbcType=INTEGER} then #{item.email,jdbcType=VARCHAR}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="deleted = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.deleted != null">
-                        when id = #{item.id,jdbcType=INTEGER} then #{item.deleted,jdbcType=BOOLEAN}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="gmt_create = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.gmtCreate != null">
-                        when id = #{item.id,jdbcType=INTEGER} then #{item.gmtCreate,jdbcType=TIMESTAMP}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="gmt_modified = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.gmtModified != null">
-                        when id = #{item.id,jdbcType=INTEGER} then #{item.gmtModified,jdbcType=TIMESTAMP}
-                    </if>
-                </foreach>
-            </trim>
-        </trim>
-        where id in
-        <foreach close=")" collection="list" item="item" open="(" separator=", ">
-            #{item.id,jdbcType=INTEGER}
+      </trim>
+      <trim prefix="nickname = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.nickname,jdbcType=VARCHAR}
         </foreach>
-    </update>
-    <insert id="batchInsert" keyColumn="id" keyProperty="id" parameterType="map" useGeneratedKeys="true">
-        <!--@mbg.generated-->
-        insert into sys_user
-                (username, nickname, gender, `password`, avatar, mobile, `status`, email, deleted,
-                 gmt_create, gmt_modified)
-                values
-        <foreach collection="list" item="item" separator=",">
-            (#{item.username,jdbcType=VARCHAR}, #{item.nickname,jdbcType=VARCHAR}, #{item.gender,jdbcType=BOOLEAN},
-             #{item.password,jdbcType=VARCHAR}, #{item.avatar,jdbcType=VARCHAR}, #{item.mobile,jdbcType=VARCHAR},
-             #{item.status,jdbcType=BOOLEAN}, #{item.email,jdbcType=VARCHAR}, #{item.deleted,jdbcType=BOOLEAN},
-             #{item.gmtCreate,jdbcType=TIMESTAMP}, #{item.gmtModified,jdbcType=TIMESTAMP})
+      </trim>
+      <trim prefix="gender = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.gender,jdbcType=BOOLEAN}
         </foreach>
-    </insert>
+      </trim>
+      <trim prefix="`password` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.password,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="avatar = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.avatar,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="mobile = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.mobile,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="`status` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.status,jdbcType=BOOLEAN}
+        </foreach>
+      </trim>
+      <trim prefix="email = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.email,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="deleted = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.deleted,jdbcType=BOOLEAN}
+        </foreach>
+      </trim>
+      <trim prefix="gmt_create = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.gmtCreate,jdbcType=TIMESTAMP}
+        </foreach>
+      </trim>
+      <trim prefix="gmt_modified = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=INTEGER} then #{item.gmtModified,jdbcType=TIMESTAMP}
+        </foreach>
+      </trim>
+    </trim>
+    where id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.id,jdbcType=INTEGER}
+    </foreach>
+  </update>
+  <update id="updateBatchSelective" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update sys_user
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="username = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.username != null">
+            when id = #{item.id,jdbcType=INTEGER} then #{item.username,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="nickname = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.nickname != null">
+            when id = #{item.id,jdbcType=INTEGER} then #{item.nickname,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="gender = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.gender != null">
+            when id = #{item.id,jdbcType=INTEGER} then #{item.gender,jdbcType=BOOLEAN}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="`password` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.password != null">
+            when id = #{item.id,jdbcType=INTEGER} then #{item.password,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="avatar = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.avatar != null">
+            when id = #{item.id,jdbcType=INTEGER} then #{item.avatar,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="mobile = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.mobile != null">
+            when id = #{item.id,jdbcType=INTEGER} then #{item.mobile,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="`status` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.status != null">
+            when id = #{item.id,jdbcType=INTEGER} then #{item.status,jdbcType=BOOLEAN}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="email = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.email != null">
+            when id = #{item.id,jdbcType=INTEGER} then #{item.email,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="deleted = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.deleted != null">
+            when id = #{item.id,jdbcType=INTEGER} then #{item.deleted,jdbcType=BOOLEAN}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="gmt_create = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.gmtCreate != null">
+            when id = #{item.id,jdbcType=INTEGER} then #{item.gmtCreate,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="gmt_modified = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.gmtModified != null">
+            when id = #{item.id,jdbcType=INTEGER} then #{item.gmtModified,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+    </trim>
+    where id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.id,jdbcType=INTEGER}
+    </foreach>
+  </update>
+  <insert id="batchInsert" keyColumn="id" keyProperty="id" parameterType="map" useGeneratedKeys="true">
+    <!--@mbg.generated-->
+    insert into sys_user
+    (username, nickname, gender, `password`, avatar, mobile, `status`, email, deleted, 
+      gmt_create, gmt_modified)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.username,jdbcType=VARCHAR}, #{item.nickname,jdbcType=VARCHAR}, #{item.gender,jdbcType=BOOLEAN}, 
+        #{item.password,jdbcType=VARCHAR}, #{item.avatar,jdbcType=VARCHAR}, #{item.mobile,jdbcType=VARCHAR}, 
+        #{item.status,jdbcType=BOOLEAN}, #{item.email,jdbcType=VARCHAR}, #{item.deleted,jdbcType=BOOLEAN}, 
+        #{item.gmtCreate,jdbcType=TIMESTAMP}, #{item.gmtModified,jdbcType=TIMESTAMP})
+    </foreach>
+  </insert>
+  <insert id="insertOrUpdate" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.domain.system.SysUser" useGeneratedKeys="true">
+    <!--@mbg.generated-->
+    insert into sys_user
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      username,
+      nickname,
+      gender,
+      `password`,
+      avatar,
+      mobile,
+      `status`,
+      email,
+      deleted,
+      gmt_create,
+      gmt_modified,
+    </trim>
+    values
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=INTEGER},
+      </if>
+      #{username,jdbcType=VARCHAR},
+      #{nickname,jdbcType=VARCHAR},
+      #{gender,jdbcType=BOOLEAN},
+      #{password,jdbcType=VARCHAR},
+      #{avatar,jdbcType=VARCHAR},
+      #{mobile,jdbcType=VARCHAR},
+      #{status,jdbcType=BOOLEAN},
+      #{email,jdbcType=VARCHAR},
+      #{deleted,jdbcType=BOOLEAN},
+      #{gmtCreate,jdbcType=TIMESTAMP},
+      #{gmtModified,jdbcType=TIMESTAMP},
+    </trim>
+    on duplicate key update 
+    <trim suffixOverrides=",">
+      <if test="id != null">
+        id = #{id,jdbcType=INTEGER},
+      </if>
+      username = #{username,jdbcType=VARCHAR},
+      nickname = #{nickname,jdbcType=VARCHAR},
+      gender = #{gender,jdbcType=BOOLEAN},
+      `password` = #{password,jdbcType=VARCHAR},
+      avatar = #{avatar,jdbcType=VARCHAR},
+      mobile = #{mobile,jdbcType=VARCHAR},
+      `status` = #{status,jdbcType=BOOLEAN},
+      email = #{email,jdbcType=VARCHAR},
+      deleted = #{deleted,jdbcType=BOOLEAN},
+      gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
+      gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
+    </trim>
+  </insert>
+  <insert id="insertOrUpdateSelective" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.domain.system.SysUser" useGeneratedKeys="true">
+    <!--@mbg.generated-->
+    insert into sys_user
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="username != null">
+        username,
+      </if>
+      <if test="nickname != null">
+        nickname,
+      </if>
+      <if test="gender != null">
+        gender,
+      </if>
+      <if test="password != null">
+        `password`,
+      </if>
+      <if test="avatar != null">
+        avatar,
+      </if>
+      <if test="mobile != null">
+        mobile,
+      </if>
+      <if test="status != null">
+        `status`,
+      </if>
+      <if test="email != null">
+        email,
+      </if>
+      <if test="deleted != null">
+        deleted,
+      </if>
+      <if test="gmtCreate != null">
+        gmt_create,
+      </if>
+      <if test="gmtModified != null">
+        gmt_modified,
+      </if>
+    </trim>
+    values
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="username != null">
+        #{username,jdbcType=VARCHAR},
+      </if>
+      <if test="nickname != null">
+        #{nickname,jdbcType=VARCHAR},
+      </if>
+      <if test="gender != null">
+        #{gender,jdbcType=BOOLEAN},
+      </if>
+      <if test="password != null">
+        #{password,jdbcType=VARCHAR},
+      </if>
+      <if test="avatar != null">
+        #{avatar,jdbcType=VARCHAR},
+      </if>
+      <if test="mobile != null">
+        #{mobile,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null">
+        #{status,jdbcType=BOOLEAN},
+      </if>
+      <if test="email != null">
+        #{email,jdbcType=VARCHAR},
+      </if>
+      <if test="deleted != null">
+        #{deleted,jdbcType=BOOLEAN},
+      </if>
+      <if test="gmtCreate != null">
+        #{gmtCreate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="gmtModified != null">
+        #{gmtModified,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+    on duplicate key update 
+    <trim suffixOverrides=",">
+      <if test="id != null">
+        id = #{id,jdbcType=INTEGER},
+      </if>
+      <if test="username != null">
+        username = #{username,jdbcType=VARCHAR},
+      </if>
+      <if test="nickname != null">
+        nickname = #{nickname,jdbcType=VARCHAR},
+      </if>
+      <if test="gender != null">
+        gender = #{gender,jdbcType=BOOLEAN},
+      </if>
+      <if test="password != null">
+        `password` = #{password,jdbcType=VARCHAR},
+      </if>
+      <if test="avatar != null">
+        avatar = #{avatar,jdbcType=VARCHAR},
+      </if>
+      <if test="mobile != null">
+        mobile = #{mobile,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null">
+        `status` = #{status,jdbcType=BOOLEAN},
+      </if>
+      <if test="email != null">
+        email = #{email,jdbcType=VARCHAR},
+      </if>
+      <if test="deleted != null">
+        deleted = #{deleted,jdbcType=BOOLEAN},
+      </if>
+      <if test="gmtCreate != null">
+        gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="gmtModified != null">
+        gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
 
-    <select id="queryByUsername" resultMap="BaseResultMap">
+    <select id="queryByUsername" resultMap="AuthResultMap">
         select id,
                username,
                password,

@@ -1,6 +1,5 @@
 package xyz.foolcat.eve.evehelper.domain.system;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -10,62 +9,62 @@ import lombok.Data;
 import java.io.Serializable;
 import java.util.Date;
 
-@Schema(title="挖矿明细")
+@Schema
 @Data
 @TableName(value = "mining_detail")
 public class MiningDetail implements Serializable {
-    @TableId(value = "id", type = IdType.AUTO)
-    @Schema(name="")
+    @TableId(value = "id")
+    @Schema(description = "")
     private String id;
 
     /**
      * 角色ID
      */
     @TableField(value = "character_id")
-    @Schema(name="角色ID")
+    @Schema(description = "角色ID")
     private Integer characterId;
 
     @TableField(value = "character_name")
-    @Schema(name="")
+    @Schema(description = "")
     private String characterName;
 
     /**
      * 开采时该角色所属公司
      */
     @TableField(value = "recorded_corporation_id")
-    @Schema(name="开采时该角色所属公司")
+    @Schema(description = "开采时该角色所属公司")
     private Integer recordedCorporationId;
 
     @TableField(value = "recorded_corporation_name")
-    @Schema(name="")
+    @Schema(description = "")
     private String recordedCorporationName;
 
     /**
      * 物品类型ID
      */
     @TableField(value = "type_id")
-    @Schema(name="物品类型ID")
+    @Schema(description = "物品类型ID")
     private Integer typeId;
 
     /**
      * 开采数量
      */
     @TableField(value = "quantity")
-    @Schema(name="开采数量")
+    @Schema(description = "开采数量")
     private Long quantity;
 
     /**
      * observer id
      */
     @TableField(value = "observer_id")
-    @Schema(name="observer id")
+    @Schema(description = "observer id")
     private Long observerId;
 
     /**
      * 上次更新时间
      */
     @TableField(value = "last_updated")
-    @Schema(name="上次更新时间")
+    @Schema(description = "上次更新时间")
     private Date lastUpdated;
 
     private static final long serialVersionUID = 1L;

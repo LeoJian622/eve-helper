@@ -122,6 +122,120 @@
         )
     </foreach>
   </insert>
+  <insert id="insertOrUpdate" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.domain.system.SysPermission" useGeneratedKeys="true">
+    <!--@mbg.generated-->
+    insert into sys_permission
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      `name`,
+      menu_id,
+      url_perm,
+      btn_perm,
+      gmt_create,
+      gmt_modified,
+    </trim>
+    values
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=BIGINT},
+      </if>
+      #{name,jdbcType=VARCHAR},
+      #{menuId,jdbcType=BIGINT},
+      #{urlPerm,jdbcType=VARCHAR},
+      #{btnPerm,jdbcType=VARCHAR},
+      #{gmtCreate,jdbcType=TIMESTAMP},
+      #{gmtModified,jdbcType=TIMESTAMP},
+    </trim>
+    on duplicate key update 
+    <trim suffixOverrides=",">
+      <if test="id != null">
+        id = #{id,jdbcType=BIGINT},
+      </if>
+      `name` = #{name,jdbcType=VARCHAR},
+      menu_id = #{menuId,jdbcType=BIGINT},
+      url_perm = #{urlPerm,jdbcType=VARCHAR},
+      btn_perm = #{btnPerm,jdbcType=VARCHAR},
+      gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
+      gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
+    </trim>
+  </insert>
+  <insert id="insertOrUpdateSelective" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.domain.system.SysPermission" useGeneratedKeys="true">
+    <!--@mbg.generated-->
+    insert into sys_permission
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="name != null">
+        `name`,
+      </if>
+      <if test="menuId != null">
+        menu_id,
+      </if>
+      <if test="urlPerm != null">
+        url_perm,
+      </if>
+      <if test="btnPerm != null">
+        btn_perm,
+      </if>
+      <if test="gmtCreate != null">
+        gmt_create,
+      </if>
+      <if test="gmtModified != null">
+        gmt_modified,
+      </if>
+    </trim>
+    values
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=BIGINT},
+      </if>
+      <if test="name != null">
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="menuId != null">
+        #{menuId,jdbcType=BIGINT},
+      </if>
+      <if test="urlPerm != null">
+        #{urlPerm,jdbcType=VARCHAR},
+      </if>
+      <if test="btnPerm != null">
+        #{btnPerm,jdbcType=VARCHAR},
+      </if>
+      <if test="gmtCreate != null">
+        #{gmtCreate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="gmtModified != null">
+        #{gmtModified,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+    on duplicate key update 
+    <trim suffixOverrides=",">
+      <if test="id != null">
+        id = #{id,jdbcType=BIGINT},
+      </if>
+      <if test="name != null">
+        `name` = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="menuId != null">
+        menu_id = #{menuId,jdbcType=BIGINT},
+      </if>
+      <if test="urlPerm != null">
+        url_perm = #{urlPerm,jdbcType=VARCHAR},
+      </if>
+      <if test="btnPerm != null">
+        btn_perm = #{btnPerm,jdbcType=VARCHAR},
+      </if>
+      <if test="gmtCreate != null">
+        gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
+      </if>
+      <if test="gmtModified != null">
+        gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
 
   <select id="listPermRoles" resultMap="BaseResultMap">
     SELECT sp.id,

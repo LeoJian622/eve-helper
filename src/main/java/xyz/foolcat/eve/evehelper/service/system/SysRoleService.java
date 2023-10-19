@@ -12,15 +12,15 @@ import java.util.List;
 @Transactional(rollbackFor = RuntimeException.class)
 public class SysRoleService extends ServiceImpl<SysRoleMapper, SysRole> {
 
-    
+
     public int updateBatch(List<SysRole> list) {
         return baseMapper.updateBatch(list);
     }
-    
+
     public int updateBatchSelective(List<SysRole> list) {
         return baseMapper.updateBatchSelective(list);
     }
-    
+
     public int batchInsert(List<SysRole> list) {
         return baseMapper.batchInsert(list);
     }
@@ -28,4 +28,13 @@ public class SysRoleService extends ServiceImpl<SysRoleMapper, SysRole> {
     public List<String> queryRolesByUserId(Integer id) {
         return baseMapper.queryRolesByUserId(id);
     }
+
+    public int insertOrUpdate(SysRole record) {
+        return baseMapper.insertOrUpdate(record);
+    }
+
+    public int insertOrUpdateSelective(SysRole record) {
+        return baseMapper.insertOrUpdateSelective(record);
+    }
 }
+

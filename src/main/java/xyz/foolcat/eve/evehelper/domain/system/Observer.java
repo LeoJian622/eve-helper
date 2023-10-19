@@ -1,6 +1,5 @@
 package xyz.foolcat.eve.evehelper.domain.system;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -10,30 +9,30 @@ import lombok.Data;
 import java.io.Serializable;
 import java.util.Date;
 
-@Schema(title="observer",hidden = true)
+@Schema
 @Data
 @TableName(value = "observer")
 public class Observer implements Serializable {
-    @TableId(value = "observer_id", type = IdType.AUTO)
-    @Schema(name="")
+    @TableId(value = "observer_id")
+    @Schema(description = "")
     private Long observerId;
 
     /**
-     * 观察者类型  枚举：structure 
+     * 观察者类型  枚举：structure
      */
     @TableField(value = "observer_type")
-    @Schema(name="观察者类型  枚举：structure ")
+    @Schema(description = "观察者类型  枚举：structure ")
     private String observerType;
 
     /**
      * 上次更新时间
      */
     @TableField(value = "last_updated")
-    @Schema(name="上次更新时间")
+    @Schema(description = "上次更新时间")
     private Date lastUpdated;
 
     @TableField(value = "croporation_id")
-    @Schema(name="")
+    @Schema(description = "")
     private Long croporationId;
 
     private static final long serialVersionUID = 1L;

@@ -94,7 +94,8 @@ spring:
 # 日志配置
 logging:
   level:
-    root: INFO
+    root: info
+    web:  debug
     com:
       bolingcavalry:
         druidtwosource:

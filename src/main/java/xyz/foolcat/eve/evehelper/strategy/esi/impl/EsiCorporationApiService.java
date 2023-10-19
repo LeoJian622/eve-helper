@@ -4,11 +4,8 @@ import cn.hutool.json.JSONArray;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import xyz.foolcat.eve.evehelper.client.EsiCorporationClient;
-import xyz.foolcat.eve.evehelper.domain.system.Assets;
-import xyz.foolcat.eve.evehelper.domain.system.Blueprints;
-import xyz.foolcat.eve.evehelper.domain.system.MiningDetail;
-import xyz.foolcat.eve.evehelper.domain.system.Observer;
+import xyz.foolcat.eve.evehelper.esi.EsiCorporationClient;
+import xyz.foolcat.eve.evehelper.domain.system.*;
 import xyz.foolcat.eve.evehelper.dto.esi.IndustryJobDTO;
 import xyz.foolcat.eve.evehelper.strategy.esi.EsiClientStrategy;
 
@@ -35,9 +32,13 @@ public class EsiCorporationApiService implements EsiClientStrategy {
     }
 
     @Override
-    public List<Assets> getAssetsList(String id,int page, String accessToken) {
-        List<Assets> assetsList = esiCorporationClient.getCorporationAssets(id,page, accessToken);
-        return assetsList;
+    public List<Asserts> getAssetsList(String id, int page, String accessToken) {
+        return esiCorporationClient.getCorporationAssets(id,page, accessToken);
+    }
+
+    @Override
+    public List<WalletJournal> getWalletJournalList(String id, int page, String accessToken) {
+        return null;
     }
 
     @Override
@@ -47,12 +48,11 @@ public class EsiCorporationApiService implements EsiClientStrategy {
 
     @Override
     public List<Blueprints> getBlueprintsList(String id, int page, String accessToken) {
-        List<Blueprints> blueprintsList = esiCorporationClient.getCharactorBlueprints(id,page, accessToken);
-        return blueprintsList;
+        return esiCorporationClient.getCorporationBlueprints(id,page, accessToken);
     }
 
     @Override
-    public List<Observer> getCropObeserverList(Long id, Integer page, String accessToken) {
+    public List<Observer> getCropObserverList(Long id, Integer page, String accessToken) {
         return esiCorporationClient.getObserverList(id, page, accessToken);
     }
 

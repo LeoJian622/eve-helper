@@ -22,6 +22,7 @@ public class BlueprintsDataService extends ServiceImpl<BlueprintsDataMapper, Blu
 
     /**
      * 查询卖单价，收单价，材料卖单总价，材料收单总价
+     *
      * @return List<BlueprintCostDTO>
      */
     @Cacheable
@@ -30,8 +31,9 @@ public class BlueprintsDataService extends ServiceImpl<BlueprintsDataMapper, Blu
     }
 
     /**
-     *  根据物品ID查询卖单价，收单价，材料卖单总价，材料收单总价
-     * @param typeId  物品ID
+     * 根据物品ID查询卖单价，收单价，材料卖单总价，材料收单总价
+     *
+     * @param typeId 物品ID
      * @return BlueprintCostDTO
      */
     @Cacheable
@@ -46,4 +48,12 @@ public class BlueprintsDataService extends ServiceImpl<BlueprintsDataMapper, Blu
     }
 
 
+    public int insertOrUpdate(BlueprintsData record) {
+        return baseMapper.insertOrUpdate(record);
+    }
+
+    public int insertOrUpdateSelective(BlueprintsData record) {
+        return baseMapper.insertOrUpdateSelective(record);
+    }
 }
+

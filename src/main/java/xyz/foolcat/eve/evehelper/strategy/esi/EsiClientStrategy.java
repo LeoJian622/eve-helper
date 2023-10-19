@@ -1,10 +1,7 @@
 package xyz.foolcat.eve.evehelper.strategy.esi;
 
 import cn.hutool.json.JSONArray;
-import xyz.foolcat.eve.evehelper.domain.system.Assets;
-import xyz.foolcat.eve.evehelper.domain.system.Blueprints;
-import xyz.foolcat.eve.evehelper.domain.system.MiningDetail;
-import xyz.foolcat.eve.evehelper.domain.system.Observer;
+import xyz.foolcat.eve.evehelper.domain.system.*;
 import xyz.foolcat.eve.evehelper.dto.esi.IndustryJobDTO;
 
 import java.util.ArrayList;
@@ -31,7 +28,15 @@ public interface EsiClientStrategy {
      * @param id
      * @return
      */
-    List<Assets> getAssetsList(String id,int page, String accessToken);
+    List<Asserts> getAssetsList(String id, int page, String accessToken);
+
+    /**
+     * 获取资产信息
+     * @param accessToken
+     * @param id
+     * @return
+     */
+    List<WalletJournal> getWalletJournalList(String id, int page, String accessToken);
 
     /**
      * 获取物品自定义名称
@@ -42,7 +47,7 @@ public interface EsiClientStrategy {
     JSONArray getAssetsNamesList(String id,  List itemIds, String accessToken);
 
     /**
-     * 获取资产信息
+     * 获取蓝图信息
      * @param accessToken
      * @param id
      * @return
@@ -59,7 +64,7 @@ public interface EsiClientStrategy {
      * @param accessToken
      * @return
      */
-    default List<Observer> getCropObeserverList(Long id, Integer page, String accessToken){
+    default List<Observer> getCropObserverList(Long id, Integer page, String accessToken){
         return new ArrayList<>();
     }
 

@@ -15,8 +15,6 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.nio.charset.StandardCharsets;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @DisplayName("蓝图接口测试")
@@ -29,7 +27,7 @@ class BlueprintsControllerTest {
 
     @Test
     void addBlueprintsList() throws Exception {
-        String url = "/blueprints/char/2112832425";
+        String url = "/1/blueprints/char/2112832425";
         String result = mockMvc.perform(MockMvcRequestBuilders.get(url))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andDo(MockMvcResultHandlers.print())
@@ -41,7 +39,7 @@ class BlueprintsControllerTest {
 
     @Test
     void getBlueprintsList() throws Exception {
-        String url = "/blueprints/2112832425";
+        String url = "/1/blueprints/2112832425";
         String result = mockMvc.perform(MockMvcRequestBuilders.get(url))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andDo(MockMvcResultHandlers.print())

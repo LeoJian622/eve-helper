@@ -35,7 +35,7 @@ public class MiningDetailService extends ServiceImpl<MiningDetailMapper, MiningD
     }
 
     public void saveObserverMining(Long corporationId, Long observerId) throws ParseException {
-        String accessToken = esiApiService.getAccessToken(GlobalConstants.CHAR, corporationId.toString());
+        String accessToken = esiApiService.getAccessToken(corporationId.toString());
         int i = 1;
         List<MiningDetail> miningDetails = new ArrayList<>();
         while (true) {
@@ -72,7 +72,16 @@ public class MiningDetailService extends ServiceImpl<MiningDetailMapper, MiningD
     public int updateBatchSelective(List<MiningDetail> list) {
         return baseMapper.updateBatchSelective(list);
     }
+
+    public int insertOrUpdate(MiningDetail record) {
+        return baseMapper.insertOrUpdate(record);
+    }
+
+    public int insertOrUpdateSelective(MiningDetail record) {
+        return baseMapper.insertOrUpdateSelective(record);
+    }
 }
+
 
 
 

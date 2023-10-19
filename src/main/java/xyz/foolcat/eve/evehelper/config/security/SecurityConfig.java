@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -19,6 +20,8 @@ import xyz.foolcat.eve.evehelper.config.security.filter.JwtAuthorizationTokenFil
 import xyz.foolcat.eve.evehelper.config.security.handler.AccessDeniedServletHandler;
 import xyz.foolcat.eve.evehelper.config.security.handler.AuthenticationSuccessServletHandler;
 import xyz.foolcat.eve.evehelper.service.system.SysUserService;
+
+import javax.annotation.PostConstruct;
 
 /**
  * @author Leojan
@@ -41,6 +44,11 @@ public class SecurityConfig {
     final JwtAuthorizationTokenFilter jwtAuthorizationTokenFilter;
 
     final SysUserService sysUserService;
+
+    @PostConstruct
+    void setStrategyName(){
+        SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
+    }
 
     @Bean
     WebSecurityCustomizer webSecurityCustomizer() {

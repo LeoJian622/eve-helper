@@ -1,206 +1,361 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.MarketOrderMapper">
-    <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.MarketOrder">
-        <!--@mbg.generated-->
-        <!--@Table market_order-->
-        <id column="order_id" jdbcType="BIGINT" property="orderId"/>
-        <result column="duration" jdbcType="BIGINT" property="duration"/>
-        <result column="is_buy_order" jdbcType="BOOLEAN" property="isBuyOrder"/>
-        <result column="issued" jdbcType="TIMESTAMP" property="issued"/>
-        <result column="location_id" jdbcType="BIGINT" property="locationId"/>
-        <result column="min_volume" jdbcType="BIGINT" property="minVolume"/>
-        <result column="price" jdbcType="BIGINT" property="price"/>
-        <result column="order_range" jdbcType="VARCHAR" property="orderRange"/>
-        <result column="system_id" jdbcType="BIGINT" property="systemId"/>
-        <result column="type_id" jdbcType="BIGINT" property="typeId"/>
-        <result column="volume_remain" jdbcType="BIGINT" property="volumeRemain"/>
-        <result column="volume_total" jdbcType="BIGINT" property="volumeTotal"/>
-        <result column="region_id" jdbcType="BIGINT" property="regionId"/>
-    </resultMap>
-    <sql id="Base_Column_List">
-        <!--@mbg.generated-->
-        order_id, duration, is_buy_order, issued, location_id, min_volume, price, order_range,
-        system_id, type_id, volume_remain, volume_total, region_id
-    </sql>
-    <update id="updateBatch" parameterType="java.util.List">
-        <!--@mbg.generated-->
-        update market_order
-        <trim prefix="set" suffixOverrides=",">
-            <trim prefix="duration = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.duration,jdbcType=BIGINT}
-                </foreach>
-            </trim>
-            <trim prefix="is_buy_order = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.isBuyOrder,jdbcType=BOOLEAN}
-                </foreach>
-            </trim>
-            <trim prefix="issued = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.issued,jdbcType=TIMESTAMP}
-                </foreach>
-            </trim>
-            <trim prefix="location_id = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.locationId,jdbcType=BIGINT}
-                </foreach>
-            </trim>
-            <trim prefix="min_volume = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.minVolume,jdbcType=BIGINT}
-                </foreach>
-            </trim>
-            <trim prefix="price = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.price,jdbcType=BIGINT}
-                </foreach>
-            </trim>
-            <trim prefix="order_range = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.orderRange,jdbcType=VARCHAR}
-                </foreach>
-            </trim>
-            <trim prefix="system_id = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.systemId,jdbcType=BIGINT}
-                </foreach>
-            </trim>
-            <trim prefix="type_id = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.typeId,jdbcType=BIGINT}
-                </foreach>
-            </trim>
-            <trim prefix="volume_remain = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.volumeRemain,jdbcType=BIGINT}
-                </foreach>
-            </trim>
-            <trim prefix="volume_total = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.volumeTotal,jdbcType=BIGINT}
-                </foreach>
-            </trim>
-            <trim prefix="region_id = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.regionId,jdbcType=BIGINT}
-                </foreach>
-            </trim>
-        </trim>
-        where order_id in
-        <foreach close=")" collection="list" item="item" open="(" separator=", ">
-            #{item.orderId,jdbcType=BIGINT}
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.MarketOrder">
+    <!--@mbg.generated-->
+    <!--@Table market_order-->
+    <id column="order_id" jdbcType="BIGINT" property="orderId" />
+    <result column="duration" jdbcType="BIGINT" property="duration" />
+    <result column="is_buy_order" jdbcType="BOOLEAN" property="isBuyOrder" />
+    <result column="issued" jdbcType="TIMESTAMP" property="issued" />
+    <result column="location_id" jdbcType="BIGINT" property="locationId" />
+    <result column="min_volume" jdbcType="BIGINT" property="minVolume" />
+    <result column="price" jdbcType="BIGINT" property="price" />
+    <result column="order_range" jdbcType="VARCHAR" property="orderRange" />
+    <result column="system_id" jdbcType="BIGINT" property="systemId" />
+    <result column="type_id" jdbcType="BIGINT" property="typeId" />
+    <result column="volume_remain" jdbcType="BIGINT" property="volumeRemain" />
+    <result column="volume_total" jdbcType="BIGINT" property="volumeTotal" />
+    <result column="region_id" jdbcType="BIGINT" property="regionId" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    order_id, duration, is_buy_order, issued, location_id, min_volume, price, order_range, 
+    system_id, type_id, volume_remain, volume_total, region_id
+  </sql>
+  <update id="updateBatch" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update market_order
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="duration = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.duration,jdbcType=BIGINT}
         </foreach>
-    </update>
-    <update id="updateBatchSelective" parameterType="java.util.List">
-        <!--@mbg.generated-->
-        update market_order
-        <trim prefix="set" suffixOverrides=",">
-            <trim prefix="duration = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.duration != null">
-                        when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.duration,jdbcType=BIGINT}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="is_buy_order = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.isBuyOrder != null">
-                        when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.isBuyOrder,jdbcType=BOOLEAN}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="issued = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.issued != null">
-                        when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.issued,jdbcType=TIMESTAMP}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="location_id = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.locationId != null">
-                        when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.locationId,jdbcType=BIGINT}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="min_volume = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.minVolume != null">
-                        when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.minVolume,jdbcType=BIGINT}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="price = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.price != null">
-                        when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.price,jdbcType=BIGINT}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="order_range = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.orderRange != null">
-                        when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.orderRange,jdbcType=VARCHAR}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="system_id = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.systemId != null">
-                        when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.systemId,jdbcType=BIGINT}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="type_id = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.typeId != null">
-                        when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.typeId,jdbcType=BIGINT}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="volume_remain = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.volumeRemain != null">
-                        when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.volumeRemain,jdbcType=BIGINT}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="volume_total = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.volumeTotal != null">
-                        when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.volumeTotal,jdbcType=BIGINT}
-                    </if>
-                </foreach>
-            </trim>
-            <trim prefix="region_id = case" suffix="end,">
-                <foreach collection="list" index="index" item="item">
-                    <if test="item.regionId != null">
-                        when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.regionId,jdbcType=BIGINT}
-                    </if>
-                </foreach>
-            </trim>
-        </trim>
-        where order_id in
-        <foreach close=")" collection="list" item="item" open="(" separator=", ">
-            #{item.orderId,jdbcType=BIGINT}
+      </trim>
+      <trim prefix="is_buy_order = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.isBuyOrder,jdbcType=BOOLEAN}
         </foreach>
-    </update>
-    <insert id="batchInsert" keyColumn="order_id" keyProperty="orderId" parameterType="map" useGeneratedKeys="true">
-        <!--@mbg.generated-->
-        insert into market_order
-        (duration, is_buy_order, issued, location_id, min_volume, price, order_range, system_id,
-         type_id, volume_remain, volume_total, region_id)
-        values
-        <foreach collection="list" item="item" separator=",">
-            (#{item.duration,jdbcType=BIGINT}, #{item.isBuyOrder,jdbcType=BOOLEAN}, #{item.issued,jdbcType=TIMESTAMP},
-             #{item.locationId,jdbcType=BIGINT}, #{item.minVolume,jdbcType=BIGINT}, #{item.price,jdbcType=BIGINT},
-             #{item.orderRange,jdbcType=VARCHAR}, #{item.systemId,jdbcType=BIGINT}, #{item.typeId,jdbcType=BIGINT},
-             #{item.volumeRemain,jdbcType=BIGINT}, #{item.volumeTotal,jdbcType=BIGINT},
-             #{item.regionId,jdbcType=BIGINT})
+      </trim>
+      <trim prefix="issued = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.issued,jdbcType=TIMESTAMP}
         </foreach>
-    </insert>
+      </trim>
+      <trim prefix="location_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.locationId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="min_volume = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.minVolume,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="price = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.price,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="order_range = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.orderRange,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="system_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.systemId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="type_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.typeId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="volume_remain = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.volumeRemain,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="volume_total = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.volumeTotal,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="region_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.regionId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+    </trim>
+    where order_id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.orderId,jdbcType=BIGINT}
+    </foreach>
+  </update>
+  <update id="updateBatchSelective" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update market_order
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="duration = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.duration != null">
+            when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.duration,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="is_buy_order = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.isBuyOrder != null">
+            when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.isBuyOrder,jdbcType=BOOLEAN}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="issued = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.issued != null">
+            when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.issued,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="location_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.locationId != null">
+            when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.locationId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="min_volume = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.minVolume != null">
+            when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.minVolume,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="price = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.price != null">
+            when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.price,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="order_range = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.orderRange != null">
+            when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.orderRange,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="system_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.systemId != null">
+            when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.systemId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="type_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.typeId != null">
+            when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.typeId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="volume_remain = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.volumeRemain != null">
+            when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.volumeRemain,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="volume_total = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.volumeTotal != null">
+            when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.volumeTotal,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="region_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.regionId != null">
+            when order_id = #{item.orderId,jdbcType=BIGINT} then #{item.regionId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+    </trim>
+    where order_id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.orderId,jdbcType=BIGINT}
+    </foreach>
+  </update>
+  <insert id="batchInsert" parameterType="map">
+    <!--@mbg.generated-->
+    insert into market_order
+    (order_id, duration, is_buy_order, issued, location_id, min_volume, price, order_range, 
+      system_id, type_id, volume_remain, volume_total, region_id)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.orderId,jdbcType=BIGINT}, #{item.duration,jdbcType=BIGINT}, #{item.isBuyOrder,jdbcType=BOOLEAN}, 
+        #{item.issued,jdbcType=TIMESTAMP}, #{item.locationId,jdbcType=BIGINT}, #{item.minVolume,jdbcType=BIGINT}, 
+        #{item.price,jdbcType=BIGINT}, #{item.orderRange,jdbcType=VARCHAR}, #{item.systemId,jdbcType=BIGINT}, 
+        #{item.typeId,jdbcType=BIGINT}, #{item.volumeRemain,jdbcType=BIGINT}, #{item.volumeTotal,jdbcType=BIGINT}, 
+        #{item.regionId,jdbcType=BIGINT})
+    </foreach>
+  </insert>
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.MarketOrder">
+    <!--@mbg.generated-->
+    insert into market_order
+    (order_id, duration, is_buy_order, issued, location_id, min_volume, price, order_range, 
+      system_id, type_id, volume_remain, volume_total, region_id)
+    values
+    (#{orderId,jdbcType=BIGINT}, #{duration,jdbcType=BIGINT}, #{isBuyOrder,jdbcType=BOOLEAN}, 
+      #{issued,jdbcType=TIMESTAMP}, #{locationId,jdbcType=BIGINT}, #{minVolume,jdbcType=BIGINT}, 
+      #{price,jdbcType=BIGINT}, #{orderRange,jdbcType=VARCHAR}, #{systemId,jdbcType=BIGINT}, 
+      #{typeId,jdbcType=BIGINT}, #{volumeRemain,jdbcType=BIGINT}, #{volumeTotal,jdbcType=BIGINT}, 
+      #{regionId,jdbcType=BIGINT})
+    on duplicate key update 
+    order_id = #{orderId,jdbcType=BIGINT}, 
+    duration = #{duration,jdbcType=BIGINT}, 
+    is_buy_order = #{isBuyOrder,jdbcType=BOOLEAN}, 
+    issued = #{issued,jdbcType=TIMESTAMP}, 
+    location_id = #{locationId,jdbcType=BIGINT}, 
+    min_volume = #{minVolume,jdbcType=BIGINT}, 
+    price = #{price,jdbcType=BIGINT}, 
+    order_range = #{orderRange,jdbcType=VARCHAR}, 
+    system_id = #{systemId,jdbcType=BIGINT}, 
+    type_id = #{typeId,jdbcType=BIGINT}, 
+    volume_remain = #{volumeRemain,jdbcType=BIGINT}, 
+    volume_total = #{volumeTotal,jdbcType=BIGINT}, 
+    region_id = #{regionId,jdbcType=BIGINT}
+  </insert>
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.MarketOrder">
+    <!--@mbg.generated-->
+    insert into market_order
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="orderId != null">
+        order_id,
+      </if>
+      <if test="duration != null">
+        duration,
+      </if>
+      <if test="isBuyOrder != null">
+        is_buy_order,
+      </if>
+      <if test="issued != null">
+        issued,
+      </if>
+      <if test="locationId != null">
+        location_id,
+      </if>
+      <if test="minVolume != null">
+        min_volume,
+      </if>
+      <if test="price != null">
+        price,
+      </if>
+      <if test="orderRange != null">
+        order_range,
+      </if>
+      <if test="systemId != null">
+        system_id,
+      </if>
+      <if test="typeId != null">
+        type_id,
+      </if>
+      <if test="volumeRemain != null">
+        volume_remain,
+      </if>
+      <if test="volumeTotal != null">
+        volume_total,
+      </if>
+      <if test="regionId != null">
+        region_id,
+      </if>
+    </trim>
+    values
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="orderId != null">
+        #{orderId,jdbcType=BIGINT},
+      </if>
+      <if test="duration != null">
+        #{duration,jdbcType=BIGINT},
+      </if>
+      <if test="isBuyOrder != null">
+        #{isBuyOrder,jdbcType=BOOLEAN},
+      </if>
+      <if test="issued != null">
+        #{issued,jdbcType=TIMESTAMP},
+      </if>
+      <if test="locationId != null">
+        #{locationId,jdbcType=BIGINT},
+      </if>
+      <if test="minVolume != null">
+        #{minVolume,jdbcType=BIGINT},
+      </if>
+      <if test="price != null">
+        #{price,jdbcType=BIGINT},
+      </if>
+      <if test="orderRange != null">
+        #{orderRange,jdbcType=VARCHAR},
+      </if>
+      <if test="systemId != null">
+        #{systemId,jdbcType=BIGINT},
+      </if>
+      <if test="typeId != null">
+        #{typeId,jdbcType=BIGINT},
+      </if>
+      <if test="volumeRemain != null">
+        #{volumeRemain,jdbcType=BIGINT},
+      </if>
+      <if test="volumeTotal != null">
+        #{volumeTotal,jdbcType=BIGINT},
+      </if>
+      <if test="regionId != null">
+        #{regionId,jdbcType=BIGINT},
+      </if>
+    </trim>
+    on duplicate key update 
+    <trim suffixOverrides=",">
+      <if test="orderId != null">
+        order_id = #{orderId,jdbcType=BIGINT},
+      </if>
+      <if test="duration != null">
+        duration = #{duration,jdbcType=BIGINT},
+      </if>
+      <if test="isBuyOrder != null">
+        is_buy_order = #{isBuyOrder,jdbcType=BOOLEAN},
+      </if>
+      <if test="issued != null">
+        issued = #{issued,jdbcType=TIMESTAMP},
+      </if>
+      <if test="locationId != null">
+        location_id = #{locationId,jdbcType=BIGINT},
+      </if>
+      <if test="minVolume != null">
+        min_volume = #{minVolume,jdbcType=BIGINT},
+      </if>
+      <if test="price != null">
+        price = #{price,jdbcType=BIGINT},
+      </if>
+      <if test="orderRange != null">
+        order_range = #{orderRange,jdbcType=VARCHAR},
+      </if>
+      <if test="systemId != null">
+        system_id = #{systemId,jdbcType=BIGINT},
+      </if>
+      <if test="typeId != null">
+        type_id = #{typeId,jdbcType=BIGINT},
+      </if>
+      <if test="volumeRemain != null">
+        volume_remain = #{volumeRemain,jdbcType=BIGINT},
+      </if>
+      <if test="volumeTotal != null">
+        volume_total = #{volumeTotal,jdbcType=BIGINT},
+      </if>
+      <if test="regionId != null">
+        region_id = #{regionId,jdbcType=BIGINT},
+      </if>
+    </trim>
+  </insert>
 
     <select id="queryPrice" resultType="xyz.foolcat.eve.evehelper.dto.system.MarketOrderDTO">
         select distinct mo.type_id, it.type_name, price_sale.price as sale_price, price_buy.price as buy_price

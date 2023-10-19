@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 @Tag(name ="市场订单")
 @RestController
 @Slf4j
-@RequestMapping("/market/order")
+@RequestMapping("/*/market/order")
 @RequiredArgsConstructor
 public class MarketOrderController {
 

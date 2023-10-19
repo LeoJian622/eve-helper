@@ -22,7 +22,7 @@ import java.text.ParseException;
 @Tag(name ="蓝图数据")
 @RestController
 @Slf4j
-@RequestMapping("/blueprints")
+@RequestMapping("/*/blueprints")
 @RequiredArgsConstructor
 public class BlueprintsController {
 
@@ -30,12 +30,12 @@ public class BlueprintsController {
 
     @Parameters({
             @Parameter(name = "type", description = "枚举值，角色：char; 军团：crop" ,required = true),
-            @Parameter(name = "id", description = "角色或军团的ID" ,required = true)
+            @Parameter(name = "cid", description = "角色或军团的ID" ,required = true)
     })
     @Operation(summary = "蓝图数据-蓝图读取")
-    @GetMapping("/{type}/{id}")
-    public Result addBlueprintsList(@PathVariable String type, @PathVariable String id) throws ParseException {
-        blueprintsService.saveAndUpdateBlueprints(type, id);
+    @GetMapping("/{type}/{cid}")
+    public Result addBlueprintsList(@PathVariable String type, @PathVariable String cid) throws ParseException {
+        blueprintsService.saveAndUpdateBlueprints(type, cid);
         return Result.success();
     }
 

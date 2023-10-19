@@ -24,4 +24,75 @@
         #{item.activityId,jdbcType=TINYINT}, #{item.quantity,jdbcType=INTEGER})
     </foreach>
   </insert>
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.BlueprintFormula">
+    <!--@mbg.generated-->
+    insert into blueprint_formula
+    (blueprint_id, material_type_id, type_name, activity_id, quantity)
+    values
+    (#{blueprintId,jdbcType=INTEGER}, #{materialTypeId,jdbcType=INTEGER}, #{typeName,jdbcType=VARCHAR}, 
+      #{activityId,jdbcType=TINYINT}, #{quantity,jdbcType=INTEGER})
+    on duplicate key update 
+    blueprint_id = #{blueprintId,jdbcType=INTEGER}, 
+    material_type_id = #{materialTypeId,jdbcType=INTEGER}, 
+    type_name = #{typeName,jdbcType=VARCHAR}, 
+    activity_id = #{activityId,jdbcType=TINYINT}, 
+    quantity = #{quantity,jdbcType=INTEGER}
+  </insert>
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.BlueprintFormula">
+    <!--@mbg.generated-->
+    insert into blueprint_formula
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="blueprintId != null">
+        blueprint_id,
+      </if>
+      <if test="materialTypeId != null">
+        material_type_id,
+      </if>
+      <if test="typeName != null">
+        type_name,
+      </if>
+      <if test="activityId != null">
+        activity_id,
+      </if>
+      <if test="quantity != null">
+        quantity,
+      </if>
+    </trim>
+    values
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="blueprintId != null">
+        #{blueprintId,jdbcType=INTEGER},
+      </if>
+      <if test="materialTypeId != null">
+        #{materialTypeId,jdbcType=INTEGER},
+      </if>
+      <if test="typeName != null">
+        #{typeName,jdbcType=VARCHAR},
+      </if>
+      <if test="activityId != null">
+        #{activityId,jdbcType=TINYINT},
+      </if>
+      <if test="quantity != null">
+        #{quantity,jdbcType=INTEGER},
+      </if>
+    </trim>
+    on duplicate key update 
+    <trim suffixOverrides=",">
+      <if test="blueprintId != null">
+        blueprint_id = #{blueprintId,jdbcType=INTEGER},
+      </if>
+      <if test="materialTypeId != null">
+        material_type_id = #{materialTypeId,jdbcType=INTEGER},
+      </if>
+      <if test="typeName != null">
+        type_name = #{typeName,jdbcType=VARCHAR},
+      </if>
+      <if test="activityId != null">
+        activity_id = #{activityId,jdbcType=TINYINT},
+      </if>
+      <if test="quantity != null">
+        quantity = #{quantity,jdbcType=INTEGER},
+      </if>
+    </trim>
+  </insert>
 </mapper>

@@ -16,6 +16,10 @@ public interface MarketOrderMapper extends BaseMapper<MarketOrder> {
 
     int batchInsert(@Param("list") List<MarketOrder> list);
 
+    int insertOrUpdate(MarketOrder record);
+
+    int insertOrUpdateSelective(MarketOrder record);
+
     /**
      * 查询某个地点的价格
      *

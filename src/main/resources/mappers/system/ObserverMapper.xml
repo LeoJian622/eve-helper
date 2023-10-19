@@ -5,7 +5,7 @@
     <!--@mbg.generated-->
     <!--@Table observer-->
     <id column="observer_id" jdbcType="BIGINT" property="observerId" />
-    <result column="observer_type" jdbcType="BIGINT" property="observerType" />
+    <result column="observer_type" jdbcType="VARCHAR" property="observerType" />
     <result column="last_updated" jdbcType="TIMESTAMP" property="lastUpdated" />
     <result column="croporation_id" jdbcType="BIGINT" property="croporationId" />
   </resultMap>
@@ -19,7 +19,7 @@
     <trim prefix="set" suffixOverrides=",">
       <trim prefix="observer_type = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when observer_id = #{item.observerId,jdbcType=BIGINT} then #{item.observerType,jdbcType=BIGINT}
+          when observer_id = #{item.observerId,jdbcType=BIGINT} then #{item.observerType,jdbcType=VARCHAR}
         </foreach>
       </trim>
       <trim prefix="last_updated = case" suffix="end,">
@@ -45,7 +45,7 @@
       <trim prefix="observer_type = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
           <if test="item.observerType != null">
-            when observer_id = #{item.observerId,jdbcType=BIGINT} then #{item.observerType,jdbcType=BIGINT}
+            when observer_id = #{item.observerId,jdbcType=BIGINT} then #{item.observerType,jdbcType=VARCHAR}
           </if>
         </foreach>
       </trim>
@@ -75,8 +75,69 @@
     (observer_id, observer_type, last_updated, croporation_id)
     values
     <foreach collection="list" item="item" separator=",">
-      (#{item.observerId,jdbcType=BIGINT}, #{item.observerType,jdbcType=BIGINT}, #{item.lastUpdated,jdbcType=TIMESTAMP}, 
+      (#{item.observerId,jdbcType=BIGINT}, #{item.observerType,jdbcType=VARCHAR}, #{item.lastUpdated,jdbcType=TIMESTAMP}, 
         #{item.croporationId,jdbcType=BIGINT})
     </foreach>
+  </insert>
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.Observer">
+    <!--@mbg.generated-->
+    insert into observer
+    (observer_id, observer_type, last_updated, croporation_id)
+    values
+    (#{observerId,jdbcType=BIGINT}, #{observerType,jdbcType=VARCHAR}, #{lastUpdated,jdbcType=TIMESTAMP}, 
+      #{croporationId,jdbcType=BIGINT})
+    on duplicate key update 
+    observer_id = #{observerId,jdbcType=BIGINT}, 
+    observer_type = #{observerType,jdbcType=VARCHAR}, 
+    last_updated = #{lastUpdated,jdbcType=TIMESTAMP}, 
+    croporation_id = #{croporationId,jdbcType=BIGINT}
+  </insert>
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.Observer">
+    <!--@mbg.generated-->
+    insert into observer
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="observerId != null">
+        observer_id,
+      </if>
+      <if test="observerType != null">
+        observer_type,
+      </if>
+      <if test="lastUpdated != null">
+        last_updated,
+      </if>
+      <if test="croporationId != null">
+        croporation_id,
+      </if>
+    </trim>
+    values
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="observerId != null">
+        #{observerId,jdbcType=BIGINT},
+      </if>
+      <if test="observerType != null">
+        #{observerType,jdbcType=VARCHAR},
+      </if>
+      <if test="lastUpdated != null">
+        #{lastUpdated,jdbcType=TIMESTAMP},
+      </if>
+      <if test="croporationId != null">
+        #{croporationId,jdbcType=BIGINT},
+      </if>
+    </trim>
+    on duplicate key update 
+    <trim suffixOverrides=",">
+      <if test="observerId != null">
+        observer_id = #{observerId,jdbcType=BIGINT},
+      </if>
+      <if test="observerType != null">
+        observer_type = #{observerType,jdbcType=VARCHAR},
+      </if>
+      <if test="lastUpdated != null">
+        last_updated = #{lastUpdated,jdbcType=TIMESTAMP},
+      </if>
+      <if test="croporationId != null">
+        croporation_id = #{croporationId,jdbcType=BIGINT},
+      </if>
+    </trim>
   </insert>
 </mapper>
