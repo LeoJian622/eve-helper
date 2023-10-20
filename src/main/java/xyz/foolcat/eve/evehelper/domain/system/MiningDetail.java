@@ -18,10 +18,10 @@ public class MiningDetail implements Serializable {
     private String id;
 
     /**
-     * 角色ID
+     * 人物ID
      */
     @TableField(value = "character_id")
-    @Schema(description = "角色ID")
+    @Schema(description = "人物ID")
     private Integer characterId;
 
     @TableField(value = "character_name")
@@ -29,10 +29,10 @@ public class MiningDetail implements Serializable {
     private String characterName;
 
     /**
-     * 开采时该角色所属公司
+     * 开采时该人物所属公司
      */
     @TableField(value = "recorded_corporation_id")
-    @Schema(description = "开采时该角色所属公司")
+    @Schema(description = "开采时该人物所属公司")
     private Integer recordedCorporationId;
 
     @TableField(value = "recorded_corporation_name")

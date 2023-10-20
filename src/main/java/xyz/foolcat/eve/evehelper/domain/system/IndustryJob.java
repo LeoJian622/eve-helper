@@ -101,17 +101,17 @@ public class IndustryJob implements Serializable {
     private Long duration;
 
     /**
-     * 启动角色
+     * 启动人物
      */
     @TableField(value = "installer")
-    @Schema(description = "启动角色")
+    @Schema(description = "启动人物")
     private String installer;
 
     /**
-     * 完成角色
+     * 完成人物
      */
     @TableField(value = "completed_character")
-    @Schema(description = "完成角色")
+    @Schema(description = "完成人物")
     private String completedCharacter;
 
     /**
@@ -164,10 +164,10 @@ public class IndustryJob implements Serializable {
     private Date pauseDate;
 
     /**
-     * 启动角色ID
+     * 启动人物ID
      */
     @TableField(value = "installer_id")
-    @Schema(description = "启动角色ID")
+    @Schema(description = "启动人物ID")
     private Long installerId;
 
     private static final long serialVersionUID = 1L;

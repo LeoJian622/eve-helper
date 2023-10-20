@@ -11,7 +11,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 游戏角色表
+ * 游戏人物表
  */
 @Schema(description = "游戏账户表")
 @Data
@@ -29,17 +29,17 @@ public class EveAccount implements Serializable {
     private Integer userId;
 
     /**
-     * 角色ID
+     * 人物ID
      */
     @TableField(value = "character_id")
-    @Schema(description = "角色ID")
+    @Schema(description = "人物ID")
     private Integer characterId;
 
     /**
-     * 角色名
+     * 人物名
      */
     @TableField(value = "character_name")
-    @Schema(description = "角色名")
+    @Schema(description = "人物名")
     private String characterName;
 
     /**
@@ -71,10 +71,10 @@ public class EveAccount implements Serializable {
     private String allianceName;
 
     /**
-     * 角色授权
+     * 人物授权
      */
     @TableField(value = "refresh_token")
-    @Schema(description = "角色授权")
+    @Schema(description = "人物授权")
     private String refreshToken;
 
     @TableField(value = "gmt_create")

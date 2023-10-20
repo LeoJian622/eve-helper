@@ -10,7 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.common.result.ResultCode;
-import xyz.foolcat.eve.evehelper.esi.model.AlliancesIconResponse;
+import xyz.foolcat.eve.evehelper.esi.model.IconResponse;
 import xyz.foolcat.eve.evehelper.esi.model.AlliancesResponse;
 import xyz.foolcat.eve.evehelper.esi.model.AuthErrorResponse;
 import xyz.foolcat.eve.evehelper.exception.EsiException;
@@ -100,14 +100,14 @@ public class AlliancesApi {
             @Parameter(name = "datasource",description = "服务器数据源" ,required = true),
     })
     @Operation(summary = "ESI-联盟图标地址")
-    public Mono<AlliancesIconResponse> queryAlliancesIcon(Long allianceId, String datasource) {
+    public Mono<IconResponse> queryAlliancesIcon(Long allianceId, String datasource) {
         return apiClient.get().uri("/alliances/{alliance_id}/icons/?datasource={datasource}", allianceId, datasource)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(AuthErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(AuthErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToMono(AlliancesIconResponse.class);
+                .bodyToMono(IconResponse.class);
     }
 
 }

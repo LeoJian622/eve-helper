@@ -19,7 +19,7 @@ import java.text.ParseException;
  * @date 2021-12-10 17:02
  */
 
-@Tag(name ="角色")
+@Tag(name ="人物")
 @RestController
 @Slf4j
 @RequestMapping("/character")
@@ -29,7 +29,7 @@ public class CharacterController {
     private final EsiApiService esiApiService;
 
     @Parameters({
-            @Parameter(name = "type", description = "枚举值，角色：char; 军团：crop; 技能：skill; 基础：normal" ,required = true),
+            @Parameter(name = "type", description = "枚举值，人物：char; 军团：crop; 技能：skill; 基础：normal" ,required = true),
             @Parameter(name = "code", description = "授权code" ,required = true)
     })
     @PostMapping("/{type}/{code}")

@@ -4,9 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
-    * 游戏角色表
+    * 游戏人物表
     */
-@Schema(title="游戏角色视图")
+@Schema(title="游戏人物视图")
 @Data
 public class EveCharacterVO {
 
@@ -20,15 +20,15 @@ public class EveCharacterVO {
     private Integer userId;
 
     /**
-     * 角色ID
+     * 人物ID
      */
-    @Schema(name="角色ID")
+    @Schema(name="人物ID")
     private Integer characterId;
 
     /**
-     * 角色名
+     * 人物名
      */
-    @Schema(name="角色名")
+    @Schema(name="人物名")
     private String characterName;
 
     /**

@@ -34,21 +34,21 @@ public class AssetsApi {
 
     /**
      *
-     * 获取角色资产清单
+     * 获取人物资产清单
      *
-     * @param characterId 角色ID
+     * @param characterId 人物ID
      * @param datasource 服务器
      * @param page 页码
      * @param accessesToken 授权Token
      * @return Flux<AssertResponse>
      */
     @Parameters({
-            @Parameter(name = "characterId",description = "角色ID" ,required = true),
+            @Parameter(name = "characterId",description = "人物ID" ,required = true),
             @Parameter(name = "datasource",description = "服务器数据源" ,required = true),
             @Parameter(name = "page",description = "页码" ,required = true),
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
-    @Operation(summary = "ESI-角色资产清单")
+    @Operation(summary = "ESI-人物资产清单")
     public Flux<AssertResponse> queryCharactersAssets(Long characterId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/characters/{character_id}/assets/?datasource={datasource}&page={page}",characterId,datasource,page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
@@ -62,21 +62,21 @@ public class AssetsApi {
 
     /**
      *
-     * 查询角色物品位置信息
+     * 查询人物物品位置信息
      *
-     * @param characterId 角色ID
+     * @param characterId 人物ID
      * @param datasource 服务器
      * @param itemIds 物品ID列表
      * @param accessesToken 授权Token
      * @return Flux<AssetsLocationResponse>
      */
     @Parameters({
-            @Parameter(name = "characterId",description = "角色ID" ,required = true),
+            @Parameter(name = "characterId",description = "人物ID" ,required = true),
             @Parameter(name = "datasource",description = "服务器数据源" ,required = true),
             @Parameter(name = "itemIds",description = "物品ID清单" ,required = true),
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
-    @Operation(summary = "ESI-角色物品位置信息")
+    @Operation(summary = "ESI-人物物品位置信息")
     public Flux<AssetsLocationResponse> queryCharactersAssetsLocations(Long characterId, String datasource, List<Long> itemIds, String accessesToken) {
         return apiClient.post().uri("/characters/{character_id}/assets/locations/?datasource={datasource}",characterId,datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
@@ -92,16 +92,16 @@ public class AssetsApi {
 
     /**
      *
-     * 查询角色物品命名信息
+     * 查询人物物品命名信息
      *
-     * @param characterId 角色ID
+     * @param characterId 人物ID
      * @param datasource 服务器
      * @param itemIds 物品ID列表
      * @param accessesToken 授权Token
      * @return Flux<AssetsNameResponse>
      */
     @Parameters({
-            @Parameter(name = "characterId",description = "角色ID" ,required = true),
+            @Parameter(name = "characterId",description = "人物ID" ,required = true),
             @Parameter(name = "datasource",description = "服务器数据源" ,required = true),
             @Parameter(name = "itemIds",description = "物品ID清单" ,required = true),
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),

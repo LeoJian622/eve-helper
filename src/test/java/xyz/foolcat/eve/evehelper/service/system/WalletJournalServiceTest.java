@@ -12,7 +12,7 @@ import javax.annotation.Resource;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @WithUserDetails("user1")
-@DisplayName("角色钱包交易记录")
+@DisplayName("人物钱包交易记录")
 class WalletJournalServiceTest {
 
     @Resource

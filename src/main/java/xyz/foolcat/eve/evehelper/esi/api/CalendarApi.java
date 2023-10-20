@@ -36,16 +36,16 @@ public class CalendarApi {
     private final WebClient apiClient;
 
     /**
-     * 角色日历事件
+     * 人物日历事件
      *
-     * @param characterId   角色ID
+     * @param characterId   人物ID
      * @param datasource    服务器
      * @param fromEventId   事件码
      * @param accessesToken 授权Token
      * @return
      */
     @Parameters({
-            @Parameter(name = "characterId", description = "角色ID", required = true),
+            @Parameter(name = "characterId", description = "人物ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
             @Parameter(name = "fromEventId", description = "事件码", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
@@ -65,14 +65,14 @@ public class CalendarApi {
     /**
      * 日程事件详情
      *
-     * @param characterId   角色ID
+     * @param characterId   人物ID
      * @param datasource    服务器
      * @param eventId       事件码
      * @param accessesToken 授权Token
      * @return
      */
     @Parameters({
-            @Parameter(name = "characterId", description = "角色ID", required = true),
+            @Parameter(name = "characterId", description = "人物ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
             @Parameter(name = "eventId", description = "事件ID", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
@@ -93,7 +93,7 @@ public class CalendarApi {
     /**
      * 回复事件确认
      *
-     * @param characterId       角色ID
+     * @param characterId       人物ID
      * @param datasource        服务器
      * @param eventId           事件码
      * @param calendarEventEnum 回复值
@@ -101,7 +101,7 @@ public class CalendarApi {
      * @return
      */
     @Parameters({
-            @Parameter(name = "characterId", description = "角色ID", required = true),
+            @Parameter(name = "characterId", description = "人物ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
             @Parameter(name = "eventId", description = "事件ID", required = true),
             @Parameter(name = "calendarEvetEnum", description = "回复值", required = true),
@@ -127,14 +127,14 @@ public class CalendarApi {
     /**
      * 查询受邀请人的回复情况
      *
-     * @param characterId   角色ID
+     * @param characterId   人物ID
      * @param datasource    服务器
      * @param eventId       事件码
      * @param accessesToken 授权Token
      * @return
      */
     @Parameters({
-            @Parameter(name = "characterId", description = "角色ID", required = true),
+            @Parameter(name = "characterId", description = "人物ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
             @Parameter(name = "eventId", description = "事件ID", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
