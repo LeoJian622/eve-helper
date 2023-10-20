@@ -87,15 +87,15 @@ public class IndustryJobDTO extends BaseEntity implements Serializable {
     private String duration;
 
     /**
-     * 启动角色
+     * 启动人物
      */
-    @Schema(name="启动角色")
+    @Schema(name="启动人物")
     private String installerId;
 
     /**
-     * 完成角色
+     * 完成人物
      */
-    @Schema(name="完成角色")
+    @Schema(name="完成人物")
     private String completedCharacterId;
 
     /**

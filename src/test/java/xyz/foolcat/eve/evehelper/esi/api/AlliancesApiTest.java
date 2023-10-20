@@ -7,7 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import xyz.foolcat.eve.evehelper.esi.model.AlliancesIconResponse;
+import xyz.foolcat.eve.evehelper.esi.model.IconResponse;
 import xyz.foolcat.eve.evehelper.esi.model.AlliancesResponse;
 
 import java.util.List;
@@ -46,7 +46,7 @@ class AlliancesApiTest {
 
     @Test
     void queryAlliancesIcon() {
-        AlliancesIconResponse icon = alliancesApi.queryAlliancesIcon(562593865L, "serenity").block();
+        IconResponse icon = alliancesApi.queryAlliancesIcon(562593865L, "serenity").block();
         Assert.notNull(icon);
         System.out.println("icon = " + icon);
     }

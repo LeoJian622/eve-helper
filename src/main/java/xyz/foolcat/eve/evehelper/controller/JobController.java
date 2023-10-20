@@ -34,8 +34,8 @@ public class JobController {
     private final EsiApiService esiApiService;
 
     @Parameters({
-            @Parameter(name = "type", description = "枚举值，角色：char; 军团：crop" ,required = true),
-            @Parameter(name = "id", description = "角色或军团的ID" ,required = true)
+            @Parameter(name = "type", description = "枚举值，人物：char; 军团：crop" ,required = true),
+            @Parameter(name = "id", description = "人物或军团的ID" ,required = true)
     })
     @Operation(summary = "工业制造-制造线数据读取")
     @GetMapping("/{type}/{id}")

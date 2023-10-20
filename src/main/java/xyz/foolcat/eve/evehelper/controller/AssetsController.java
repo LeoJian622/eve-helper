@@ -27,8 +27,8 @@ public class AssetsController {
     private final AssertsService assertsService;
 
     @Parameters({
-            @Parameter(name = "type",description = "枚举值，角色：char; 军团：crop" ,required = true),
-            @Parameter(name = "cid",description = "角色或军团的ID" ,required = true)
+            @Parameter(name = "type",description = "枚举值，人物：char; 军团：crop" ,required = true),
+            @Parameter(name = "cid",description = "人物或军团的ID" ,required = true)
     })
     @Operation(summary = "游戏资产-资产读取")
     @GetMapping("/{type}/{cid}")
@@ -38,7 +38,7 @@ public class AssetsController {
     }
 
     @Parameters({
-            @Parameter(name = "id", description = "角色或军团的ID", required = true),
+            @Parameter(name = "id", description = "人物或军团的ID", required = true),
             @Parameter(name = "current", description = "页码"),
             @Parameter(name = "size", description = "每页行数")
     })

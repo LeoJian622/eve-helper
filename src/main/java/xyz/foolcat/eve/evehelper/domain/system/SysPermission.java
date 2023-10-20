@@ -39,7 +39,7 @@ public class SysPermission extends BaseEntity implements Serializable {
     @Schema(description = "权限名称")
     private String name;
     @TableField(exist = false)
-    @Schema(name = "角色列表")
+    @Schema(name = "人物列表")
     private List<String> roles;
 
     /**

@@ -43,7 +43,7 @@ class CharacterApiTest {
     }
 
     @Test
-    void queryCharactersCalendarEventId() {
+    void queryCharacter() {
         CharacterPublicInfoResponse characterPublicInfoResponse = characterApi.queryCharacter(2112818290L, "serenity", at).block();
         System.out.println("characterPublicInfoResponse = " + characterPublicInfoResponse);
     }
@@ -70,5 +70,53 @@ class CharacterApiTest {
     void queryCharacterCspa() {
         Float aFloat = characterApi.queryCharacterCspa(2112818290L, "serenity", Arrays.asList(2112832425, 2112965519, 91424410), at).block();
         System.out.println("aFloat = " + aFloat);
+    }
+
+    @Test
+    void queryCharacterFatigue() {
+        FatigueResponse fatigueResponse = characterApi.queryCharacterFatigue(2112818290L, "serenity", at).block();
+        System.out.println("fatigueResponse = " + fatigueResponse);
+    }
+
+    @Test
+    void queryCharacterMedals() {
+        List<MedalResponse> fatigueResponses = characterApi.queryCharacterMedals(2112818290L, "serenity", at).collectList().block();
+        System.out.println("fatigueResponses = " + fatigueResponses);
+    }
+
+    @Test
+    void queryCharacterNotification() {
+        List<NotificationResponse> notificationResponses = characterApi.queryCharacterNotification(2112818290L, "serenity", at).collectList().block();
+        System.out.println("notificationResponses = " + notificationResponses);
+    }
+
+    @Test
+    void queryCharacterNotificationContact() {
+        List<NotificationContactResponse> notificationContactResponses = characterApi.queryCharacterNotificationContact(2112818290L, "serenity", at).collectList().block();
+        System.out.println("notificationContactResponses = " + notificationContactResponses);
+    }
+
+    @Test
+    void queryCharacterPortrait() {
+        IconResponse iconResponse = characterApi.queryCharacterPortrait(2112818290L, "serenity", at).block();
+        System.out.println("iconResponse = " + iconResponse);
+    }
+
+    @Test
+    void queryCharacterRoles() {
+        RoleResponse roleResponse = characterApi.queryCharacterRoles(2112818290L, "serenity", at).block();
+        System.out.println("roleResponse = " + roleResponse);
+    }
+
+    @Test
+    void queryCharacterStanding() {
+        List<StandingResponse> standingResponses = characterApi.queryCharacterStanding(2112818290L, "serenity", at).collectList().block();
+        System.out.println("standingResponses = " + standingResponses);
+    }
+
+    @Test
+    void queryCharacterTitle() {
+        List<TitleResponse> titleResponses = characterApi.queryCharacterTitle(2112818290L, "serenity", at).collectList().block();
+        System.out.println("titleResponses = " + titleResponses);
     }
 }
