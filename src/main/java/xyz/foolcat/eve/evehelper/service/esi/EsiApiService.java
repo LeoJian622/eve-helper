@@ -112,7 +112,7 @@ public class EsiApiService {
         //获取角色信息
         CharacterInfoResponseDTO characterInfoResponseDTO = esiNormalClient.getCharacterInfo(characterId);
         //联盟军团信息
-        List<UniverseNameResponeDTO> universeNames = esiNormalClient.getUniverseName(Arrays.asList(characterInfoResponseDTO.getAlliance_id(), characterInfoResponseDTO.getCorporation_id()));
+        List<UniverseNameResponeDTO> universeNames = esiNormalClient.getUniverseName(List.of(characterInfoResponseDTO.getAlliance_id(), characterInfoResponseDTO.getCorporation_id()));
         Map<Integer, String> universeNameMap = universeNames.stream().collect(Collectors.toMap(UniverseNameResponeDTO::getId, UniverseNameResponeDTO::getName, (k1, k2) -> k1));
 
         //redis缓存access_token

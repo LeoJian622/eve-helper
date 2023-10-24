@@ -1,5 +1,6 @@
-package xyz.foolcat.eve.evehelper.esi.model;
+package xyz.foolcat.eve.evehelper.esi.model.sub;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
 
 /**
@@ -11,6 +12,7 @@ import lombok.Data;
  */
 
 @Data
+@Tag(name = "位标信息")
 public class Position {
 
     private Double x;

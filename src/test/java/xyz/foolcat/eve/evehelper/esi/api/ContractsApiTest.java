@@ -11,23 +11,21 @@ import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
 import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
-import xyz.foolcat.eve.evehelper.esi.model.AssertResponse;
-import xyz.foolcat.eve.evehelper.esi.model.AssetsLocationResponse;
-import xyz.foolcat.eve.evehelper.esi.model.AssetsNameResponse;
 import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
+import xyz.foolcat.eve.evehelper.esi.model.BidsResponse;
+import xyz.foolcat.eve.evehelper.esi.model.ContractResponse;
 import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
-@DisplayName("ESI Assets Api Test")
-class AssetsApiTest {
+@DisplayName("ESI Contract Api Test")
+class ContractsApiTest {
 
     @Autowired
-    AssetsApi assetsApi;
+    ContractsApi contractsApi;
 
     @Autowired
     EveAccountService eveAccountService;
@@ -46,24 +44,15 @@ class AssetsApiTest {
     }
 
     @Test
-    void queryCharacterAssetsById() {
-        List<AssertResponse> block = assetsApi.queryCharactersAssets(2112818290L, "serenity", 1, at).collectList().block();
-        System.out.println("block = " + block);
+    void queryCharactersContracts() {
+        List<ContractResponse> contractResponses = contractsApi.queryCharactersContracts(2112818290L, "serenity", 1, at).collectList().block();
+        System.out.println("contractResponses = " + contractResponses);
     }
 
     @Test
-    void queryCharacterAssetsLocations() {
-        List<Long> itemIds = List.of(1005714787537L, 1006072740228L, 1006142100083L);
-
-        List<AssetsLocationResponse> block = assetsApi.queryCharactersAssetsLocations(2112818290L, "serenity", itemIds, at).collectList().block();
-        System.out.println("block = " + block);
+    void queryCharactersContractsBids() {
+        List<BidsResponse> bidsResponses = contractsApi.queryCharactersContractsBids(2112818290L, "serenity", 54403173, at).collectList().block();
+        System.out.println("bidsResponses = " + bidsResponses);
     }
 
-    @Test
-    void queryCharacterAssetsNames() {
-        List<Long> itemIds = List.of(1005714787537L, 1006072740228L, 1006142100083L);
-
-        List<AssetsNameResponse> block = assetsApi.queryCharactersAssetsNames(2112818290L, "serenity", itemIds, at).collectList().block();
-        System.out.println("block = " + block);
-    }
 }

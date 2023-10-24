@@ -1,5 +1,6 @@
-package xyz.foolcat.eve.evehelper.esi.model;
+package xyz.foolcat.eve.evehelper.esi.model.sub;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
 
 /**
@@ -8,6 +9,7 @@ import lombok.Data;
  */
 
 @Data
+@Tag(name = "图标数据")
 public class Graphics {
 
     private Integer color;

@@ -13,7 +13,7 @@ import lombok.Data;
 
 @Data
 @Tag(name = "错误响应体 40X 50X object")
-public class AuthErrorResponse {
+public class ErrorResponse {
 
     private String error;
 
