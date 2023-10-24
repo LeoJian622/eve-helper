@@ -11,23 +11,20 @@ import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
 import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
-import xyz.foolcat.eve.evehelper.esi.model.AssertResponse;
-import xyz.foolcat.eve.evehelper.esi.model.AssetsLocationResponse;
-import xyz.foolcat.eve.evehelper.esi.model.AssetsNameResponse;
 import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
+import xyz.foolcat.eve.evehelper.esi.model.CloneResponse;
 import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
-@DisplayName("ESI Assets Api Test")
-class AssetsApiTest {
+@DisplayName("ESI Clone Api Test")
+class CloneApiTest {
 
     @Autowired
-    AssetsApi assetsApi;
+    CloneApi cloneApi;
 
     @Autowired
     EveAccountService eveAccountService;
@@ -46,24 +43,14 @@ class AssetsApiTest {
     }
 
     @Test
-    void queryCharacterAssetsById() {
-        List<AssertResponse> block = assetsApi.queryCharactersAssets(2112818290L, "serenity", 1, at).collectList().block();
-        System.out.println("block = " + block);
+    void queryCharacterClone() {
+        CloneResponse cloneResponse = cloneApi.queryCharacterClone(2112818290L, "serenity", at).block();
+        System.out.println("cloneResponse = " + cloneResponse);
     }
 
     @Test
-    void queryCharacterAssetsLocations() {
-        List<Long> itemIds = List.of(1005714787537L, 1006072740228L, 1006142100083L);
-
-        List<AssetsLocationResponse> block = assetsApi.queryCharactersAssetsLocations(2112818290L, "serenity", itemIds, at).collectList().block();
-        System.out.println("block = " + block);
-    }
-
-    @Test
-    void queryCharacterAssetsNames() {
-        List<Long> itemIds = List.of(1005714787537L, 1006072740228L, 1006142100083L);
-
-        List<AssetsNameResponse> block = assetsApi.queryCharactersAssetsNames(2112818290L, "serenity", itemIds, at).collectList().block();
-        System.out.println("block = " + block);
+    void queryCharacterImplant() {
+        List<Integer> integers = cloneApi.queryCharacterImplant(2112818290L, "serenity", at).collectList().block();
+        System.out.println("integers = " + integers);
     }
 }

@@ -3,6 +3,7 @@ package xyz.foolcat.eve.evehelper.esi.api;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.apache.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -13,10 +14,10 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.common.result.ResultCode;
 import xyz.foolcat.eve.evehelper.esi.enums.CalendarEventEnum;
-import xyz.foolcat.eve.evehelper.esi.model.AuthErrorResponse;
 import xyz.foolcat.eve.evehelper.esi.model.CalendarEventAttendeesResponse;
-import xyz.foolcat.eve.evehelper.esi.model.CalendarResponse;
 import xyz.foolcat.eve.evehelper.esi.model.CalendarEventResponse;
+import xyz.foolcat.eve.evehelper.esi.model.CalendarResponse;
+import xyz.foolcat.eve.evehelper.esi.model.ErrorResponse;
 import xyz.foolcat.eve.evehelper.exception.EsiException;
 
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Tag(name = "ESI 日历事件相关接口")
 public class CalendarApi {
 
     private final WebClient apiClient;
@@ -56,9 +58,9 @@ public class CalendarApi {
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
-                        response.bodyToMono(AuthErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
-                        response.bodyToMono(AuthErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(CalendarResponse.class);
     }
 
@@ -83,9 +85,9 @@ public class CalendarApi {
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
-                        response.bodyToMono(AuthErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
-                        response.bodyToMono(AuthErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(CalendarEventResponse.class);
     }
 
@@ -117,9 +119,9 @@ public class CalendarApi {
                 .body(Mono.just(responseReply), Map.class)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
-                        response.bodyToMono(AuthErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
-                        response.bodyToMono(AuthErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(Object.class)
                 ;
     }
@@ -145,9 +147,9 @@ public class CalendarApi {
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
-                        response.bodyToMono(AuthErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
-                        response.bodyToMono(AuthErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(CalendarEventAttendeesResponse.class);
     }
 

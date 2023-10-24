@@ -3,6 +3,7 @@ package xyz.foolcat.eve.evehelper.esi.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
+import xyz.foolcat.eve.evehelper.esi.model.sub.Position;
 
 /**
  * @author Leojan

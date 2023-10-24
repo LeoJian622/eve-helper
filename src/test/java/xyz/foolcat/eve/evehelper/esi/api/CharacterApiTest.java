@@ -68,7 +68,7 @@ class CharacterApiTest {
 
     @Test
     void queryCharacterCspa() {
-        Float aFloat = characterApi.queryCharacterCspa(2112818290L, "serenity", Arrays.asList(2112832425, 2112965519, 91424410), at).block();
+        Float aFloat = characterApi.queryCharacterCspa(2112818290L, "serenity", List.of(2112832425, 2112965519, 91424410), at).block();
         System.out.println("aFloat = " + aFloat);
     }
 
@@ -118,5 +118,11 @@ class CharacterApiTest {
     void queryCharacterTitle() {
         List<TitleResponse> titleResponses = characterApi.queryCharacterTitle(2112818290L, "serenity", at).collectList().block();
         System.out.println("titleResponses = " + titleResponses);
+    }
+
+    @Test
+    void queryCharacterAffiliation() {
+        List<AffiliationResponse> affiliationResponses = characterApi.queryCharacterAffiliation("serenity", List.of(2112832425, 2112965519, 91424410), at).collectList().block();
+        System.out.println("affiliationResponses = " + affiliationResponses);
     }
 }

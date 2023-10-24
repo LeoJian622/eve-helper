@@ -28,8 +28,8 @@ import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
-import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -58,7 +58,7 @@ public class AuthenticationSuccessServletHandler implements AuthenticationSucces
                 .claim(SecurityConstant.USER_ID_KEY, sysUser.getId())
                 .claim(SecurityConstant.USER_NAME_KEY, sysUser.getUsername())
                 .claim(SecurityConstant.JWT_AUTHORITIES_KEY, sysUser.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
-//                .claim("esi-authorise", Arrays.asList("qwe", "asd", "zxc"))
+//                .claim("esi-authorise", List.of("qwe", "asd", "zxc"))
                 .expirationTime(new Date(System.currentTimeMillis() + jwtTokenProperties.getExpirationTime() * 1000))
                 .build();
 
@@ -87,8 +87,8 @@ public class AuthenticationSuccessServletHandler implements AuthenticationSucces
                 .issuer("https://c2id.com")
                 .claim(SecurityConstant.USER_ID_KEY, "1")
                 .claim(SecurityConstant.USER_NAME_KEY, "admin")
-                .claim(SecurityConstant.JWT_AUTHORITIES_KEY, Arrays.asList("qwe", "asd", "zxc"))
-                .claim("esi-authorise", Arrays.asList("qwe", "asd", "zxc"))
+                .claim(SecurityConstant.JWT_AUTHORITIES_KEY, List.of("qwe", "asd", "zxc"))
+                .claim("esi-authorise", List.of("qwe", "asd", "zxc"))
                 .expirationTime(new Date(System.currentTimeMillis() + 60 * 1000))
                 .build();
 

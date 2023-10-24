@@ -37,7 +37,7 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
     }
 
     public boolean refreshPermRolesRules() {
-        redisTemplate.delete(Arrays.asList(GlobalConstants.URL_PERM_ROLES_KEY, GlobalConstants.BTN_PERM_ROLES_KEY));
+        redisTemplate.delete(List.of(GlobalConstants.URL_PERM_ROLES_KEY, GlobalConstants.BTN_PERM_ROLES_KEY));
         List<SysPermission> permissions = this.listPermRoles();
         if (CollectionUtil.isNotEmpty(permissions)) {
             //init URL【权限->角色（合集）】规则

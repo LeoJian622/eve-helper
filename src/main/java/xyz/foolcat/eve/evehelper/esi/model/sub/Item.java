@@ -1,6 +1,7 @@
-package xyz.foolcat.eve.evehelper.esi.model;
+package xyz.foolcat.eve.evehelper.esi.model.sub;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
 
 /**
@@ -11,6 +12,7 @@ import lombok.Data;
  */
 
 @Data
+@Tag(name = "物品信息")
 public class Item {
 
     @JsonProperty("item_id")
