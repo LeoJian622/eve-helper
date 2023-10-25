@@ -38,18 +38,15 @@ public class CharacterApi {
      *
      * @param characterId   人物ID
      * @param datasource    服务器
-     * @param accessesToken 授权码
      * @return
      */
     @Parameters({
             @Parameter(name = "characterId", description = "人物ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
-            @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-人物详细公开信息")
-    public Mono<CharacterPublicInfoResponse> queryCharacter(Long characterId, String datasource, String accessesToken) {
+    public Mono<CharacterPublicInfoResponse> queryCharacter(Long characterId, String datasource) {
         return apiClient.get().uri("/characters/{character_id}/?datasource={datasource}", characterId, datasource)
-                .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
@@ -114,18 +111,15 @@ public class CharacterApi {
      *
      * @param characterId   人物ID
      * @param datasource    服务器
-     * @param accessesToken 授权码
      * @return
      */
     @Parameters({
             @Parameter(name = "characterId", description = "人物ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
-            @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-人物雇佣记录")
-    public Flux<CorporationHistoryResponse> queryCharacterCorporationHistory(Long characterId, String datasource, String accessesToken) {
+    public Flux<CorporationHistoryResponse> queryCharacterCorporationHistory(Long characterId, String datasource) {
         return apiClient.get().uri("/characters/{character_id}/corporationhistory/?datasource={datasource}", characterId, datasource)
-                .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
@@ -268,18 +262,15 @@ public class CharacterApi {
      *
      * @param characterId   人物ID
      * @param datasource    服务器
-     * @param accessesToken 授权码
      * @return
      */
     @Parameters({
             @Parameter(name = "characterId", description = "人物ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
-            @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-人物肖像图标地址")
-    public Mono<IconResponse> queryCharacterPortrait(Long characterId, String datasource, String accessesToken) {
+    public Mono<IconResponse> queryCharacterPortrait(Long characterId, String datasource) {
         return apiClient.get().uri("/characters/{character_id}/portrait/?datasource={datasource}", characterId, datasource)
-                .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
@@ -369,18 +360,15 @@ public class CharacterApi {
      *
      * @param datasource    服务器
      * @param characters    人物ID列表
-     * @param accessesToken 授权码
      * @return
      */
     @Parameters({
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
             @Parameter(name = "characters", description = "人物ID列表", required = true),
-            @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-批量获取角色的军团、联盟、势力信息")
-    public Flux<AffiliationResponse> queryCharacterAffiliation(String datasource, List<Integer> characters, String accessesToken) {
+    public Flux<AffiliationResponse> queryCharacterAffiliation(String datasource, List<Integer> characters) {
         return apiClient.post().uri("/characters/affiliation/?datasource={datasource}", datasource)
-                .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(characters), List.class)
                 .retrieve()

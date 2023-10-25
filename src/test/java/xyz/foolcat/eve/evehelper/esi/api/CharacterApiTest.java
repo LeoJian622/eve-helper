@@ -14,7 +14,6 @@ import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.esi.model.*;
 import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -44,7 +43,7 @@ class CharacterApiTest {
 
     @Test
     void queryCharacter() {
-        CharacterPublicInfoResponse characterPublicInfoResponse = characterApi.queryCharacter(2112818290L, "serenity", at).block();
+        CharacterPublicInfoResponse characterPublicInfoResponse = characterApi.queryCharacter(2112818290L, "serenity").block();
         System.out.println("characterPublicInfoResponse = " + characterPublicInfoResponse);
     }
 
@@ -62,7 +61,7 @@ class CharacterApiTest {
 
     @Test
     void queryCharacterCorporationHistory() {
-        List<CorporationHistoryResponse> corporationHistoryResponses = characterApi.queryCharacterCorporationHistory(2112818290L, "serenity", at).collectList().block();
+        List<CorporationHistoryResponse> corporationHistoryResponses = characterApi.queryCharacterCorporationHistory(2112818290L, "serenity").collectList().block();
         System.out.println("corporationHistoryResponses = " + corporationHistoryResponses);
     }
 
@@ -98,7 +97,7 @@ class CharacterApiTest {
 
     @Test
     void queryCharacterPortrait() {
-        IconResponse iconResponse = characterApi.queryCharacterPortrait(2112818290L, "serenity", at).block();
+        IconResponse iconResponse = characterApi.queryCharacterPortrait(2112818290L, "serenity").block();
         System.out.println("iconResponse = " + iconResponse);
     }
 
@@ -122,7 +121,7 @@ class CharacterApiTest {
 
     @Test
     void queryCharacterAffiliation() {
-        List<AffiliationResponse> affiliationResponses = characterApi.queryCharacterAffiliation("serenity", List.of(2112832425, 2112965519, 91424410), at).collectList().block();
+        List<AffiliationResponse> affiliationResponses = characterApi.queryCharacterAffiliation("serenity", List.of(2112832425, 2112965519, 91424410)).collectList().block();
         System.out.println("affiliationResponses = " + affiliationResponses);
     }
 }
