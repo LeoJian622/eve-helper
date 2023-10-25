@@ -51,7 +51,8 @@ public enum ResultCode implements IResultCode, Serializable {
     /**
      * ESI登录异常
      */
-    ESI_AUTHORIZATION_FAILUE("ESI00403","ESI 未授权或授权过期，请重新登录"),
+    ESI_AUTHORIZATION_FAILURE("ESI00400","ESI 未授权或授权过期，请重新登录"),
+    ESI_SERVER_FAILURE("ESI00500","ESI 服务器请求失败"),
 
     ;
 
