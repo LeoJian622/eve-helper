@@ -106,4 +106,22 @@ class CorporationApiTest {
         Integer membersLimit = corporationApi.queryCorporationMembersLimit(656880659L, "serenity", at).block();
         System.out.println("membersLimit = " + membersLimit);
     }
+
+    @Test
+    void queryCorporationMembersTitles() {
+        List<MemberTitleResponse> memberTitleResponses = corporationApi.queryCorporationMembersTitles(656880659L, "serenity", at).collectList().block();
+        System.out.println("memberTitleResponses = " + memberTitleResponses);
+    }
+
+    @Test
+    void queryCorporationMembersTracking() {
+        List<MemberTrackingResponse> memberTrackingResponses = corporationApi.queryCorporationMembersTracking(656880659L, "serenity", at).collectList().block();
+        System.out.println("memberTrackingResponses = " + memberTrackingResponses);
+    }
+
+    @Test
+    void queryCorporationMembersRoles() {
+        List<MemberRolesResponse> memberRolesResponses = corporationApi.queryCorporationMembersRoles(656880659L, "serenity", at).collectList().block();
+        System.out.println("memberRolesResponses = " + memberRolesResponses);
+    }
 }

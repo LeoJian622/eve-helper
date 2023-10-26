@@ -278,6 +278,7 @@ public class CorporationApi {
 
     /**
      * 军团成员上限
+     *
      * @param corporationId 军团ID
      * @param datasource    服务器数据源
      * @param accessesToken 授权Token
@@ -298,6 +299,291 @@ public class CorporationApi {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(Integer.class);
+    }
+
+    /**
+     * 军团成员职位
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器数据源
+     * @param accessesToken 授权Token
+     * @return
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团成员职位")
+    public Flux<MemberTitleResponse> queryCorporationMembersTitles(Long corporationId, String datasource, String accessesToken) {
+        return apiClient.get().uri("/corporations/{corporation_id}/members/titles/?datasource={datasource}", corporationId, datasource)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatus::is5xxServerError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .bodyToFlux(MemberTitleResponse.class);
+    }
+
+    /**
+     * 军团成员追踪职位
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器数据源
+     * @param accessesToken 授权Token
+     * @return
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团成员追踪职位")
+    public Flux<MemberTrackingResponse> queryCorporationMembersTracking(Long corporationId, String datasource, String accessesToken) {
+        return apiClient.get().uri("/corporations/{corporation_id}/membertracking/?datasource={datasource}", corporationId, datasource)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatus::is5xxServerError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .bodyToFlux(MemberTrackingResponse.class);
+    }
+
+    /**
+     * 军团成员角色,  需要授权人物拥有人事权限或者总监权限
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器数据源
+     * @param accessesToken 授权Token
+     * @return
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团成员角色")
+    public Flux<MemberRolesResponse> queryCorporationMembersRoles(Long corporationId, String datasource, String accessesToken) {
+        return apiClient.get().uri("/corporations/{corporation_id}/roles/?datasource={datasource}", corporationId, datasource)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatus::is5xxServerError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .bodyToFlux(MemberRolesResponse.class);
+    }
+
+    /**
+     * 军团成员角色变更记录
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器数据源
+     * @param page          页码
+     * @param accessesToken 授权Token
+     * @return
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "page", description = "页码", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团成员角色变更记录")
+    public Flux<RoleChangeResponse> queryCorporationMembersRolesHistory(Long corporationId, String datasource, Integer page, String accessesToken) {
+        return apiClient.get().uri("/corporations/{corporation_id}/roles/history/?datasource={datasource}&page={page}", corporationId, datasource, page)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatus::is5xxServerError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .bodyToFlux(RoleChangeResponse.class);
+    }
+
+    /**
+     * 军团股东
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器数据源
+     * @param page          页码
+     * @param accessesToken 授权Token
+     * @return
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "page", description = "页码", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团股东")
+    public Flux<ShareHolderResponse> queryCorporationShareHolders(Long corporationId, String datasource, Integer page, String accessesToken) {
+        return apiClient.get().uri("/corporations/{corporation_id}/shareholders/?datasource={datasource}&page={page}", corporationId, datasource, page)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatus::is5xxServerError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .bodyToFlux(ShareHolderResponse.class);
+    }
+
+    /**
+     * 军团声望
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器数据源
+     * @param page          页码
+     * @param accessesToken 授权Token
+     * @return
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "page", description = "页码", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团声望")
+    public Flux<ShareHolderResponse> queryCorporationStanding(Long corporationId, String datasource, Integer page, String accessesToken) {
+        return apiClient.get().uri("/corporations/{corporation_id}/standings/?datasource={datasource}&page={page}", corporationId, datasource, page)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatus::is5xxServerError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .bodyToFlux(ShareHolderResponse.class);
+    }
+
+    /**
+     * 军团母星建筑（POS)
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器数据源
+     * @param page          页码
+     * @param accessesToken 授权Token
+     * @return
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "page", description = "页码", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团母星建筑（POS)")
+    public Flux<StarBaseResponse> queryCorporationStarBases(Long corporationId, String datasource, Integer page, String accessesToken) {
+        return apiClient.get().uri("/corporations/{corporation_id}/starbases/?datasource={datasource}&page={page}", corporationId, datasource, page)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatus::is5xxServerError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .bodyToFlux(StarBaseResponse.class);
+    }
+
+    /**
+     * 军团母星建筑（POS)配置信息
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器数据源
+     * @param systemId      星系ID
+     * @param accessesToken 授权Token
+     * @return
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "systemId", description = "星系ID", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团母星建筑（POS)配置信息")
+    public Mono<StarBaseConfigResponse> queryCorporationStarBase(Long corporationId, String datasource, Integer systemId, String accessesToken) {
+        return apiClient.get().uri("/corporations/{corporation_id}/starbases/{starbase_id}/?datasource={datasource}&system_id={system_id}", corporationId, datasource, systemId)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatus::is5xxServerError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .bodyToMono(StarBaseConfigResponse.class);
+    }
+
+    /**
+     * 军团建筑信息
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器数据源
+     * @param language      语言
+     * @param page          页码
+     * @param accessesToken 授权Token
+     * @return
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "language", description = "语言", required = true),
+            @Parameter(name = "page", description = "页码", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团建筑信息")
+    public Flux<StructuresInformationResponse> queryCorporationStructures(Long corporationId, String datasource, String language, Integer page, String accessesToken) {
+        return apiClient.get().uri("/corporations/{corporation_id}/structures/?datasource={datasource}&language={language}&page={page}", corporationId, datasource, language, page)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .header(HttpHeaders.ACCEPT_LANGUAGE, language)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatus::is5xxServerError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .bodyToFlux(StructuresInformationResponse.class);
+    }
+
+    /**
+     * 军团职位信息
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器数据源
+     * @param accessesToken 授权Token
+     * @return
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团职位信息")
+    public Flux<CorporationTitleResponse> queryCorporationTitles(Long corporationId, String datasource, String accessesToken) {
+        return apiClient.get().uri("/corporations/{corporation_id}/titles/?datasource={datasource}", corporationId, datasource)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatus::is5xxServerError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .bodyToFlux(CorporationTitleResponse.class);
+    }
+
+    /**
+     * NPC军团列表
+     *
+     * @param datasource 服务器数据源
+     * @return
+     */
+    @Parameters({
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+    })
+    @Operation(summary = "ESI-NPC军团列表")
+    public Flux<Integer> queryNpcCorporation(String datasource) {
+        return apiClient.get().uri("/corporations/npccorps/?datasource={datasource}", datasource)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatus::is5xxServerError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .bodyToFlux(Integer.class);
     }
 
 }
