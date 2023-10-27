@@ -35,6 +35,9 @@ public class FactionWarfareStatisticsResponse {
 
     private Integer pilots;
 
+    @JsonProperty("systems_controlled")
+    private Integer systemsControlled;
+
     @JsonProperty("victory_points")
     private VictoryPoint victoryPoints;
 }
