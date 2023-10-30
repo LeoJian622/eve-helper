@@ -20,7 +20,7 @@ import java.util.List;
  * @date 2021-12-07 17:19
  */
 @BaseRequest(
-        baseURL = "https://esi.evepc.163.com/latest",     // 默认域名
+        baseURL = "https://ali-esi.evepc.163.com/latest",     // 默认域名
         headers = {
                 "Accept:application/json; charset=UTF-8",// 默认请求头
                 "Cache-Control: no-cache",

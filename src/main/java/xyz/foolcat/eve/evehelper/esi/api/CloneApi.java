@@ -44,7 +44,7 @@ public class CloneApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-人物克隆体信息")
-    public Mono<CloneResponse> queryCharacterClone(Long characterId, String datasource, String accessesToken) {
+    public Mono<CloneResponse> queryCharacterClone(Integer characterId, String datasource, String accessesToken) {
         return apiClient.get().uri("/characters/{character_id}/clones/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -69,7 +69,7 @@ public class CloneApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-植入体信息")
-    public Flux<Integer> queryCharacterImplant(Long characterId, String datasource, String accessesToken) {
+    public Flux<Integer> queryCharacterImplant(Integer characterId, String datasource, String accessesToken) {
         return apiClient.get().uri("/characters/{character_id}/implants/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()

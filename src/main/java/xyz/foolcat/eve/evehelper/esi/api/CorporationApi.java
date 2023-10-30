@@ -41,7 +41,7 @@ public class CorporationApi {
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
     })
     @Operation(summary = "ESI-军团公开信息")
-    public Mono<CorporationResponse> queryCorporationContracts(Long corporationId, String datasource) {
+    public Mono<CorporationResponse> queryCorporationContracts(Integer corporationId, String datasource) {
         return apiClient.get().uri("/corporations/{corporation_id}/?datasource={datasource}", corporationId, datasource)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
@@ -63,7 +63,7 @@ public class CorporationApi {
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
     })
     @Operation(summary = "ESI-军团联盟记录")
-    public Flux<AllianceHistoryResponse> queryCorporationAllianceHistory(Long corporationId, String datasource) {
+    public Flux<AllianceHistoryResponse> queryCorporationAllianceHistory(Integer corporationId, String datasource) {
         return apiClient.get().uri("/corporations/{corporation_id}/alliancehistory/?datasource={datasource}", corporationId, datasource)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
@@ -76,21 +76,21 @@ public class CorporationApi {
     /**
      * 军团拥有的蓝图
      *
-     * @param corporationsId 军团ID
+     * @param corporationId 军团ID
      * @param datasource     服务器数据源
      * @param page           页码
      * @param accessesToken  授权Token
      * @return
      */
     @Parameters({
-            @Parameter(name = "corporationsId", description = "军团ID", required = true),
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
             @Parameter(name = "page", description = "页码", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团拥有的蓝图")
-    public Flux<BlueprintResponse> queryCorporationBlueprints(Long corporationsId, String datasource, Integer page, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/blueprints/?datasource={datasource}&page={page}", corporationsId, datasource, page)
+    public Flux<BlueprintResponse> queryCorporationBlueprints(Integer corporationId, String datasource, Integer page, String accessesToken) {
+        return apiClient.get().uri("/corporations/{corporation_id}/blueprints/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
@@ -103,21 +103,21 @@ public class CorporationApi {
     /**
      * 军团机库容器7天审计记录
      *
-     * @param corporationsId 军团ID
+     * @param corporationId 军团ID
      * @param datasource     服务器数据源
      * @param page           页码
      * @param accessesToken  授权Token
      * @return
      */
     @Parameters({
-            @Parameter(name = "corporationsId", description = "军团ID", required = true),
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
             @Parameter(name = "page", description = "页码", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团机库容器7天审计记录")
-    public Flux<ContainersLogsResponse> queryCorporationContainersLogs(Long corporationsId, String datasource, Integer page, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/containers/logs/?datasource={datasource}&page={page}", corporationsId, datasource, page)
+    public Flux<ContainersLogsResponse> queryCorporationContainersLogs(Integer corporationId, String datasource, Integer page, String accessesToken) {
+        return apiClient.get().uri("/corporations/{corporation_id}/containers/logs/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
@@ -130,19 +130,19 @@ public class CorporationApi {
     /**
      * 军团部门账户名称
      *
-     * @param corporationsId 军团ID
+     * @param corporationId 军团ID
      * @param datasource     服务器数据源
      * @param accessesToken  授权Token
      * @return
      */
     @Parameters({
-            @Parameter(name = "corporationsId", description = "军团ID", required = true),
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团部门账户名称")
-    public Flux<DivisionNamesResponse> queryCorporationDivisions(Long corporationsId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/divisions/?datasource={datasource}", corporationsId, datasource)
+    public Flux<DivisionNamesResponse> queryCorporationDivisions(Integer corporationId, String datasource, String accessesToken) {
+        return apiClient.get().uri("/corporations/{corporation_id}/divisions/?datasource={datasource}", corporationId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
@@ -155,19 +155,19 @@ public class CorporationApi {
     /**
      * 军团设施
      *
-     * @param corporationsId 军团ID
+     * @param corporationId 军团ID
      * @param datasource     服务器数据源
      * @param accessesToken  授权Token
      * @return
      */
     @Parameters({
-            @Parameter(name = "corporationsId", description = "军团ID", required = true),
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团设施")
-    public Flux<FacilitiesResponse> queryCorporationFacilities(Long corporationsId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/facilities/?datasource={datasource}", corporationsId, datasource)
+    public Flux<FacilitiesResponse> queryCorporationFacilities(Integer corporationId, String datasource, String accessesToken) {
+        return apiClient.get().uri("/corporations/{corporation_id}/facilities/?datasource={datasource}", corporationId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
@@ -189,7 +189,7 @@ public class CorporationApi {
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
     })
     @Operation(summary = "ESI-军团图标地址")
-    public Mono<IconResponse> queryCorporationIcons(Long corporationId, String datasource) {
+    public Mono<IconResponse> queryCorporationIcons(Integer corporationId, String datasource) {
         return apiClient.get().uri("/corporations/{corporation_id}/icons/?datasource={datasource}", corporationId, datasource)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
@@ -213,7 +213,7 @@ public class CorporationApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团勋章信息")
-    public Flux<MedalResponse> queryCorporationMedals(Long corporationId, String datasource, Integer page, String accessesToken) {
+    public Flux<MedalResponse> queryCorporationMedals(Integer corporationId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/medals/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -240,7 +240,7 @@ public class CorporationApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团发布的勋章信息")
-    public Flux<MedalResponse> queryCorporationIssuedMedals(Long corporationId, String datasource, Integer page, String accessesToken) {
+    public Flux<MedalResponse> queryCorporationIssuedMedals(Integer corporationId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/medals/issued/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -265,7 +265,7 @@ public class CorporationApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团成员列表")
-    public Flux<Long> queryCorporationMembers(Long corporationId, String datasource, String accessesToken) {
+    public Flux<Long> queryCorporationMembers(Integer corporationId, String datasource, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/members/?datasource={datasource}", corporationId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -290,7 +290,7 @@ public class CorporationApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团成员上限")
-    public Mono<Integer> queryCorporationMembersLimit(Long corporationId, String datasource, String accessesToken) {
+    public Mono<Integer> queryCorporationMembersLimit(Integer corporationId, String datasource, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/members/limit/?datasource={datasource}", corporationId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -315,7 +315,7 @@ public class CorporationApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团成员职位")
-    public Flux<MemberTitleResponse> queryCorporationMembersTitles(Long corporationId, String datasource, String accessesToken) {
+    public Flux<MemberTitleResponse> queryCorporationMembersTitles(Integer corporationId, String datasource, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/members/titles/?datasource={datasource}", corporationId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -340,7 +340,7 @@ public class CorporationApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团成员追踪职位")
-    public Flux<MemberTrackingResponse> queryCorporationMembersTracking(Long corporationId, String datasource, String accessesToken) {
+    public Flux<MemberTrackingResponse> queryCorporationMembersTracking(Integer corporationId, String datasource, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/membertracking/?datasource={datasource}", corporationId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -365,7 +365,7 @@ public class CorporationApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团成员角色")
-    public Flux<MemberRolesResponse> queryCorporationMembersRoles(Long corporationId, String datasource, String accessesToken) {
+    public Flux<MemberRolesResponse> queryCorporationMembersRoles(Integer corporationId, String datasource, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/roles/?datasource={datasource}", corporationId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -392,7 +392,7 @@ public class CorporationApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团成员角色变更记录")
-    public Flux<RoleChangeResponse> queryCorporationMembersRolesHistory(Long corporationId, String datasource, Integer page, String accessesToken) {
+    public Flux<RoleChangeResponse> queryCorporationMembersRolesHistory(Integer corporationId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/roles/history/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -419,7 +419,7 @@ public class CorporationApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团股东")
-    public Flux<ShareHolderResponse> queryCorporationShareHolders(Long corporationId, String datasource, Integer page, String accessesToken) {
+    public Flux<ShareHolderResponse> queryCorporationShareHolders(Integer corporationId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/shareholders/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -446,7 +446,7 @@ public class CorporationApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团声望")
-    public Flux<ShareHolderResponse> queryCorporationStanding(Long corporationId, String datasource, Integer page, String accessesToken) {
+    public Flux<ShareHolderResponse> queryCorporationStanding(Integer corporationId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/standings/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -473,7 +473,7 @@ public class CorporationApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团母星建筑（POS)")
-    public Flux<StarBaseResponse> queryCorporationStarBases(Long corporationId, String datasource, Integer page, String accessesToken) {
+    public Flux<StarBaseResponse> queryCorporationStarBases(Integer corporationId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/starbases/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -500,7 +500,7 @@ public class CorporationApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团母星建筑（POS)配置信息")
-    public Mono<StarBaseConfigResponse> queryCorporationStarBase(Long corporationId, String datasource, Integer systemId, String accessesToken) {
+    public Mono<StarBaseConfigResponse> queryCorporationStarBase(Integer corporationId, String datasource, Integer systemId, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/starbases/{starbase_id}/?datasource={datasource}&system_id={system_id}", corporationId, datasource, systemId)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -529,7 +529,7 @@ public class CorporationApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团建筑信息")
-    public Flux<StructuresInformationResponse> queryCorporationStructures(Long corporationId, String datasource, String language, Integer page, String accessesToken) {
+    public Flux<StructuresInformationResponse> queryCorporationStructures(Integer corporationId, String datasource, String language, Integer page, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/structures/?datasource={datasource}&language={language}&page={page}", corporationId, datasource, language, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .header(HttpHeaders.ACCEPT_LANGUAGE, language)
@@ -555,7 +555,7 @@ public class CorporationApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团职位信息")
-    public Flux<CorporationTitleResponse> queryCorporationTitles(Long corporationId, String datasource, String accessesToken) {
+    public Flux<CorporationTitleResponse> queryCorporationTitles(Integer corporationId, String datasource, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/titles/?datasource={datasource}", corporationId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()

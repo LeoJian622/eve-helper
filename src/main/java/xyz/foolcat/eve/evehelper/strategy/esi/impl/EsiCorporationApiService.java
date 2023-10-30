@@ -52,12 +52,12 @@ public class EsiCorporationApiService implements EsiClientStrategy {
     }
 
     @Override
-    public List<Observer> getCropObserverList(Long id, Integer page, String accessToken) {
+    public List<Observer> getCropObserverList(Integer id, Integer page, String accessToken) {
         return esiCorporationClient.getObserverList(id, page, accessToken);
     }
 
     @Override
-    public List<MiningDetail> getMiningDetailListByObserver(Long id, Long observerId, Integer page, String accessToken) {
+    public List<MiningDetail> getMiningDetailListByObserver(Integer id, Long observerId, Integer page, String accessToken) {
         return esiCorporationClient.getMinigDetail(id, observerId, page, accessToken);
     }
 }

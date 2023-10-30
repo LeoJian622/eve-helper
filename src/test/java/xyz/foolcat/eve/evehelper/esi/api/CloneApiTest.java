@@ -44,13 +44,13 @@ class CloneApiTest {
 
     @Test
     void queryCharacterClone() {
-        CloneResponse cloneResponse = cloneApi.queryCharacterClone(2112818290L, "serenity", at).block();
+        CloneResponse cloneResponse = cloneApi.queryCharacterClone(2112818290, "serenity", at).block();
         System.out.println("cloneResponse = " + cloneResponse);
     }
 
     @Test
     void queryCharacterImplant() {
-        List<Integer> integers = cloneApi.queryCharacterImplant(2112818290L, "serenity", at).collectList().block();
+        List<Integer> integers = cloneApi.queryCharacterImplant(2112818290, "serenity", at).collectList().block();
         System.out.println("integers = " + integers);
     }
 }

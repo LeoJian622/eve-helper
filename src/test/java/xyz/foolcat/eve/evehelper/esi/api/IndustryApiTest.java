@@ -11,11 +11,10 @@ import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
 import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
-import xyz.foolcat.eve.evehelper.esi.enums.CalendarEventEnum;
 import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
-import xyz.foolcat.eve.evehelper.esi.model.CalendarEventAttendeesResponse;
-import xyz.foolcat.eve.evehelper.esi.model.CalendarResponse;
-import xyz.foolcat.eve.evehelper.esi.model.CalendarEventResponse;
+import xyz.foolcat.eve.evehelper.esi.model.ChunkTimersResponse;
+import xyz.foolcat.eve.evehelper.esi.model.IndustryJobPlacedResponse;
+import xyz.foolcat.eve.evehelper.esi.model.MiningLedgerResponse;
 import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
 
 import java.util.List;
@@ -23,12 +22,11 @@ import java.util.Objects;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
-@DisplayName("ESI Calendar Api Test")
-class CalendarApiTest {
-
+@DisplayName("ESI Industry Api Test")
+class IndustryApiTest {
 
     @Autowired
-    CalendarApi calendarApi;
+    IndustryApi industryApi;
 
     @Autowired
     EveAccountService eveAccountService;
@@ -47,26 +45,20 @@ class CalendarApiTest {
     }
 
     @Test
-    void queryCharactersCalendar() {
-        List<CalendarResponse> calendarResponses = calendarApi.queryCharactersCalendar(2112818290, "serenity", null, at).collectList().block();
-        System.out.println("calendarResponses = " + calendarResponses);
+    void queryCharacterIndustryJobs() {
+        List<IndustryJobPlacedResponse> industryJobPlacedResponses = industryApi.queryCharacterIndustryJobs(2112818290, "serenity", null, at).collectList().block();
+        System.out.println("industryJobPlacedResponses = " + industryJobPlacedResponses);
     }
 
     @Test
-    void queryCharactersCalendarEventId() {
-        CalendarEventResponse calendarEventResponse = calendarApi.queryCharactersCalendarEventId(2112818290, "serenity", 604077, at).block();
-        System.out.println("eventResponse = " + calendarEventResponse);
+    void queryCharacterMining() {
+        List<MiningLedgerResponse> miningLedgerResponses = industryApi.queryCharacterMining(2112818290, "serenity", 1, at).collectList().block();
+        System.out.println("miningLedgerResponses = " + miningLedgerResponses);
     }
 
     @Test
-    void updateCharactersCalendarEventId() {
-        Object o = calendarApi.updateCharactersCalendarEventId(2112818290, "serenity", 604077, CalendarEventEnum.ACCEPTED, at).block();
-        System.out.println("o = " + o);
-    }
-
-    @Test
-    void queryCharactersCalendarEventIdAttendees() {
-        List<CalendarEventAttendeesResponse> calendarEventAttendeesResponses = calendarApi.queryCharactersCalendarEventIdAttendees(2112818290, "serenity", 604077, at).collectList().block();
-        System.out.println("calendarEventAttendeesResponses = " + calendarEventAttendeesResponses);
+    void queryCorporationMiningExtractions() {
+        List<ChunkTimersResponse> chunkTimersResponses = industryApi.queryCorporationMiningExtractions(656880659, "serenity", 1, at).collectList().block();
+        System.out.println("chunkTimersResponses = " + chunkTimersResponses);
     }
 }

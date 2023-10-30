@@ -33,7 +33,7 @@ public class ObserverController {
         @Parameter(name = "corporationId", description = "军团ID", required = true)
         @Operation(summary = "月矿采掘-月矿堡读取")
         @GetMapping("/{corporationId}")
-        public Result saveObserverByCorporationId(@PathVariable Long corporationId) throws ParseException {
+        public Result saveObserverByCorporationId(@PathVariable Integer corporationId) throws ParseException {
                 observerService.saveObserverFromEsi(corporationId);
                 return Result.success();
         }

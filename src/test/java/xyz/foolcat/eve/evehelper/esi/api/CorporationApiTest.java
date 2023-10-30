@@ -43,85 +43,85 @@ class CorporationApiTest {
 
     @Test
     void queryCorporationContracts() {
-        CorporationResponse corporationResponse = corporationApi.queryCorporationContracts(656880659L, "serenity").block();
+        CorporationResponse corporationResponse = corporationApi.queryCorporationContracts(656880659, "serenity").block();
         System.out.println("corporationResponse = " + corporationResponse);
     }
 
     @Test
     void queryCorporationAllianceHistory() {
-        List<AllianceHistoryResponse> allianceHistoryResponses = corporationApi.queryCorporationAllianceHistory(656880659L, "serenity").collectList().block();
+        List<AllianceHistoryResponse> allianceHistoryResponses = corporationApi.queryCorporationAllianceHistory(656880659, "serenity").collectList().block();
         System.out.println("allianceHistoryResponses = " + allianceHistoryResponses);
     }
 
     @Test
     void queryCorporationBlueprints() {
-        List<BlueprintResponse> blueprintResponses = corporationApi.queryCorporationBlueprints(656880659L, "serenity", 1, at).collectList().block();
+        List<BlueprintResponse> blueprintResponses = corporationApi.queryCorporationBlueprints(656880659, "serenity", 1, at).collectList().block();
         System.out.println("blueprintResponses = " + blueprintResponses);
     }
 
     @Test
     void queryCorporationContainersLogs() {
-        List<ContainersLogsResponse> containersLogsResponses = corporationApi.queryCorporationContainersLogs(656880659L, "serenity", 1, at).collectList().block();
+        List<ContainersLogsResponse> containersLogsResponses = corporationApi.queryCorporationContainersLogs(656880659, "serenity", 1, at).collectList().block();
         System.out.println("containersLogsResponses = " + containersLogsResponses);
     }
 
     @Test
     void queryCorporationDivisions() {
-        List<DivisionNamesResponse> divisionNamesResponses = corporationApi.queryCorporationDivisions(656880659L, "serenity", at).collectList().block();
+        List<DivisionNamesResponse> divisionNamesResponses = corporationApi.queryCorporationDivisions(656880659, "serenity", at).collectList().block();
         System.out.println("divisionNamesResponses = " + divisionNamesResponses);
     }
 
     @Test
     void queryCorporationFacilities() {
-        List<FacilitiesResponse> facilitiesResponses = corporationApi.queryCorporationFacilities(656880659L, "serenity", at).collectList().block();
+        List<FacilitiesResponse> facilitiesResponses = corporationApi.queryCorporationFacilities(656880659, "serenity", at).collectList().block();
         System.out.println("facilitiesResponses = " + facilitiesResponses);
     }
 
     @Test
     void queryCorporationIcons() {
-        IconResponse iconResponse = corporationApi.queryCorporationIcons(656880659L, "serenity").block();
+        IconResponse iconResponse = corporationApi.queryCorporationIcons(656880659, "serenity").block();
         System.out.println("iconResponse = " + iconResponse);
     }
 
     @Test
     void queryCorporationMedals() {
-        List<MedalResponse> medalResponses = corporationApi.queryCorporationMedals(656880659L, "serenity", 1, at).collectList().block();
+        List<MedalResponse> medalResponses = corporationApi.queryCorporationMedals(656880659, "serenity", 1, at).collectList().block();
         System.out.println("medalResponses = " + medalResponses);
     }
 
     @Test
     void queryCorporationIssuedMedals() {
-        List<MedalResponse> medalResponses = corporationApi.queryCorporationIssuedMedals(656880659L, "serenity", 1, at).collectList().block();
+        List<MedalResponse> medalResponses = corporationApi.queryCorporationIssuedMedals(656880659, "serenity", 1, at).collectList().block();
         System.out.println("medalResponses = " + medalResponses);
     }
 
     @Test
     void queryCorporationMembers() {
-        List<Long> longs = corporationApi.queryCorporationMembers(656880659L, "serenity", at).collectList().block();
+        List<Long> longs = corporationApi.queryCorporationMembers(656880659, "serenity", at).collectList().block();
         System.out.println("longs = " + longs);
     }
 
     @Test
     void queryCorporationMembersLimit() {
-        Integer membersLimit = corporationApi.queryCorporationMembersLimit(656880659L, "serenity", at).block();
+        Integer membersLimit = corporationApi.queryCorporationMembersLimit(656880659, "serenity", at).block();
         System.out.println("membersLimit = " + membersLimit);
     }
 
     @Test
     void queryCorporationMembersTitles() {
-        List<MemberTitleResponse> memberTitleResponses = corporationApi.queryCorporationMembersTitles(656880659L, "serenity", at).collectList().block();
+        List<MemberTitleResponse> memberTitleResponses = corporationApi.queryCorporationMembersTitles(656880659, "serenity", at).collectList().block();
         System.out.println("memberTitleResponses = " + memberTitleResponses);
     }
 
     @Test
     void queryCorporationMembersTracking() {
-        List<MemberTrackingResponse> memberTrackingResponses = corporationApi.queryCorporationMembersTracking(656880659L, "serenity", at).collectList().block();
+        List<MemberTrackingResponse> memberTrackingResponses = corporationApi.queryCorporationMembersTracking(656880659, "serenity", at).collectList().block();
         System.out.println("memberTrackingResponses = " + memberTrackingResponses);
     }
 
     @Test
     void queryCorporationMembersRoles() {
-        List<MemberRolesResponse> memberRolesResponses = corporationApi.queryCorporationMembersRoles(656880659L, "serenity", at).collectList().block();
+        List<MemberRolesResponse> memberRolesResponses = corporationApi.queryCorporationMembersRoles(656880659, "serenity", at).collectList().block();
         System.out.println("memberRolesResponses = " + memberRolesResponses);
     }
 }

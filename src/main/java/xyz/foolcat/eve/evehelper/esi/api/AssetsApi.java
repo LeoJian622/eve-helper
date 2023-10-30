@@ -51,7 +51,7 @@ public class AssetsApi {
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
     @Operation(summary = "ESI-人物资产清单")
-    public Flux<AssertResponse> queryCharactersAssets(Long characterId, String datasource, Integer page, String accessesToken) {
+    public Flux<AssertResponse> queryCharactersAssets(Integer characterId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/characters/{character_id}/assets/?datasource={datasource}&page={page}",characterId,datasource,page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -79,7 +79,7 @@ public class AssetsApi {
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
     @Operation(summary = "ESI-人物物品位置信息")
-    public Flux<AssetsLocationResponse> queryCharactersAssetsLocations(Long characterId, String datasource, List<Long> itemIds, String accessesToken) {
+    public Flux<AssetsLocationResponse> queryCharactersAssetsLocations(Integer characterId, String datasource, List<Long> itemIds, String accessesToken) {
         return apiClient.post().uri("/characters/{character_id}/assets/locations/?datasource={datasource}",characterId,datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -109,7 +109,7 @@ public class AssetsApi {
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
     @Operation(summary = "ESI-角色物品命名信息")
-    public Flux<AssetsNameResponse> queryCharactersAssetsNames(Long characterId, String datasource, List<Long> itemIds, String accessesToken) {
+    public Flux<AssetsNameResponse> queryCharactersAssetsNames(Integer characterId, String datasource, List<Long> itemIds, String accessesToken) {
         return apiClient.post().uri("/characters/{character_id}/assets/names/?datasource={datasource}",characterId,datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -139,7 +139,7 @@ public class AssetsApi {
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
     @Operation(summary = "ESI-角色资产清单")
-    public Flux<AssertResponse> queryCorporationsAssets(Long corporationId, String datasource, Integer page, String accessesToken) {
+    public Flux<AssertResponse> queryCorporationsAssets(Integer corporationId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/assets/?datasource={datasource}&page={page}",corporationId,datasource,page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -167,7 +167,7 @@ public class AssetsApi {
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
     @Operation(summary = "ESI-军团物品位置信息")
-    public Flux<AssetsLocationResponse> queryCorporationsAssetsLocations(Long corporationId, String datasource, List<Long> itemIds, String accessesToken) {
+    public Flux<AssetsLocationResponse> queryCorporationsAssetsLocations(Integer corporationId, String datasource, List<Long> itemIds, String accessesToken) {
         return apiClient.post().uri("/corporations/{corporation_id}/assets/locations/?datasource={datasource}",corporationId,datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -197,7 +197,7 @@ public class AssetsApi {
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
     @Operation(summary = "ESI-军团物品命名信息")
-    public Flux<AssetsNameResponse> queryCorporationsAssetsNames(Long corporationId, String datasource, List<Long> itemIds, String accessesToken) {
+    public Flux<AssetsNameResponse> queryCorporationsAssetsNames(Integer corporationId, String datasource, List<Long> itemIds, String accessesToken) {
         return apiClient.post().uri("/corporations/{corporation_id}/assets/names/?datasource={datasource}",corporationId,datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .contentType(MediaType.APPLICATION_JSON)

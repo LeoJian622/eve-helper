@@ -46,19 +46,19 @@ class ContractsApiTest {
 
     @Test
     void queryCharactersContracts() {
-        List<ContractResponse> contractResponses = contractsApi.queryCharactersContracts(2112818290L, "serenity", 1, at).collectList().block();
+        List<ContractResponse> contractResponses = contractsApi.queryCharactersContracts(2112818290, "serenity", 1, at).collectList().block();
         System.out.println("contractResponses = " + contractResponses);
     }
 
     @Test
     void queryCharactersContractsBids() {
-        List<ContractBidsResponse> contractBidsResponses = contractsApi.queryCharactersContractsBids(2112818290L, "serenity", 54403173, at).collectList().block();
+        List<ContractBidsResponse> contractBidsResponses = contractsApi.queryCharactersContractsBids(2112818290, "serenity", 54403173, at).collectList().block();
         System.out.println("contractBidsResponses = " + contractBidsResponses);
     }
 
     @Test
     void queryCharactersContractsItems() {
-        List<ContractItemResponse> contractItemResponses = contractsApi.queryCharactersContractsItems(2112818290L, "serenity", 54403173, at).collectList().block();
+        List<ContractItemResponse> contractItemResponses = contractsApi.queryCharactersContractsItems(2112818290, "serenity", 54403173, at).collectList().block();
         System.out.println("contractItemResponses = " + contractItemResponses);
     }
 
@@ -82,19 +82,19 @@ class ContractsApiTest {
 
     @Test
     void queryCorporationsContracts() {
-        List<ContractResponse> contractResponses = contractsApi.queryCorporationsContracts(656880659L, "serenity", 1, at).collectList().block();
+        List<ContractResponse> contractResponses = contractsApi.queryCorporationsContracts(656880659, "serenity", 1, at).collectList().block();
         System.out.println("contractResponses = " + contractResponses);
     }
 
     @Test
     void queryCorporationsContractsBids() {
-        List<ContractBidsResponse> contractBidsResponses = contractsApi.queryCorporationsContractsBids(656880659L, "serenity", 54393962, at).collectList().block();
+        List<ContractBidsResponse> contractBidsResponses = contractsApi.queryCorporationsContractsBids(656880659, "serenity", 54393962, at).collectList().block();
         System.out.println("contractBidsResponses = " + contractBidsResponses);
     }
 
     @Test
     void queryCorporationsContractsItems() {
-        List<ContractItemResponse> contractItemResponses = contractsApi.queryCorporationsContractsItems(656880659L, "serenity", 54393962, at).collectList().block();
+        List<ContractItemResponse> contractItemResponses = contractsApi.queryCorporationsContractsItems(656880659, "serenity", 54393962, at).collectList().block();
         System.out.println("contractItemResponses = " + contractItemResponses);
     }
 }

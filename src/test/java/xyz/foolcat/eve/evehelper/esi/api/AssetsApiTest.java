@@ -47,7 +47,7 @@ class AssetsApiTest {
 
     @Test
     void queryCharacterAssetsById() {
-        List<AssertResponse> block = assetsApi.queryCharactersAssets(2112818290L, "serenity", 1, at).collectList().block();
+        List<AssertResponse> block = assetsApi.queryCharactersAssets(2112818290, "serenity", 1, at).collectList().block();
         System.out.println("block = " + block);
     }
 
@@ -55,7 +55,7 @@ class AssetsApiTest {
     void queryCharacterAssetsLocations() {
         List<Long> itemIds = List.of(1005714787537L, 1006072740228L, 1006142100083L);
 
-        List<AssetsLocationResponse> block = assetsApi.queryCharactersAssetsLocations(2112818290L, "serenity", itemIds, at).collectList().block();
+        List<AssetsLocationResponse> block = assetsApi.queryCharactersAssetsLocations(2112818290, "serenity", itemIds, at).collectList().block();
         System.out.println("block = " + block);
     }
 
@@ -63,7 +63,7 @@ class AssetsApiTest {
     void queryCharacterAssetsNames() {
         List<Long> itemIds = List.of(1005714787537L, 1006072740228L, 1006142100083L);
 
-        List<AssetsNameResponse> block = assetsApi.queryCharactersAssetsNames(2112818290L, "serenity", itemIds, at).collectList().block();
+        List<AssetsNameResponse> block = assetsApi.queryCharactersAssetsNames(2112818290, "serenity", itemIds, at).collectList().block();
         System.out.println("block = " + block);
     }
 }

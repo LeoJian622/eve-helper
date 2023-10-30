@@ -129,14 +129,14 @@ public class DogmaApi {
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
     })
     @Operation(summary = "ESI-深渊属性影响详情")
-    public Flux<DogmaEffectResponse> queryEffect(Integer effectId, String datasource) {
+    public Mono<DogmaEffectResponse> queryEffect(Integer effectId, String datasource) {
         return apiClient.get().uri("/dogma/effects/{effect_id}/?datasource={datasource}", effectId, datasource)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToFlux(DogmaEffectResponse.class);
+                .bodyToMono(DogmaEffectResponse.class);
     }
 
 

@@ -26,7 +26,7 @@ class AuthorizeOAuthTest {
 
     @Test
     void updateAccessTokenAuthorizationCode() throws InterruptedException {
-        AuthTokenResponse block = authorizeOAuth.updateAccessToken(GrantType.AUTHORIZATION_CODE, "Reh4eZtbX0-RCyzWzekq2A").log().block();
+        AuthTokenResponse block = authorizeOAuth.updateAccessToken(GrantType.AUTHORIZATION_CODE, "PUqAZZLYsUaLomEFnIIyYQ").log().block();
         System.out.println("block = " + block);
     }
 

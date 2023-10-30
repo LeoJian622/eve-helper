@@ -24,9 +24,9 @@ public class EsiClientProperties {
 
     private String authUrl = "https://login.evepc.163.com/v2/oauth";
 
-    private String basePath = "https://esi.evepc.163.com/latest";
+    private String basePath = "https://ali-esi.evepc.163.com/latest";
 
-    private String callBackUrl = "https://esi.evepc.163.com/ui/oauth2-redirect.html";
+    private String callBackUrl = "https://ali-esi.evepc.163.com/ui/oauth2-redirect.html";
 
     private String datasource = "serenity";
 

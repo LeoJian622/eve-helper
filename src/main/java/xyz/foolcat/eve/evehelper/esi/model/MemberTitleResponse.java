@@ -18,7 +18,7 @@ import java.util.List;
 public class MemberTitleResponse {
 
     @JsonProperty("character_id")
-    private Long characterId;
+    private Integer characterId;
 
     private List<Integer> titles;
 

@@ -35,7 +35,7 @@ public class MiningController {
     })
     @Operation(summary = "月矿采掘-开采明细读取")
     @GetMapping("/{corporationId}/{observerId}")
-    public Result readMinigDetail(@PathVariable Long corporationId, @PathVariable Long observerId) throws ParseException {
+    public Result readMinigDetail(@PathVariable Integer corporationId, @PathVariable Long observerId) throws ParseException {
         miningDetailService.saveObserverMining(corporationId, observerId);
         return Result.success();
     }

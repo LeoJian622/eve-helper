@@ -33,7 +33,7 @@ public class Observer implements Serializable {
 
     @TableField(value = "croporation_id")
     @Schema(description = "")
-    private Long croporationId;
+    private Integer croporationId;
 
     private static final long serialVersionUID = 1L;
 

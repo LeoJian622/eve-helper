@@ -48,7 +48,7 @@ public class ContractsApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-人物合同记录")
-    public Flux<ContractResponse> queryCharactersContracts(Long characterId, String datasource, Integer page, String accessesToken) {
+    public Flux<ContractResponse> queryCharactersContracts(Integer characterId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/characters/{character_id}/contracts/?datasource={datasource}&page={page}", characterId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -75,7 +75,7 @@ public class ContractsApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-人物合同（拍卖）出价信息")
-    public Flux<ContractBidsResponse> queryCharactersContractsBids(Long characterId, String datasource, Integer contractId, String accessesToken) {
+    public Flux<ContractBidsResponse> queryCharactersContractsBids(Integer characterId, String datasource, Integer contractId, String accessesToken) {
         return apiClient.get().uri("/characters/{character_id}/contracts/{contract_id}/bids/?datasource={datasource}", characterId, contractId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -102,7 +102,7 @@ public class ContractsApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-人物合同物品清单")
-    public Flux<ContractItemResponse> queryCharactersContractsItems(Long characterId, String datasource, Integer contractId, String accessesToken) {
+    public Flux<ContractItemResponse> queryCharactersContractsItems(Integer characterId, String datasource, Integer contractId, String accessesToken) {
         return apiClient.get().uri("/characters/{character_id}/contracts/{contract_id}/items/?datasource={datasource}", characterId, contractId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -198,7 +198,7 @@ public class ContractsApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团合同记录")
-    public Flux<ContractResponse> queryCorporationsContracts(Long corporationId, String datasource, Integer page, String accessesToken) {
+    public Flux<ContractResponse> queryCorporationsContracts(Integer corporationId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/contracts/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -225,7 +225,7 @@ public class ContractsApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团合同（拍卖）出价信息")
-    public Flux<ContractBidsResponse> queryCorporationsContractsBids(Long corporationId, String datasource, Integer contractId, String accessesToken) {
+    public Flux<ContractBidsResponse> queryCorporationsContractsBids(Integer corporationId, String datasource, Integer contractId, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/contracts/{contract_id}/bids/?datasource={datasource}", corporationId, contractId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -252,7 +252,7 @@ public class ContractsApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团合同物品清单")
-    public Flux<ContractItemResponse> queryCorporationsContractsItems(Long corporationId, String datasource, Integer contractId, String accessesToken) {
+    public Flux<ContractItemResponse> queryCorporationsContractsItems(Integer corporationId, String datasource, Integer contractId, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/contracts/{contract_id}/items/?datasource={datasource}", corporationId, contractId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()

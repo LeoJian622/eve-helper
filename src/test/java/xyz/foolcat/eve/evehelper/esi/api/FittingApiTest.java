@@ -11,24 +11,23 @@ import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
 import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
-import xyz.foolcat.eve.evehelper.esi.enums.CalendarEventEnum;
 import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
-import xyz.foolcat.eve.evehelper.esi.model.CalendarEventAttendeesResponse;
-import xyz.foolcat.eve.evehelper.esi.model.CalendarResponse;
-import xyz.foolcat.eve.evehelper.esi.model.CalendarEventResponse;
+import xyz.foolcat.eve.evehelper.esi.model.FittingResponse;
+import xyz.foolcat.eve.evehelper.esi.model.send.Fitting;
+import xyz.foolcat.eve.evehelper.esi.model.sub.FittingItem;
 import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
-@DisplayName("ESI Calendar Api Test")
-class CalendarApiTest {
-
+@DisplayName("ESI Fitting Api Test")
+class FittingApiTest {
 
     @Autowired
-    CalendarApi calendarApi;
+    FittingApi fittingApi;
 
     @Autowired
     EveAccountService eveAccountService;
@@ -47,26 +46,33 @@ class CalendarApiTest {
     }
 
     @Test
-    void queryCharactersCalendar() {
-        List<CalendarResponse> calendarResponses = calendarApi.queryCharactersCalendar(2112818290, "serenity", null, at).collectList().block();
-        System.out.println("calendarResponses = " + calendarResponses);
+    void queryCharacterFittings() {
+        List<FittingResponse> fittingResponses = fittingApi.queryCharacterFittings(2112818290, "serenity", at).collectList().block();
+        System.out.println("fittingResponses = " + fittingResponses);
     }
 
     @Test
-    void queryCharactersCalendarEventId() {
-        CalendarEventResponse calendarEventResponse = calendarApi.queryCharactersCalendarEventId(2112818290, "serenity", 604077, at).block();
-        System.out.println("eventResponse = " + calendarEventResponse);
+    void addCharacterFittings() {
+        Fitting fitting = new Fitting();
+        fitting.setDescription("test");
+        fitting.setName("测试装配");
+        fitting.setShipTypeId(626);
+
+        ArrayList<FittingItem> fittingItems = new ArrayList<>();
+        FittingItem fittingItem = new FittingItem();
+        fittingItem.setFlag("DroneBay");
+        fittingItem.setQuantity(4);
+        fittingItem.setTypeId(21638);
+        fittingItems.add(fittingItem);
+        fitting.setItems(fittingItems);
+
+        FittingResponse fittingResponse = fittingApi.addCharacterFittings(2112818290, "serenity", fitting, at).block();
+        System.out.println("fittingResponse = " + fittingResponse);
     }
 
     @Test
-    void updateCharactersCalendarEventId() {
-        Object o = calendarApi.updateCharactersCalendarEventId(2112818290, "serenity", 604077, CalendarEventEnum.ACCEPTED, at).block();
-        System.out.println("o = " + o);
-    }
-
-    @Test
-    void queryCharactersCalendarEventIdAttendees() {
-        List<CalendarEventAttendeesResponse> calendarEventAttendeesResponses = calendarApi.queryCharactersCalendarEventIdAttendees(2112818290, "serenity", 604077, at).collectList().block();
-        System.out.println("calendarEventAttendeesResponses = " + calendarEventAttendeesResponses);
+    void deleteCharacterFittings() {
+        Object block = fittingApi.deleteCharacterFittings(2112818290, "serenity", 18419043, at).block();
+        System.out.println("block = " + block);
     }
 }
