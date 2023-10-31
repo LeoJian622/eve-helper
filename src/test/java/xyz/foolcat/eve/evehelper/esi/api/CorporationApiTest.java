@@ -73,8 +73,8 @@ class CorporationApiTest {
 
     @Test
     void queryCorporationFacilities() {
-        List<FacilitiesResponse> facilitiesResponses = corporationApi.queryCorporationFacilities(656880659, "serenity", at).collectList().block();
-        System.out.println("facilitiesResponses = " + facilitiesResponses);
+        List<CorporationFacilitiesResponse> corporationFacilitiesRespons = corporationApi.queryCorporationFacilities(656880659, "serenity", at).collectList().block();
+        System.out.println("facilitiesResponses = " + corporationFacilitiesRespons);
     }
 
     @Test

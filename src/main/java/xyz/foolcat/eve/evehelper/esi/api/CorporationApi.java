@@ -166,7 +166,7 @@ public class CorporationApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团设施")
-    public Flux<FacilitiesResponse> queryCorporationFacilities(Integer corporationId, String datasource, String accessesToken) {
+    public Flux<CorporationFacilitiesResponse> queryCorporationFacilities(Integer corporationId, String datasource, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/facilities/?datasource={datasource}", corporationId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -174,7 +174,7 @@ public class CorporationApi {
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToFlux(FacilitiesResponse.class);
+                .bodyToFlux(CorporationFacilitiesResponse.class);
     }
 
     /**
