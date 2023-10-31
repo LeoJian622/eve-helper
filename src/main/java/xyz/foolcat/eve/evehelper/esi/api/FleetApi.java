@@ -334,7 +334,7 @@ public class FleetApi {
 
     })
     @Operation(summary = "ESI-添加联队")
-    public Mono<Long> addFleetWing(Long fleetId, String datasource, String accessesToken) {
+    public Mono<NewWingResponse> addFleetWing(Long fleetId, String datasource, String accessesToken) {
         return apiClient.post().uri("/fleets/{fleet_id}/wings/?datasource={datasource}", fleetId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -342,7 +342,7 @@ public class FleetApi {
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToMono(Long.class);
+                .bodyToMono(NewWingResponse.class);
     }
 
     /**
@@ -423,7 +423,7 @@ public class FleetApi {
 
     })
     @Operation(summary = "ESI-添加中队")
-    public Mono<Long> addFleetWingSquad(Long fleetId, String datasource, Long wingId, String accessesToken) {
+    public Mono<NewSquadResponse> addFleetWingSquad(Long fleetId, String datasource, Long wingId, String accessesToken) {
         return apiClient.post().uri("/fleets/{fleet_id}/wings/{wing_id}/squads/?datasource={datasource}", fleetId, wingId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -431,7 +431,7 @@ public class FleetApi {
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToMono(Long.class);
+                .bodyToMono(NewSquadResponse.class);
     }
 
 }

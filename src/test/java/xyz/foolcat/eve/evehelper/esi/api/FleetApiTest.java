@@ -51,7 +51,7 @@ class FleetApiTest {
 
     @Test
     void queryFleet() {
-        FleetDetailResponse fleetDetailResponse = fleetApi.queryFleet(1L, "serenity", at).block();
+        FleetDetailResponse fleetDetailResponse = fleetApi.queryFleet(1022810945368L, "serenity", at).block();
         System.out.println("fleetDetailResponse = " + fleetDetailResponse);
     }
 
@@ -59,28 +59,30 @@ class FleetApiTest {
     void updateFleet() {
         FleetNewSetting fleetNewSetting = new FleetNewSetting();
         fleetNewSetting.setIsFreeMove(true);
-        FleetDetailResponse fleetDetailResponse = fleetApi.updateFleet(1L, "serenity", fleetNewSetting, at).block();
+        FleetDetailResponse fleetDetailResponse = fleetApi.updateFleet(1022810945368L, "serenity", fleetNewSetting, at).block();
         System.out.println("fleetDetailResponse = " + fleetDetailResponse);
     }
 
     @Test
     void queryFleetMember() {
-        List<FleetMemberResponse> fleetMemberResponseList = fleetApi.queryFleetMember(1L, "serenity", "zh", at).collectList().block();
+        List<FleetMemberResponse> fleetMemberResponseList = fleetApi.queryFleetMember(1022810945368L, "serenity", "zh", at).collectList().block();
         System.out.println("fleetMemberResponseList = " + fleetMemberResponseList);
     }
 
     @Test
     void addFleetMember() {
         FleetInvitationDetails fleetInvitationDetails = new FleetInvitationDetails();
-        fleetInvitationDetails.setCharacterId(1);
+        fleetInvitationDetails.setCharacterId(2112832425);
         fleetInvitationDetails.setRole("squad_member");
-        Object o = fleetApi.addFleetMember(1L, "serenity", fleetInvitationDetails, at).block();
+//        fleetInvitationDetails.setSquadId(1L);
+//        fleetInvitationDetails.setWingId(1L);
+        Object o = fleetApi.addFleetMember(1022810945368L, "serenity", fleetInvitationDetails, at).block();
         System.out.println("o = " + o);
     }
 
     @Test
     void deleteFleetMember() {
-        Object o = fleetApi.deleteFleetMember(1L, "serenity", 1, at).block();
+        Object o = fleetApi.deleteFleetMember(1022810945368L, "serenity", 2112832425, at).block();
         System.out.println("o = " + o);
     }
 
@@ -88,49 +90,52 @@ class FleetApiTest {
     void updateFleetMember() {
         FleetInvitationDetails fleetInvitationDetails = new FleetInvitationDetails();
         fleetInvitationDetails.setRole("squad_commander");
-        Object o = fleetApi.updateFleetMember(1L, "serenity", 1, fleetInvitationDetails, at).block();
+        fleetInvitationDetails.setSquadId(3052010945368L);
+        fleetInvitationDetails.setWingId(2027110945368L);
+        Object o = fleetApi.updateFleetMember(1022810945368L, "serenity", 2112832425, fleetInvitationDetails, at).block();
         System.out.println("o = " + o);
     }
 
     @Test
     void deleteFleetSquad() {
-        Object block = fleetApi.deleteFleetSquad(1L, "serenity", 1L, at).block();
+        Object block = fleetApi.deleteFleetSquad(1022810945368L, "serenity", 3057910945368L, at).block();
         System.out.println("block = " + block);
     }
 
     @Test
     void updateFleetSquadRename() {
-        Object block = fleetApi.updateFleetSquadRename(1L, "serenity", 1L, "测试中队", at).block();
+        Object block = fleetApi.updateFleetSquadRename(1022810945368L, "serenity", 3052010945368L, "ABC", at).block();
         System.out.println("block = " + block);
     }
 
     @Test
     void queryFleetWings() {
-        List<WingResponse> wingResponses = fleetApi.queryFleetWings(1L, "serenity", at).collectList().block();
+        List<WingResponse> wingResponses = fleetApi.queryFleetWings(1022810945368L, "serenity", at).collectList().block();
         System.out.println("wingResponses = " + wingResponses);
     }
 
     @Test
     void addFleetWing() {
-        Long block = fleetApi.addFleetWing(1L, "serenity", at).block();
-        System.out.println("block = " + block);
+        NewWingResponse newWingResponse = fleetApi.addFleetWing(1022810945368L, "serenity", at).block();
+        System.out.println("newWingResponse = " + newWingResponse);
+
     }
 
     @Test
     void deleteFleetWing() {
-        Object block = fleetApi.deleteFleetWing(1L, "serenity", 1L, at).block();
+        Object block = fleetApi.deleteFleetWing(1022810945368L, "serenity", 2029210945368L, at).block();
         System.out.println("block = " + block);
     }
 
     @Test
     void updateFleetWingRename() {
-        Object block = fleetApi.updateFleetWingRename(1L, "serenity", 1L, "测试中队", at).block();
+        Object block = fleetApi.updateFleetWingRename(1022810945368L, "serenity", 2029510945368L, "ABC", at).block();
         System.out.println("block = " + block);
     }
 
     @Test
     void addFleetWingSquad() {
-        Long block = fleetApi.addFleetWingSquad(1L, "serenity", 1L, at).block();
+        NewSquadResponse block = fleetApi.addFleetWingSquad(1022810945368L, "serenity", 2029510945368L, at).block();
         System.out.println("block = " + block);
     }
 }
