@@ -51,14 +51,14 @@ public class AssetsApi {
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
     @Operation(summary = "ESI-人物资产清单")
-    public Flux<AssertResponse> queryCharactersAssets(Long characterId, String datasource, Integer page, String accessesToken) {
+    public Flux<AssertResponse> queryCharactersAssets(Integer characterId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/characters/{character_id}/assets/?datasource={datasource}&page={page}",characterId,datasource,page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(AssertResponse.class);
     }
 
@@ -79,16 +79,16 @@ public class AssetsApi {
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
     @Operation(summary = "ESI-人物物品位置信息")
-    public Flux<AssetsLocationResponse> queryCharactersAssetsLocations(Long characterId, String datasource, List<Long> itemIds, String accessesToken) {
+    public Flux<AssetsLocationResponse> queryCharactersAssetsLocations(Integer characterId, String datasource, List<Long> itemIds, String accessesToken) {
         return apiClient.post().uri("/characters/{character_id}/assets/locations/?datasource={datasource}",characterId,datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(itemIds),List.class)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(AssetsLocationResponse.class);
     }
 
@@ -109,16 +109,16 @@ public class AssetsApi {
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
     @Operation(summary = "ESI-角色物品命名信息")
-    public Flux<AssetsNameResponse> queryCharactersAssetsNames(Long characterId, String datasource, List<Long> itemIds, String accessesToken) {
+    public Flux<AssetsNameResponse> queryCharactersAssetsNames(Integer characterId, String datasource, List<Long> itemIds, String accessesToken) {
         return apiClient.post().uri("/characters/{character_id}/assets/names/?datasource={datasource}",characterId,datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(itemIds),List.class)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(AssetsNameResponse.class);
     }
 
@@ -139,14 +139,14 @@ public class AssetsApi {
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
     @Operation(summary = "ESI-角色资产清单")
-    public Flux<AssertResponse> queryCorporationsAssets(Long corporationId, String datasource, Integer page, String accessesToken) {
+    public Flux<AssertResponse> queryCorporationsAssets(Integer corporationId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/assets/?datasource={datasource}&page={page}",corporationId,datasource,page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(AssertResponse.class);
     }
 
@@ -167,16 +167,16 @@ public class AssetsApi {
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
     @Operation(summary = "ESI-军团物品位置信息")
-    public Flux<AssetsLocationResponse> queryCorporationsAssetsLocations(Long corporationId, String datasource, List<Long> itemIds, String accessesToken) {
+    public Flux<AssetsLocationResponse> queryCorporationsAssetsLocations(Integer corporationId, String datasource, List<Long> itemIds, String accessesToken) {
         return apiClient.post().uri("/corporations/{corporation_id}/assets/locations/?datasource={datasource}",corporationId,datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(itemIds),List.class)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(AssetsLocationResponse.class);
     }
 
@@ -197,16 +197,16 @@ public class AssetsApi {
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
     @Operation(summary = "ESI-军团物品命名信息")
-    public Flux<AssetsNameResponse> queryCorporationsAssetsNames(Long corporationId, String datasource, List<Long> itemIds, String accessesToken) {
+    public Flux<AssetsNameResponse> queryCorporationsAssetsNames(Integer corporationId, String datasource, List<Long> itemIds, String accessesToken) {
         return apiClient.post().uri("/corporations/{corporation_id}/assets/names/?datasource={datasource}",corporationId,datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(itemIds),List.class)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILUE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(AssetsNameResponse.class);
     }
 }

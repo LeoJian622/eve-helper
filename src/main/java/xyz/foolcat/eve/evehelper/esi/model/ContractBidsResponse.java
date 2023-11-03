@@ -15,7 +15,7 @@ import java.time.OffsetDateTime;
 
 @Data
 @Tag(name = "esi合同（拍卖）出价信息响应体 200 ok")
-public class BidsResponse {
+public class ContractBidsResponse {
 
     private Float amount;
 

@@ -45,25 +45,25 @@ class BookmarksApiTest {
 
     @Test
     void queryCharactersBookmarks() {
-        List<BookmarksResponse> bookmarksResponseList = bookmarksApi.queryCharactersBookmarks(2112818290L, "serenity", 1, at).collectList().block();
+        List<BookmarksResponse> bookmarksResponseList = bookmarksApi.queryCharactersBookmarks(2112818290, "serenity", 1, at).collectList().block();
         System.out.println("bookmarksResponseList = " + bookmarksResponseList);
     }
 
     @Test
     void queryCharactersBookmarksFolders() {
-        List<BookmarkFoldersResponse> bookmarkFoldersResponseList = bookmarksApi.queryCharactersBookmarksFolders(2112818290L, "serenity", 1, at).collectList().block();
+        List<BookmarkFoldersResponse> bookmarkFoldersResponseList = bookmarksApi.queryCharactersBookmarksFolders(2112818290, "serenity", 1, at).collectList().block();
         System.out.println("bookmarkFoldersResponseList = " + bookmarkFoldersResponseList);
     }
 
     @Test
     void queryCorporationsBookmarks() {
-        List<BookmarksResponse> bookmarksResponseList = bookmarksApi.queryCorporationsBookmarks(656880659L, "serenity", 1, at).collectList().block();
+        List<BookmarksResponse> bookmarksResponseList = bookmarksApi.queryCorporationsBookmarks(656880659, "serenity", 1, at).collectList().block();
         System.out.println("bookmarksResponseList = " + bookmarksResponseList);
     }
 
     @Test
     void queryCorporationsBookmarksFolders() {
-        List<BookmarkFoldersResponse> bookmarkFoldersResponseList = bookmarksApi.queryCorporationsBookmarksFolders(656880659L, "serenity", 1, at).collectList().block();
+        List<BookmarkFoldersResponse> bookmarkFoldersResponseList = bookmarksApi.queryCorporationsBookmarksFolders(656880659, "serenity", 1, at).collectList().block();
         System.out.println("bookmarkFoldersResponseList = " + bookmarkFoldersResponseList);
     }
 }

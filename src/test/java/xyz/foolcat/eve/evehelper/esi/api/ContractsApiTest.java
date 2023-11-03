@@ -12,7 +12,8 @@ import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
 import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
-import xyz.foolcat.eve.evehelper.esi.model.BidsResponse;
+import xyz.foolcat.eve.evehelper.esi.model.ContractBidsResponse;
+import xyz.foolcat.eve.evehelper.esi.model.ContractItemResponse;
 import xyz.foolcat.eve.evehelper.esi.model.ContractResponse;
 import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
 
@@ -45,14 +46,55 @@ class ContractsApiTest {
 
     @Test
     void queryCharactersContracts() {
-        List<ContractResponse> contractResponses = contractsApi.queryCharactersContracts(2112818290L, "serenity", 1, at).collectList().block();
+        List<ContractResponse> contractResponses = contractsApi.queryCharactersContracts(2112818290, "serenity", 1, at).collectList().block();
         System.out.println("contractResponses = " + contractResponses);
     }
 
     @Test
     void queryCharactersContractsBids() {
-        List<BidsResponse> bidsResponses = contractsApi.queryCharactersContractsBids(2112818290L, "serenity", 54403173, at).collectList().block();
-        System.out.println("bidsResponses = " + bidsResponses);
+        List<ContractBidsResponse> contractBidsResponses = contractsApi.queryCharactersContractsBids(2112818290, "serenity", 54403173, at).collectList().block();
+        System.out.println("contractBidsResponses = " + contractBidsResponses);
     }
 
+    @Test
+    void queryCharactersContractsItems() {
+        List<ContractItemResponse> contractItemResponses = contractsApi.queryCharactersContractsItems(2112818290, "serenity", 54403173, at).collectList().block();
+        System.out.println("contractItemResponses = " + contractItemResponses);
+    }
+
+    @Test
+    void queryPublicContractsRegion() {
+        List<ContractResponse> contractResponses = contractsApi.queryPublicContractsRegion(10000002, "serenity", 2).collectList().block();
+        System.out.println("contractResponses = " + contractResponses);
+    }
+
+    @Test
+    void queryPublicContractsBids() {
+        List<ContractBidsResponse> contractBidsResponses = contractsApi.queryPublicContractsBids("serenity", 54544413).collectList().block();
+        System.out.println("contractBidsResponses = " + contractBidsResponses);
+    }
+
+    @Test
+    void queryPublicContractsItems() {
+        List<ContractItemResponse> contractItemResponses = contractsApi.queryPublicContractsItems("serenity", 54544413).collectList().block();
+        System.out.println("contractItemResponses = " + contractItemResponses);
+    }
+
+    @Test
+    void queryCorporationsContracts() {
+        List<ContractResponse> contractResponses = contractsApi.queryCorporationsContracts(656880659, "serenity", 1, at).collectList().block();
+        System.out.println("contractResponses = " + contractResponses);
+    }
+
+    @Test
+    void queryCorporationsContractsBids() {
+        List<ContractBidsResponse> contractBidsResponses = contractsApi.queryCorporationsContractsBids(656880659, "serenity", 54393962, at).collectList().block();
+        System.out.println("contractBidsResponses = " + contractBidsResponses);
+    }
+
+    @Test
+    void queryCorporationsContractsItems() {
+        List<ContractItemResponse> contractItemResponses = contractsApi.queryCorporationsContractsItems(656880659, "serenity", 54393962, at).collectList().block();
+        System.out.println("contractItemResponses = " + contractItemResponses);
+    }
 }

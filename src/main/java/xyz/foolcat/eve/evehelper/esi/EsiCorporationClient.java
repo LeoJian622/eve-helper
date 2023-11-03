@@ -20,7 +20,7 @@ import java.util.List;
  * @date 2021-12-07 17:19
  */
 @BaseRequest(
-        baseURL = "https://esi.evepc.163.com/latest",     // 默认域名
+        baseURL = "https://ali-esi.evepc.163.com/latest",     // 默认域名
         headers = {
                 "Accept:application/json; charset=UTF-8",// 默认请求头
                 "Cache-Control: no-cache",
@@ -82,7 +82,7 @@ public interface EsiCorporationClient {
      * @return
      */
     @Get(url = "/corporation/{corporation_id}/mining/observers/",dataType = "json")
-    List<Observer> getObserverList(@Var("corporation_id") Long corporationId, @Query("page") Integer page, @Header("Authorization") String accessToken);
+    List<Observer> getObserverList(@Var("corporation_id") Integer corporationId, @Query("page") Integer page, @Header("Authorization") String accessToken);
 
     /**
      * 某一观察者获取的采矿数据
@@ -93,5 +93,5 @@ public interface EsiCorporationClient {
      * @return
      */
     @Get(url = "/corporation/{corporation_id}/mining/observers/{observer_id}/",dataType = "json")
-    List<MiningDetail> getMinigDetail(@Var("corporation_id") Long corporationId , @Var("observer_id") Long observerId, @Query("page") Integer page, @Header("Authorization") String accessToken);
+    List<MiningDetail> getMinigDetail(@Var("corporation_id") Integer corporationId , @Var("observer_id") Long observerId, @Query("page") Integer page, @Header("Authorization") String accessToken);
 }

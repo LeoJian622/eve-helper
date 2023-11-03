@@ -48,25 +48,25 @@ class CalendarApiTest {
 
     @Test
     void queryCharactersCalendar() {
-        List<CalendarResponse> calendarResponses = calendarApi.queryCharactersCalendar(2112818290L, "serenity", null, at).collectList().block();
+        List<CalendarResponse> calendarResponses = calendarApi.queryCharactersCalendar(2112818290, "serenity", null, at).collectList().block();
         System.out.println("calendarResponses = " + calendarResponses);
     }
 
     @Test
     void queryCharactersCalendarEventId() {
-        CalendarEventResponse calendarEventResponse = calendarApi.queryCharactersCalendarEventId(2112818290L, "serenity", 604077, at).block();
+        CalendarEventResponse calendarEventResponse = calendarApi.queryCharactersCalendarEventId(2112818290, "serenity", 604077, at).block();
         System.out.println("eventResponse = " + calendarEventResponse);
     }
 
     @Test
     void updateCharactersCalendarEventId() {
-        Object o = calendarApi.updateCharactersCalendarEventId(2112818290L, "serenity", 604077, CalendarEventEnum.ACCEPTED, at).block();
+        Object o = calendarApi.updateCharactersCalendarEventId(2112818290, "serenity", 604077, CalendarEventEnum.ACCEPTED, at).block();
         System.out.println("o = " + o);
     }
 
     @Test
     void queryCharactersCalendarEventIdAttendees() {
-        List<CalendarEventAttendeesResponse> calendarEventAttendeesResponses = calendarApi.queryCharactersCalendarEventIdAttendees(2112818290L, "serenity", 604077, at).collectList().block();
+        List<CalendarEventAttendeesResponse> calendarEventAttendeesResponses = calendarApi.queryCharactersCalendarEventIdAttendees(2112818290, "serenity", 604077, at).collectList().block();
         System.out.println("calendarEventAttendeesResponses = " + calendarEventAttendeesResponses);
     }
 }

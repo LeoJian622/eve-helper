@@ -57,42 +57,42 @@ class ContactApiTest {
 
     @Test
     void deleteCharactersContacts() {
-        contactApi.deleteCharactersContacts(2112818290L, "serenity", List.of(2112156363L), at).block();
+        contactApi.deleteCharactersContacts(2112818290, "serenity", List.of(2112156363L), at).block();
     }
 
     @Test
     void queryCharactersContacts() {
-        List<ContactResponse> contactResponses = contactApi.queryCharactersContacts(2112818290L, "serenity", at).collectList().block();
+        List<ContactResponse> contactResponses = contactApi.queryCharactersContacts(2112818290, "serenity", at).collectList().block();
         System.out.println("contactResponses = " + contactResponses);
     }
 
     @Test
     void addCharactersContacts() {
-        List<Long> longs = contactApi.addCharactersContacts(2112818290L, "serenity", List.of(2112156363L), List.of(), 5, false, at).collectList().block();
+        List<Long> longs = contactApi.addCharactersContacts(2112818290, "serenity", List.of(2112156363L), List.of(), 5, false, at).collectList().block();
         System.out.println("longs = " + longs);
     }
 
     @Test
     void updateCharactersContacts() {
-        Object objects = contactApi.updateCharactersContacts(2112818290L, "serenity", List.of(2112156363L), List.of(), 10, false, at).block();
+        Object objects = contactApi.updateCharactersContacts(2112818290, "serenity", List.of(2112156363L), List.of(), 10, false, at).block();
         System.out.println("objects = " + objects);
     }
 
     @Test
     void queryCharactersContactsLabel() {
-        List<ContactLabelResponse> contactLabelResponses = contactApi.queryCharactersContactsLabel(2112818290L, "serenity", at).collectList().block();
+        List<ContactLabelResponse> contactLabelResponses = contactApi.queryCharactersContactsLabel(2112818290, "serenity", at).collectList().block();
         System.out.println("contactLabelResponses = " + contactLabelResponses);
     }
 
     @Test
     void queryCorporationsContacts() {
-        List<ContactResponse> contactResponses = contactApi.queryCorporationsContacts(656880659L, "serenity", at).collectList().block();
+        List<ContactResponse> contactResponses = contactApi.queryCorporationsContacts(656880659, "serenity", at).collectList().block();
         System.out.println("contactResponses = " + contactResponses);
     }
 
     @Test
     void queryCorporationsContactsLabel() {
-        List<ContactLabelResponse> contactLabelResponses = contactApi.queryCorporationsContactsLabel(656880659L, "serenity", at).collectList().block();
+        List<ContactLabelResponse> contactLabelResponses = contactApi.queryCorporationsContactsLabel(656880659, "serenity", at).collectList().block();
         System.out.println("contactLabelResponses = " + contactLabelResponses);
     }
 }

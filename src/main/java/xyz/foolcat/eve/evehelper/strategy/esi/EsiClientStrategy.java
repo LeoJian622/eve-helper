@@ -64,7 +64,7 @@ public interface EsiClientStrategy {
      * @param accessToken
      * @return
      */
-    default List<Observer> getCropObserverList(Long id, Integer page, String accessToken){
+    default List<Observer> getCropObserverList(Integer id, Integer page, String accessToken){
         return new ArrayList<>();
     }
 
@@ -78,7 +78,7 @@ public interface EsiClientStrategy {
      * @param accessToken
      * @return
      */
-    default List<MiningDetail> getMiningDetailListByObserver(Long id, Long observerId, Integer page, String accessToken) {
+    default List<MiningDetail> getMiningDetailListByObserver(Integer id, Long observerId, Integer page, String accessToken) {
         return new ArrayList<>();
     }
 

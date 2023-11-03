@@ -19,6 +19,6 @@ class ObserverServiceTest {
 
     @Test
     void saveObserverFromEsi() throws ParseException {
-        observerService.saveObserverFromEsi(656880659L);
+        observerService.saveObserverFromEsi(656880659);
     }
 }
