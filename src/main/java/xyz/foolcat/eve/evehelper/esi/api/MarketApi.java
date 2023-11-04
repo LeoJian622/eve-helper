@@ -13,279 +13,288 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.common.result.ResultCode;
 import xyz.foolcat.eve.evehelper.esi.model.*;
-import xyz.foolcat.eve.evehelper.esi.model.send.NewLabel;
-import xyz.foolcat.eve.evehelper.esi.model.send.NewMail;
 import xyz.foolcat.eve.evehelper.exception.EsiException;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 /**
- * ESI 邮件接口
+ * ESI 市场相关接口
  *
  * @author Leojan
- * @date 2023-10-31 16:52
+ * @date 2023-11-03 15:07
  */
 
 @Service
 @RequiredArgsConstructor
-@Tag(name = "ESI 邮件接口")
-public class MailApi {
+@Tag(name = "ESI 市场相关接口")
+public class MarketApi {
 
     private final WebClient apiClient;
 
     /**
-     * 返回属于符合查询条件的人物的50个最新邮件标题。查询可按标签过滤，last_mail_id 可用于向后分页
+     * 查询人物订单
      *
      * @param characterId   人物ID
      * @param datasource    服务器数据源
-     * @param labels        标签ID
-     * @param lastMailId    最新的邮件ID
      * @param accessesToken 授权Token
      * @return
      */
     @Parameters({
             @Parameter(name = "characterId", description = "人物ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
-            @Parameter(name = "labels", description = "标签ID", required = true),
-            @Parameter(name = "lastMailId", description = "最新的邮件ID", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
-    @Operation(summary = "ESI-符合查询条件的50个最新邮件标题")
-    public Flux<RequestedMailResponse> queryCharacterMails(Integer characterId, String datasource, List<Integer> labels, Integer lastMailId, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/mail/?datasource={datasource}&labels={labels}&last_mail_id={last_mail_id}", characterId, datasource, labels, lastMailId)
+    @Operation(summary = "ESI-查询人物订单")
+    public Flux<MarketOrderResponse> queryCharacterOrders(Integer characterId, String datasource, String accessesToken) {
+        return apiClient.get().uri("/characters/{character_id}/orders/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToFlux(RequestedMailResponse.class);
+                .bodyToFlux(MarketOrderResponse.class);
     }
 
     /**
-     * 发送新邮件
+     * 查询人物过去90天取消和到期的订单
      *
      * @param characterId   人物ID
      * @param datasource    服务器数据源
-     * @param newMail       邮件信息
      * @param accessesToken 授权Token
      * @return
      */
     @Parameters({
             @Parameter(name = "characterId", description = "人物ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
-            @Parameter(name = "newMail", description = "邮件信息", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
-    @Operation(summary = "ESI-发送新邮件")
-    public Mono<Integer> addCharacterMail(Integer characterId, String datasource, NewMail newMail, String accessesToken) {
-        return apiClient.post().uri("/characters/{character_id}/mail/?datasource={datasource}", characterId, datasource)
-                .header(HttpHeaders.AUTHORIZATION, accessesToken)
-                .body(Mono.just(newMail), NewMail.class)
-                .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToMono(Integer.class);
-    }
-
-
-    /**
-     * 删除邮件
-     *
-     * @param characterId   人物ID
-     * @param datasource    服务器数据源
-     * @param mailId        邮件ID
-     * @param accessesToken 授权Token
-     * @return
-     */
-    @Parameters({
-            @Parameter(name = "characterId", description = "人物ID", required = true),
-            @Parameter(name = "datasource", description = "服务器数据源", required = true),
-            @Parameter(name = "mailId", description = "邮件ID", required = true),
-            @Parameter(name = "accessesToken", description = "授权Token", required = true),
-    })
-    @Operation(summary = "ESI-删除邮件")
-    public Mono<Object> deleteCharacterMail(Integer characterId, String datasource, Integer mailId, String accessesToken) {
-        return apiClient.delete().uri("/characters/{character_id}/mail/{mail_id}/?datasource={datasource}", characterId, mailId, datasource)
+    @Operation(summary = "ESI-查询人物过去90天取消和到期的订单")
+    public Flux<MarketOrderResponse> queryCharacterOrdersHistory(Integer characterId, String datasource, String accessesToken) {
+        return apiClient.get().uri("/characters/{character_id}/orders/history/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToMono(Object.class);
-    }
-
-
-    /**
-     * 邮件详情
-     *
-     * @param characterId   人物ID
-     * @param datasource    服务器数据源
-     * @param mailId        邮件ID
-     * @param accessesToken 授权Token
-     * @return
-     */
-    @Parameters({
-            @Parameter(name = "characterId", description = "人物ID", required = true),
-            @Parameter(name = "datasource", description = "服务器数据源", required = true),
-            @Parameter(name = "mailId", description = "邮件ID", required = true),
-            @Parameter(name = "accessesToken", description = "授权Token", required = true),
-    })
-    @Operation(summary = "ESI-邮件详情")
-    public Mono<MailResponse> queryCharacterMail(Integer characterId, String datasource, Integer mailId, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/mail/{mail_id}/?datasource={datasource}", characterId, mailId, datasource)
-                .header(HttpHeaders.AUTHORIZATION, accessesToken)
-                .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToMono(MailResponse.class);
+                .bodyToFlux(MarketOrderResponse.class);
     }
 
     /**
-     * 修改邮件标签和阅读状态
+     * 查询军团订单
      *
-     * @param characterId   人物ID
+     * @param characterId   军团ID
      * @param datasource    服务器数据源
-     * @param mailId        邮件ID
-     * @param labelIds      标签ID列表
-     * @param read          阅读状态
+     * @param page          页码
      * @param accessesToken 授权Token
      * @return
      */
     @Parameters({
-            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "characterId", description = "军团ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
-            @Parameter(name = "mailId", description = "邮件ID", required = true),
-            @Parameter(name = "labelIds", description = "标签ID列表", required = true),
-            @Parameter(name = "read", description = "阅读状态", required = true),
+            @Parameter(name = "page", description = "页码", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
-    @Operation(summary = "ESI-邮件详情")
-    public Mono<MailResponse> updateCharacterMail(Integer characterId, String datasource, Integer mailId, List<Integer> labelIds, Boolean read, String accessesToken) {
-        Map<String, Object> contents = new HashMap<>(2);
-        contents.put("labels", labelIds);
-        contents.put("read", read);
-        return apiClient.put().uri("/characters/{character_id}/mail/{mail_id}/?datasource={datasource}", characterId, mailId, datasource)
+    @Operation(summary = "ESI-查询军团订单")
+    public Flux<MarketOrderResponse> queryCorporationOrders(Integer characterId, String datasource, Integer page, String accessesToken) {
+        return apiClient.get().uri("/corporations/{corporation_id}/orders/?datasource={datasource}&page={page}", characterId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
-                .body(Mono.just(contents), Map.class)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToMono(MailResponse.class);
+                .bodyToFlux(MarketOrderResponse.class);
     }
 
     /**
-     * 邮件标签
+     * 查询军团过去90天取消和到期的订单
      *
-     * @param characterId   人物ID
+     * @param characterId   军团ID
      * @param datasource    服务器数据源
      * @param accessesToken 授权Token
      * @return
      */
     @Parameters({
-            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "characterId", description = "军团ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
-    @Operation(summary = "ESI-邮件标签")
-    public Mono<MailLabelsAndUnreadCountsResponse> queryCharacterMailLabels(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/mail/labels/?datasource={datasource}", characterId, datasource)
+    @Operation(summary = "ESI-查询军团过去90天取消和到期的订单")
+    public Flux<MarketOrderResponse> queryCorporationOrdersHistory(Integer characterId, String datasource, String accessesToken) {
+        return apiClient.get().uri("/corporations/{corporation_id}/orders/history/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToMono(MailLabelsAndUnreadCountsResponse.class);
+                .bodyToFlux(MarketOrderResponse.class);
     }
 
     /**
-     * 新增邮件标签
+     * 查询物品星域价格历史统计
      *
-     * @param characterId   人物ID
-     * @param datasource    服务器数据源
-     * @param newLabel       标签信息
-     * @param accessesToken 授权Token
+     * @param regionId   星域ID
+     * @param datasource 服务器数据源
+     * @param typeId     物品类型ID
      * @return
      */
     @Parameters({
-            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "regionId", description = "星域ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
-            @Parameter(name = "newLabel", description = "标签信息", required = true),
-            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+            @Parameter(name = "typeId", description = "物品类型ID", required = true),
     })
-    @Operation(summary = "ESI-新增邮件标签")
-    public Mono<Integer> addCharacterMailLabels(Integer characterId, String datasource, NewLabel newLabel, String accessesToken) {
-        return apiClient.post().uri("/characters/{character_id}/mail/labels/?datasource={datasource}", characterId, datasource)
-                .header(HttpHeaders.AUTHORIZATION, accessesToken)
-                .body(Mono.just(newLabel), NewMail.class)
+    @Operation(summary = "ESI-查询物品星域价格历史统计")
+    public Flux<HistoricalMarketStatisticsResponse> queryMarketRegionHistory(Integer regionId, String datasource, Integer typeId) {
+        return apiClient.get().uri("/markets/{region_id}/history/?datasource={datasource}&type_id={type_id}", regionId, datasource, typeId)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToMono(Integer.class);
+                .bodyToFlux(HistoricalMarketStatisticsResponse.class);
     }
 
     /**
-     * 删除邮件标签
+     * 查询某个星域某个物品的订单
      *
-     * @param characterId   人物ID
-     * @param datasource    服务器数据源
-     * @param labelId       标签ID
-     * @param accessesToken 授权Token
+     * @param regionId   星域ID
+     * @param datasource 服务器数据源
+     * @param typeId     物品类型ID
+     * @param page       页码
      * @return
      */
     @Parameters({
-            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "characterId", description = "星域ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
-            @Parameter(name = "labelId", description = "标签ID", required = true),
-            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+            @Parameter(name = "typeId", description = "物品类型ID", required = true),
+            @Parameter(name = "page", description = "页码", required = true),
     })
-    @Operation(summary = "ESI-删除邮件标签")
-    public Mono<Integer> deleteCharacterMailLabel(Integer characterId, String datasource, Integer labelId, String accessesToken) {
-        return apiClient.delete().uri("/characters/{character_id}/mail/labels/{label_id}/?datasource={datasource}", characterId, labelId, datasource)
-                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+    @Operation(summary = "ESI-查询某个星域某个物品的订单")
+    public Flux<MarketOrderResponse> queryRegionOrders(Integer regionId, String datasource, Integer typeId, Integer page) {
+        return apiClient.get().uri("/markets/{region_id}/orders/?datasource={datasource}&type_id={type_id}&page={page}", regionId, datasource, typeId, page)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToMono(Integer.class);
+                .bodyToFlux(MarketOrderResponse.class);
     }
 
     /**
-     * 查询人物邮件列表
+     * 查询某个星域活跃订单物品类型ID
      *
-     * @param characterId   人物ID
+     * @param regionId   星域ID
+     * @param datasource 服务器数据源
+     * @param page       页码
+     * @return
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "星域ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "page", description = "页码", required = true),
+    })
+    @Operation(summary = "ESI-查询某个星域活跃订单物品类型ID")
+    public Flux<Integer> queryRegionTypes(Integer regionId, String datasource, Integer page) {
+        return apiClient.get().uri("/markets/{region_id}/types/?datasource={datasource}&page={page}", regionId, datasource, page)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatus::is5xxServerError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .bodyToFlux(Integer.class);
+    }
+
+    /**
+     * 查询市场组ID
+     *
+     * @param datasource 服务器数据源
+     * @return
+     */
+    @Parameters({
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "page", description = "页码", required = true),
+    })
+    @Operation(summary = "ESI-查询市场组ID")
+    public Flux<Integer> queryMarketGroup(String datasource) {
+        return apiClient.get().uri("/markets/groups/?datasource={datasource}", datasource)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatus::is5xxServerError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .bodyToFlux(Integer.class);
+    }
+
+    /**
+     * 查询市场组信息
+     *
+     * @param marketGroupId 物品组ID
      * @param datasource    服务器数据源
+     * @param language      语言
+     * @return
+     */
+    @Parameters({
+            @Parameter(name = "marketGroupId", description = "物品组ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "language", description = "语言", required = true),
+    })
+    @Operation(summary = "ESI-查询市场组信息")
+    public Mono<GroupItemResponse> queryMarketGroupInfo(Integer marketGroupId, String datasource, String language) {
+        return apiClient.get().uri("/markets/groups/{market_group_id}/?datasource={datasource}&language={language}", marketGroupId, datasource, language)
+                .header(HttpHeaders.ACCEPT_LANGUAGE, language)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatus::is5xxServerError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .bodyToMono(GroupItemResponse.class);
+    }
+
+    /**
+     * 查询价格信息
+     *
+     * @param datasource
+     * @return
+     */
+    @Parameters({
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+    })
+    @Operation(summary = "ESI-查询价格信息")
+    public Flux<PriceResponse> queryMarketPrices(String datasource) {
+        return apiClient.get().uri("/markets/prices/?datasource={datasource}", datasource)
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatus::is5xxServerError, response ->
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .bodyToFlux(PriceResponse.class);
+    }
+
+    /**
+     * 查询建筑订单
+     *
+     * @param structureId   建筑ID
+     * @param datasource    服务器数据源
+     * @param page          页码
      * @param accessesToken 授权Token
      * @return
      */
     @Parameters({
-            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "structureId", description = "建筑ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "page", description = "页码", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
-    @Operation(summary = "ESI-查询人物邮件列表")
-    public Flux<MailListResponse> queryCharacterMailList(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/mail/lists/?datasource={datasource}", characterId, datasource)
+    @Operation(summary = "ESI-查询建筑订单")
+    public Flux<MarketOrderResponse> queryStructureOrders(Long structureId, String datasource, Integer page, String accessesToken) {
+        return apiClient.get().uri("/markets/structures/{structure_id}/?datasource={datasource}&page={page}", structureId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToFlux(MailListResponse.class);
+                .bodyToFlux(MarketOrderResponse.class);
     }
-
 }
