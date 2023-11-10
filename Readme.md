@@ -22,7 +22,7 @@
 * esi-characters.read_standings.v1<br>
   允许读取人物的声望
 * esi-characters.read_titles.v1<br>
-  [待确认]
+  允许读取人物的头衔
 * esi-fittings.read_fittings.v1<br>
   允许读取装配信息
 * esi-fittings.write_fittings.v1<br>
