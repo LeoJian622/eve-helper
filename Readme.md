@@ -134,3 +134,7 @@
 允许读取人物军团的钱包、日志和交易记录，前提是该人物有所需的职位
 
 
+
+感谢：
+
+[![JetBrains Logo (Main) logo](https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg)](https://jb.gg/OpenSourceSupport)
