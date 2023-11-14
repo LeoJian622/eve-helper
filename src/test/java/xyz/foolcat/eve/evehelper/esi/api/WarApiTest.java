@@ -11,7 +11,7 @@ import xyz.foolcat.eve.evehelper.esi.model.WarDetailsResponse;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest

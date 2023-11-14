@@ -17,7 +17,7 @@ public enum GrantType {
     /**
      * 授权方式举例
      */
-    private String grantType;
+    private final String  grantType;
 
     GrantType(String grantType) {
         this.grantType = grantType;

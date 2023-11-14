@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.common.result.ResultCode;
 import xyz.foolcat.eve.evehelper.util.ResponseUtils;
 
-import javax.security.auth.login.AccountException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;

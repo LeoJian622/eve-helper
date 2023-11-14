@@ -1,6 +1,5 @@
 package xyz.foolcat.eve.evehelper.service.eve;
 
-import com.fasterxml.jackson.databind.util.JSONPObject;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.mapper.eve.IndustryActivityMaterialsMapper;
 import xyz.foolcat.eve.evehelper.mapper.system.InvTypesMapper;
