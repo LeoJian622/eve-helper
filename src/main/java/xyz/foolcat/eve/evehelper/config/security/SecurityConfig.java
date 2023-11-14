@@ -25,7 +25,7 @@ import javax.annotation.PostConstruct;
 
 /**
  * @author Leojan
- * @date 2023-07-20 15:05
+ * date 2023-07-20 15:05
  */
 
 @Configuration

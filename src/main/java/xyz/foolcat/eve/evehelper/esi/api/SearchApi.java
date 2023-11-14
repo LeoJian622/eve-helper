@@ -19,7 +19,7 @@ import xyz.foolcat.eve.evehelper.exception.EsiException;
  * ESI 搜索接口
  *
  * @author Leojan
- * @date 2023-11-09 16:03
+ * date 2023-11-09 16:03
  */
 
 @Service

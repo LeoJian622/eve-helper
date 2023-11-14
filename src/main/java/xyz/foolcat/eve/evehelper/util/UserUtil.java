@@ -8,7 +8,7 @@ import xyz.foolcat.eve.evehelper.domain.system.SysUser;
  * 用户信息工具包
  *
  * @author Leojan
- * @date 2023-07-30 11:21
+ * date 2023-07-30 11:21
  */
 
 public class UserUtil {

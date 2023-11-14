@@ -12,7 +12,7 @@ import java.util.List;
  * 军团建筑信息
  *
  * @author Leojan
- * @date 2023-10-26 13:56
+ * date 2023-10-26 13:56
  */
 
 @Data

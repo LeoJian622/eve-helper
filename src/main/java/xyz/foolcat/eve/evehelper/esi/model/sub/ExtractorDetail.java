@@ -10,7 +10,7 @@ import java.util.List;
  * 采集器详细信息
  *
  * @author Leojan
- * @date 2023-11-07 14:47
+ * date 2023-11-07 14:47
  */
 
 @Data

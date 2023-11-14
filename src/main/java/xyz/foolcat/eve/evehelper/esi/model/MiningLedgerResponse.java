@@ -10,7 +10,7 @@ import java.util.Date;
  * 人物采矿明细记录
  *
  * @author Leojan
- * @date 2023-10-30 16:46
+ * date 2023-10-30 16:46
  */
 
 @Data

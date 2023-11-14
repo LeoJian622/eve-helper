@@ -10,7 +10,7 @@ import java.time.OffsetDateTime;
  * 军团发布的勋章信息
  *
  * @author Leojan
- * @date 2023-10-25 16:51
+ * date 2023-10-25 16:51
  */
 
 @Data

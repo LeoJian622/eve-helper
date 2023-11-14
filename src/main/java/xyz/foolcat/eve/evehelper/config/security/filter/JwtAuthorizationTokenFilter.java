@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
  * JWT认证校验
  *
  * @author Leojan
- * @date 2022-01-14 13:47
+ * date 2022-01-14 13:47
  */
 
 @Component

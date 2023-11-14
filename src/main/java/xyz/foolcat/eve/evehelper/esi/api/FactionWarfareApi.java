@@ -19,7 +19,7 @@ import xyz.foolcat.eve.evehelper.exception.EsiException;
  * ESI 势力战争接口
  *
  * @author Leojan
- * @date 2023-10-26 16:18
+ * date 2023-10-26 16:18
  */
 
 @Service

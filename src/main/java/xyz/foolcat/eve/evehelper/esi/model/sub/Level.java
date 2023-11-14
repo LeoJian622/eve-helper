@@ -7,7 +7,7 @@ import lombok.Data;
  * 保险等级及信息
  *
  * @author Leojan
- * @date 2023-10-31 11:41
+ * date 2023-10-31 11:41
  */
 
 @Data

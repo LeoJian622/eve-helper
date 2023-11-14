@@ -22,7 +22,7 @@ import xyz.foolcat.eve.evehelper.exception.EsiException;
  * ESI 机遇系统接口
  *
  * @author Leojan
- * @date 2023-11-07 9:57
+ * date 2023-11-07 9:57
  */
 
 @Service

@@ -10,7 +10,7 @@ import java.time.OffsetDateTime;
  * 合同（拍卖）出价信息
  *
  * @author Leojan
- * @date 2023-10-24 17:05
+ * date 2023-10-24 17:05
  */
 
 @Data

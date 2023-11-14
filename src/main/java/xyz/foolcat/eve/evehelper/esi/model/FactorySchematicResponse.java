@@ -8,7 +8,7 @@ import lombok.Data;
  * 行星工厂生产详细信息
  *
  * @author Leojan
- * @date 2023-11-07 15:47
+ * date 2023-11-07 15:47
  */
 
 @Data

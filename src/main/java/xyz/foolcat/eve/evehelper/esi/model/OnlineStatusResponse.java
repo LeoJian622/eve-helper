@@ -10,7 +10,7 @@ import java.time.OffsetDateTime;
  * 人物在线状态
  *
  * @author Leojan
- * @date 2023-10-31 15:38
+ * date 2023-10-31 15:38
  */
 
 @Data

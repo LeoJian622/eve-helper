@@ -8,7 +8,7 @@ import lombok.Data;
  * 创建中队成功返回体
  *
  * @author Leojan
- * @date 2023-10-30 20:32
+ * date 2023-10-30 20:32
  */
 
 @Data

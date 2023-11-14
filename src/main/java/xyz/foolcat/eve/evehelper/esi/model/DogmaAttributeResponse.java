@@ -8,7 +8,7 @@ import lombok.Data;
  * 属性详情
  *
  * @author Leojan
- * @date 2023-10-26 15:19
+ * date 2023-10-26 15:19
  */
 
 @Data

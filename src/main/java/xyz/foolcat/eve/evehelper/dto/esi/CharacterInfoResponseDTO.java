@@ -6,7 +6,7 @@ import lombok.Data;
  * 人物信息查询对象
  *
  * @author Leojan
- * @date 2021-12-13 16:29
+ * date 2021-12-13 16:29
  */
 @Data
 public class CharacterInfoResponseDTO {

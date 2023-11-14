@@ -8,7 +8,7 @@ import lombok.Data;
  * 人物邮件列表
  *
  * @author Leojan
- * @date 2023-11-03 13:55
+ * date 2023-11-03 13:55
  */
 
 @Data

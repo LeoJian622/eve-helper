@@ -8,7 +8,7 @@ import lombok.Data;
  * 行星开发采集器信息
  *
  * @author Leojan
- * @date 2023-11-07 14:45
+ * date 2023-11-07 14:45
  */
 
 @Data

@@ -6,7 +6,7 @@ import xyz.foolcat.eve.evehelper.dto.system.UserDTO;
 
 /**
  * @author Leojan
- * @date 2022-03-16 17:12
+ * date 2022-03-16 17:12
  */
 @Mapper(componentModel = "spring")
 public interface UserConverter {

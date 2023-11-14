@@ -2,7 +2,7 @@ package xyz.foolcat.eve.evehelper.esi.auth;
 
 /**
  * @author Leojan
- * @date 2023-08-02 9:40
+ * date 2023-08-02 9:40
  */
 
 public enum GrantType {

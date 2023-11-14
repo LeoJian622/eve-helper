@@ -8,7 +8,7 @@ import lombok.Data;
  * 物品价格信息
  *
  * @author Leojan
- * @date 2023-11-03 16:50
+ * date 2023-11-03 16:50
  */
 
 @Data

@@ -20,7 +20,7 @@ import xyz.foolcat.eve.evehelper.exception.EsiException;
  * ESI 人物克隆信息接口
  *
  * @author Leojan
- * @date 2023-10-24 10:59
+ * date 2023-10-24 10:59
  */
 
 @Service

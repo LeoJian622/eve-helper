@@ -4,7 +4,7 @@ import java.util.*;
 
 /**
  * @author Leojan
- * @date 2023-08-01 16:08
+ * date 2023-08-01 16:08
  */
 
 public interface SsoScopes {

@@ -10,7 +10,7 @@ import xyz.foolcat.eve.evehelper.esi.model.sub.LeaderboardCharacterVictoryPoint;
  * 人物势力战争排行榜
  *
  * @author Leojan
- * @date 2023-10-26 16:46
+ * date 2023-10-26 16:46
  */
 
 @Data

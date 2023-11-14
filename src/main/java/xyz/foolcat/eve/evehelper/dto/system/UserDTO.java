@@ -5,7 +5,7 @@ import lombok.Data;
 
 /**
  * @author Leojan
- * @date 2022-03-16 17:13
+ * date 2022-03-16 17:13
  */
 
 @Schema(title="用户注册DTO")

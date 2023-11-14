@@ -8,7 +8,7 @@ import lombok.Data;
  * 军团设施信息
  *
  * @author Leojan
- * @date 2023-10-25 16:11
+ * date 2023-10-25 16:11
  */
 
 @Data

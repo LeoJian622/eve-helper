@@ -6,7 +6,7 @@ import lombok.Data;
 
 /**
  * @author Leojan
- * @date 2023-10-18 16:32
+ * date 2023-10-18 16:32
  */
 @Data
 @Tag(name = "日历事件参与者响应体 200 ok")

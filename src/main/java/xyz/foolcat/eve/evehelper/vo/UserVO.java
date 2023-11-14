@@ -5,7 +5,7 @@ import lombok.Data;
 
 /**
  * @author Leojan
- * @date 2022-03-21 14:36
+ * date 2022-03-21 14:36
  */
 
 @Schema(title="用户VO")

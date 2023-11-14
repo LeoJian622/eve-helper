@@ -4,7 +4,7 @@ package xyz.foolcat.eve.evehelper.common.constant;
  * 系统常量
  *
  * @author Leojan
- * @date 2021-12-28 16:39
+ * date 2021-12-28 16:39
  */
 
 public interface GlobalConstants {

@@ -10,7 +10,7 @@ import java.util.List;
  * 入侵星系信息
  *
  * @author Leojan
- * @date 2023-10-30 15:33
+ * date 2023-10-30 15:33
  */
 
 @Data

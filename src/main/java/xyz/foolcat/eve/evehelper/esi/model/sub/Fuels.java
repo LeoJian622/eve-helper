@@ -8,7 +8,7 @@ import lombok.Data;
  * 燃料信息
  *
  * @author Leojan
- * @date 2023-10-26 11:47
+ * date 2023-10-26 11:47
  */
 
 @Data

@@ -8,7 +8,7 @@ import lombok.Data;
  * 忠诚点商店需求item
  *
  * @author Leojan
- * @date 2023-10-31 16:11
+ * date 2023-10-31 16:11
  */
 @Data
 @Tag(name = "忠诚点商店需求item")

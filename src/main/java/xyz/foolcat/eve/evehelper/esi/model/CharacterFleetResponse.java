@@ -8,7 +8,7 @@ import lombok.Data;
  * 人物的舰队基础信息
  *
  * @author Leojan
- * @date 2023-10-27 15:25
+ * date 2023-10-27 15:25
  */
 
 @Data

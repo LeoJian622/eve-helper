@@ -8,7 +8,7 @@ import lombok.Data;
  * character_id_bookmarks_item
  *
  * @author Leojan
- * @date 2023-09-28 11:34
+ * date 2023-09-28 11:34
  */
 
 @Data

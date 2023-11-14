@@ -17,7 +17,7 @@ import java.util.List;
  * 用于调用网易提供的各种ESI接口
  *
  * @author Leojan
- * @date 2021-12-07 17:19
+ * date 2021-12-07 17:19
  */
 @BaseRequest(
         baseURL = "https://ali-esi.evepc.163.com/latest",     // 默认域名

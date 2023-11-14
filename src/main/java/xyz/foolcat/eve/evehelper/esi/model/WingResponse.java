@@ -10,7 +10,7 @@ import java.util.List;
  * 联队信息
  *
  * @author Leojan
- * @date 2023-10-30 11:13
+ * date 2023-10-30 11:13
  */
 
 @Data

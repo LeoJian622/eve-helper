@@ -11,7 +11,7 @@ import java.util.List;
  * 深渊属性影响详情
  *
  * @author Leojan
- * @date 2023-10-26 15:58
+ * date 2023-10-26 15:58
  */
 
 @Data

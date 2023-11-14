@@ -11,7 +11,7 @@ import java.time.OffsetDateTime;
  * 跳跃疲劳信息
  *
  * @author Leojan
- * @date 2023-10-20 14:35
+ * date 2023-10-20 14:35
  */
 @Data
 @Tag(name = "跳跃疲劳信息响应体 200 ok")

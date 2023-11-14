@@ -11,7 +11,7 @@ import java.util.List;
  * 军团母星建筑（POS）配置信息
  *
  * @author Leojan
- * @date 2023-10-26 11:45
+ * date 2023-10-26 11:45
  */
 
 @Data

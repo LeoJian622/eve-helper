@@ -8,7 +8,7 @@ import lombok.Data;
  * 合同物品信息
  *
  * @author Leojan
- * @date 2023-10-25 11:34
+ * date 2023-10-25 11:34
  */
 
 @Data

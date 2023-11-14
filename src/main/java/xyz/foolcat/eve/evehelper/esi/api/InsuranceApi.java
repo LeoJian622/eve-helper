@@ -20,7 +20,7 @@ import xyz.foolcat.eve.evehelper.exception.EsiException;
  * 舰船保险
  *
  * @author Leojan
- * @date 2023-10-31 11:39
+ * date 2023-10-31 11:39
  */
 
 @Service

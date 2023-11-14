@@ -8,7 +8,7 @@ import lombok.Data;
  * 工业成本系数
  *
  * @author Leojan
- * @date 2023-10-31 10:59
+ * date 2023-10-31 10:59
  */
 
 @Data

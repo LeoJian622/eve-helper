@@ -11,7 +11,7 @@ import java.time.OffsetDateTime;
  * 角色的代理研究信息列表响应体
  *
  * @author Leojan
- * @date 2023-10-19 11:03
+ * date 2023-10-19 11:03
  */
 @Data
 @Tag(name = "角色的代理研究信息列表响应体 200 ok")

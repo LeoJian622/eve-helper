@@ -8,7 +8,7 @@ import lombok.Data;
  * 舰船装配Item
  *
  * @author Leojan
- * @date 2023-10-27 14:32
+ * date 2023-10-27 14:32
  */
 
 @Data

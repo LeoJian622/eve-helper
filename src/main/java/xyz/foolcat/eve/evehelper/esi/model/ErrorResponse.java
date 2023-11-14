@@ -8,7 +8,7 @@ import lombok.Data;
  * 错误响应体
  *
  * @author Leojan
- * @date 2023-08-02 11:52
+ * date 2023-08-02 11:52
  */
 
 @Data

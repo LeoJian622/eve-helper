@@ -11,7 +11,7 @@ import java.util.List;
  * 舰船保险信息
  *
  * @author Leojan
- * @date 2023-10-31 11:43
+ * date 2023-10-31 11:43
  */
 
 @Data

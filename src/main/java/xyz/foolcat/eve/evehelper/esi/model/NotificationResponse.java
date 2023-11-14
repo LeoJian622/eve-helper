@@ -11,7 +11,7 @@ import java.time.OffsetDateTime;
  * 角色通知消息
  *
  * @author Leojan
- * @date 2023-10-20 15:03
+ * date 2023-10-20 15:03
  */
 
 @Data

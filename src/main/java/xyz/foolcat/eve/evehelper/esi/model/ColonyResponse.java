@@ -10,7 +10,7 @@ import java.time.OffsetDateTime;
  * 行星殖民地信息
  *
  * @author Leojan
- * @date 2023-11-07 13:59
+ * date 2023-11-07 13:59
  */
 
 @Data

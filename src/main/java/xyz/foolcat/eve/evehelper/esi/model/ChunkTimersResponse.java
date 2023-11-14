@@ -10,7 +10,7 @@ import java.time.OffsetDateTime;
  * 开采碎裂计时器
  *
  * @author Leojan
- * @date 2023-10-30 17:00
+ * date 2023-10-30 17:00
  */
 
 @Data

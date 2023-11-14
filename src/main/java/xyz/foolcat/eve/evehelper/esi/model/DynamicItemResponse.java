@@ -12,7 +12,7 @@ import java.util.List;
  * 深渊装备属性
  *
  * @author Leojan
- * @date 2023-10-26 15:42
+ * date 2023-10-26 15:42
  */
 
 @Data

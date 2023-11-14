@@ -8,7 +8,7 @@ import xyz.foolcat.eve.evehelper.esi.model.sub.Position;
 
 /**
  * @author Leojan
- * @date 2023-09-28 14:36
+ * date 2023-09-28 14:36
  */
 
 @Data

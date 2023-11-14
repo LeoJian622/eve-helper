@@ -10,7 +10,7 @@ import java.time.OffsetDateTime;
  * 军团的联盟历史记录
  *
  * @author Leojan
- * @date 2023-10-25 15:13
+ * date 2023-10-25 15:13
  */
 @Data
 @Tag(name = "军团的联盟历史记录 200 ok")

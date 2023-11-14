@@ -8,7 +8,7 @@ import lombok.Data;
  * 机遇任务详情
  *
  * @author Leojan
- * @date 2023-11-07 10:57
+ * date 2023-11-07 10:57
  */
 
 @Data

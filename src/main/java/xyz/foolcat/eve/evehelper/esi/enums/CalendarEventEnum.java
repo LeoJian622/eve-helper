@@ -4,7 +4,7 @@ package xyz.foolcat.eve.evehelper.esi.enums;
  * 日历事件枚举
  *
  * @author Leojan
- * @date 2023-10-18 14:58
+ * date 2023-10-18 14:58
  */
 
 public enum CalendarEventEnum {

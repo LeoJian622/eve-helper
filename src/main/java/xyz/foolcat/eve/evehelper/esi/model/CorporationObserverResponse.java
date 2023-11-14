@@ -10,7 +10,7 @@ import java.util.Date;
  * 开采记录
  *
  * @author Leojan
- * @date 2023-10-31 8:37
+ * date 2023-10-31 8:37
  */
 
 @Data

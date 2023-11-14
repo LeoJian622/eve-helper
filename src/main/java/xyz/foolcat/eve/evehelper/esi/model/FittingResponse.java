@@ -11,7 +11,7 @@ import java.util.List;
  * 舰船装配详情
  *
  * @author Leojan
- * @date 2023-10-27 14:31
+ * date 2023-10-27 14:31
  */
 @Data
 @Tag(name = "舰船装配详情 200 ok")

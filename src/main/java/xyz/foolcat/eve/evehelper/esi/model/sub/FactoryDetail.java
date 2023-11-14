@@ -10,7 +10,7 @@ import java.util.List;
  * 工厂详细信
  *
  * @author Leojan
- * @date 2023-11-07 14:51
+ * date 2023-11-07 14:51
  */
 
 @Data

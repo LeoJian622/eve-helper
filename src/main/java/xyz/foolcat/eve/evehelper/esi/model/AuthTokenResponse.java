@@ -8,7 +8,7 @@ import lombok.Data;
  * esi认证信息响应体
  *
  * @author Leojan
- * @date 2021-12-13 15:00
+ * date 2021-12-13 15:00
  */
 
 @Data
