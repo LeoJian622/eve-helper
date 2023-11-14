@@ -21,7 +21,7 @@ import xyz.foolcat.eve.evehelper.exception.EsiException;
  * ESI 忠诚点接口
  *
  * @author Leojan
- * @date 2023-10-31 16:04
+ * date 2023-10-31 16:04
  */
 
 @Service

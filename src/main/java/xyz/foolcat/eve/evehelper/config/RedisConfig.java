@@ -11,7 +11,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
  * @author Leojan
- * @date 2021-06-15 17:29
+ * date 2021-06-15 17:29
  */
 
 @Configuration

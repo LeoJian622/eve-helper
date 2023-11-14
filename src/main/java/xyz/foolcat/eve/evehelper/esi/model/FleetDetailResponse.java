@@ -8,7 +8,7 @@ import lombok.Data;
  * 舰队登记详细信息
  *
  * @author Leojan
- * @date 2023-10-27 15:43
+ * date 2023-10-27 15:43
  */
 @Data
 @Tag(name = "舰队登记详细信息 200 ok")

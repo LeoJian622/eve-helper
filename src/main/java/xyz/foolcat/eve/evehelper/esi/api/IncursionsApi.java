@@ -19,7 +19,7 @@ import xyz.foolcat.eve.evehelper.exception.EsiException;
  * 入侵星系信息
  *
  * @author Leojan
- * @date 2023-10-30 15:19
+ * date 2023-10-30 15:19
  */
 
 @Service

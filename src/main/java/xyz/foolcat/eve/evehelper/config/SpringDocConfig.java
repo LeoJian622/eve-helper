@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * @author Leojan
- * @date 2021-12-06 17:02
+ * date 2021-12-06 17:02
  */
 
 @Configuration

@@ -8,7 +8,7 @@ import lombok.Data;
  * 势力战争星系所有权信息
  *
  * @author Leojan
- * @date 2023-10-27 11:28
+ * date 2023-10-27 11:28
  */
 
 @Data

@@ -21,7 +21,7 @@ import xyz.foolcat.eve.evehelper.exception.EsiException;
  * ESI 舰船装配接口
  *
  * @author Leojan
- * @date 2023-10-27 14:27
+ * date 2023-10-27 14:27
  */
 
 @Service

@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
  * Forest 配置
  *
  * @author Leojan
- * @date 2022-04-19 9:15
+ * date 2022-04-19 9:15
  */
 
 @Configuration

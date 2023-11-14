@@ -4,7 +4,7 @@ package xyz.foolcat.eve.evehelper.common.constant;
  * 安全认证权限
  *
  * @author Leojan
- * @date 2022-01-15 11:38
+ * date 2022-01-15 11:38
  */
 
 public interface SecurityConstant {

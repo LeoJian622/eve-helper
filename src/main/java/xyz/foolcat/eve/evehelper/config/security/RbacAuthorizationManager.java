@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * 权限验证器
  *
  * @author Leojan
- * @date 2023-07-20 16:23
+ * date 2023-07-20 16:23
  */
 
 @Component

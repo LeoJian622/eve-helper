@@ -10,7 +10,7 @@ import xyz.foolcat.eve.evehelper.service.system.SysPermissionService;
  * 容器启动完成时加载角色权限规则至Redis缓存
  *
  * @author Leojan
- * @date 2021-12-28 16:34
+ * date 2021-12-28 16:34
  */
 
 @Component

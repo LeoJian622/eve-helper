@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
  * ESI Client 配置参数
  *
  * @author Leojan
- * @date 2023-08-01 16:04
+ * date 2023-08-01 16:04
  */
 
 @Data

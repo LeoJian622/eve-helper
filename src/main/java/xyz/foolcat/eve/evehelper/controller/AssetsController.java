@@ -15,7 +15,7 @@ import xyz.foolcat.eve.evehelper.vo.AssetsVO;
 
 /**
  * @author Leojan
- * @date 2022-04-20 10:24
+ * date 2022-04-20 10:24
  */
 @Tag(name = "游戏资产")
 @RestController

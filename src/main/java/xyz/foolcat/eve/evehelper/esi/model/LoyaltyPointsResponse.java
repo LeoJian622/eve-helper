@@ -8,7 +8,7 @@ import lombok.Data;
  * 忠诚点信息
  *
  * @author Leojan
- * @date 2023-10-31 16:01
+ * date 2023-10-31 16:01
  */
 
 @Data

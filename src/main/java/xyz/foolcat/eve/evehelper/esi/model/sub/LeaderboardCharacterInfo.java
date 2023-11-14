@@ -8,7 +8,7 @@ import lombok.Data;
  * 人物排行榜排行信息
  *
  * @author Leojan
- * @date 2023-10-26 16:50
+ * date 2023-10-26 16:50
  */
 
 @Data

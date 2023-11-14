@@ -9,7 +9,7 @@ import lombok.Data;
  *  声望列表
  *
  * @author Leojan
- * @date 2023-10-20 16:35
+ * date 2023-10-20 16:35
  */
 
 @Data

@@ -17,7 +17,7 @@ import java.util.List;
  *
  *
  * @author Leojan
- * @date 2021-12-07 17:19
+ * date 2021-12-07 17:19
  */
 @BaseRequest(
         baseURL = "https://ali-esi.evepc.163.com/latest",     // 默认域名

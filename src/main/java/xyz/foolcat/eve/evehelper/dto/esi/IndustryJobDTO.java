@@ -13,7 +13,7 @@ import java.util.Date;
  *
  * 制造作业ESI接收DTO
  * @author Leojan
- * @date 2022-04-15 16:23
+ * date 2022-04-15 16:23
  */
 
 @Schema(title="制造作业表")

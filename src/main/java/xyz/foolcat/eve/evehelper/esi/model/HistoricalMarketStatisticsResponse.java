@@ -10,7 +10,7 @@ import java.util.Date;
  * 星域价格历史统计
  *
  * @author Leojan
- * @date 2023-11-03 15:42
+ * date 2023-11-03 15:42
  */
 
 @Data

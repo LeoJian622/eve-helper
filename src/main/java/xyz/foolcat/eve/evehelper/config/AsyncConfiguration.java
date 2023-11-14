@@ -10,7 +10,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * @author Leojan
- * @date 2021-12-10 16:57
+ * date 2021-12-10 16:57
  */
 
 @Configuration

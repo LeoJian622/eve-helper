@@ -9,7 +9,7 @@ import java.io.Serializable;
  * 物品买卖单对象
  *
  * @author Leojan
- * @date 2022-06-09 11:29
+ * date 2022-06-09 11:29
  */
 
 @Schema(title="买卖单最高或最低售价")

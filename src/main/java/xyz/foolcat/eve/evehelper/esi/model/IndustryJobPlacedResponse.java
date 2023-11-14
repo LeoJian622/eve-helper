@@ -10,7 +10,7 @@ import java.time.OffsetDateTime;
  * 工业产线信息
  *
  * @author Leojan
- * @date 2023-10-30 16:08
+ * date 2023-10-30 16:08
  */
 
 @Data

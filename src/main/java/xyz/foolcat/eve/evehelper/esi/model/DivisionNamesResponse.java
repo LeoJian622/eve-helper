@@ -8,7 +8,7 @@ import xyz.foolcat.eve.evehelper.esi.model.sub.Division;
  * 军团部门名称
  *
  * @author Leojan
- * @date 2023-10-25 16:04
+ * date 2023-10-25 16:04
  */
 
 @Data

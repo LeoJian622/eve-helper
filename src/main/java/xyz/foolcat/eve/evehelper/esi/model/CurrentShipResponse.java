@@ -8,7 +8,7 @@ import lombok.Data;
  * 人物当前所在舰船信息
  *
  * @author Leojan
- * @date 2023-10-31 15:48
+ * date 2023-10-31 15:48
  */
 
 @Data

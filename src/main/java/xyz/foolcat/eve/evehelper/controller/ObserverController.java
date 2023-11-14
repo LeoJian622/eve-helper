@@ -18,7 +18,7 @@ import java.text.ParseException;
  * 采矿观察者清单对象
  *
  * @author Leojan
- * @date 2022-07-06 22:26
+ * date 2022-07-06 22:26
  */
 
 @Tag(name ="月矿采掘")

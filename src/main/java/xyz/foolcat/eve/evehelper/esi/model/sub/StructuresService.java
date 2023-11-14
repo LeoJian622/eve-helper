@@ -7,7 +7,7 @@ import lombok.Data;
  * 建筑服务信息
  *
  * @author Leojan
- * @date 2023-10-26 14:09
+ * date 2023-10-26 14:09
  */
 
 @Data

@@ -11,7 +11,7 @@ import java.util.List;
  * 星系工业成本系数
  *
  * @author Leojan
- * @date 2023-10-31 11:31
+ * date 2023-10-31 11:31
  */
 
 @Data

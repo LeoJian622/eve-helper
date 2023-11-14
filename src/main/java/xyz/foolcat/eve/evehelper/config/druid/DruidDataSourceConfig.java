@@ -13,7 +13,7 @@ import javax.sql.DataSource;
  * Druid配置类
  *
  * @author Leojan
- * @date 2021-12-06 17:07
+ * date 2021-12-06 17:07
  */
 
 @Configuration

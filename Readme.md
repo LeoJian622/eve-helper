@@ -22,7 +22,7 @@
 * esi-characters.read_standings.v1<br>
   允许读取人物的声望
 * esi-characters.read_titles.v1<br>
-  [待确认]
+  允许读取人物的头衔
 * esi-fittings.read_fittings.v1<br>
   允许读取装配信息
 * esi-fittings.write_fittings.v1<br>
@@ -134,3 +134,7 @@
 允许读取人物军团的钱包、日志和交易记录，前提是该人物有所需的职位
 
 
+
+感谢：
+
+[![JetBrains Logo (Main) logo](https://resources.jetbrains.com/storage/products/company/brand/logos/jb_beam.svg)](https://jb.gg/OpenSourceSupport)

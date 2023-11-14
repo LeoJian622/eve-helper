@@ -11,7 +11,7 @@ import java.util.List;
  * 邮件信息
  *
  * @author Leojan
- * @date 2023-10-31 16:56
+ * date 2023-10-31 16:56
  */
 
 @Data

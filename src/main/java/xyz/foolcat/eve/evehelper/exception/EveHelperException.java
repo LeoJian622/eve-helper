@@ -6,7 +6,7 @@ import xyz.foolcat.eve.evehelper.common.result.IResultCode;
 
 /**
  * @author Leojan
- * @date 2021-12-20 17:05
+ * date 2021-12-20 17:05
  */
 
 @Getter

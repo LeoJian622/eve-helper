@@ -18,7 +18,7 @@ import javax.sql.DataSource;
  * System数据源配置
  *
  * @author Leojan
- * @date 2021-12-06 17:11
+ * date 2021-12-06 17:11
  */
 
 @Configuration

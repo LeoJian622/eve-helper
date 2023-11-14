@@ -12,7 +12,7 @@ import xyz.foolcat.eve.evehelper.config.mybatis.handler.MyMetaObjectHandler;
 
 /**
  * @author Leojan
- * @date 2021-06-16 16:00
+ * date 2021-06-16 16:00
  */
 
 @Configuration

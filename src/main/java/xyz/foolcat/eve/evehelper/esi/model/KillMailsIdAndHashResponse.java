@@ -8,7 +8,7 @@ import lombok.Data;
  * 击毁报告ID和HASH值
  *
  * @author Leojan
- * @date 2023-10-31 11:59
+ * date 2023-10-31 11:59
  */
 
 @Data

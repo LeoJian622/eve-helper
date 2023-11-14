@@ -11,7 +11,7 @@ import java.time.OffsetDateTime;
  * 勋章信息
  *
  * @author Leojan
- * @date 2023-10-20 14:45
+ * date 2023-10-20 14:45
  */
 @Data
 @Tag(name = "勋章信息响应体 200 ok")

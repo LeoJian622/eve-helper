@@ -21,7 +21,7 @@ import xyz.foolcat.eve.evehelper.exception.EsiException;
  * ESI 击毁报告
  *
  * @author Leojan
- * @date 2023-10-31 13:48
+ * date 2023-10-31 13:48
  */
 
 @Service

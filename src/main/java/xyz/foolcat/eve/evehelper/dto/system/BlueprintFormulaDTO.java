@@ -10,7 +10,7 @@ import java.util.List;
  * 基础蓝图制造清单
  *
  * @author Leojan
- * @date 2022-09-21 16:36
+ * date 2022-09-21 16:36
  */
 
 @Schema(title="蓝图材料清单")

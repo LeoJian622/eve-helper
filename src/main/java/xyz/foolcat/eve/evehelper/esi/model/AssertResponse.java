@@ -9,7 +9,7 @@ import lombok.Data;
  * 资产信息响应体
  *
  * @author Leojan
- * @date 2023-09-25 16:05
+ * date 2023-09-25 16:05
  */
 
 @Data

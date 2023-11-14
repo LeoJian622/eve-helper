@@ -6,7 +6,7 @@ import xyz.foolcat.eve.evehelper.dto.esi.UniverseNameResponeDTO;
 
 /**
  * @author Leojan
- * @date 2022-07-07 16:49
+ * date 2022-07-07 16:49
  */
 @Mapper(componentModel = "spring")
 public interface UniverseNameConverter {

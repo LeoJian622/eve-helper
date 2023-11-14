@@ -10,7 +10,7 @@ import java.util.Date;
  * 单个建筑的采矿明细
  *
  * @author Leojan
- * @date 2023-10-31 10:13
+ * date 2023-10-31 10:13
  */
 
 @Data
