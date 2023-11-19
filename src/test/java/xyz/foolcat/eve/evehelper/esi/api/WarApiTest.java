@@ -11,7 +11,7 @@ import xyz.foolcat.eve.evehelper.esi.model.WarDetailsResponse;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -35,7 +35,7 @@ class WarApiTest {
 
     @Test
     void queryWarsKillMails() {
-        List<KillMailsIdAndHashResponse> killMailsIdAndHashResponses = warApi.queryWarsKillMails(303667, "serenity").collectList().block();
+        List<KillMailsIdAndHashResponse> killMailsIdAndHashResponses = warApi.queryWarsKillMails(303667, "serenity",1).collectList().block();
         System.out.println("killMailsIdAndHashResponses = " + killMailsIdAndHashResponses);
     }
 }

@@ -53,7 +53,7 @@ public class WarApi {
     /**
      * 战争详细信息
      *
-     * @param warId 战争ID
+     * @param warId      战争ID
      * @param datasource 服务器数据源
      * @return
      */
@@ -75,17 +75,19 @@ public class WarApi {
     /**
      * 战争击毁报告
      *
-     * @param warId 战争ID
+     * @param warId      战争ID
      * @param datasource 服务器数据源
+     * @param page       页码
      * @return
      */
     @Parameters({
             @Parameter(name = "warId", description = "战争ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "page", description = "页码", required = true),
     })
     @Operation(summary = "ESI-战争击毁报告")
-    public Flux<KillMailsIdAndHashResponse> queryWarsKillMails(Integer warId, String datasource) {
-        return apiClient.get().uri("/wars/{war_id}/killmails/?datasource={datasource}", warId, datasource)
+    public Flux<KillMailsIdAndHashResponse> queryWarsKillMails(Integer warId, String datasource, Integer page) {
+        return apiClient.get().uri("/wars/{war_id}/killmails/?datasource={datasource}&page={page}", warId, datasource, page)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

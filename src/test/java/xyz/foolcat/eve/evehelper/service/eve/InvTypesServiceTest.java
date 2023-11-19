@@ -9,7 +9,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import xyz.foolcat.eve.evehelper.domain.system.InvTypes;
 import xyz.foolcat.eve.evehelper.service.system.InvTypesService;
 
-import static org.junit.jupiter.api.Assertions.*;
+
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest

@@ -16,7 +16,7 @@ public enum CalendarEventEnum {
     , DECLINED("declined")
     , TENTATIVE("tentative");
 
-    private String value;
+    private final String value;
 
     CalendarEventEnum(String value) {
         this.value = value;

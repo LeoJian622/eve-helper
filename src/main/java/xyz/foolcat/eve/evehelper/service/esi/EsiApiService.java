@@ -17,15 +17,14 @@ import xyz.foolcat.eve.evehelper.dto.esi.CharacterInfoResponseDTO;
 import xyz.foolcat.eve.evehelper.dto.esi.IndustryJobDTO;
 import xyz.foolcat.eve.evehelper.dto.esi.UniverseNameResponeDTO;
 import xyz.foolcat.eve.evehelper.esi.EsiNormalClient;
-import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
 import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
+import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
 import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.strategy.esi.EsiClientStrategyContext;
 import xyz.foolcat.eve.evehelper.util.UserUtil;
 
 import java.text.ParseException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;

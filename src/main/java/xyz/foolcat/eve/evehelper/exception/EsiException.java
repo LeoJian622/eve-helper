@@ -1,11 +1,7 @@
 package xyz.foolcat.eve.evehelper.exception;
 
-import com.dtflys.forest.annotation.Get;
-import lombok.Data;
 import lombok.Getter;
 import xyz.foolcat.eve.evehelper.common.result.IResultCode;
-
-import java.security.PrivilegedActionException;
 
 /**
  * Esi请求错误异常

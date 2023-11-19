@@ -1,6 +1,5 @@
 package xyz.foolcat.eve.evehelper.exception;
 
-import lombok.Data;
 import lombok.Getter;
 import xyz.foolcat.eve.evehelper.common.result.IResultCode;
 
