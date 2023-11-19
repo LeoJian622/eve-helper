@@ -9,186 +9,158 @@ import org.apache.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.common.result.ResultCode;
-import xyz.foolcat.eve.evehelper.esi.model.CorporationWalletsResponse;
 import xyz.foolcat.eve.evehelper.esi.model.ErrorResponse;
-import xyz.foolcat.eve.evehelper.esi.model.WalletJournalResponse;
-import xyz.foolcat.eve.evehelper.esi.model.WalletTransactionsResponse;
+import xyz.foolcat.eve.evehelper.esi.model.send.NewMailUI;
 import xyz.foolcat.eve.evehelper.exception.EsiException;
 
 /**
- * ESI 钱包接口
+ * ESI 用户界面操作接口
  *
  * @author Leojan
- * date 2023-11-16 21:45
+ * date 2023-11-19 20:03
  */
 
 @Service
 @RequiredArgsConstructor
-@Tag(name = "ESI 主权相关接口")
-public class WalletApi {
+@Tag(name = "ESI 用户界面操作接口")
+public class UserInterfaceApi {
 
     private final WebClient apiClient;
 
     /**
-     * 人物钱包余额
+     * 添加自动导航航标
      *
-     * @param characterId   人物ID
-     * @param datasource    服务器数据源
-     * @param accessesToken 授权Token
+     * @param datasource          服务器数据源
+     * @param addToBeginning      是否是起始点
+     * @param clearOtherWaypoints 是否清除其他航标
+     * @param destinationId       目标点ID
+     * @param accessesToken       授权Token
      * @return
      */
     @Parameters({
-            @Parameter(name = "characterId", description = "人物ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "addToBeginning", description = "是否是起始点", required = true),
+            @Parameter(name = "clearOtherWaypoints", description = "是否清除其他航标", required = true),
+            @Parameter(name = "destinationId", description = "目标点ID", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
-    @Operation(summary = "ESI-人物钱包余额")
-    public Mono<Double> queryCharacterWallet(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/wallet/?datasource={datasource}", characterId, datasource)
+    @Operation(summary = "ESI-添加自动导航航标")
+    public Mono<Object> addWaypoint(String datasource, Boolean addToBeginning, Boolean clearOtherWaypoints, Long destinationId, String accessesToken) {
+        return apiClient.post().uri("/ui/autopilot/waypoint/?datasource={datasource}&add_to_beginning={addToBeginning}&clear_other_waypoints={clearOtherWaypoints}&destination_id={destinationId}",
+                        datasource, addToBeginning, clearOtherWaypoints, destinationId)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToMono(Double.class);
+                .bodyToMono(Object.class);
     }
 
     /**
-     * 人物钱包记录
+     * 在客户端内打开合同窗口
      *
-     * @param characterId   人物ID
      * @param datasource    服务器数据源
-     * @param page          页码
+     * @param contractId    合同ID
      * @param accessesToken 授权Token
      * @return
      */
     @Parameters({
-            @Parameter(name = "characterId", description = "人物ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
-            @Parameter(name = "page", description = "页码", required = true),
+            @Parameter(name = "contractId", description = "合同ID", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
-    @Operation(summary = "ESI-人物钱包记录")
-    public Flux<WalletJournalResponse> queryCharacterWalletJournal(Integer characterId, String datasource, Integer page, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/wallet/journal/?datasource={datasource}&page={page}", characterId, datasource, page)
+    @Operation(summary = "ESI-在游戏中打开对应的合同")
+    public Mono<Object> openContract(String datasource, Integer contractId, String accessesToken) {
+        return apiClient.post().uri("/ui/openwindow/contract/?datasource={datasource}&contract_id={contractId}",
+                        datasource, contractId)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToFlux(WalletJournalResponse.class);
+                .bodyToMono(Object.class);
     }
 
     /**
-     * 人物钱包交易记录
+     * 打开客户端内角色、公司或联盟的信息窗口
      *
-     * @param characterId   人物ID
      * @param datasource    服务器数据源
-     * @param fromId        在该ID之前的记录
+     * @param targetId      角色、公司或联盟的ID
      * @param accessesToken 授权Token
      * @return
      */
     @Parameters({
-            @Parameter(name = "characterId", description = "人物ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
-            @Parameter(name = "fromId", description = "在该ID之前的记录"),
+            @Parameter(name = "targetId", description = "角色、公司或联盟的ID ", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
-    @Operation(summary = "ESI-人物钱包交易记录")
-    public Flux<WalletTransactionsResponse> queryCharacterWalletTransactions(Integer characterId, String datasource, Long fromId, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/wallet/transactions/?datasource={datasource}&from_id={fromId}", characterId, datasource, fromId)
+    @Operation(summary = "ESI-打开客户端内角色、公司或联盟的信息窗口")
+    public Mono<Object> openInformation(String datasource, Integer targetId, String accessesToken) {
+        return apiClient.post().uri("/ui/openwindow/information/?datasource={datasource}&target_id={targetId}",
+                        datasource, targetId)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToFlux(WalletTransactionsResponse.class);
+                .bodyToMono(Object.class);
     }
 
     /**
-     * 军团钱包余额
+     * 在客户端中打开特定 typeID 的市场详细信息窗口
      *
-     * @param corporationId   军团ID
      * @param datasource    服务器数据源
+     * @param typeId        物品类型ID
      * @param accessesToken 授权Token
      * @return
      */
     @Parameters({
-            @Parameter(name = "corporationId", description = "军团ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "typeId", description = "物品类型ID ", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
-    @Operation(summary = "ESI-军团钱包余额")
-    public Flux<CorporationWalletsResponse> queryCorporationWallet(Integer corporationId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/wallets/?datasource={datasource}", corporationId, datasource)
+    @Operation(summary = "ESI-在客户端中打开特定 typeID 的市场详细信息窗口")
+    public Mono<Object> openMarketDetails(String datasource, Integer typeId, String accessesToken) {
+        return apiClient.post().uri("/ui/openwindow/marketdetails/?datasource={datasource}&type_id={typeId}",
+                        datasource, typeId)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToFlux(CorporationWalletsResponse.class);
+                .bodyToMono(Object.class);
     }
 
     /**
-     * 军团钱包记录
+     * 根据请求中的设置（如果适用）打开“新建邮件”窗口
      *
-     * @param corporationId   军团ID
      * @param datasource    服务器数据源
-     * @param page          页码
+     * @param newMail       新建邮件的设置
      * @param accessesToken 授权Token
      * @return
      */
     @Parameters({
-            @Parameter(name = "corporationId", description = "军团ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
-            @Parameter(name = "page", description = "页码", required = true),
+            @Parameter(name = "newMail", description = "新建邮件的设置 ", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
-    @Operation(summary = "ESI-军团钱包记录")
-    public Flux<WalletJournalResponse> queryCorporationWalletJournal(Integer corporationId, Integer division,String datasource, Integer page, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/wallets/{division}/journal/?datasource={datasource}&page={page}", corporationId, division, datasource, page)
+    @Operation(summary = "ESI-根据请求中的设置（如果适用）打开“新建邮件”窗口")
+    public Mono<Object> openNewMail(String datasource, NewMailUI newMail, String accessesToken) {
+        return apiClient.post().uri("/ui/openwindow/newmail/?datasource={datasource}",
+                        datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .body(Mono.just(newMail), NewMailUI.class)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToFlux(WalletJournalResponse.class);
+                .bodyToMono(Object.class);
     }
-
-    /**
-     * 军团钱包交易记录
-     *
-     * @param corporationId   军团ID
-     * @param datasource    服务器数据源
-     * @param fromId        在该ID之前的记录
-     * @param accessesToken 授权Token
-     * @return
-     */
-    @Parameters({
-            @Parameter(name = "corporationId", description = "军团ID", required = true),
-            @Parameter(name = "datasource", description = "服务器数据源", required = true),
-            @Parameter(name = "fromId", description = "在该ID之前的记录"),
-            @Parameter(name = "accessesToken", description = "授权Token", required = true),
-    })
-    @Operation(summary = "ESI-军团钱包交易记录")
-    public Flux<WalletTransactionsResponse> queryCorporationWalletTransactions(Integer corporationId, Integer division, String datasource, Long fromId, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/wallets/{division}/transactions/?datasource={datasource}&from_id={fromId}", corporationId, division, datasource, fromId)
-                .header(HttpHeaders.AUTHORIZATION, accessesToken)
-                .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToFlux(WalletTransactionsResponse.class);
-    }
-
-
 }

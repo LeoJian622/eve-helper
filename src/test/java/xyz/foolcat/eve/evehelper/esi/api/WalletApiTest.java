@@ -12,14 +12,13 @@ import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
 import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
+import xyz.foolcat.eve.evehelper.esi.model.CorporationWalletsResponse;
 import xyz.foolcat.eve.evehelper.esi.model.WalletJournalResponse;
 import xyz.foolcat.eve.evehelper.esi.model.WalletTransactionsResponse;
 import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
 
 import java.util.List;
 import java.util.Objects;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
@@ -46,8 +45,8 @@ class WalletApiTest {
     }
 
     @Test
-    void queryCharactersWallet() {
-        Double wallet = walletApi.queryCharactersWallet(2112818290, "serenity", at).block();
+    void queryCharacterWallet() {
+        Double wallet = walletApi.queryCharacterWallet(2112818290, "serenity", at).block();
         System.out.println("wallet = " + wallet);
     }
 
@@ -60,6 +59,24 @@ class WalletApiTest {
     @Test
     void queryCharacterWalletTransactions() {
         List<WalletTransactionsResponse> walletTransactionsResponses = walletApi.queryCharacterWalletTransactions(2112818290, "serenity", null, at).collectList().block();
+        System.out.println("walletTransactionsResponses = " + walletTransactionsResponses);
+    }
+
+    @Test
+    void queryCorporationWallet() {
+        List<CorporationWalletsResponse> corporationWalletsResponses = walletApi.queryCorporationWallet(656880659, "serenity", at).collectList().block();
+        System.out.println("corporationWalletsResponses = " + corporationWalletsResponses);
+    }
+
+    @Test
+    void queryCorporationWalletJournal() {
+        List<WalletJournalResponse> walletJournalResponses = walletApi.queryCorporationWalletJournal(656880659, 1, "serenity", 1, at).collectList().block();
+        System.out.println("walletJournalResponses = " + walletJournalResponses);
+    }
+
+    @Test
+    void queryCorporationWalletTransactions() {
+        List<WalletTransactionsResponse> walletTransactionsResponses = walletApi.queryCorporationWalletTransactions(656880659, 1, "serenity", null, at).collectList().block();
         System.out.println("walletTransactionsResponses = " + walletTransactionsResponses);
     }
 }
