@@ -45,7 +45,7 @@ class ContactApiTest {
 
     @Test
     void queryAlliancesContacts() {
-        List<ContactResponse> contactResponses = contactApi.queryAlliancesContacts(562593865L, "serenity", at).collectList().block();
+        List<ContactResponse> contactResponses = contactApi.queryAlliancesContacts(562593865L, "serenity", 1, at).collectList().block();
         System.out.println("contactResponses = " + contactResponses);
     }
 

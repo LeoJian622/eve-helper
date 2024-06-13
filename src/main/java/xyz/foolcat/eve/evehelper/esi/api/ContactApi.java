@@ -39,16 +39,17 @@ public class ContactApi {
      * @param allianceId    联盟ID
      * @param datasource    服务器数据源
      * @param accessesToken 授权Token
-     * @return
+     * @return 联盟联系人列表
      */
     @Parameters({
             @Parameter(name = "allianceId", description = "联盟ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "page",description = "页码" ,required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-联盟联系人")
-    public Flux<ContactResponse> queryAlliancesContacts(Long allianceId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/alliances/{alliance_id}/contacts/?datasource={datasource}", allianceId, datasource)
+    public Flux<ContactResponse> queryAlliancesContacts(Long allianceId, String datasource,Integer page, String accessesToken) {
+        return apiClient.get().uri("/alliances/{alliance_id}/contacts/?datasource={datasource}&page={page}", allianceId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
@@ -64,7 +65,7 @@ public class ContactApi {
      * @param allianceId    联盟ID
      * @param datasource    服务器数据源
      * @param accessesToken 授权Token
-     * @return
+     * @return 联盟自定义标签列表
      */
     @Parameters({
             @Parameter(name = "allianceId", description = "联盟ID", required = true),
@@ -90,7 +91,7 @@ public class ContactApi {
      * @param datasource    服务器数据源
      * @param contactIds    联系人IDs
      * @param accessesToken 授权Token
-     * @return
+     * @return 返回信息
      */
     @Parameters({
             @Parameter(name = "characterId", description = "人物ID", required = true),
@@ -116,7 +117,7 @@ public class ContactApi {
      * @param characterId   人物ID
      * @param datasource    服务器数据源
      * @param accessesToken 授权Token
-     * @return
+     * @return  联系人信息响应体
      */
     @Parameters({
             @Parameter(name = "characterId", description = "人物ID", required = true),
@@ -145,7 +146,7 @@ public class ContactApi {
      * @param standing      声望
      * @param watched       是否通知联系人
      * @param accessesToken 授权Token
-     * @return
+     * @return ID
      */
     @Parameters({
             @Parameter(name = "characterId", description = "人物ID", required = true),
@@ -179,7 +180,7 @@ public class ContactApi {
      * @param standing      声望
      * @param watched       是否通知联系人
      * @param accessesToken 授权Token
-     * @return
+     * @return 返回信息
      */
     @Parameters({
             @Parameter(name = "characterId", description = "人物ID", required = true),
@@ -209,7 +210,7 @@ public class ContactApi {
      * @param characterId    联盟ID
      * @param datasource    服务器数据源
      * @param accessesToken 授权Token
-     * @return
+     * @return 自定义标签列表
      */
     @Parameters({
             @Parameter(name = "characterId", description = "人物ID", required = true),
@@ -234,7 +235,7 @@ public class ContactApi {
      * @param corporationId    军团ID
      * @param datasource    服务器数据源
      * @param accessesToken 授权Token
-     * @return
+     * @return 军团联系人列表
      */
     @Parameters({
             @Parameter(name = "corporationId", description = "军团ID", required = true),
@@ -259,7 +260,7 @@ public class ContactApi {
      * @param corporationId    军团ID
      * @param datasource    服务器数据源
      * @param accessesToken 授权Token
-     * @return
+     * @return 军团自定义标签列表
      */
     @Parameters({
             @Parameter(name = "corporationId", description = "军团ID", required = true),
