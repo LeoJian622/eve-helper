@@ -29,6 +29,8 @@ public class IndustryApi {
 
     private final WebClient apiClient;
 
+    private final PageTotalApi pageTotalApi;
+
     /**
      * 人物工业生产项目
      *
@@ -54,6 +56,25 @@ public class IndustryApi {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(IndustryJobPlacedResponse.class);
+    }
+
+    /**
+     * 人物采矿明细记录最大页数
+     *
+     * @param characterId   人物ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-人物采矿明细记录最大页数")
+    public Integer queryCharacterMiningMaxPage(Integer characterId, String datasource, String accessesToken) {
+        String uri = "/characters/" + characterId + "/mining/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
     }
 
 
@@ -85,6 +106,25 @@ public class IndustryApi {
     }
 
     /**
+     * 开采碎裂计时最大页数
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-开采碎裂计时最大页数")
+    public Integer queryCorporationMiningExtractionsMaxPage(Integer corporationId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/mining/extractions/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
+
+    /**
      * 开采碎裂计时
      *
      * @param corporationId 军团ID
@@ -109,6 +149,25 @@ public class IndustryApi {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(ChunkTimersResponse.class);
+    }
+
+    /**
+     * 军团开采记录最大页数
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团开采记录最大页数")
+    public Integer queryCorporationMiningObserversMaxPage(Integer corporationId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/mining/observers/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
     }
 
     /**
@@ -139,6 +198,27 @@ public class IndustryApi {
     }
 
     /**
+     * 军团单个建筑采矿明细最大页数
+     *
+     * @param corporationId 军团ID
+     * @param observerId    工业建筑ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "observerId", description = "工业建筑ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团单个建筑采矿明细最大页数")
+    public Integer queryCorporationMiningObserverMaxPage(Integer corporationId, Long observerId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/mining/observers/" + observerId + "/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
+
+    /**
      * 军团单个建筑采矿明细
      *
      * @param corporationId 军团ID
@@ -165,6 +245,25 @@ public class IndustryApi {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(ObserverMiningLedgerResponse.class);
+    }
+
+    /**
+     * 军团工业生产项目最大页数
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团工业生产项目最大页数")
+    public Integer queryCorporationIndustryJobsMaxPage(Integer corporationId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/industry/jobs/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
     }
 
     /**

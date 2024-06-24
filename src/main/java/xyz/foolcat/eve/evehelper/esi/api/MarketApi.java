@@ -29,6 +29,8 @@ public class MarketApi {
 
     private final WebClient apiClient;
 
+    private final PageTotalApi pageTotalApi;
+
     /**
      * 查询人物订单
      *
@@ -52,6 +54,25 @@ public class MarketApi {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(MarketOrderResponse.class);
+    }
+
+    /**
+     * 查询人物过去90天取消和到期的订单最大页数
+     *
+     * @param characterId   人物ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-查询人物过去90天取消和到期的订单最大页数")
+    public Integer queryCharacterOrdersHistoryMaxPage(Integer characterId, String datasource, String accessesToken) {
+        String uri = "/characters/" + characterId + "/orders/history/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
     }
 
     /**
@@ -80,6 +101,25 @@ public class MarketApi {
     }
 
     /**
+     * 军团订单最大页数
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团订单最大页数")
+    public Integer queryCorporationOrdersMaxPage(Integer corporationId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/orders/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
+
+    /**
      * 查询军团订单
      *
      * @param characterId   军团ID
@@ -104,6 +144,25 @@ public class MarketApi {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(MarketOrderResponse.class);
+    }
+
+    /**
+     * 查询军团过去90天取消和到期的订单最大页数
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-查询军团过去90天取消和到期的订单最大页数")
+    public Integer queryCorporationOrdersHistoryMaxPage(Integer corporationId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/orders/history/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
     }
 
     /**
@@ -156,6 +215,26 @@ public class MarketApi {
     }
 
     /**
+     * 某个星域某个物品的订单最大页数
+     *
+     * @param regionId   星域ID
+     * @param typeId     物品类型ID
+     * @param datasource 服务器
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "regionId", description = "星域ID", required = true),
+            @Parameter(name = "typeId", description = "物品类型ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-某个星域某个物品的订单最大页数")
+    public Integer queryRegionOrdersMaxPage(Integer regionId, Integer typeId, String datasource) {
+        String uri = "/markets/" + regionId + "/orders/?datasource=" + datasource + "&type_id=" + typeId + "&page=1";
+        return pageTotalApi.queryMaxPage("", uri,  apiClient);
+    }
+
+    /**
      * 查询某个星域某个物品的订单
      *
      * @param regionId   星域ID
@@ -179,6 +258,23 @@ public class MarketApi {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(MarketOrderResponse.class);
+    }
+
+    /**
+     * 某个星域活跃订单物品类型ID最大页数
+     *
+     * @param regionId   星域ID
+     * @param datasource 服务器
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "regionId", description = "星域ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+    })
+    @Operation(summary = "ESI-某个星域活跃订单物品类型ID最大页数")
+    public Integer queryRegionTypesMaxPage(Integer regionId, String datasource) {
+        String uri = "/markets/" + regionId + "/types/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage("", uri,  apiClient);
     }
 
     /**
@@ -270,7 +366,24 @@ public class MarketApi {
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(PriceResponse.class);
     }
-
+    /**
+     * 建筑订单最大页数
+     *
+     * @param structureId   建筑ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "structureId", description = "建筑ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-建筑订单最大页数")
+    public Integer queryStructureOrdersMaxPage(Long structureId, String datasource, String accessesToken) {
+        String uri = "/markets/structures/" + structureId + "/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
     /**
      * 查询建筑订单
      *

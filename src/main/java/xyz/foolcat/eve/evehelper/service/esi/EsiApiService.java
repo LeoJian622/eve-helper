@@ -77,7 +77,7 @@ public class EsiApiService {
         EveAccount character = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, code).eq(EveAccount::getUserId, UserUtil.getUserId()).one();
 
         GrantType grantType = GrantType.AUTHORIZATION_CODE;
-        if (ObjectUtil.isNull(character)) {
+        if (ObjectUtil.isNotNull(character)) {
             grantType = GrantType.REFRESH_TOKEN;
             code = character.getRefreshToken();
         }

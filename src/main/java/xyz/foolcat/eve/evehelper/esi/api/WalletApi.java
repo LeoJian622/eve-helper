@@ -32,6 +32,27 @@ public class WalletApi {
 
     private final WebClient apiClient;
 
+    private final PageTotalApi pageTotalApi;
+
+    /**
+     * 人物钱包记录最大页数
+     *
+     * @param characterId   人物ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-人物钱包记录最大页数")
+    public Integer queryCharacterWalletJournalMaxPage(Integer characterId, String datasource, String accessesToken) {
+        String uri = "/characters/" + characterId + "/wallet/journal/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
+
     /**
      * 人物钱包余额
      *
@@ -56,6 +77,7 @@ public class WalletApi {
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(Double.class);
     }
+
 
     /**
      * 人物钱包记录
@@ -85,7 +107,26 @@ public class WalletApi {
     }
 
     /**
-     * 人物钱包交易记录
+     * 人物钱包市场交易记录最大页数
+     *
+     * @param characterId   人物ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-人物钱包市场交易记录最大页数")
+    public Integer queryCharacterWalletTransactionsMaxPage(Integer characterId, String datasource, String accessesToken) {
+        String uri = "/characters/" + characterId + "/wallet/transactions/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
+
+    /**
+     * 人物钱包市场交易记录
      *
      * @param characterId   人物ID
      * @param datasource    服务器数据源
@@ -99,7 +140,7 @@ public class WalletApi {
             @Parameter(name = "fromId", description = "在该ID之前的记录"),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
-    @Operation(summary = "ESI-人物钱包交易记录")
+    @Operation(summary = "ESI-人物钱包市场交易记录")
     public Flux<WalletTransactionsResponse> queryCharacterWalletTransactions(Integer characterId, String datasource, Long fromId, String accessesToken) {
         return apiClient.get().uri("/characters/{character_id}/wallet/transactions/?datasource={datasource}&from_id={fromId}", characterId, datasource, fromId)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
@@ -110,6 +151,7 @@ public class WalletApi {
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(WalletTransactionsResponse.class);
     }
+
 
     /**
      * 军团钱包余额
@@ -135,7 +177,26 @@ public class WalletApi {
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(CorporationWalletsResponse.class);
     }
-
+    /**
+     * 军团钱包记录最大页数
+     *
+     * @param corporationId 军团ID
+     * @param division      部门ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "division", description = "部门ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团钱包记录最大页数")
+    public Integer queryCorporationWalletJournalMaxPage(Integer corporationId, Integer division, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/wallets/" + division + "/journal/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
     /**
      * 军团钱包记录
      *

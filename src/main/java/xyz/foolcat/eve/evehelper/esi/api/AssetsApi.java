@@ -34,6 +34,27 @@ public class AssetsApi {
 
     private final WebClient apiClient;
 
+    private final PageTotalApi pageTotalApi;
+
+    /**
+     * 人物资产清单最大页数
+     *
+     * @param characterId   人物ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-人物资产清单最大页数")
+    public Integer queryCharactersAssetsMaxPage(Integer characterId, String datasource, String accessesToken) {
+        String uri = "/characters/" + characterId + "/assets/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
+
     /**
      *
      * 获取人物资产清单
@@ -120,6 +141,25 @@ public class AssetsApi {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(AssetsNameResponse.class);
+    }
+
+    /**
+     * 军团资产清单最大页数
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团资产清单最大页数")
+    public Integer queryCorporationsAssetsMaxPage(Integer corporationId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/assets/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
     }
 
     /**

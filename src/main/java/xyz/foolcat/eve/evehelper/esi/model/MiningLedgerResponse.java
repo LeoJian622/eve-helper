@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
 
-import java.util.Date;
+import java.time.OffsetDateTime;
 
 /**
  * 人物采矿明细记录
@@ -17,7 +17,7 @@ import java.util.Date;
 @Tag(name = "人物采矿明细记录 200 ok")
 public class MiningLedgerResponse {
 
-    private Date date;
+    private OffsetDateTime date;
 
     private Long quantity;
 

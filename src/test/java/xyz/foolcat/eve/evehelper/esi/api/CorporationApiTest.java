@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Objects;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayName("ESI Corporation Api Test")
 class CorporationApiTest {
 
@@ -123,5 +123,39 @@ class CorporationApiTest {
     void queryCorporationMembersRoles() {
         List<MemberRolesResponse> memberRolesResponses = corporationApi.queryCorporationMembersRoles(656880659, "serenity", at).collectList().block();
         System.out.println("memberRolesResponses = " + memberRolesResponses);
+    }
+
+    @Test
+    void queryCorporationMembersRolesHistory() {
+    }
+
+    @Test
+    void queryCorporationShareHolders() {
+    }
+
+    @Test
+    void queryCorporationStanding() {
+    }
+
+    @Test
+    void queryCorporationStarBases() {
+    }
+
+    @Test
+    void queryCorporationStarBase() {
+    }
+
+    @Test
+    void queryCorporationStructures() {
+        List<StructuresInformationResponse> structuresInformationResponses = corporationApi.queryCorporationStructures(656880659, "serenity", "zh", 1, at).collectList().block();
+        System.out.println("structuresInformationResponses = " + structuresInformationResponses);
+    }
+
+    @Test
+    void queryCorporationTitles() {
+    }
+
+    @Test
+    void queryNpcCorporation() {
     }
 }

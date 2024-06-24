@@ -19,6 +19,9 @@ import java.util.List;
 @Tag(name = "军团建筑信息 200 is ok")
 public class StructuresInformationResponse {
 
+    @JsonProperty("structure_id")
+    private Long structureId;
+
     @JsonProperty("corporation_id")
     private Integer corporationId;
 
@@ -48,9 +51,6 @@ public class StructuresInformationResponse {
 
     @JsonProperty("state_timer_start")
     private OffsetDateTime stateTimerStart;
-
-    @JsonProperty("structure_id")
-    private Long structureId;
 
     @JsonProperty("system_id")
     private Integer systemId;

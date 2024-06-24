@@ -30,6 +30,8 @@ public class WarApi {
 
     private final WebClient apiClient;
 
+    private final PageTotalApi pageTotalApi;
+
     /**
      * 战争ID清单
      *
@@ -70,6 +72,23 @@ public class WarApi {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(WarDetailsResponse.class);
+    }
+
+    /**
+     * 战争击毁报告最大页数
+     *
+     * @param warId      战争ID
+     * @param datasource 服务器
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "warId", description = "战争ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+    })
+    @Operation(summary = "ESI-战争击毁报告最大页数")
+    public Integer queryWarsKillMailsMaxPage(Integer warId, String datasource) {
+        String uri = "/wars/" + warId + "/killmails/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage("", uri, apiClient);
     }
 
     /**

@@ -31,6 +31,27 @@ public class KillMailApi {
 
     private final WebClient apiClient;
 
+    private final PageTotalApi pageTotalApi;
+
+    /**
+     * 人物击毁报告最大页数
+     *
+     * @param characterId   人物ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-人物击毁报告最大页数")
+    public Integer queryCharacterKillMailMaxPage(Integer characterId, String datasource, String accessesToken) {
+        String uri = "/characters/" + characterId + "/killmails/recent/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
+
     /**
      * 人物击毁报告
      *

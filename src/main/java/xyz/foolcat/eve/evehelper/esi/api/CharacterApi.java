@@ -33,6 +33,8 @@ public class CharacterApi {
 
     private final WebClient apiClient;
 
+    private final PageTotalApi pageTotalApi;
+
     /**
      * 查询人物公开信息
      *
@@ -78,6 +80,25 @@ public class CharacterApi {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(AgentsResearchResponse.class);
+    }
+
+    /**
+     * 人物蓝图清单最大页数
+     *
+     * @param characterId   人物ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-人物蓝图清单最大页数")
+    public Integer queryCharacterBlueprintMaxPage(Integer characterId, String datasource, String accessesToken) {
+        String uri = "/characters/" + characterId + "/blueprints/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
     }
 
     /**
@@ -302,6 +323,25 @@ public class CharacterApi {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(RoleResponse.class);
+    }
+
+    /**
+     * 军团声望最大页数
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团声望最大页数")
+    public Integer queryCorporationStandingMaxPage(Integer corporationId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/standings/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
     }
 
     /**

@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.StructureMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.Structure">
+    <!--@mbg.generated-->
+    <!--@Table `structure`-->
+    <id column="structure_id" jdbcType="BIGINT" property="structureId" />
+    <result column="corporation_id" jdbcType="INTEGER" property="corporationId" />
+    <result column="fuel_expires" jdbcType="TIMESTAMP" property="fuelExpires" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="next_reinforce_apply" jdbcType="TIMESTAMP" property="nextReinforceApply" />
+    <result column="next_reinforce_hour" jdbcType="INTEGER" property="nextReinforceHour" />
+    <result column="profile_id" jdbcType="INTEGER" property="profileId" />
+    <result column="reinforce_hour" jdbcType="INTEGER" property="reinforceHour" />
+    <result column="state" jdbcType="VARCHAR" property="state" />
+    <result column="state_timer_end" jdbcType="TIMESTAMP" property="stateTimerEnd" />
+    <result column="state_timer_start" jdbcType="TIMESTAMP" property="stateTimerStart" />
+    <result column="system_id" jdbcType="INTEGER" property="systemId" />
+    <result column="type_id" jdbcType="INTEGER" property="typeId" />
+    <result column="unanchors_at" jdbcType="TIMESTAMP" property="unanchorsAt" />
+    <result column="services" jdbcType="VARCHAR" property="services" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    structure_id, corporation_id, fuel_expires, `name`, next_reinforce_apply, next_reinforce_hour, 
+    profile_id, reinforce_hour, `state`, state_timer_end, state_timer_start, system_id, 
+    type_id, unanchors_at, services
+  </sql>
+  <update id="updateBatch" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update `structure`
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="corporation_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.corporationId,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="fuel_expires = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.fuelExpires,jdbcType=TIMESTAMP}
+        </foreach>
+      </trim>
+      <trim prefix="`name` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.name,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="next_reinforce_apply = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.nextReinforceApply,jdbcType=TIMESTAMP}
+        </foreach>
+      </trim>
+      <trim prefix="next_reinforce_hour = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.nextReinforceHour,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="profile_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.profileId,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="reinforce_hour = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.reinforceHour,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="`state` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.state,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="state_timer_end = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.stateTimerEnd,jdbcType=TIMESTAMP}
+        </foreach>
+      </trim>
+      <trim prefix="state_timer_start = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.stateTimerStart,jdbcType=TIMESTAMP}
+        </foreach>
+      </trim>
+      <trim prefix="system_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.systemId,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="type_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.typeId,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="unanchors_at = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.unanchorsAt,jdbcType=TIMESTAMP}
+        </foreach>
+      </trim>
+      <trim prefix="services = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.services,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+    </trim>
+    where structure_id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.structureId,jdbcType=BIGINT}
+    </foreach>
+  </update>
+  <update id="updateBatchSelective" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update `structure`
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="corporation_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.corporationId != null">
+            when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.corporationId,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="fuel_expires = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.fuelExpires != null">
+            when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.fuelExpires,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="`name` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.name != null">
+            when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.name,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="next_reinforce_apply = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.nextReinforceApply != null">
+            when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.nextReinforceApply,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="next_reinforce_hour = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.nextReinforceHour != null">
+            when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.nextReinforceHour,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="profile_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.profileId != null">
+            when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.profileId,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="reinforce_hour = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.reinforceHour != null">
+            when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.reinforceHour,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="`state` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.state != null">
+            when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.state,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="state_timer_end = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.stateTimerEnd != null">
+            when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.stateTimerEnd,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="state_timer_start = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.stateTimerStart != null">
+            when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.stateTimerStart,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="system_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.systemId != null">
+            when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.systemId,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="type_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.typeId != null">
+            when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.typeId,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="unanchors_at = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.unanchorsAt != null">
+            when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.unanchorsAt,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="services = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.services != null">
+            when structure_id = #{item.structureId,jdbcType=BIGINT} then #{item.services,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+    </trim>
+    where structure_id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.structureId,jdbcType=BIGINT}
+    </foreach>
+  </update>
+  <insert id="batchInsert" parameterType="map">
+    <!--@mbg.generated-->
+    insert into `structure`
+    (structure_id, corporation_id, fuel_expires, `name`, next_reinforce_apply, next_reinforce_hour, 
+      profile_id, reinforce_hour, `state`, state_timer_end, state_timer_start, system_id, 
+      type_id, unanchors_at, services)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.structureId,jdbcType=BIGINT}, #{item.corporationId,jdbcType=INTEGER}, #{item.fuelExpires,jdbcType=TIMESTAMP}, 
+        #{item.name,jdbcType=VARCHAR}, #{item.nextReinforceApply,jdbcType=TIMESTAMP}, #{item.nextReinforceHour,jdbcType=INTEGER}, 
+        #{item.profileId,jdbcType=INTEGER}, #{item.reinforceHour,jdbcType=INTEGER}, #{item.state,jdbcType=VARCHAR}, 
+        #{item.stateTimerEnd,jdbcType=TIMESTAMP}, #{item.stateTimerStart,jdbcType=TIMESTAMP}, 
+        #{item.systemId,jdbcType=INTEGER}, #{item.typeId,jdbcType=INTEGER}, #{item.unanchorsAt,jdbcType=TIMESTAMP}, 
+        #{item.services,jdbcType=VARCHAR})
+    </foreach>
+  </insert>
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.Structure">
+    <!--@mbg.generated-->
+    insert into `structure`
+    (structure_id, corporation_id, fuel_expires, `name`, next_reinforce_apply, next_reinforce_hour, 
+      profile_id, reinforce_hour, `state`, state_timer_end, state_timer_start, system_id, 
+      type_id, unanchors_at, services)
+    values
+    (#{structureId,jdbcType=BIGINT}, #{corporationId,jdbcType=INTEGER}, #{fuelExpires,jdbcType=TIMESTAMP}, 
+      #{name,jdbcType=VARCHAR}, #{nextReinforceApply,jdbcType=TIMESTAMP}, #{nextReinforceHour,jdbcType=INTEGER}, 
+      #{profileId,jdbcType=INTEGER}, #{reinforceHour,jdbcType=INTEGER}, #{state,jdbcType=VARCHAR}, 
+      #{stateTimerEnd,jdbcType=TIMESTAMP}, #{stateTimerStart,jdbcType=TIMESTAMP}, #{systemId,jdbcType=INTEGER}, 
+      #{typeId,jdbcType=INTEGER}, #{unanchorsAt,jdbcType=TIMESTAMP}, #{services,jdbcType=VARCHAR}
+      )
+    on duplicate key update 
+    structure_id = #{structureId,jdbcType=BIGINT}, 
+    corporation_id = #{corporationId,jdbcType=INTEGER}, 
+    fuel_expires = #{fuelExpires,jdbcType=TIMESTAMP}, 
+    `name` = #{name,jdbcType=VARCHAR}, 
+    next_reinforce_apply = #{nextReinforceApply,jdbcType=TIMESTAMP}, 
+    next_reinforce_hour = #{nextReinforceHour,jdbcType=INTEGER}, 
+    profile_id = #{profileId,jdbcType=INTEGER}, 
+    reinforce_hour = #{reinforceHour,jdbcType=INTEGER}, 
+    `state` = #{state,jdbcType=VARCHAR}, 
+    state_timer_end = #{stateTimerEnd,jdbcType=TIMESTAMP}, 
+    state_timer_start = #{stateTimerStart,jdbcType=TIMESTAMP}, 
+    system_id = #{systemId,jdbcType=INTEGER}, 
+    type_id = #{typeId,jdbcType=INTEGER}, 
+    unanchors_at = #{unanchorsAt,jdbcType=TIMESTAMP}, 
+    services = #{services,jdbcType=VARCHAR}
+  </insert>
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.Structure">
+    <!--@mbg.generated-->
+    insert into `structure`
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="structureId != null">
+        structure_id,
+      </if>
+      <if test="corporationId != null">
+        corporation_id,
+      </if>
+      <if test="fuelExpires != null">
+        fuel_expires,
+      </if>
+      <if test="name != null">
+        `name`,
+      </if>
+      <if test="nextReinforceApply != null">
+        next_reinforce_apply,
+      </if>
+      <if test="nextReinforceHour != null">
+        next_reinforce_hour,
+      </if>
+      <if test="profileId != null">
+        profile_id,
+      </if>
+      <if test="reinforceHour != null">
+        reinforce_hour,
+      </if>
+      <if test="state != null">
+        `state`,
+      </if>
+      <if test="stateTimerEnd != null">
+        state_timer_end,
+      </if>
+      <if test="stateTimerStart != null">
+        state_timer_start,
+      </if>
+      <if test="systemId != null">
+        system_id,
+      </if>
+      <if test="typeId != null">
+        type_id,
+      </if>
+      <if test="unanchorsAt != null">
+        unanchors_at,
+      </if>
+      <if test="services != null">
+        services,
+      </if>
+    </trim>
+    values
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="structureId != null">
+        #{structureId,jdbcType=BIGINT},
+      </if>
+      <if test="corporationId != null">
+        #{corporationId,jdbcType=INTEGER},
+      </if>
+      <if test="fuelExpires != null">
+        #{fuelExpires,jdbcType=TIMESTAMP},
+      </if>
+      <if test="name != null">
+        #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="nextReinforceApply != null">
+        #{nextReinforceApply,jdbcType=TIMESTAMP},
+      </if>
+      <if test="nextReinforceHour != null">
+        #{nextReinforceHour,jdbcType=INTEGER},
+      </if>
+      <if test="profileId != null">
+        #{profileId,jdbcType=INTEGER},
+      </if>
+      <if test="reinforceHour != null">
+        #{reinforceHour,jdbcType=INTEGER},
+      </if>
+      <if test="state != null">
+        #{state,jdbcType=VARCHAR},
+      </if>
+      <if test="stateTimerEnd != null">
+        #{stateTimerEnd,jdbcType=TIMESTAMP},
+      </if>
+      <if test="stateTimerStart != null">
+        #{stateTimerStart,jdbcType=TIMESTAMP},
+      </if>
+      <if test="systemId != null">
+        #{systemId,jdbcType=INTEGER},
+      </if>
+      <if test="typeId != null">
+        #{typeId,jdbcType=INTEGER},
+      </if>
+      <if test="unanchorsAt != null">
+        #{unanchorsAt,jdbcType=TIMESTAMP},
+      </if>
+      <if test="services != null">
+        #{services,jdbcType=VARCHAR},
+      </if>
+    </trim>
+    on duplicate key update 
+    <trim suffixOverrides=",">
+      <if test="structureId != null">
+        structure_id = #{structureId,jdbcType=BIGINT},
+      </if>
+      <if test="corporationId != null">
+        corporation_id = #{corporationId,jdbcType=INTEGER},
+      </if>
+      <if test="fuelExpires != null">
+        fuel_expires = #{fuelExpires,jdbcType=TIMESTAMP},
+      </if>
+      <if test="name != null">
+        `name` = #{name,jdbcType=VARCHAR},
+      </if>
+      <if test="nextReinforceApply != null">
+        next_reinforce_apply = #{nextReinforceApply,jdbcType=TIMESTAMP},
+      </if>
+      <if test="nextReinforceHour != null">
+        next_reinforce_hour = #{nextReinforceHour,jdbcType=INTEGER},
+      </if>
+      <if test="profileId != null">
+        profile_id = #{profileId,jdbcType=INTEGER},
+      </if>
+      <if test="reinforceHour != null">
+        reinforce_hour = #{reinforceHour,jdbcType=INTEGER},
+      </if>
+      <if test="state != null">
+        `state` = #{state,jdbcType=VARCHAR},
+      </if>
+      <if test="stateTimerEnd != null">
+        state_timer_end = #{stateTimerEnd,jdbcType=TIMESTAMP},
+      </if>
+      <if test="stateTimerStart != null">
+        state_timer_start = #{stateTimerStart,jdbcType=TIMESTAMP},
+      </if>
+      <if test="systemId != null">
+        system_id = #{systemId,jdbcType=INTEGER},
+      </if>
+      <if test="typeId != null">
+        type_id = #{typeId,jdbcType=INTEGER},
+      </if>
+      <if test="unanchorsAt != null">
+        unanchors_at = #{unanchorsAt,jdbcType=TIMESTAMP},
+      </if>
+      <if test="services != null">
+        services = #{services,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+</mapper>
