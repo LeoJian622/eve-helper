@@ -11,7 +11,7 @@ import java.util.List;
  * @author Leojan
  * date 2022-04-21 17:12
  */
-
+@Deprecated
 public interface EsiClientStrategy {
 
     /**

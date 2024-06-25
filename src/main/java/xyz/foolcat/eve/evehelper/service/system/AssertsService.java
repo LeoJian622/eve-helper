@@ -2,6 +2,7 @@ package xyz.foolcat.eve.evehelper.service.system;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -11,20 +12,22 @@ import xyz.foolcat.eve.evehelper.mapper.system.AssetsMapper;
 import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.vo.AssetsVO;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.SubmissionPublisher;
 
+/**
+ * @author Leojan
+ */
 @Service
 @Slf4j
 @Transactional(rollbackFor = RuntimeException.class)
+@RequiredArgsConstructor
 public class AssertsService extends ServiceImpl<AssetsMapper, Asserts> {
 
-    @Resource
-    private EsiApiService esiApiService;
+    private final EsiApiService esiApiService;
 
     public int batchInsert(List<Asserts> list) {
         return baseMapper.batchInsert(list);

@@ -22,11 +22,11 @@
         <nimbus-jose-jwt.version>8.19</nimbus-jose-jwt.version>
         <mybatis-plus-boot-starter.version>3.5.4</mybatis-plus-boot-starter.version>
         <druid.version>1.2.8</druid.version>
-        <hutool-all.version>5.8.22</hutool-all.version>
+        <hutool-all.version>5.8.25</hutool-all.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <knife4j.version>4.1.0</knife4j.version>
         <springdco.version>1.7.0</springdco.version>
-        <mysql.version>8.0.33</mysql.version>
+        <mysql.version>8.0.28</mysql.version>
         <snakeyaml.version>2.1</snakeyaml.version>
     </properties>
 
@@ -164,7 +164,6 @@
     <build>
         <plugins>
             <plugin>
-<!--                可以使用MVND-->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
@@ -187,6 +186,10 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

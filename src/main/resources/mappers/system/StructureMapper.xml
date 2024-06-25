@@ -230,6 +230,38 @@
         #{item.services,jdbcType=VARCHAR})
     </foreach>
   </insert>
+  <insert id="batchInsertOrUpdate" parameterType="map">
+    <!--@mbg.generated-->
+    insert into `structure`
+    (structure_id, corporation_id, fuel_expires, `name`, next_reinforce_apply, next_reinforce_hour,
+    profile_id, reinforce_hour, `state`, state_timer_end, state_timer_start, system_id,
+    type_id, unanchors_at, services)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.structureId,jdbcType=BIGINT}, #{item.corporationId,jdbcType=INTEGER}, #{item.fuelExpires,jdbcType=TIMESTAMP},
+      #{item.name,jdbcType=VARCHAR}, #{item.nextReinforceApply,jdbcType=TIMESTAMP}, #{item.nextReinforceHour,jdbcType=INTEGER},
+      #{item.profileId,jdbcType=INTEGER}, #{item.reinforceHour,jdbcType=INTEGER}, #{item.state,jdbcType=VARCHAR},
+      #{item.stateTimerEnd,jdbcType=TIMESTAMP}, #{item.stateTimerStart,jdbcType=TIMESTAMP},
+      #{item.systemId,jdbcType=INTEGER}, #{item.typeId,jdbcType=INTEGER}, #{item.unanchorsAt,jdbcType=TIMESTAMP},
+      #{item.services,jdbcType=VARCHAR})
+    </foreach>
+    on duplicate key update
+    structure_id = values(structure_id),
+    corporation_id = values(corporation_id),
+    fuel_expires = values(fuel_expires),
+    `name` = values(name),
+    next_reinforce_apply = values(next_reinforce_apply),
+    next_reinforce_hour = values(next_reinforce_hour),
+    profile_id = values(profile_id),
+    reinforce_hour = values(reinforce_hour),
+    `state` = values(state),
+    state_timer_end =values(state_timer_end),
+    state_timer_start = values(state_timer_start),
+    system_id = values(system_id),
+    type_id = values(type_id),
+    unanchors_at = values(unanchors_at),
+    services = values(services)
+  </insert>
   <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.Structure">
     <!--@mbg.generated-->
     insert into `structure`
@@ -407,4 +439,11 @@
       </if>
     </trim>
   </insert>
+
+  <select id="selectFuelExpiresList" parameterType="integer" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>
+    from structure
+    where (fuel_expires <![CDATA[<]]> date_add(now(),interval #{hour} hour) or fuel_expires is null)
+    and corporation_id = #{corporationId}
+    </select>
 </mapper>

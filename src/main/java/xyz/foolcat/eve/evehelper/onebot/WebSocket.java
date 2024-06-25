@@ -21,7 +21,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * Webscoket 消息处理器
  *
  * @author Leojan
- * @date 2024-06-21 11:54
+ * date 2024-06-21 11:54
  */
 
 @Component
@@ -29,7 +29,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 @ServerEndpoint("/websocket/onebot/{userId}")
 public class WebSocket {
 
-    private BotDispather botDispather = SpringUtil.getBean("botDispather");
+    private final BotDispatcher botDispatcher = SpringUtil.getBean("botDispatcher");
 
     /**
      * 线程安全的无序的集合
@@ -46,7 +46,7 @@ public class WebSocket {
         try {
             SESSIONS.add(session);
             SESSION_POOL.put(userId, session);
-            log.info("【WebSocket消息】有新的连接，总数为：" + SESSIONS.size());
+            log.debug("【WebSocket消息】有新的连接，总数为：" + SESSIONS.size());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -56,7 +56,7 @@ public class WebSocket {
     public void onClose(Session session) {
         try {
             SESSIONS.remove(session);
-            log.info("【WebSocket消息】连接断开，总数为：" + SESSIONS.size());
+            log.debug("【WebSocket消息】连接断开，总数为：" + SESSIONS.size());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -64,10 +64,9 @@ public class WebSocket {
 
     @OnMessage
     public void onMessage(String message, Session session) {
-        log.info("【WebSocket消息】收到客户端消息：" + message);
-        log.info("【WebSocket消息】session：" + session);
+        log.debug("【WebSocket消息】收到客户端消息：" + message);
         MessageEvent messageEvent = JSONUtil.toBean(message, MessageEvent.class);
-        JSONObject dispatchers = botDispather.dispatchers(messageEvent);
+        JSONObject dispatchers = botDispatcher.dispatchers(messageEvent);
         if (dispatchers != null) {
                 sendOneMessage("napcat", dispatchers.toJSONString(4));
         }
@@ -79,7 +78,7 @@ public class WebSocket {
      * @param message 消息
      */
     public void sendAllMessage(String message) {
-        log.info("【WebSocket消息】广播消息：" + message);
+        log.debug("【WebSocket消息】广播消息：" + message);
         for (Session session : SESSIONS) {
             try {
                 if (session.isOpen()) {
@@ -102,7 +101,7 @@ public class WebSocket {
         if (session != null && session.isOpen()) {
             try {
                 synchronized (session) {
-                    log.info("【WebSocket消息】单点消息：" + message);
+                    log.debug("【WebSocket消息】单点消息：" + message);
                     session.getAsyncRemote().sendText(message);
                 }
             } catch (Exception e) {
@@ -122,7 +121,7 @@ public class WebSocket {
             Session session = SESSION_POOL.get(userId);
             if (session != null && session.isOpen()) {
                 try {
-                    log.info("【WebSocket消息】单点消息：" + message);
+                    log.debug("【WebSocket消息】单点消息：" + message);
                     session.getAsyncRemote().sendText(message);
                 } catch (Exception e) {
                     e.printStackTrace();

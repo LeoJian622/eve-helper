@@ -20,17 +20,16 @@ import java.util.regex.Pattern;
  * 消息分发器
  *
  * @author Leojan
- * @date 2024-06-21 16:38
+ * date 2024-06-21 16:38
  */
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class BotDispather {
+public class BotDispatcher {
 
-    private final Pattern cqPattern = Pattern.compile("^\\[CQ:.*\\]");
+    private final Pattern cqPattern = Pattern.compile("^\\[CQ:.*");
     private final Pattern commandPattern = Pattern.compile("(^.jita) (.*)");
-
 
     private final InvTypesService invTypesService;
 
@@ -45,7 +44,7 @@ public class BotDispather {
         } else {
             Matcher commandMatcher = commandPattern.matcher(messageEvent.getRaw_message());
             if (commandMatcher.matches() && commandMatcher.group(1).startsWith(".jita")) {
-                InvTypes invTypes = invTypesService.getOne(new QueryWrapper<InvTypes>().lambda().eq(InvTypes::getTypeName,  commandMatcher.group(2)));
+                InvTypes invTypes = invTypesService.getOne(new QueryWrapper<InvTypes>().lambda().eq(InvTypes::getTypeName, commandMatcher.group(2)));
                 WebClient request = WebClient.builder().build();
                 JSONObject price = request.get().uri("https://www.ceve-market.org/api/market/region/{reg}/type/{id}.json", 10000002, invTypes.getTypeId())
                         .retrieve().bodyToMono(JSONObject.class).block();
@@ -54,31 +53,15 @@ public class BotDispather {
                 BigDecimal buyMax = BigDecimal.valueOf(price.getJSONObject("buy").getDouble("max"));
                 BigDecimal sellMin = BigDecimal.valueOf(price.getJSONObject("sell").getDouble("min"));
                 String message = "物品国服售价（伏尔戈）：\n物品名称：" + invTypes.getTypeName() + "\n收单价：" + decimalFormat.format(buyMax) + "\n卖单价：" + decimalFormat.format(sellMin) + "\n中位价：" + decimalFormat.format(buyMax.add(sellMin).divide(BigDecimal.valueOf(2), RoundingMode.HALF_UP));
-                JSONObject jsonObject = new JSONObject();
-                JSONObject jsonObject2 = new JSONObject();
-                jsonObject2.set("user_id", messageEvent.getUser_id());
-                jsonObject2.set("group_id", messageEvent.getGroup_id());
-                jsonObject2.set("message", message);
-                jsonObject2.set("message_type", messageEvent.getMessage_type());
-                jsonObject2.set("auto_escape", true);
-                jsonObject.set("action", "send_msg");
-                jsonObject.set("params", jsonObject2);
-                return jsonObject;
+                return BotUtil.generateMessage(messageEvent, message);
             } else {
                 if (messageEvent.getRaw_message().startsWith("TESTBOT")) {
-                    log.debug("text", messageEvent.getRaw_message());
-                    JSONObject jsonObject = new JSONObject();
-                    JSONObject jsonObject2 = new JSONObject();
-                    jsonObject2.set("user_id", messageEvent.getUser_id());
-                    jsonObject2.set("group_id", messageEvent.getGroup_id());
-                    jsonObject2.set("message", messageEvent.getRaw_message().substring(7));
-                    jsonObject2.set("message_type", messageEvent.getMessage_type());
-                    jsonObject.set("action", "send_msg");
-                    jsonObject.set("params", jsonObject2);
-                    return jsonObject;
+                    log.debug("text" + messageEvent.getRaw_message());
+                    return BotUtil.generateMessage(messageEvent, messageEvent.getRaw_message().substring(7));
                 }
                 return null;
             }
         }
     }
+
 }

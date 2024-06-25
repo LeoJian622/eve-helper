@@ -1,61 +1,58 @@
 package xyz.foolcat.eve.evehelper.task;
 
+import cn.hutool.json.JSONObject;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
-import xyz.foolcat.eve.evehelper.esi.EsiClient;
-import xyz.foolcat.eve.evehelper.esi.api.CorporationApi;
-import xyz.foolcat.eve.evehelper.esi.model.StructuresInformationResponse;
-import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
-import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.domain.system.Structure;
+import xyz.foolcat.eve.evehelper.onebot.BotUtil;
+import xyz.foolcat.eve.evehelper.onebot.WebSocket;
 import xyz.foolcat.eve.evehelper.service.system.StructureService;
 
 import java.text.ParseException;
-import java.util.Collection;
-import java.util.Date;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * 建筑相关任务
  *
  * @author Leojan
- * @date 2024-06-24 9:20
+ * date 2024-06-24 9:20
  */
 
 @Component
 @RequiredArgsConstructor
 public class StructTask {
 
-    private final EveAccountService eveAccountService;
-
-    private final EsiApiService esiApiService;
-
-    private final CorporationApi corporationApi;
-
     private final StructureService structureService;
 
-    @Scheduled(fixedDelay = 5000)
-    public void fixedDelayJob() throws InterruptedException {
-        System.out.println("fixedDelay 每隔5秒" + new Date());
+    private final WebSocket webSocket;
+
+    @Scheduled(cron = "0 0 0/1 * * ? ")
+    public void updateStruct() throws ParseException {
+        structureService.esiBatchInsert(2112818290);
     }
 
-    public void updateStruct() throws ParseException {
-        List<EveAccount> accounts = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, 2112818290).list();
-        if (!accounts.isEmpty()){
-            EveAccount eveAccount = accounts.get(0);
-            String accessToken = esiApiService.getAccessToken(eveAccount.getCharacterId().toString());
-            Integer max = corporationApi.queryCorporationStructuresMaxPage(eveAccount.getCorpId(), EsiClient.SERENITY, accessToken);
-            List<StructuresInformationResponse> structuresInformationResponses = Stream.iterate(1, i -> i + 1).limit(max)
-                    .map(i -> corporationApi.queryCorporationStructures(eveAccount.getCorpId(), EsiClient.SERENITY, "zh", i, accessToken)
-                            .collectList().block())
-                    .sequential()
-                    .collect(Collectors.toList())
-                    .stream().flatMap(Collection::stream)
-                    .collect(Collectors.toList());
-            structureService.esiBatchInsert(structuresInformationResponses);
-        }
+    @Scheduled(cron = "0 0 18,22 * * ? ")
+    public void noticeFuelExpires() {
+
+        List<Structure> structures = structureService.selectFuelExpiresList(24, 656880659);
+        String message = structures.stream().filter(structure -> structure.getFuelExpires() == null)
+                .map(structure -> structure.getName() + ", 燃料耗尽")
+                .collect(Collectors.joining("\n"));
+
+        message = message + "\n============================\n" + structures.stream()
+                .filter(structure -> structure.getFuelExpires() != null)
+                .sorted(Comparator.comparing(Structure::getFuelExpires))
+                .map(structure -> {
+                    long between = ChronoUnit.HOURS.between(OffsetDateTime.now(), structure.getFuelExpires());
+                    return structure.getName() + ", 将在" + between + "小时后燃料耗尽";
+                }).collect(Collectors.joining("\n"));
+        JSONObject group = BotUtil.generateMessage(null, 41772910L, BotUtil.MESSAGE_TYPE_GROUP, message);
+
+        webSocket.sendOneMessage("napcat", group.toJSONString(4));
     }
 }

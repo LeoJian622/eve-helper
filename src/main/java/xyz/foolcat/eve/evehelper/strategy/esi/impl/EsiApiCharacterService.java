@@ -19,7 +19,7 @@ import java.util.List;
  * @author Leojan
  * date 2021-12-07 16:54
  */
-
+@Deprecated
 @Slf4j
 @Service("char")
 @RequiredArgsConstructor
