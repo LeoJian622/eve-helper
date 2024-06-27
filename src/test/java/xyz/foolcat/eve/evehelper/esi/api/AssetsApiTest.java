@@ -11,7 +11,7 @@ import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
 import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
-import xyz.foolcat.eve.evehelper.esi.model.AssertResponse;
+import xyz.foolcat.eve.evehelper.esi.model.AssetResponse;
 import xyz.foolcat.eve.evehelper.esi.model.AssetsLocationResponse;
 import xyz.foolcat.eve.evehelper.esi.model.AssetsNameResponse;
 import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
@@ -46,7 +46,7 @@ class AssetsApiTest {
 
     @Test
     void queryCharacterAssetsById() {
-        List<AssertResponse> block = assetsApi.queryCharactersAssets(2112818290, "serenity", 1, at).collectList().block();
+        List<AssetResponse> block = assetsApi.queryCharactersAssets(2112818290, "serenity", 1, at).collectList().block();
         System.out.println("block = " + block);
     }
 
@@ -80,8 +80,8 @@ class AssetsApiTest {
 
     @Test
     void queryCorporationsAssets() {
-        List<AssertResponse> assertResponseList = assetsApi.queryCorporationsAssets(656880659, "serenity", 1, at).collectList().block();
-        System.out.println("assertResponseList = " + assertResponseList);
+        List<AssetResponse> assetResponseList = assetsApi.queryCorporationsAssets(656880659, "serenity", 1, at).collectList().block();
+        System.out.println("assertResponseList = " + assetResponseList);
     }
 
     @Test

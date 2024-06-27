@@ -74,7 +74,7 @@ public class EsiApiService {
             return accessToken;
         }
 
-        EveAccount character = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, code).eq(EveAccount::getUserId, UserUtil.getUserId()).one();
+        EveAccount character = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, code).one();
 
         GrantType grantType = GrantType.AUTHORIZATION_CODE;
         if (ObjectUtil.isNotNull(character)) {
@@ -155,7 +155,7 @@ public class EsiApiService {
      * @return
      * @throws ParseException
      */
-    public List<Asserts> getAssetsList(String type, int page, String cid) throws ParseException {
+    public List<Assets> getAssetsList(String type, int page, String cid) throws ParseException {
         String accessToken = getAccessToken(cid);
         return strategyContext.getResource(type).getAssetsList(cid, page, accessToken);
     }

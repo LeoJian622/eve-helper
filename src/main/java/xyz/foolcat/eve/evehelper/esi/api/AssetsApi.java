@@ -13,7 +13,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.common.result.ResultCode;
-import xyz.foolcat.eve.evehelper.esi.model.AssertResponse;
+import xyz.foolcat.eve.evehelper.esi.model.AssetResponse;
 import xyz.foolcat.eve.evehelper.esi.model.AssetsLocationResponse;
 import xyz.foolcat.eve.evehelper.esi.model.AssetsNameResponse;
 import xyz.foolcat.eve.evehelper.esi.model.ErrorResponse;
@@ -72,7 +72,7 @@ public class AssetsApi {
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
     @Operation(summary = "ESI-人物资产清单")
-    public Flux<AssertResponse> queryCharactersAssets(Integer characterId, String datasource, Integer page, String accessesToken) {
+    public Flux<AssetResponse> queryCharactersAssets(Integer characterId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/characters/{character_id}/assets/?datasource={datasource}&page={page}",characterId,datasource,page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -80,7 +80,7 @@ public class AssetsApi {
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToFlux(AssertResponse.class);
+                .bodyToFlux(AssetResponse.class);
     }
 
     /**
@@ -179,7 +179,7 @@ public class AssetsApi {
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
     @Operation(summary = "ESI-角色资产清单")
-    public Flux<AssertResponse> queryCorporationsAssets(Integer corporationId, String datasource, Integer page, String accessesToken) {
+    public Flux<AssetResponse> queryCorporationsAssets(Integer corporationId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/assets/?datasource={datasource}&page={page}",corporationId,datasource,page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -187,7 +187,7 @@ public class AssetsApi {
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .bodyToFlux(AssertResponse.class);
+                .bodyToFlux(AssetResponse.class);
     }
 
     /**

@@ -48,7 +48,7 @@ public class WebSocket {
             SESSION_POOL.put(userId, session);
             log.debug("【WebSocket消息】有新的连接，总数为：" + SESSIONS.size());
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("【WebSocket消息】有新的连接异常,{}", e.getMessage());
         }
     }
 
@@ -58,7 +58,7 @@ public class WebSocket {
             SESSIONS.remove(session);
             log.debug("【WebSocket消息】连接断开，总数为：" + SESSIONS.size());
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("【WebSocket消息】连接断开异常,{}", e.getMessage());
         }
     }
 
@@ -85,7 +85,7 @@ public class WebSocket {
                     session.getAsyncRemote().sendText(message);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("【WebSocket消息】广播消息异常,{}", e.getMessage());
             }
         }
     }
@@ -105,7 +105,7 @@ public class WebSocket {
                     session.getAsyncRemote().sendText(message);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("【WebSocket消息】消息异常,{}", e.getMessage());
             }
         }
     }
@@ -124,7 +124,7 @@ public class WebSocket {
                     log.debug("【WebSocket消息】单点消息：" + message);
                     session.getAsyncRemote().sendText(message);
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.error("【WebSocket消息】消息异常,{}", e.getMessage());
                 }
             }
         }

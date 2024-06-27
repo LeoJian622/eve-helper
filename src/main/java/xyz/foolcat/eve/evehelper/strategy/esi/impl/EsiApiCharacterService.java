@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.esi.EsiCharacterClient;
-import xyz.foolcat.eve.evehelper.domain.system.Asserts;
+import xyz.foolcat.eve.evehelper.domain.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.system.Blueprints;
 import xyz.foolcat.eve.evehelper.domain.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.dto.esi.IndustryJobDTO;
@@ -34,7 +34,7 @@ public class EsiApiCharacterService implements EsiClientStrategy {
     }
 
     @Override
-    public List<Asserts> getAssetsList(String id, int page, String accessToken) {
+    public List<Assets> getAssetsList(String id, int page, String accessToken) {
         return esiCharacterClient.getCharacterAssets(id,page, accessToken);
     }
 

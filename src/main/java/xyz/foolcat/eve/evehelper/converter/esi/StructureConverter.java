@@ -10,7 +10,7 @@ import java.util.List;
 
 /**
  * @author Leojan
- * @date 2024-06-24 11:49
+ * date 2024-06-24 11:49
  */
 
 @Mapper(componentModel = "spring")

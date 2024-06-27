@@ -28,7 +28,7 @@ public interface EsiClientStrategy {
      * @param id
      * @return
      */
-    List<Asserts> getAssetsList(String id, int page, String accessToken);
+    List<Assets> getAssetsList(String id, int page, String accessToken);
 
     /**
      * 获取资产信息

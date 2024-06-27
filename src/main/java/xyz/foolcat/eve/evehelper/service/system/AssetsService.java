@@ -7,16 +7,24 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.domain.system.Asserts;
+import xyz.foolcat.eve.evehelper.converter.esi.AssetsConverter;
+import xyz.foolcat.eve.evehelper.domain.system.Assets;
+import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
+import xyz.foolcat.eve.evehelper.esi.EsiClient;
+import xyz.foolcat.eve.evehelper.esi.api.AssetsApi;
 import xyz.foolcat.eve.evehelper.mapper.system.AssetsMapper;
 import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.vo.AssetsVO;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.SubmissionPublisher;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Leojan
@@ -25,11 +33,18 @@ import java.util.concurrent.SubmissionPublisher;
 @Slf4j
 @Transactional(rollbackFor = RuntimeException.class)
 @RequiredArgsConstructor
-public class AssertsService extends ServiceImpl<AssetsMapper, Asserts> {
+public class AssetsService extends ServiceImpl<AssetsMapper, Assets> {
 
     private final EsiApiService esiApiService;
 
-    public int batchInsert(List<Asserts> list) {
+    private final AssetsApi assetsApi;
+
+    private final EveAccountService eveAccountService;
+
+    private final AssetsConverter assetsConverter;
+
+
+    public int batchInsert(List<Assets> list) {
         return baseMapper.batchInsert(list);
     }
 
@@ -42,9 +57,9 @@ public class AssertsService extends ServiceImpl<AssetsMapper, Asserts> {
      */
     public void saveAndUpdateAsserts(String type, String cid) {
 
-        lambdaUpdate().eq(Asserts::getOwnerId,cid).remove();
+        lambdaUpdate().eq(Assets::getOwnerId, cid).remove();
 
-        List<Asserts> assertsList = new ArrayList<>();
+        List<Assets> assetsList = new ArrayList<>();
 
         SubmissionPublisher<Integer> submissionPublisher = new SubmissionPublisher<>(new ForkJoinPool(4), 4);
         Flow.Subscriber<Integer> subscriber = new Flow.Subscriber<>() {
@@ -63,12 +78,12 @@ public class AssertsService extends ServiceImpl<AssetsMapper, Asserts> {
             public void onNext(Integer item) {
                 log.info("处理页数：" + item);
                 //请求数据
-                List<Asserts> assertsPageList = esiApiService.getAssetsList(type, item, cid);
+                List<Assets> assetsPageList = esiApiService.getAssetsList(type, item, cid);
                 Long ownId = Long.valueOf(cid);
-                assertsPageList.forEach(assets -> {
+                assetsPageList.forEach(assets -> {
                     assets.setOwnerId(ownId);
                 });
-                assertsList.addAll(assertsPageList);
+                assetsList.addAll(assetsPageList);
                 log.info("进行下一条处理");
                 this.subscription.request(1);
             }
@@ -89,9 +104,9 @@ public class AssertsService extends ServiceImpl<AssetsMapper, Asserts> {
         int i = 1;
         do {
             try {
-            log.info("发送消息" + i);
-            submissionPublisher.submit(i++);
-            }catch (Exception e){
+                log.info("发送消息" + i);
+                submissionPublisher.submit(i++);
+            } catch (Exception e) {
                 log.info("订阅者取消订阅");
             }
 
@@ -99,7 +114,7 @@ public class AssertsService extends ServiceImpl<AssetsMapper, Asserts> {
 
         submissionPublisher.close();
 
-        saveBatch(assertsList);
+        saveBatch(assetsList);
 
     }
 
@@ -113,20 +128,52 @@ public class AssertsService extends ServiceImpl<AssetsMapper, Asserts> {
         return baseMapper.selectAssertsInvtypeUniverse(page, cid);
     }
 
-    public int updateBatch(List<Asserts> list) {
+    public int updateBatch(List<Assets> list) {
         return baseMapper.updateBatch(list);
     }
 
-    public int updateBatchSelective(List<Asserts> list) {
+    public int updateBatchSelective(List<Assets> list) {
         return baseMapper.updateBatchSelective(list);
     }
 
-    public int insertOrUpdate(Asserts record) {
+    public int insertOrUpdate(Assets record) {
         return baseMapper.insertOrUpdate(record);
     }
 
-    public int insertOrUpdateSelective(Asserts record) {
+    public int insertOrUpdateSelective(Assets record) {
         return baseMapper.insertOrUpdateSelective(record);
+    }
+
+    /**
+     * 与ESI资产数据进行同步并返回
+     *
+     * @param characterId 角色ID
+     */
+    public void saveAndUpdateCharactersAsserts(Integer characterId) throws ParseException {
+
+        /**
+         * 获取游戏人物信息及授权
+         */
+        EveAccount eveAccount = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, characterId).one();
+        String accessToken = esiApiService.getAccessToken(String.valueOf(eveAccount.getCharacterId()));
+
+        /**
+         * 获取总页数
+         */
+        Integer max = assetsApi.queryCharactersAssetsMaxPage(eveAccount.getCharacterId(), EsiClient.SERENITY, accessToken);
+
+        /**
+         * 从ESI获取资产列表
+         */
+        List<Assets> assets = Stream.iterate(1, i -> i + 1).limit(max)
+                .map(page -> assetsApi.queryCharactersAssets(eveAccount.getCharacterId(), EsiClient.SERENITY, page, accessToken).collectList())
+                .sequential()
+                .collect(Collectors.toList())
+                .stream().flatMap(asset -> Objects.requireNonNull(asset.block()).stream())
+                .collect(Collectors.toList())
+                .stream().map(assetsConverter::assetResponse2Assets)
+                .collect(Collectors.toList());
+
     }
 }
 

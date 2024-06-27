@@ -18,7 +18,7 @@ import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
 import java.util.Objects;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayName("ESI Search Api Test")
 class SearchApiTest {
 
@@ -42,8 +42,9 @@ class SearchApiTest {
     }
 
     @Test
-    void queryCharacterPlanets() {
-        SearchResponse searchResponse = searchApi.queryCharacterPlanets(2112818290, "serenity",  "corporation,character", "劲风之", false, "zh", at).block();
+    void queryCharacterSearch() {
+        SearchResponse searchResponse = searchApi.queryCharacterSearch(2112818290, "serenity",  "corporation,character", "劲风之", false, "zh", at).block();
         System.out.println("searchResponse = " + searchResponse);
     }
+
 }

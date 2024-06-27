@@ -32,7 +32,7 @@ public class EsiCorporationApiService implements EsiClientStrategy {
     }
 
     @Override
-    public List<Asserts> getAssetsList(String id, int page, String accessToken) {
+    public List<Assets> getAssetsList(String id, int page, String accessToken) {
         return esiCorporationClient.getCorporationAssets(id,page, accessToken);
     }
 

@@ -2,7 +2,7 @@ package xyz.foolcat.eve.evehelper.esi;
 
 import cn.hutool.json.JSONArray;
 import com.dtflys.forest.annotation.*;
-import xyz.foolcat.eve.evehelper.domain.system.Asserts;
+import xyz.foolcat.eve.evehelper.domain.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.system.Blueprints;
 import xyz.foolcat.eve.evehelper.domain.system.MiningDetail;
 import xyz.foolcat.eve.evehelper.domain.system.Observer;
@@ -50,7 +50,7 @@ public interface EsiCorporationClient {
      * @return
      */
     @Get(url = "/corporations/{corporation_id}/assets/", dataType = "json")
-    List<Asserts> getCorporationAssets(@Var("corporation_id") String corporationId, @Query("page") int page, @Header("Authorization") String accessToken);
+    List<Assets> getCorporationAssets(@Var("corporation_id") String corporationId, @Query("page") int page, @Header("Authorization") String accessToken);
 
     /**
      * 获取公司资产信息名称

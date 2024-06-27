@@ -443,7 +443,7 @@
   <select id="selectFuelExpiresList" parameterType="integer" resultMap="BaseResultMap">
     select <include refid="Base_Column_List"/>
     from structure
-    where (fuel_expires <![CDATA[<]]> date_add(now(),interval #{hour} hour) or fuel_expires is null)
+    where (fuel_expires <![CDATA[<]]> date_add(now()+8,interval #{hour}-8 hour) or fuel_expires is null)
     and corporation_id = #{corporationId}
     </select>
 </mapper>
