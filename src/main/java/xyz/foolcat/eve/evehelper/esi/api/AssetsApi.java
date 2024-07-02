@@ -178,7 +178,7 @@ public class AssetsApi {
             @Parameter(name = "page",description = "页码" ,required = true),
             @Parameter(name = "accessesToken",description = "授权Token" ,required = true),
     })
-    @Operation(summary = "ESI-角色资产清单")
+    @Operation(summary = "ESI-军团资产清单")
     public Flux<AssetResponse> queryCorporationsAssets(Integer corporationId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/assets/?datasource={datasource}&page={page}",corporationId,datasource,page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)

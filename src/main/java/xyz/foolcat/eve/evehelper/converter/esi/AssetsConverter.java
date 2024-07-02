@@ -17,6 +17,6 @@ public interface AssetsConverter {
      * @param assetResponse ESI返回的资产对象
      * @return Structure
      */
-    Assets assetResponse2Assets(AssetResponse assetResponse);
+    Assets toAssets(AssetResponse assetResponse);
 
 }

@@ -29,7 +29,7 @@ public class BlueprintsController {
     private final BlueprintsService blueprintsService;
 
     @Parameters({
-            @Parameter(name = "type", description = "枚举值，人物：char; 军团：crop" ,required = true),
+            @Parameter(name = "type", description = "枚举值，人物：char; 公司：crop" ,required = true),
             @Parameter(name = "cid", description = "人物或军团的ID" ,required = true)
     })
     @Operation(summary = "蓝图数据-蓝图读取")

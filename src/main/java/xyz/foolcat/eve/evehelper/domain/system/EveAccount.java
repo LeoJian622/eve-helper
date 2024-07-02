@@ -5,18 +5,31 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-
 import java.io.Serializable;
 import java.util.Date;
+import lombok.Data;
 
 /**
- * 游戏人物表
+ * 游戏角色表
  */
-@Schema(description = "游戏账户表")
+@Schema(description = "游戏角色表")
 @Data
 @TableName(value = "eve_account")
 public class EveAccount implements Serializable {
+    public static final String COL_ID = "id";
+    public static final String COL_USER_ID = "user_id";
+    public static final String COL_CHARACTER_ID = "character_id";
+    public static final String COL_CHARACTER_NAME = "character_name";
+    public static final String COL_CORP_ID = "corp_id";
+    public static final String COL_CORP_NAME = "corp_name";
+    public static final String COL_ALLIANCE_ID = "alliance_id";
+    public static final String COL_ALLIANCE_NAME = "alliance_name";
+    public static final String COL_REFRESH_TOKEN = "refresh_token";
+    public static final String COL_REFRESH_TOKEN_CHAR = "refresh_token_char";
+    public static final String COL_REFRESH_TOKEN_CROP = "refresh_token_crop";
+    public static final String COL_GMT_CREATE = "gmt_create";
+    public static final String COL_GMT_MODIFIED = "gmt_modified";
+    public static final String COL_TYPE = "type";
     @TableId(value = "id", type = IdType.AUTO)
     @Schema(description = "")
     private Integer id;
@@ -29,31 +42,31 @@ public class EveAccount implements Serializable {
     private Integer userId;
 
     /**
-     * 人物ID
+     * 角色ID
      */
     @TableField(value = "character_id")
-    @Schema(description = "人物ID")
+    @Schema(description = "角色ID")
     private Integer characterId;
 
     /**
-     * 人物名
+     * 角色名
      */
     @TableField(value = "character_name")
-    @Schema(description = "人物名")
+    @Schema(description = "角色名")
     private String characterName;
 
     /**
-     * 军团（公司）ID
+     * 公司ID
      */
     @TableField(value = "corp_id")
-    @Schema(description = "军团（公司）ID")
+    @Schema(description = "公司ID")
     private Integer corpId;
 
     /**
-     * 军团（公司）名称
+     * 公司名称
      */
     @TableField(value = "corp_name")
-    @Schema(description = "军团（公司）名称")
+    @Schema(description = "公司名称")
     private String corpName;
 
     /**
@@ -71,10 +84,10 @@ public class EveAccount implements Serializable {
     private String allianceName;
 
     /**
-     * 人物授权
+     * 角色授权
      */
     @TableField(value = "refresh_token")
-    @Schema(description = "人物授权")
+    @Schema(description = "角色授权")
     private String refreshToken;
 
     @TableField(value = "gmt_create")
@@ -92,33 +105,12 @@ public class EveAccount implements Serializable {
     @Schema(description = "CH:0 EU:1")
     private Integer type;
 
+    /**
+     * QQ号
+     */
+    @TableField(value = "qq")
+    @Schema(description = "QQ号")
+    private Integer qq;
+
     private static final long serialVersionUID = 1L;
-
-    public static final String COL_ID = "id";
-
-    public static final String COL_USER_ID = "user_id";
-
-    public static final String COL_CHARACTER_ID = "character_id";
-
-    public static final String COL_CHARACTER_NAME = "character_name";
-
-    public static final String COL_CORP_ID = "corp_id";
-
-    public static final String COL_CORP_NAME = "corp_name";
-
-    public static final String COL_ALLIANCE_ID = "alliance_id";
-
-    public static final String COL_ALLIANCE_NAME = "alliance_name";
-
-    public static final String COL_REFRESH_TOKEN = "refresh_token";
-
-    public static final String COL_REFRESH_TOKEN_CHAR = "refresh_token_char";
-
-    public static final String COL_REFRESH_TOKEN_CROP = "refresh_token_crop";
-
-    public static final String COL_GMT_CREATE = "gmt_create";
-
-    public static final String COL_GMT_MODIFIED = "gmt_modified";
-
-    public static final String COL_TYPE = "type";
 }

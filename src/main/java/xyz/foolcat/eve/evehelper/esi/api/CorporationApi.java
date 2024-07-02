@@ -43,7 +43,7 @@ public class CorporationApi {
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
     })
     @Operation(summary = "ESI-军团公开信息")
-    public Mono<CorporationResponse> queryCorporationContracts(Integer corporationId, String datasource) {
+    public Mono<CorporationResponse> queryCorporation(Integer corporationId, String datasource) {
         return apiClient.get().uri("/corporations/{corporation_id}/?datasource={datasource}", corporationId, datasource)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
@@ -548,6 +548,25 @@ public class CorporationApi {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(ShareHolderResponse.class);
+    }
+
+    /**
+     * 军团声望最大页数
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团声望最大页数")
+    public Integer queryCorporationStandingMaxPage(Integer corporationId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/standings/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
     }
 
     /**

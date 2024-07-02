@@ -20,6 +20,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Flow;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.SubmissionPublisher;
@@ -48,13 +49,19 @@ public class AssetsService extends ServiceImpl<AssetsMapper, Assets> {
         return baseMapper.batchInsert(list);
     }
 
+    public int batchInsertOrUpdate(List<Assets> list) {
+        return baseMapper.batchInsertOrUpdate(list);
+    }
+
     /**
      * 与ESI资产数据进行同步并返回
+     * 新方法查看{@link xyz.foolcat.eve.evehelper.service.system.AssetsService#saveAndUpdateAsserts(Integer,Integer)}
      *
      * @param type
      * @param cid
      * @return
      */
+    @Deprecated
     public void saveAndUpdateAsserts(String type, String cid) {
 
         lambdaUpdate().eq(Assets::getOwnerId, cid).remove();
@@ -147,22 +154,22 @@ public class AssetsService extends ServiceImpl<AssetsMapper, Assets> {
     /**
      * 与ESI资产数据进行同步并返回
      *
-     * @param characterId 角色ID
+     * @param cid 角色ID
      */
-    public void saveAndUpdateCharactersAsserts(Integer characterId) throws ParseException {
+    public void saveAndUpdateAsserts(Integer cid, Integer userId) throws ParseException {
 
-        /**
+        /*
          * 获取游戏人物信息及授权
          */
-        EveAccount eveAccount = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, characterId).one();
-        String accessToken = esiApiService.getAccessToken(String.valueOf(eveAccount.getCharacterId()));
+        EveAccount eveAccount = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, cid).or().eq(EveAccount::getCorpId,cid).one();
+        String accessToken = esiApiService.getAccessToken(String.valueOf(eveAccount.getCharacterId()), userId);
 
-        /**
+        /*
          * 获取总页数
          */
         Integer max = assetsApi.queryCharactersAssetsMaxPage(eveAccount.getCharacterId(), EsiClient.SERENITY, accessToken);
 
-        /**
+        /*
          * 从ESI获取资产列表
          */
         List<Assets> assets = Stream.iterate(1, i -> i + 1).limit(max)
@@ -171,8 +178,21 @@ public class AssetsService extends ServiceImpl<AssetsMapper, Assets> {
                 .collect(Collectors.toList())
                 .stream().flatMap(asset -> Objects.requireNonNull(asset.block()).stream())
                 .collect(Collectors.toList())
-                .stream().map(assetsConverter::assetResponse2Assets)
+                .stream().map(assetsConverter::toAssets)
                 .collect(Collectors.toList());
+        batchInsertOrUpdate(assets);
+
+        /*
+         * 移除不在ESI列表的物品
+         */
+        Set<Long> itemIds = assets.stream().map(Assets::getItemId).collect(Collectors.toSet());
+
+        List<Long> removeItemIds = lambdaQuery().select(Assets::getItemId).eq(Assets::getOwnerId, eveAccount.getCharacterId()).list()
+                .stream()
+                .map(Assets::getItemId)
+                .filter(itemId -> !itemIds.contains(itemId))
+                .collect(Collectors.toList());
+        removeBatchByIds(removeItemIds);
 
     }
 }

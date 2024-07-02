@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration;
  * date 2023-07-30 9:05
  */
 
-@Configuration
 public class WalletTask {
 
 

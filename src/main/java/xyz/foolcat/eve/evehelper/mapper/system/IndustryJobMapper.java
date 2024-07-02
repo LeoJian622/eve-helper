@@ -18,4 +18,6 @@ public interface IndustryJobMapper extends BaseMapper<IndustryJob> {
     int insertOrUpdate(IndustryJob record);
 
     int insertOrUpdateSelective(IndustryJob record);
+
+    int batchInsertOrUpdate(@Param("list") List<IndustryJob> list);
 }

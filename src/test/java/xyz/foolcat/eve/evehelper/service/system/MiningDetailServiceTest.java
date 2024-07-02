@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import xyz.foolcat.eve.evehelper.util.UserUtil;
 
 import javax.annotation.Resource;
 
@@ -26,12 +27,6 @@ class MiningDetailServiceTest {
 
     @Test
     void saveObserverMining() throws ParseException {
-        miningDetailService.saveObserverMining(656880659,1014012914900L);
-        miningDetailService.saveObserverMining(656880659,1014017721086L);
-        miningDetailService.saveObserverMining(656880659,1014017747012L);
-        miningDetailService.saveObserverMining(656880659,1014687327267L);
-        miningDetailService.saveObserverMining(656880659,1015469786781L);
-        miningDetailService.saveObserverMining(656880659,1016834508958L);
-        miningDetailService.saveObserverMining(656880659,1017079657075L);
+        miningDetailService.saveObserverMining(656880659,1014012914900L, UserUtil.getUserId());
     }
 }

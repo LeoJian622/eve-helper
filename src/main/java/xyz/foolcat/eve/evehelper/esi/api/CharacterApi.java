@@ -325,24 +325,7 @@ public class CharacterApi {
                 .bodyToMono(RoleResponse.class);
     }
 
-    /**
-     * 军团声望最大页数
-     *
-     * @param corporationId 军团ID
-     * @param datasource    服务器
-     * @param accessesToken 授权Token
-     * @return 最大页数
-     */
-    @Parameters({
-            @Parameter(name = "corporationId", description = "军团ID", required = true),
-            @Parameter(name = "datasource", description = "服务器数据源", required = true),
-            @Parameter(name = "accessesToken", description = "授权Token", required = true),
-    })
-    @Operation(summary = "ESI-军团声望最大页数")
-    public Integer queryCorporationStandingMaxPage(Integer corporationId, String datasource, String accessesToken) {
-        String uri = "/corporations/" + corporationId + "/standings/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
-    }
+
 
     /**
      * 人物声望列表

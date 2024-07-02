@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import xyz.foolcat.eve.evehelper.common.result.Result;
 import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
+import xyz.foolcat.eve.evehelper.util.UserUtil;
 
 import java.text.ParseException;
 
@@ -29,12 +30,12 @@ public class CharacterController {
     private final EsiApiService esiApiService;
 
     @Parameters({
-            @Parameter(name = "type", description = "枚举值，人物：char; 军团：crop; 技能：skill; 基础：normal" ,required = true),
+            @Parameter(name = "type", description = "枚举值，人物：char; 公司：crop; 技能：skill; 基础：normal" ,required = true),
             @Parameter(name = "code", description = "授权code" ,required = true)
     })
     @PostMapping("/{type}/{code}")
     public Result addCharacterAuth(@PathVariable String type, @PathVariable String code) throws ParseException {
-        esiApiService.getAccessToken(code);
+        esiApiService.getAccessToken(code, UserUtil.getUserId());
         return Result.success();
     }
 }

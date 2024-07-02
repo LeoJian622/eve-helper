@@ -15,6 +15,7 @@ import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -61,36 +62,35 @@ public class StructureService extends ServiceImpl<StructureMapper, Structure> {
     /**
      * ESI获取的建筑列表批量获取数据
      *
-     * @param characterId 角色ID
+     * @param cId 角色ID
      */
     @Transactional
-    public void esiBatchInsert(Integer characterId) throws ParseException {
+    public void batchInsertOrUpdateFromEsi(Integer cId, Integer userId) throws ParseException {
 
-        /**
-         * 获取游戏人物信息及授权
+        /*
+          获取游戏人物信息及授权
          */
-        EveAccount eveAccount = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, characterId).one();
-        String accessToken = esiApiService.getAccessToken(eveAccount.getCharacterId().toString());
+        EveAccount eveAccount = eveAccountService.getAccountOne(cId, userId);
+        String accessToken = esiApiService.getAccessToken(cId, userId);
 
-        /**
-         * 获取总页数
+        /*
+          获取总页数
          */
         Integer max = corporationApi.queryCorporationStructuresMaxPage(eveAccount.getCorpId(), EsiClient.SERENITY, accessToken);
 
-        /**
-         * 从ESI获取建筑列表
+        /*
+          从ESI获取建筑列表
          */
         List<Structure> structures = Stream.iterate(1, i -> i + 1).limit(max)
                 .map(i -> corporationApi.queryCorporationStructures(eveAccount.getCorpId(), EsiClient.SERENITY, "zh", i, accessToken)
                         .collectList().block())
-                .sequential()
-                .collect(Collectors.toList())
-                .stream().flatMap(Collection::stream)
-                .map(structureConverter::structuresInformationResponse2Structure)
+                .sequential().filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .map(structureConverter::toStructure)
                 .collect(Collectors.toList());
         batchInsertOrUpdate(structures);
 
-        /**
+        /*
          * 移除不在ESI列表的建筑
          */
         Set<Long> newStructureIds = structures.stream().map(Structure::getStructureId).collect(Collectors.toSet());

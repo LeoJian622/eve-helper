@@ -42,8 +42,8 @@ class CorporationApiTest {
     }
 
     @Test
-    void queryCorporationContracts() {
-        CorporationResponse corporationResponse = corporationApi.queryCorporationContracts(656880659, "serenity").block();
+    void queryCorporation() {
+        CorporationResponse corporationResponse = corporationApi.queryCorporation(98061457, "serenity").block();
         System.out.println("corporationResponse = " + corporationResponse);
     }
 

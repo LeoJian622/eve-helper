@@ -53,11 +53,11 @@ public class BotDispatcher {
                 BigDecimal buyMax = BigDecimal.valueOf(price.getJSONObject("buy").getDouble("max"));
                 BigDecimal sellMin = BigDecimal.valueOf(price.getJSONObject("sell").getDouble("min"));
                 String message = "物品国服售价（伏尔戈）：\n物品名称：" + invTypes.getTypeName() + "\n收单价：" + decimalFormat.format(buyMax) + "\n卖单价：" + decimalFormat.format(sellMin) + "\n中位价：" + decimalFormat.format(buyMax.add(sellMin).divide(BigDecimal.valueOf(2), RoundingMode.HALF_UP));
-                return BotUtil.generateMessage(messageEvent, message);
+                return BotUtil.generateMessage(messageEvent, message,false);
             } else {
                 if (messageEvent.getRaw_message().startsWith("TESTBOT")) {
                     log.debug("text" + messageEvent.getRaw_message());
-                    return BotUtil.generateMessage(messageEvent, messageEvent.getRaw_message().substring(7));
+                    return BotUtil.generateMessage(messageEvent, messageEvent.getRaw_message().substring(7),false);
                 }
                 return null;
             }

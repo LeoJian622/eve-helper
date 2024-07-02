@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Objects;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayName("ESI Character Api Test")
 class CharacterApiTest {
 
@@ -43,7 +43,7 @@ class CharacterApiTest {
 
     @Test
     void queryCharacter() {
-        CharacterPublicInfoResponse characterPublicInfoResponse = characterApi.queryCharacter(2112818290, "serenity").block();
+        CharacterPublicInfoResponse characterPublicInfoResponse = characterApi.queryCharacter(90561297, "serenity").block();
         System.out.println("characterPublicInfoResponse = " + characterPublicInfoResponse);
     }
 

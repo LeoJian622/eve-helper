@@ -43,15 +43,21 @@ public class StructTask {
         add(47516);
     }};
 
+    /**
+     * 更新建築信息
+     */
     @Scheduled(cron = "0 0 0/1 * * ? ")
     public void updateStruct() {
         try {
-            structureService.esiBatchInsert(2112818290);
+            structureService.batchInsertOrUpdateFromEsi(2112818290, -1);
         } catch (ParseException e) {
             log.error("【建筑】定时更新建筑信息失败：{}", e.getMessage());
         }
     }
 
+    /**
+     * 通知24小時燃料耗盡的建築
+     */
     @Scheduled(cron = "0 0 18,22 * * ? ")
     public void noticeFuelExpires() {
         log.debug("【建筑】通知建筑燃料信息");
@@ -62,7 +68,7 @@ public class StructTask {
                 .map(structure -> structure.getName() + ", 燃料耗尽")
                 .collect(Collectors.joining("\n"));
 
-        if (StrUtil.isNotBlank(message)) {
+        if (StrUtil.isNotEmpty(message)) {
             message += "\n============================\n";
         }
 
@@ -73,11 +79,11 @@ public class StructTask {
                     long between = ChronoUnit.HOURS.between(OffsetDateTime.now(), structure.getFuelExpires());
                     return structure.getName() + ", 将在" + between + "小时后燃料耗尽";
                 }).collect(Collectors.joining("\n"));
-        if (StrUtil.isBlank(message)) {
+        if (StrUtil.isEmpty(message)) {
             message = "燃料充足，建筑击毁报告不可用！";
         }
         System.out.println("message = " + message);
-        JSONObject group = BotUtil.generateMessage(null, 41772910L, BotUtil.MESSAGE_TYPE_GROUP, message);
+        JSONObject group = BotUtil.generateMessage(null, 41772910L, BotUtil.MESSAGE_TYPE_GROUP, message,false);
         webSocket.sendOneMessage("napcat", group.toJSONString(4));
     }
 }
