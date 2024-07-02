@@ -36,8 +36,8 @@ public class ObserverService extends ServiceImpl<ObserverMapper, Observer> {
         return baseMapper.batchInsert(list);
     }
 
-    public void saveObserverFromEsi(Integer corporationId) throws ParseException {
-        String accessToken = esiApiService.getAccessToken(corporationId.toString());
+    public void saveObserverFromEsi(Integer corporationId,Integer userId) throws ParseException {
+        String accessToken = esiApiService.getAccessToken(corporationId.toString(),userId);
         List<Observer> observerList = new ArrayList<>();
         int i = 1;
         while (true) {

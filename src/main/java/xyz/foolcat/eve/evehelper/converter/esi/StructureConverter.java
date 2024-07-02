@@ -18,10 +18,10 @@ public interface StructureConverter {
 
     /**
      * StructuresInformationResponse 转换为 Structure
-     * @param structuresInformationResponse
+     * @param structuresInformationResponse ESI返回的建筑对象
      * @return Structure
      */
-    Structure structuresInformationResponse2Structure(StructuresInformationResponse structuresInformationResponse);
+    Structure toStructure(StructuresInformationResponse structuresInformationResponse);
 
     default String map(List<StructuresService> value){
         return JSONUtil.toJsonStr(value);

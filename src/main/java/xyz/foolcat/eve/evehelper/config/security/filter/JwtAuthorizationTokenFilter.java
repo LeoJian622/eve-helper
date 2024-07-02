@@ -48,7 +48,7 @@ public class JwtAuthorizationTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String token = request.getHeader(SecurityConstant.AUTHORIZATION_KEY);
 
-        if (StrUtil.isBlank(token) || !token.startsWith(SecurityConstant.JWT_PREFIX)) {
+        if (StrUtil.isEmpty(token) || !token.startsWith(SecurityConstant.JWT_PREFIX)) {
             //非JWT或者JWT为空不处理
             logger.debug("非JWT验证，进入下一个步");
             filterChain.doFilter(request, response);

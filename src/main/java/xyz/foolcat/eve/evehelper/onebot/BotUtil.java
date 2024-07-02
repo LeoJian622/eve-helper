@@ -16,18 +16,18 @@ public class BotUtil {
     public static final String MESSAGE_TYPE_GROUP = "group";
     public static final String MESSAGE_TYPE_PRIVATE = "private";
 
-    public static @NotNull JSONObject generateMessage(MessageEvent messageEvent, String message) {
-        return generateMessage(messageEvent.getUser_id(), messageEvent.getGroup_id(), messageEvent.getMessage_type(), message);
+    public static @NotNull JSONObject generateMessage(MessageEvent messageEvent, String message, Boolean escape) {
+        return generateMessage(messageEvent.getUser_id(), messageEvent.getGroup_id(), messageEvent.getMessage_type(), message,escape);
     }
 
-    public static @NotNull JSONObject generateMessage(Long userId, Long groupId, String messageType, String message) {
+    public static @NotNull JSONObject generateMessage(Long userId, Long groupId, String messageType, String message, Boolean escape) {
         JSONObject action = new JSONObject();
         JSONObject messageBody = new JSONObject();
         messageBody.set("user_id", userId);
         messageBody.set("group_id", groupId);
         messageBody.set("message", message);
         messageBody.set("message_type", messageType);
-        messageBody.set("auto_escape", true);
+        messageBody.set("auto_escape", escape);
         action.set("action", "send_msg");
         action.set("params", messageBody);
         return action;

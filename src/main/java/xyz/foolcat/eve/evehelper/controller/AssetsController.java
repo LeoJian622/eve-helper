@@ -11,7 +11,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import xyz.foolcat.eve.evehelper.common.result.Result;
 import xyz.foolcat.eve.evehelper.service.system.AssetsService;
+import xyz.foolcat.eve.evehelper.util.UserUtil;
 import xyz.foolcat.eve.evehelper.vo.AssetsVO;
+
+import java.text.ParseException;
 
 /**
  * @author Leojan
@@ -27,13 +30,12 @@ public class AssetsController {
     private final AssetsService assetsService;
 
     @Parameters({
-            @Parameter(name = "type",description = "枚举值，人物：char; 军团：crop" ,required = true),
             @Parameter(name = "cid",description = "人物或军团的ID" ,required = true)
     })
     @Operation(summary = "游戏资产-资产读取")
-    @GetMapping("/{type}/{cid}")
-    public Result addAssertsList(@PathVariable String type, @PathVariable String cid) throws Throwable {
-        assetsService.saveAndUpdateAsserts(type, cid);
+    @PutMapping("/{cid}")
+    public Result addAssertsList( @PathVariable Integer cid) throws ParseException {
+        assetsService.saveAndUpdateAsserts(cid, UserUtil.getUserId());
         return Result.success();
     }
 

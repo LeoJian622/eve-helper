@@ -231,7 +231,6 @@
     </foreach>
   </insert>
   <insert id="batchInsertOrUpdate" parameterType="map">
-    <!--@mbg.generated-->
     insert into `structure`
     (structure_id, corporation_id, fuel_expires, `name`, next_reinforce_apply, next_reinforce_hour,
     profile_id, reinforce_hour, `state`, state_timer_end, state_timer_start, system_id,

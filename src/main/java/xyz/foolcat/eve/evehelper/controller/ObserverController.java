@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import xyz.foolcat.eve.evehelper.common.result.Result;
 import xyz.foolcat.eve.evehelper.service.system.ObserverService;
+import xyz.foolcat.eve.evehelper.util.UserUtil;
 
 import java.text.ParseException;
 
@@ -34,7 +35,7 @@ public class ObserverController {
         @Operation(summary = "月矿采掘-月矿堡读取")
         @GetMapping("/{corporationId}")
         public Result saveObserverByCorporationId(@PathVariable Integer corporationId) throws ParseException {
-                observerService.saveObserverFromEsi(corporationId);
+                observerService.saveObserverFromEsi(corporationId, UserUtil.getUserId());
                 return Result.success();
         }
 

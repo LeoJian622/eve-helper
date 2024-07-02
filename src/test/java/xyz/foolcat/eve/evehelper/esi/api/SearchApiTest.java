@@ -43,7 +43,7 @@ class SearchApiTest {
 
     @Test
     void queryCharacterSearch() {
-        SearchResponse searchResponse = searchApi.queryCharacterSearch(2112818290, "serenity",  "corporation,character", "劲风之", false, "zh", at).block();
+        SearchResponse searchResponse = searchApi.queryCharacterSearch(2112818290, "serenity",  "corporation,character", "Q Abraham", false, "zh", at).block();
         System.out.println("searchResponse = " + searchResponse);
     }
 

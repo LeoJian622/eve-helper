@@ -290,6 +290,7 @@ public class ContactApi {
         return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
     }
 
+
     /**
      * 军团联系人
      *

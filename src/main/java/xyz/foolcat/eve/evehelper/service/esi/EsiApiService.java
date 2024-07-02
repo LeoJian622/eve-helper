@@ -3,7 +3,6 @@ package xyz.foolcat.eve.evehelper.service.esi;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONArray;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
@@ -12,14 +11,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.common.constant.GlobalConstants;
+import xyz.foolcat.eve.evehelper.common.result.ResultCode;
 import xyz.foolcat.eve.evehelper.domain.system.*;
-import xyz.foolcat.eve.evehelper.dto.esi.CharacterInfoResponseDTO;
 import xyz.foolcat.eve.evehelper.dto.esi.IndustryJobDTO;
-import xyz.foolcat.eve.evehelper.dto.esi.UniverseNameResponeDTO;
+import xyz.foolcat.eve.evehelper.esi.EsiClient;
 import xyz.foolcat.eve.evehelper.esi.EsiNormalClient;
+import xyz.foolcat.eve.evehelper.esi.api.CharacterApi;
+import xyz.foolcat.eve.evehelper.esi.api.UniverseApi;
 import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
+import xyz.foolcat.eve.evehelper.esi.model.CharacterPublicInfoResponse;
+import xyz.foolcat.eve.evehelper.esi.model.Id2NameResponse;
+import xyz.foolcat.eve.evehelper.exception.EsiException;
 import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.strategy.esi.EsiClientStrategyContext;
 import xyz.foolcat.eve.evehelper.util.UserUtil;
@@ -52,6 +56,10 @@ public class EsiApiService {
 
     private final AuthorizeOAuth authorizeOAuth;
 
+    private final CharacterApi characterApi;
+
+    private final UniverseApi universeApi;
+
     /**
      * 获取ESI接口授权
      * <p>
@@ -60,35 +68,51 @@ public class EsiApiService {
      * 如果code为认证code，则调用认证接口获取授权。
      * 如果code为角色ID，则调用refreshtoken获取授权
      *
-     * @param code
+     * @param code 人物或者公司的ID
+     * @param userId
      * @return
      * @throws ParseException
      */
-    public String getAccessToken(String code) throws ParseException {
+    public String getAccessToken(Integer code, Integer userId) throws ParseException {
 
         String redisKey = GlobalConstants.ESI_ACCESS_TOKEN_KEY + code;
 
         String accessToken = (String) redisTemplate.opsForValue().get(redisKey);
 
-        if (StrUtil.isNotBlank(accessToken)) {
+        if (StrUtil.isNotEmpty(accessToken)) {
             return accessToken;
         }
 
-        EveAccount character = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, code).one();
-
-        GrantType grantType = GrantType.AUTHORIZATION_CODE;
-        if (ObjectUtil.isNotNull(character)) {
-            grantType = GrantType.REFRESH_TOKEN;
-            code = character.getRefreshToken();
+        EveAccount character = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, code).or().eq(EveAccount::getCorpId,code).one();
+        if (ObjectUtil.isNull(character)) {
+            throw new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE);
         }
-
-        AuthTokenResponse authToken = authorizeOAuth.updateAccessToken(grantType, code).block();
+        AuthTokenResponse authToken = authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, character.getRefreshToken()).block();
         assert authToken != null;
         accessToken = authToken.getAccessToken();
-        updateRefreshToken(authToken);
-
+        updateRefreshToken(authToken, userId);
         return GlobalConstants.TOKEN_PERN + accessToken;
+    }
 
+    /**
+     * 获取ESI接口授权
+     * <p>
+     * 优先从redis缓存中获取accesstoken，如果不存在 则授权已过期。
+     * <p>
+     * 如果code为认证code，则调用认证接口获取授权。
+     * 如果code为角色ID，则调用refreshtoken获取授权
+     *
+     * @param code 授权码
+     * @param userId
+     * @return
+     * @throws ParseException
+     */
+    public String getAccessToken(String code, Integer userId) throws ParseException {
+        AuthTokenResponse authToken = authorizeOAuth.updateAccessToken(GrantType.AUTHORIZATION_CODE, code).block();
+        assert authToken != null;
+        String accessToken = authToken.getAccessToken();
+        updateRefreshToken(authToken, userId);
+        return GlobalConstants.TOKEN_PERN + accessToken;
     }
 
     /**
@@ -99,39 +123,35 @@ public class EsiApiService {
      */
     @SuppressWarnings("unchecked")
     @SneakyThrows
-    private void updateRefreshToken(AuthTokenResponse authTokenResponse) {
+    private void updateRefreshToken(AuthTokenResponse authTokenResponse, Integer userId) {
         //获取refresh_token
         String characterRefreshToken = authTokenResponse.getRefreshToken();
         String accessToken = authTokenResponse.getAccessToken();
         //解析token
         SignedJWT signedJwt = SignedJWT.parse(accessToken);
         JWTClaimsSet jwtClaimsSet = signedJwt.getJWTClaimsSet();
-        String characterId = jwtClaimsSet.getStringClaim("sub").split(":")[2];
+        Integer characterId = Integer.parseInt(jwtClaimsSet.getStringClaim("sub").split(":")[2]);
         String characterName = jwtClaimsSet.getStringClaim("name");
         //获取角色信息
-        CharacterInfoResponseDTO characterInfoResponseDTO = esiNormalClient.getCharacterInfo(characterId);
-        //联盟军团信息
-        List<UniverseNameResponeDTO> universeNames = esiNormalClient.getUniverseName(List.of(characterInfoResponseDTO.getAlliance_id(), characterInfoResponseDTO.getCorporation_id()));
-        Map<Integer, String> universeNameMap = universeNames.stream().collect(Collectors.toMap(UniverseNameResponeDTO::getId, UniverseNameResponeDTO::getName, (k1, k2) -> k1));
+        CharacterPublicInfoResponse characterPublicInfoResponse = characterApi.queryCharacter(characterId, EsiClient.SERENITY).block();
+        //联盟军团名称
+        List<Id2NameResponse> nameResponses = universeApi.queryUniverseNames(List.of(characterPublicInfoResponse.getAllianceId(), characterPublicInfoResponse.getCorporationId()), EsiClient.SERENITY).collectList().block();
+        Map<Integer, String> universeNameMap = nameResponses.stream().collect(Collectors.toMap(Id2NameResponse::getId, Id2NameResponse::getName, (k1, k2) -> k1));
 
         //redis缓存access_token
         String redisKey = GlobalConstants.ESI_ACCESS_TOKEN_KEY + characterId;
         redisTemplate.opsForValue().set(redisKey, GlobalConstants.TOKEN_PERN + accessToken, 19 * 60, TimeUnit.SECONDS);
 
         EveAccount eveAccount = new EveAccount();
-        eveAccount.setUserId(UserUtil.getUserId());
+        eveAccount.setUserId(userId);
         eveAccount.setCharacterId(Integer.valueOf(characterId));
         eveAccount.setCharacterName(characterName);
-        eveAccount.setCorpId(characterInfoResponseDTO.getCorporation_id());
-        eveAccount.setCorpName(universeNameMap.get(characterInfoResponseDTO.getCorporation_id()));
-        eveAccount.setAllianceId(characterInfoResponseDTO.getAlliance_id());
-        eveAccount.setAllianceName(universeNameMap.get(characterInfoResponseDTO.getAlliance_id()));
+        eveAccount.setCorpId(characterPublicInfoResponse.getCorporationId());
+        eveAccount.setCorpName(universeNameMap.get(characterPublicInfoResponse.getCorporationId()));
+        eveAccount.setAllianceId(characterPublicInfoResponse.getAllianceId());
+        eveAccount.setAllianceName(universeNameMap.get(characterPublicInfoResponse.getAllianceId()));
         eveAccount.setRefreshToken(characterRefreshToken);
-
-        LambdaUpdateWrapper<EveAccount> lambdaUpdateWrapper = new LambdaUpdateWrapper<>();
-        lambdaUpdateWrapper.eq(EveAccount::getCharacterId, eveAccount.getCharacterId());
-
-        eveAccountService.saveOrUpdate(eveAccount, lambdaUpdateWrapper);
+        eveAccountService.insertOrUpdate(eveAccount);
     }
 
     /**
@@ -142,8 +162,9 @@ public class EsiApiService {
      * @return
      * @throws ParseException
      */
+    @Deprecated
     public List<IndustryJobDTO> getJobList(String type, String cid) throws ParseException {
-        String accessToken = getAccessToken(cid);
+        String accessToken = getAccessToken(cid, UserUtil.getUserId());
         return strategyContext.getResource(type).getJobList(cid, accessToken);
     }
 
@@ -155,8 +176,9 @@ public class EsiApiService {
      * @return
      * @throws ParseException
      */
+    @Deprecated
     public List<Assets> getAssetsList(String type, int page, String cid) throws ParseException {
-        String accessToken = getAccessToken(cid);
+        String accessToken = getAccessToken(cid, UserUtil.getUserId());
         return strategyContext.getResource(type).getAssetsList(cid, page, accessToken);
     }
 
@@ -168,8 +190,9 @@ public class EsiApiService {
      * @param cid
      * @return
      */
+    @Deprecated
     public List<WalletJournal> getWalletJournalList(String type, Integer page, String cid) throws ParseException {
-        String accessToken = getAccessToken(cid);
+        String accessToken = getAccessToken(cid, UserUtil.getUserId());
         return strategyContext.getResource(type).getWalletJournalList(cid, page, accessToken);
     }
 
@@ -181,8 +204,9 @@ public class EsiApiService {
      * @return
      * @throws ParseException
      */
+    @Deprecated
     public JSONArray getAssetsNamesList(String type, List itemIds, String cid) throws ParseException {
-        String accessToken = getAccessToken(cid);
+        String accessToken = getAccessToken(cid, UserUtil.getUserId());
         return strategyContext.getResource(type).getAssetsNamesList(cid, itemIds, accessToken);
     }
 
@@ -194,8 +218,9 @@ public class EsiApiService {
      * @return
      * @throws ParseException
      */
+    @Deprecated
     public List<Blueprints> getBlueprintsList(String type, int page, String cid) throws ParseException {
-        String accessToken = getAccessToken(cid);
+        String accessToken = getAccessToken(cid, UserUtil.getUserId());
         return strategyContext.getResource(type).getBlueprintsList(cid, page, accessToken);
     }
 
@@ -206,18 +231,9 @@ public class EsiApiService {
      * @param page
      * @return
      */
+    @Deprecated
     public List<MarketOrder> readMarketOrder(String regionId, Integer page, Integer typeId) {
         return esiNormalClient.getMarketOrder(regionId, page, typeId);
-    }
-
-    /**
-     * 获取Universe信息
-     *
-     * @param items
-     * @return
-     */
-    public List getUniverseName(List items) {
-        return esiNormalClient.getUniverseName(items);
     }
 
 }

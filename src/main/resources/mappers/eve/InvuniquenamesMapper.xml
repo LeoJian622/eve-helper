@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.foolcat.eve.evehelper.mapper.eve.InvuniquenamesMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.eve.Invuniquenames">
+    <!--@mbg.generated-->
+    <!--@Table invuniquenames-->
+    <id column="itemID" jdbcType="INTEGER" property="itemid" />
+    <result column="itemName" jdbcType="VARCHAR" property="itemname" />
+    <result column="groupID" jdbcType="INTEGER" property="groupid" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    itemID, itemName, groupID
+  </sql>
+  <update id="updateBatch" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update invuniquenames
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="itemName = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when itemID = #{item.itemid,jdbcType=INTEGER} then #{item.itemname,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="groupID = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when itemID = #{item.itemid,jdbcType=INTEGER} then #{item.groupid,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+    </trim>
+    where itemID in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.itemid,jdbcType=INTEGER}
+    </foreach>
+  </update>
+  <insert id="batchInsert" parameterType="map">
+    <!--@mbg.generated-->
+    insert into invuniquenames
+    (itemID, itemName, groupID)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.itemid,jdbcType=INTEGER}, #{item.itemname,jdbcType=VARCHAR}, #{item.groupid,jdbcType=INTEGER}
+        )
+    </foreach>
+  </insert>
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.eve.Invuniquenames">
+    <!--@mbg.generated-->
+    insert into invuniquenames
+    (itemID, itemName, groupID)
+    values
+    (#{itemid,jdbcType=INTEGER}, #{itemname,jdbcType=VARCHAR}, #{groupid,jdbcType=INTEGER}
+      )
+    on duplicate key update 
+    itemID = #{itemid,jdbcType=INTEGER}, 
+    itemName = #{itemname,jdbcType=VARCHAR}, 
+    groupID = #{groupid,jdbcType=INTEGER}
+  </insert>
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.eve.Invuniquenames">
+    <!--@mbg.generated-->
+    insert into invuniquenames
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="itemid != null">
+        itemID,
+      </if>
+      <if test="itemname != null">
+        itemName,
+      </if>
+      <if test="groupid != null">
+        groupID,
+      </if>
+    </trim>
+    values
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="itemid != null">
+        #{itemid,jdbcType=INTEGER},
+      </if>
+      <if test="itemname != null">
+        #{itemname,jdbcType=VARCHAR},
+      </if>
+      <if test="groupid != null">
+        #{groupid,jdbcType=INTEGER},
+      </if>
+    </trim>
+    on duplicate key update 
+    <trim suffixOverrides=",">
+      <if test="itemid != null">
+        itemID = #{itemid,jdbcType=INTEGER},
+      </if>
+      <if test="itemname != null">
+        itemName = #{itemname,jdbcType=VARCHAR},
+      </if>
+      <if test="groupid != null">
+        groupID = #{groupid,jdbcType=INTEGER},
+      </if>
+    </trim>
+  </insert>
+</mapper>

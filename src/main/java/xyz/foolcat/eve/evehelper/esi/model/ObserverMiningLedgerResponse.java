@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
 
-import java.util.Date;
+import java.time.OffsetDateTime;
 
 /**
  * 单个建筑的采矿明细
@@ -21,7 +21,7 @@ public class ObserverMiningLedgerResponse {
     private Integer characterId;
 
     @JsonProperty("last_updated")
-    private Date lastUpdated;
+    private OffsetDateTime lastUpdated;
 
     private Long quantity;
 

@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Objects;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayName("ESI Industry Api Test")
 class IndustryApiTest {
 

@@ -13,7 +13,7 @@ import xyz.foolcat.eve.evehelper.esi.model.AlliancesResponse;
 import java.util.List;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayName("ESI Alliance Api Test")
 class AlliancesApiTest {
 
@@ -30,7 +30,7 @@ class AlliancesApiTest {
 
     @Test
     void queryAlliancesPublicInformation() {
-        AlliancesResponse alliancesResponse = alliancesApi.queryAlliancesPublicInformation(562593865L, "serenity")
+        AlliancesResponse alliancesResponse = alliancesApi.queryAlliancesPublicInformation(99001238L, "serenity")
                 .block();
         Assert.notNull(alliancesResponse);
         System.out.println("alliancesResponse = " + alliancesResponse);

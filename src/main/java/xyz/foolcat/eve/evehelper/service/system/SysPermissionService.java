@@ -42,7 +42,7 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
         if (CollectionUtil.isNotEmpty(permissions)) {
             //init URL【权限->角色（合集）】规则
             List<SysPermission> urlPermList = permissions.stream()
-                    .filter(item -> StrUtil.isNotBlank(item.getUrlPerm()))
+                    .filter(item -> StrUtil.isNotEmpty(item.getUrlPerm()))
                     .collect(Collectors.toList());
             if (CollectionUtil.isNotEmpty(urlPermList)) {
                 Map<String, List<String>> urlPermRoles = new HashMap<>();
@@ -58,7 +58,7 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
 
             //init URL【按钮->角色（合集）】规则
             List<SysPermission> btnPermList = permissions.stream()
-                    .filter(item -> StrUtil.isNotBlank(item.getBtnPerm()))
+                    .filter(item -> StrUtil.isNotEmpty(item.getBtnPerm()))
                     .collect(Collectors.toList());
             if (CollectionUtil.isNotEmpty(btnPermList)) {
                 Map<String, List<String>> btnRoles = new HashMap<>();

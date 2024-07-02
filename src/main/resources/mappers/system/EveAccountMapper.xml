@@ -13,8 +13,6 @@
     <result column="alliance_id" jdbcType="INTEGER" property="allianceId" />
     <result column="alliance_name" jdbcType="VARCHAR" property="allianceName" />
     <result column="refresh_token" jdbcType="VARCHAR" property="refreshToken" />
-    <result column="refresh_token_char" jdbcType="VARCHAR" property="refreshTokenChar" />
-    <result column="refresh_token_crop" jdbcType="VARCHAR" property="refreshTokenCrop" />
     <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
     <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
     <result column="type" jdbcType="INTEGER" property="type" />
@@ -22,7 +20,7 @@
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
     id, user_id, character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, 
-    refresh_token, refresh_token_char, refresh_token_crop, gmt_create, gmt_modified, 
+    refresh_token, gmt_create, gmt_modified,
     `type`
   </sql>
   <update id="updateBatch" parameterType="java.util.List">
@@ -69,16 +67,6 @@
           when id = #{item.id,jdbcType=INTEGER} then #{item.refreshToken,jdbcType=VARCHAR}
         </foreach>
       </trim>
-      <trim prefix="refresh_token_char = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=INTEGER} then #{item.refreshTokenChar,jdbcType=VARCHAR}
-        </foreach>
-      </trim>
-      <trim prefix="refresh_token_crop = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=INTEGER} then #{item.refreshTokenCrop,jdbcType=VARCHAR}
-        </foreach>
-      </trim>
       <trim prefix="gmt_create = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
           when id = #{item.id,jdbcType=INTEGER} then #{item.gmtCreate,jdbcType=TIMESTAMP}
@@ -104,14 +92,13 @@
     <!--@mbg.generated-->
     insert into eve_account
     (user_id, character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, 
-      refresh_token, refresh_token_char, refresh_token_crop, gmt_create, gmt_modified, 
+      refresh_token, gmt_create, gmt_modified,
       `type`)
     values
     <foreach collection="list" item="item" separator=",">
       (#{item.userId,jdbcType=INTEGER}, #{item.characterId,jdbcType=INTEGER}, #{item.characterName,jdbcType=VARCHAR}, 
         #{item.corpId,jdbcType=INTEGER}, #{item.corpName,jdbcType=VARCHAR}, #{item.allianceId,jdbcType=INTEGER}, 
-        #{item.allianceName,jdbcType=VARCHAR}, #{item.refreshToken,jdbcType=VARCHAR}, #{item.refreshTokenChar,jdbcType=VARCHAR}, 
-        #{item.refreshTokenCrop,jdbcType=VARCHAR}, #{item.gmtCreate,jdbcType=TIMESTAMP}, 
+        #{item.allianceName,jdbcType=VARCHAR}, #{item.refreshToken,jdbcType=VARCHAR}, #{item.gmtCreate,jdbcType=TIMESTAMP},
         #{item.gmtModified,jdbcType=TIMESTAMP}, #{item.type,jdbcType=INTEGER})
     </foreach>
   </insert>
@@ -130,8 +117,6 @@
       alliance_id,
       alliance_name,
       refresh_token,
-      refresh_token_char,
-      refresh_token_crop,
       gmt_create,
       gmt_modified,
       `type`,
@@ -149,8 +134,6 @@
       #{allianceId,jdbcType=INTEGER},
       #{allianceName,jdbcType=VARCHAR},
       #{refreshToken,jdbcType=VARCHAR},
-      #{refreshTokenChar,jdbcType=VARCHAR},
-      #{refreshTokenCrop,jdbcType=VARCHAR},
       #{gmtCreate,jdbcType=TIMESTAMP},
       #{gmtModified,jdbcType=TIMESTAMP},
       #{type,jdbcType=INTEGER},
@@ -168,8 +151,6 @@
       alliance_id = #{allianceId,jdbcType=INTEGER},
       alliance_name = #{allianceName,jdbcType=VARCHAR},
       refresh_token = #{refreshToken,jdbcType=VARCHAR},
-      refresh_token_char = #{refreshTokenChar,jdbcType=VARCHAR},
-      refresh_token_crop = #{refreshTokenCrop,jdbcType=VARCHAR},
       gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
       gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
       `type` = #{type,jdbcType=INTEGER},
@@ -205,12 +186,6 @@
       </if>
       <if test="refreshToken != null">
         refresh_token,
-      </if>
-      <if test="refreshTokenChar != null">
-        refresh_token_char,
-      </if>
-      <if test="refreshTokenCrop != null">
-        refresh_token_crop,
       </if>
       <if test="gmtCreate != null">
         gmt_create,
@@ -251,12 +226,6 @@
       <if test="refreshToken != null">
         #{refreshToken,jdbcType=VARCHAR},
       </if>
-      <if test="refreshTokenChar != null">
-        #{refreshTokenChar,jdbcType=VARCHAR},
-      </if>
-      <if test="refreshTokenCrop != null">
-        #{refreshTokenCrop,jdbcType=VARCHAR},
-      </if>
       <if test="gmtCreate != null">
         #{gmtCreate,jdbcType=TIMESTAMP},
       </if>
@@ -295,12 +264,6 @@
       </if>
       <if test="refreshToken != null">
         refresh_token = #{refreshToken,jdbcType=VARCHAR},
-      </if>
-      <if test="refreshTokenChar != null">
-        refresh_token_char = #{refreshTokenChar,jdbcType=VARCHAR},
-      </if>
-      <if test="refreshTokenCrop != null">
-        refresh_token_crop = #{refreshTokenCrop,jdbcType=VARCHAR},
       </if>
       <if test="gmtCreate != null">
         gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},

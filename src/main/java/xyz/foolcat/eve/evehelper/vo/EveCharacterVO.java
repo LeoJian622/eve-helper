@@ -32,15 +32,15 @@ public class EveCharacterVO {
     private String characterName;
 
     /**
-     * 军团（公司）ID
+     * 公司ID
      */
-    @Schema(name="军团（公司）ID")
+    @Schema(name="公司ID")
     private Integer corpId;
 
     /**
-     * 军团（公司）名称
+     * 公司名称
      */
-    @Schema(name="军团（公司）名称")
+    @Schema(name="公司名称")
     private String corpName;
 
     /**

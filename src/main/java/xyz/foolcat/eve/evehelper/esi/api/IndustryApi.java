@@ -74,7 +74,7 @@ public class IndustryApi {
     @Operation(summary = "ESI-人物采矿明细记录最大页数")
     public Integer queryCharacterMiningMaxPage(Integer characterId, String datasource, String accessesToken) {
         String uri = "/characters/" + characterId + "/mining/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri, apiClient);
     }
 
 
@@ -120,8 +120,8 @@ public class IndustryApi {
     })
     @Operation(summary = "ESI-开采碎裂计时最大页数")
     public Integer queryCorporationMiningExtractionsMaxPage(Integer corporationId, String datasource, String accessesToken) {
-        String uri = "/corporations/" + corporationId + "/mining/extractions/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+        String uri = "/corporation/" + corporationId + "/mining/extractions/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri, apiClient);
     }
 
     /**
@@ -166,8 +166,8 @@ public class IndustryApi {
     })
     @Operation(summary = "ESI-军团开采记录最大页数")
     public Integer queryCorporationMiningObserversMaxPage(Integer corporationId, String datasource, String accessesToken) {
-        String uri = "/corporations/" + corporationId + "/mining/observers/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+        String uri = "/corporation/" + corporationId + "/mining/observers/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri, apiClient);
     }
 
     /**
@@ -214,8 +214,8 @@ public class IndustryApi {
     })
     @Operation(summary = "ESI-军团单个建筑采矿明细最大页数")
     public Integer queryCorporationMiningObserverMaxPage(Integer corporationId, Long observerId, String datasource, String accessesToken) {
-        String uri = "/corporations/" + corporationId + "/mining/observers/" + observerId + "/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+        String uri = "/corporation/" + corporationId + "/mining/observers/" + observerId + "/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri, apiClient);
     }
 
     /**
@@ -261,9 +261,9 @@ public class IndustryApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-军团工业生产项目最大页数")
-    public Integer queryCorporationIndustryJobsMaxPage(Integer corporationId, String datasource, String accessesToken) {
-        String uri = "/corporations/" + corporationId + "/industry/jobs/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    public Integer queryCorporationIndustryJobsMaxPage(Integer corporationId, String datasource, Boolean includeCompleted, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/industry/jobs/?datasource=" + datasource + "&include_completed=" + includeCompleted + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri, apiClient);
     }
 
     /**
@@ -297,7 +297,7 @@ public class IndustryApi {
     /**
      * 工业设施清单
      *
-     * @param datasource       服务器
+     * @param datasource 服务器
      * @return
      */
     @Parameters({
@@ -317,7 +317,7 @@ public class IndustryApi {
     /**
      * 星系工业成本系数
      *
-     * @param datasource       服务器
+     * @param datasource 服务器
      * @return
      */
     @Parameters({

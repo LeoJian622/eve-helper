@@ -1,13 +1,13 @@
 package xyz.foolcat.eve.evehelper.domain.system;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-
 import java.io.Serializable;
-import java.util.Date;
+import java.time.OffsetDateTime;
+import lombok.Data;
 
 /**
  * 制造作业表
@@ -16,10 +16,33 @@ import java.util.Date;
 @Data
 @TableName(value = "industry_job")
 public class IndustryJob implements Serializable {
+    public static final String COL_JOB_ID = "job_id";
+    public static final String COL_BLUEPRINT_ID = "blueprint_id";
+    public static final String COL_BLUEPRINT_TYPE_ID = "blueprint_type_id";
+    public static final String COL_BLUEPRINT_TYPE = "blueprint_type";
+    public static final String COL_COST = "cost";
+    public static final String COL_LICENSED_RUNS = "licensed_runs";
+    public static final String COL_PROBABILITY = "probability";
+    public static final String COL_STATION_ID = "station_id";
+    public static final String COL_OUTPUT_LOCATION_ID = "output_location_id";
+    public static final String COL_PRODUCT_TYPE = "product_type";
+    public static final String COL_BLUEPRINT_LOCATION_ID = "blueprint_location_id";
+    public static final String COL_DURATION = "duration";
+    public static final String COL_INSTALLER = "installer";
+    public static final String COL_COMPLETED_CHARACTER = "completed_character";
+    public static final String COL_ACTIVITY = "activity";
+    public static final String COL_FACILITY_ID = "facility_id";
+    public static final String COL_RUNS = "runs";
+    public static final String COL_START_DATE = "start_date";
+    public static final String COL_END_DATE = "end_date";
+    public static final String COL_STATUS = "status";
+    public static final String COL_PAUSE_DATE = "pause_date";
+    public static final String COL_INSTALLER_ID = "installer_id";
+    public static final String COL_CORPORATION_ID = "corporation_id";
     /**
      * 作业ID
      */
-    @TableId(value = "job_id")
+    @TableId(value = "job_id", type = IdType.AUTO)
     @Schema(description = "作业ID")
     private Long jobId;
 
@@ -101,17 +124,17 @@ public class IndustryJob implements Serializable {
     private Long duration;
 
     /**
-     * 启动人物
+     * 启动角色
      */
     @TableField(value = "installer")
-    @Schema(description = "启动人物")
+    @Schema(description = "启动角色")
     private String installer;
 
     /**
-     * 完成人物
+     * 完成角色
      */
     @TableField(value = "completed_character")
-    @Schema(description = "完成人物")
+    @Schema(description = "完成角色")
     private String completedCharacter;
 
     /**
@@ -140,14 +163,14 @@ public class IndustryJob implements Serializable {
      */
     @TableField(value = "start_date")
     @Schema(description = "开始日期")
-    private Date startDate;
+    private OffsetDateTime startDate;
 
     /**
      * 结束日期
      */
     @TableField(value = "end_date")
     @Schema(description = "结束日期")
-    private Date endDate;
+    private OffsetDateTime endDate;
 
     /**
      * active-活动 cancelled-取消 delivered-交付 paused-暂停 ready-准备好 reverted-恢复
@@ -161,58 +184,21 @@ public class IndustryJob implements Serializable {
      */
     @TableField(value = "pause_date")
     @Schema(description = "该建筑服务下线时间")
-    private Date pauseDate;
+    private OffsetDateTime pauseDate;
 
     /**
-     * 启动人物ID
+     * 启动角色ID
      */
     @TableField(value = "installer_id")
-    @Schema(description = "启动人物ID")
+    @Schema(description = "启动角色ID")
     private Long installerId;
 
+    /**
+     * 公司ID
+     */
+    @TableField(value = "corporation_id")
+    @Schema(description = "公司ID")
+    private Integer corporationId;
+
     private static final long serialVersionUID = 1L;
-
-    public static final String COL_JOB_ID = "job_id";
-
-    public static final String COL_BLUEPRINT_ID = "blueprint_id";
-
-    public static final String COL_BLUEPRINT_TYPE_ID = "blueprint_type_id";
-
-    public static final String COL_BLUEPRINT_TYPE = "blueprint_type";
-
-    public static final String COL_COST = "cost";
-
-    public static final String COL_LICENSED_RUNS = "licensed_runs";
-
-    public static final String COL_PROBABILITY = "probability";
-
-    public static final String COL_STATION_ID = "station_id";
-
-    public static final String COL_OUTPUT_LOCATION_ID = "output_location_id";
-
-    public static final String COL_PRODUCT_TYPE = "product_type";
-
-    public static final String COL_BLUEPRINT_LOCATION_ID = "blueprint_location_id";
-
-    public static final String COL_DURATION = "duration";
-
-    public static final String COL_INSTALLER = "installer";
-
-    public static final String COL_COMPLETED_CHARACTER = "completed_character";
-
-    public static final String COL_ACTIVITY = "activity";
-
-    public static final String COL_FACILITY_ID = "facility_id";
-
-    public static final String COL_RUNS = "runs";
-
-    public static final String COL_START_DATE = "start_date";
-
-    public static final String COL_END_DATE = "end_date";
-
-    public static final String COL_STATUS = "status";
-
-    public static final String COL_PAUSE_DATE = "pause_date";
-
-    public static final String COL_INSTALLER_ID = "installer_id";
 }

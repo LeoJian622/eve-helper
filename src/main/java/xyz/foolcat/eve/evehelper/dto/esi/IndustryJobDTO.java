@@ -7,7 +7,7 @@ import lombok.EqualsAndHashCode;
 import xyz.foolcat.eve.evehelper.common.base.BaseEntity;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.OffsetDateTime;
 
 /**
  *
@@ -120,19 +120,19 @@ public class IndustryJobDTO extends BaseEntity implements Serializable {
      * 开始日期
      */
     @Schema(name="开始日期")
-    private Date startDate;
+    private OffsetDateTime startDate;
 
     /**
      * 开始日期
      */
     @Schema(name="暂停日期")
-    private Date pauseDate;
+    private OffsetDateTime pauseDate;
 
     /**
      * 结束日期
      */
     @Schema(name="结束日期")
-    private Date endDate;
+    private OffsetDateTime endDate;
 
     /**
      * active-活动 cancelled-取消 delivered-交付 paused-暂停 ready-准备好 reverted-恢复
