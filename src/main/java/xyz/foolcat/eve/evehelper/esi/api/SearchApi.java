@@ -49,7 +49,7 @@ public class SearchApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-搜索")
-    public Mono<SearchResponse> queryCharacterPlanets(Integer characterId, String datasource, String categories, String searchString, Boolean strict, String language, String accessesToken) {
+    public Mono<SearchResponse> queryCharacterSearch(Integer characterId, String datasource, String categories, String searchString, Boolean strict, String language, String accessesToken) {
         return apiClient.get().uri("/characters/{character_id}/search/?datasource={datasource}&categories={categories}&search={search}&strict={strict}&language={language}", characterId, datasource, categories, searchString, strict, language)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .header(HttpHeaders.ACCEPT_LANGUAGE, language)

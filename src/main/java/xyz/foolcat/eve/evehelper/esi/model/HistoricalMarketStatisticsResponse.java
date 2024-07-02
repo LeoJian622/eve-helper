@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
 
-import java.util.Date;
+import java.time.OffsetDateTime;
 
 /**
  * 星域价格历史统计
@@ -19,7 +19,7 @@ public class HistoricalMarketStatisticsResponse {
 
     private Double average;
 
-    private Date date;
+    private OffsetDateTime date;
     
     private Double highest;
 

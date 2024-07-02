@@ -2,7 +2,7 @@ package xyz.foolcat.eve.evehelper.esi;
 
 import cn.hutool.json.JSONArray;
 import com.dtflys.forest.annotation.*;
-import xyz.foolcat.eve.evehelper.domain.system.Asserts;
+import xyz.foolcat.eve.evehelper.domain.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.system.Blueprints;
 import xyz.foolcat.eve.evehelper.domain.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.dto.esi.CharacterInfoResponseDTO;
@@ -58,7 +58,7 @@ public interface EsiCharacterClient {
      * @return
      */
     @Get(url = "/characters/{character_id}/assets/", dataType = "json")
-    List<Asserts> getCharacterAssets(@Var("character_id") String characterId, @Query("page") int page, @Header("Authorization") String accessToken);
+    List<Assets> getCharacterAssets(@Var("character_id") String characterId, @Query("page") int page, @Header("Authorization") String accessToken);
 
     /**
      * 获取角色钱包交易记录

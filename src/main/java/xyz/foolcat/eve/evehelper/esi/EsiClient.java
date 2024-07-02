@@ -19,6 +19,8 @@ public class EsiClient {
 
     private final EsiClientProperties esiClientProperties;
 
+    public static final String SERENITY = "serenity";
+
     @Bean
      WebClient authClient() {
         return WebClient.builder().clone().baseUrl(esiClientProperties.getAuthUrl())
@@ -30,6 +32,7 @@ public class EsiClient {
     @Bean
      WebClient apiClient() {
         return WebClient.builder().clone().baseUrl(esiClientProperties.getBasePath())
+                .codecs(item->item.defaultCodecs().maxInMemorySize(1024 * 1024))
                 .build();
     }
 

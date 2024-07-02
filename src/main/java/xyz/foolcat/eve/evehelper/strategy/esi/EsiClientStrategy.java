@@ -11,7 +11,7 @@ import java.util.List;
  * @author Leojan
  * date 2022-04-21 17:12
  */
-
+@Deprecated
 public interface EsiClientStrategy {
 
     /**
@@ -28,7 +28,7 @@ public interface EsiClientStrategy {
      * @param id
      * @return
      */
-    List<Asserts> getAssetsList(String id, int page, String accessToken);
+    List<Assets> getAssetsList(String id, int page, String accessToken);
 
     /**
      * 获取资产信息

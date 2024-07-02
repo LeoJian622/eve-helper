@@ -14,7 +14,7 @@ import lombok.Data;
 
 @Data
 @Tag(name = "资产信息响应体 200 ok")
-public class AssertResponse {
+public class AssetResponse {
 
     @Schema(description = "蓝图拷贝")
     @JsonProperty("is_blueprint_copy")

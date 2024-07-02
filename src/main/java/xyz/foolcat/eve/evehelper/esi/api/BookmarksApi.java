@@ -31,6 +31,27 @@ public class BookmarksApi {
 
     private final WebClient apiClient;
 
+    private final PageTotalApi pageTotalApi;
+
+    /**
+     * 人物个人位标列表最大页数
+     *
+     * @param characterId   人物ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-人物个人位标列表最大页数")
+    public Integer queryCharactersBookmarksMaxPage(Integer characterId, String datasource, String accessesToken) {
+        String uri = "/characters/" + characterId + "/bookmarks/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
+
     /**
      * 查询人物个人位标列表
      *
@@ -59,6 +80,25 @@ public class BookmarksApi {
     }
 
     /**
+     * 人物个人位标文件夹最大页数
+     *
+     * @param characterId   人物ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-人物个人位标文件夹最大页数")
+    public Integer queryCharactersBookmarksFoldersMaxPage(Integer characterId, String datasource, String accessesToken) {
+        String uri = "/characters/" + characterId + "/bookmarks/folders/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
+
+    /**
      * 查询人物个人位标文件夹
      *
      * @param characterId   人物ID
@@ -73,7 +113,7 @@ public class BookmarksApi {
             @Parameter(name = "page", description = "页码", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
-    @Operation(summary = "ESI-人物个人位标列表")
+    @Operation(summary = "ESI-人物个人位标文件夹")
     public Flux<BookmarkFoldersResponse> queryCharactersBookmarksFolders(Integer characterId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/characters/{character_id}/bookmarks/folders/?datasource={datasource}&page={page}", characterId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
@@ -86,7 +126,26 @@ public class BookmarksApi {
     }
 
     /**
-     * 查询人物个人位标列表
+     * 军团位标列表最大页数
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团位标列表最大页数")
+    public Integer queryCorporationsBookmarksMaxPage(Integer corporationId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/bookmarks/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
+
+    /**
+     * 查询军团位标列表
      *
      * @param corporationId 人物ID
      * @param datasource    服务器
@@ -95,12 +154,12 @@ public class BookmarksApi {
      * @return
      */
     @Parameters({
-            @Parameter(name = "corporationId", description = "人物ID", required = true),
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
             @Parameter(name = "page", description = "页码", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
-    @Operation(summary = "ESI-人物个人位标列表")
+    @Operation(summary = "ESI-查询军团位标列表")
     public Flux<BookmarksResponse> queryCorporationsBookmarks(Integer corporationId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/bookmarks/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
@@ -113,7 +172,26 @@ public class BookmarksApi {
     }
 
     /**
-     * 查询人物个人位标文件夹
+     * 军团位标文件夹最大页数
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团位标文件夹最大页数")
+    public Integer queryCorporationsBookmarksFoldersMaxPage(Integer corporationId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/bookmarks/folders/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
+
+    /**
+     * 查询军团位标文件夹
      *
      * @param corporationId 角色ID
      * @param datasource    服务器
@@ -122,12 +200,12 @@ public class BookmarksApi {
      * @return
      */
     @Parameters({
-            @Parameter(name = "corporationId", description = "角色ID", required = true),
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
             @Parameter(name = "page", description = "页码", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
-    @Operation(summary = "ESI-角色个人位标列表")
+    @Operation(summary = "ESI-查询军团位标文件夹")
     public Flux<BookmarkFoldersResponse> queryCorporationsBookmarksFolders(Integer corporationId, String datasource, Integer page, String accessesToken) {
         return apiClient.get().uri("/corporations/{corporation_id}/bookmarks/folders/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)

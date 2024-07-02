@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.AssetsMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.Asserts">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.Assets">
     <!--@mbg.generated-->
     <!--@Table assets-->
     <id column="item_id" jdbcType="BIGINT" property="itemId" />
@@ -148,7 +148,7 @@
         )
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.Asserts">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.Assets">
     <!--@mbg.generated-->
     insert into assets
     (item_id, type_id, location_id, location_type, location_flag, is_singleton, is_blueprint_copy, 
@@ -169,7 +169,7 @@
     quantity = #{quantity,jdbcType=BIGINT}, 
     owner_id = #{ownerId,jdbcType=BIGINT}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.Asserts">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.Assets">
     <!--@mbg.generated-->
     insert into assets
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -282,4 +282,26 @@
                  left join eve_account ec on ass.owner_id = ec.character_id
         where owner_id = #{id}
     </select>
+
+  <insert id="batchInsertOrUpdate" parameterType="map">
+    <!--@mbg.generated-->
+    insert into assets
+    (item_id, type_id, location_id, location_type, location_flag, is_singleton, is_blueprint_copy,
+    quantity, owner_id)
+    values
+    (#{itemId,jdbcType=BIGINT}, #{typeId,jdbcType=INTEGER}, #{locationId,jdbcType=BIGINT},
+    #{locationType,jdbcType=VARCHAR}, #{locationFlag,jdbcType=VARCHAR}, #{isSingleton,jdbcType=BOOLEAN},
+    #{isBlueprintCopy,jdbcType=BOOLEAN}, #{quantity,jdbcType=BIGINT}, #{ownerId,jdbcType=BIGINT}
+    )
+    on duplicate key update
+    item_id = #{itemId,jdbcType=BIGINT},
+    type_id = #{typeId,jdbcType=INTEGER},
+    location_id = #{locationId,jdbcType=BIGINT},
+    location_type = #{locationType,jdbcType=VARCHAR},
+    location_flag = #{locationFlag,jdbcType=VARCHAR},
+    is_singleton = #{isSingleton,jdbcType=BOOLEAN},
+    is_blueprint_copy = #{isBlueprintCopy,jdbcType=BOOLEAN},
+    quantity = #{quantity,jdbcType=BIGINT},
+    owner_id = #{ownerId,jdbcType=BIGINT}
+  </insert>
 </mapper>

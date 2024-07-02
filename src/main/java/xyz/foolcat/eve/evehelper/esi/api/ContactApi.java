@@ -33,22 +33,44 @@ public class ContactApi {
 
     private final WebClient apiClient;
 
+    private final PageTotalApi pageTotalApi;
+
     /**
-     * 联盟联系人
+     * 联盟联系人最大页数
      *
      * @param allianceId    联盟ID
      * @param datasource    服务器数据源
      * @param accessesToken 授权Token
-     * @return
+     * @return 最大页数
      */
     @Parameters({
             @Parameter(name = "allianceId", description = "联盟ID", required = true),
             @Parameter(name = "datasource", description = "服务器数据源", required = true),
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
+    @Operation(summary = "ESI-联盟联系人最大页数")
+    public Integer queryAlliancesContactsMaxPage(Long allianceId, String datasource, String accessesToken) {
+        String uri = "/alliances/" + allianceId + "/contacts/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri, apiClient);
+    }
+
+    /**
+     * 联盟联系人
+     *
+     * @param allianceId    联盟ID
+     * @param datasource    服务器数据源
+     * @param accessesToken 授权Token
+     * @return 联盟联系人列表
+     */
+    @Parameters({
+            @Parameter(name = "allianceId", description = "联盟ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "page", description = "页码", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
     @Operation(summary = "ESI-联盟联系人")
-    public Flux<ContactResponse> queryAlliancesContacts(Long allianceId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/alliances/{alliance_id}/contacts/?datasource={datasource}", allianceId, datasource)
+    public Flux<ContactResponse> queryAlliancesContacts(Long allianceId, String datasource, Integer page, String accessesToken) {
+        return apiClient.get().uri("/alliances/{alliance_id}/contacts/?datasource={datasource}&page={page}", allianceId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
@@ -58,13 +80,15 @@ public class ContactApi {
                 .bodyToFlux(ContactResponse.class);
     }
 
+
+
     /**
      * 联盟联系人自定义标签
      *
      * @param allianceId    联盟ID
      * @param datasource    服务器数据源
      * @param accessesToken 授权Token
-     * @return
+     * @return 联盟自定义标签列表
      */
     @Parameters({
             @Parameter(name = "allianceId", description = "联盟ID", required = true),
@@ -90,7 +114,7 @@ public class ContactApi {
      * @param datasource    服务器数据源
      * @param contactIds    联系人IDs
      * @param accessesToken 授权Token
-     * @return
+     * @return 返回信息
      */
     @Parameters({
             @Parameter(name = "characterId", description = "人物ID", required = true),
@@ -111,12 +135,31 @@ public class ContactApi {
     }
 
     /**
+     * 人物联系人最大页数
+     *
+     * @param characterId   人物ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-人物联系人最大页数")
+    public Integer queryCharactersContactsMaxPage(Integer characterId, String datasource, String accessesToken) {
+        String uri = "/characters/" + characterId + "/contacts/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
+
+    /**
      * 人物联系人
      *
      * @param characterId   人物ID
      * @param datasource    服务器数据源
      * @param accessesToken 授权Token
-     * @return
+     * @return 联系人信息响应体
      */
     @Parameters({
             @Parameter(name = "characterId", description = "人物ID", required = true),
@@ -145,7 +188,7 @@ public class ContactApi {
      * @param standing      声望
      * @param watched       是否通知联系人
      * @param accessesToken 授权Token
-     * @return
+     * @return ID
      */
     @Parameters({
             @Parameter(name = "characterId", description = "人物ID", required = true),
@@ -179,7 +222,7 @@ public class ContactApi {
      * @param standing      声望
      * @param watched       是否通知联系人
      * @param accessesToken 授权Token
-     * @return
+     * @return 返回信息
      */
     @Parameters({
             @Parameter(name = "characterId", description = "人物ID", required = true),
@@ -206,10 +249,10 @@ public class ContactApi {
     /**
      * 人物联系人自定义标签
      *
-     * @param characterId    联盟ID
+     * @param characterId   联盟ID
      * @param datasource    服务器数据源
      * @param accessesToken 授权Token
-     * @return
+     * @return 自定义标签列表
      */
     @Parameters({
             @Parameter(name = "characterId", description = "人物ID", required = true),
@@ -229,12 +272,31 @@ public class ContactApi {
     }
 
     /**
+     * 军团联系人最大页数
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团联系人最大页数")
+    public Integer queryCorporationsContactsMaxPage(Integer corporationId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/contacts/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
+
+    /**
      * 军团联系人
      *
-     * @param corporationId    军团ID
+     * @param corporationId 军团ID
      * @param datasource    服务器数据源
      * @param accessesToken 授权Token
-     * @return
+     * @return 军团联系人列表
      */
     @Parameters({
             @Parameter(name = "corporationId", description = "军团ID", required = true),
@@ -256,10 +318,10 @@ public class ContactApi {
     /**
      * 军团联系人自定义标签
      *
-     * @param corporationId    军团ID
+     * @param corporationId 军团ID
      * @param datasource    服务器数据源
      * @param accessesToken 授权Token
-     * @return
+     * @return 军团自定义标签列表
      */
     @Parameters({
             @Parameter(name = "corporationId", description = "军团ID", required = true),

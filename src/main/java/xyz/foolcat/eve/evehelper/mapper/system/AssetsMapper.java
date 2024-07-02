@@ -1,26 +1,25 @@
 package xyz.foolcat.eve.evehelper.mapper.system;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-
-import java.util.List;
-
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import xyz.foolcat.eve.evehelper.domain.system.Asserts;
+import xyz.foolcat.eve.evehelper.domain.system.Assets;
 import xyz.foolcat.eve.evehelper.vo.AssetsVO;
 
+import java.util.List;
+
 @Mapper
-public interface AssetsMapper extends BaseMapper<Asserts> {
-    int updateBatch(List<Asserts> list);
+public interface AssetsMapper extends BaseMapper<Assets> {
+    int updateBatch(List<Assets> list);
 
-    int updateBatchSelective(List<Asserts> list);
+    int updateBatchSelective(List<Assets> list);
 
-    int batchInsert(@Param("list") List<Asserts> list);
+    int batchInsert(@Param("list") List<Assets> list);
 
-    int insertOrUpdate(Asserts record);
+    int insertOrUpdate(Assets record);
 
-    int insertOrUpdateSelective(Asserts record);
+    int insertOrUpdateSelective(Assets record);
 
     /**
      * 分页查询
@@ -30,4 +29,6 @@ public interface AssetsMapper extends BaseMapper<Asserts> {
      * @return
      */
     IPage<AssetsVO> selectAssertsInvtypeUniverse(IPage<AssetsVO> page, @Param("id") String id);
+
+    int batchInsertOrUpdate(@Param("list") List<Assets> list);
 }

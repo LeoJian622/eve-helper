@@ -30,6 +30,7 @@ import java.util.List;
 public class UniverseApi {
 
     private final WebClient apiClient;
+    private final PageTotalApi pageTotalApi;
 
     /**
      * 获取人物民族
@@ -257,6 +258,21 @@ public class UniverseApi {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(GraphicResponse.class);
+    }
+
+    /**
+     * 某物品分组ID列表最大页数
+     *
+     * @param datasource 服务器
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+    })
+    @Operation(summary = "ESI-某物品分组ID列表最大页数")
+    public Integer queryUniverseGroupsMaxPage(String datasource) {
+        String uri = "/universe/groups/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage("", uri,  apiClient);
     }
 
     /**
@@ -665,6 +681,21 @@ public class UniverseApi {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(SolarSystemInfoResponse.class);
+    }
+
+    /**
+     * 物品类型ID的列表最大页数
+     *
+     * @param datasource 服务器
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+    })
+    @Operation(summary = "ESI-物品类型ID的列表最大页数")
+    public Integer queryUniverseTypesUnMaxPage(String datasource) {
+        String uri = "/universe/types/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage("", uri,  apiClient);
     }
 
     /**

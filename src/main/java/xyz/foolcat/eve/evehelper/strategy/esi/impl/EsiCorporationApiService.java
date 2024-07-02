@@ -17,7 +17,7 @@ import java.util.List;
  * @author Leojan
  * date 2021-12-07 16:54
  */
-
+@Deprecated
 @Slf4j
 @Service("crop")
 @RequiredArgsConstructor
@@ -32,7 +32,7 @@ public class EsiCorporationApiService implements EsiClientStrategy {
     }
 
     @Override
-    public List<Asserts> getAssetsList(String id, int page, String accessToken) {
+    public List<Assets> getAssetsList(String id, int page, String accessToken) {
         return esiCorporationClient.getCorporationAssets(id,page, accessToken);
     }
 

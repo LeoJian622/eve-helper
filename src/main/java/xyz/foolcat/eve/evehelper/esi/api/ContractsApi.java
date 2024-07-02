@@ -32,6 +32,27 @@ public class ContractsApi {
 
     private final WebClient apiClient;
 
+    private final PageTotalApi pageTotalApi;
+
+    /**
+     * 人物合同记录最大页数
+     *
+     * @param characterId   人物ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-人物合同记录最大页数")
+    public Integer queryCharactersContractsMaxPage(Integer characterId, String datasource, String accessesToken) {
+        String uri = "/characters/" + characterId + "/contracts/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
+
     /**
      * 人物合同记录
      *
@@ -114,6 +135,23 @@ public class ContractsApi {
     }
 
     /**
+     * 星域公开合同物品清单最大页数
+     *
+     * @param regionId   星域ID
+     * @param datasource 服务器
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "星域ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+    })
+    @Operation(summary = "ESI-星域公开合同物品清单最大页数")
+    public Integer queryPublicContractsRegionMaxPage(Integer regionId, String datasource) {
+        String uri = "/contracts/public/" + regionId + "/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage("", uri,  apiClient);
+    }
+
+    /**
      * 星域公开合同记录
      *
      * @param regionId      星域ID
@@ -135,6 +173,24 @@ public class ContractsApi {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(ContractResponse.class);
+    }
+
+    /**
+     * 星域公开合同（拍卖）出价信息最大页数
+     *
+     * @param contractId 合同ID
+     * @param datasource 服务器
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "合同ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-星域公开合同（拍卖）出价信息最大页数")
+    public Integer queryPublicContractsBidsMaxPage(Integer contractId, String datasource) {
+        String uri = "/contracts/public/bids/" + contractId + "/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage("", uri,  apiClient);
     }
 
     /**
@@ -160,6 +216,23 @@ public class ContractsApi {
     }
 
     /**
+     * 星域公开合同物品清单最大页数
+     *
+     * @param contractId 合同ID
+     * @param datasource 服务器
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "合同ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+    })
+    @Operation(summary = "ESI-星域公开合同物品清单最大页数")
+    public Integer queryPublicContractsItemsMaxPage(Integer contractId, String datasource) {
+        String uri = "/contracts/public/items/" + contractId + "/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage("", uri,  apiClient);
+    }
+
+    /**
      * 星域公开合同物品清单
      *
      * @param datasource    服务器数据源
@@ -181,9 +254,27 @@ public class ContractsApi {
                 .bodyToFlux(ContractItemResponse.class);
     }
 
+    /**
+     * 军团合同记录最大页数
+     *
+     * @param corporationId 军团ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团合同记录最大页数")
+    public Integer queryCorporationsContractsMaxPage(Integer corporationId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/contracts/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+    }
 
     /**
-     * 军团合同记录R
+     * 军团合同记录
      *
      * @param corporationId   军团ID
      * @param datasource    服务器数据源
@@ -207,6 +298,27 @@ public class ContractsApi {
                 .onStatus(HttpStatus::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(ContractResponse.class);
+    }
+
+    /**
+     * 军团合同（拍卖）出价信息最大页数
+     *
+     * @param corporationId 军团ID
+     * @param contractId    合同ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "contractId", description = "合同ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团合同（拍卖）出价信息最大页数")
+    public Integer queryCorporationsContractsBidsMaxPage(Integer corporationId, Integer contractId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/contracts/" + contractId + "/bids/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
     }
 
     /**

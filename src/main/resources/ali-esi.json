@@ -8854,7 +8854,7 @@
         "tags": [
           "Industry"
         ],
-        "x-alternate-versions": [
+        "alternate-versions": [
           "dev",
           "legacy",
           "v1"

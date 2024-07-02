@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.config;
+package xyz.foolcat.eve.evehelper.esi;
 
 import kotlin.text.Charsets;
 import org.springframework.boot.web.reactive.function.client.WebClientCustomizer;
