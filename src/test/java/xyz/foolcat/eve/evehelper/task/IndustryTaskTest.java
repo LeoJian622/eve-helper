@@ -5,31 +5,23 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import xyz.foolcat.eve.evehelper.service.system.StructureService;
-
-import java.text.ParseException;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@DisplayName("建筑信息定时任务测试")
-//@WithUserDetails("user1")
-class StructTaskTest {
+@DisplayName("工业定时任务测试")
+class IndustryTaskTest {
 
     @Autowired
-    StructTask structTask;
-
-    @Autowired
-    StructureService structureService;
+    private IndustryTask industryTask;
 
     @Test
-    void updateStruct() throws ParseException {
-        structTask.updateStruct();
+    void updateIndustryJobs() {
+        industryTask.updateIndustryJobs();
     }
 
     @Test
-    void noticeFuelExpires() {
-        structTask.noticeFuelExpires();
+    void noticeJobComplete() {
+        industryTask.noticeJobComplete();
     }
 }

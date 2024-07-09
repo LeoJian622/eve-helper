@@ -40,7 +40,7 @@ public class JobController {
     @Operation(summary = "工业制造-制造线数据读取")
     @GetMapping("/{type}/{id}/{complete}")
     public Result jobs(@PathVariable String type, @PathVariable String complete, @PathVariable Integer id) throws ParseException {
-        industryJobService.batchInsertOrUpdateFromEsi(id, UserUtil.getUserId(), "complete".equals(complete), "corporation".equals(type));
+        industryJobService.batchInsertOrUpdateFromEsi(id,  "complete".equals(complete), "corporation".equals(type));
         return Result.success();
     }
 }

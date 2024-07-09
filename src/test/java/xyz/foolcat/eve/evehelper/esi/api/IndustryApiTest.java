@@ -35,7 +35,7 @@ class IndustryApiTest {
 
     @BeforeEach
     void initAccessToken() {
-        EveAccount entity = eveAccountService.lambdaQuery().eq(EveAccount::getId, 3).one();
+        EveAccount entity = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, 2112818290).one();
         Mono<AuthTokenResponse> authTokenResponseMono = authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, entity.getRefreshToken());
         at = at + Objects.requireNonNull(authTokenResponseMono.block()).getAccessToken();
         System.out.println("at = " + at);
@@ -73,7 +73,7 @@ class IndustryApiTest {
 
     @Test
     void queryCorporationIndustryJobs() {
-        List<IndustryJobPlacedResponse> industryJobPlacedResponses = industryApi.queryCorporationIndustryJobs(656880659, "serenity", null, at).collectList().block();
+        List<IndustryJobPlacedResponse> industryJobPlacedResponses = industryApi.queryCorporationIndustryJobs(98061457, "serenity", null, at).collectList().block();
         System.out.println("industryJobPlacedResponses = " + industryJobPlacedResponses);
     }
 

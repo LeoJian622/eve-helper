@@ -6,13 +6,16 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import xyz.foolcat.eve.evehelper.common.base.BaseEntity;
 
 import java.io.Serializable;
 
 /**
  * 角色表
+ * @author Leojan
  */
+@EqualsAndHashCode(callSuper = true)
 @Schema(description = "角色表")
 @Data
 @TableName(value = "sys_role")

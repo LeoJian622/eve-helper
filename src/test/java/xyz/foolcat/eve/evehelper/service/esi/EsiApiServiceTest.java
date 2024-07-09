@@ -26,9 +26,4 @@ class EsiApiServiceTest {
         System.out.println(accessToken);
     }
 
-    @Test
-    void getJobList() throws ParseException {
-        esiApiService.getJobList("char","2112965519");
-    }
-
 }

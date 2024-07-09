@@ -35,7 +35,7 @@ class CorporationApiTest {
 
     @BeforeEach
     void initAccessToken() {
-        EveAccount entity = eveAccountService.lambdaQuery().eq(EveAccount::getId, 3).one();
+        EveAccount entity = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, 2112818290).one();
         Mono<AuthTokenResponse> authTokenResponseMono = authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, entity.getRefreshToken());
         at = at + Objects.requireNonNull(authTokenResponseMono.block()).getAccessToken();
         System.out.println("at = " + at);
@@ -157,5 +157,42 @@ class CorporationApiTest {
 
     @Test
     void queryNpcCorporation() {
+    }
+
+    @Deprecated
+    void queryCorporationAllianceHistoryMaxPage() {
+        Integer maxPage = corporationApi.queryCorporationAllianceHistoryMaxPage(656880659, "serenity");
+    }
+
+    @Test
+    void queryCorporationBlueprintsMaxPage() {
+    }
+
+    @Test
+    void queryCorporationContainersLogsMaxPage() {
+    }
+
+    @Test
+    void queryCorporationMedalsMaxPage() {
+    }
+
+    @Test
+    void queryCorporationIssuedMedalsMaxPage() {
+    }
+
+    @Test
+    void queryCorporationShareHoldersMaxPage() {
+    }
+
+    @Test
+    void queryCorporationStandingMaxPage() {
+    }
+
+    @Test
+    void queryCorporationStarBasesMaxPage() {
+    }
+
+    @Test
+    void queryCorporationStructuresMaxPage() {
     }
 }

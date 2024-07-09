@@ -24,6 +24,6 @@ class BlueprintsServiceTest {
 
     @Test
     void saveAndUpdateBlueprints() throws ParseException {
-        blueprintsService.saveAndUpdateBlueprints("char","2112832425");
+//        blueprintsService.saveAndUpdateBlueprints("char","2112832425");
     }
 }

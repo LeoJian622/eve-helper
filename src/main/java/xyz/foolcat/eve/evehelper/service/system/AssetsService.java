@@ -14,6 +14,7 @@ import xyz.foolcat.eve.evehelper.esi.EsiClient;
 import xyz.foolcat.eve.evehelper.esi.api.AssetsApi;
 import xyz.foolcat.eve.evehelper.mapper.system.AssetsMapper;
 import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
+import xyz.foolcat.eve.evehelper.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.vo.AssetsVO;
 
 import java.text.ParseException;
@@ -156,13 +157,13 @@ public class AssetsService extends ServiceImpl<AssetsMapper, Assets> {
      *
      * @param cid 角色ID
      */
-    public void saveAndUpdateAsserts(Integer cid, Integer userId) throws ParseException {
+    public void saveAndUpdateAsserts(Integer cid) throws ParseException {
 
         /*
          * 获取游戏人物信息及授权
          */
-        EveAccount eveAccount = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, cid).or().eq(EveAccount::getCorpId,cid).one();
-        String accessToken = esiApiService.getAccessToken(String.valueOf(eveAccount.getCharacterId()), userId);
+        EveAccount eveAccount = AuthorizeUtil.authorize(cid);
+        String accessToken = esiApiService.getAccessToken(String.valueOf(eveAccount.getCharacterId()), eveAccount.getUserId());
 
         /*
          * 获取总页数

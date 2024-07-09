@@ -5,9 +5,10 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
 import java.io.Serializable;
 import java.time.OffsetDateTime;
-import lombok.Data;
 
 /**
  * 制造作业表
@@ -39,12 +40,32 @@ public class IndustryJob implements Serializable {
     public static final String COL_PAUSE_DATE = "pause_date";
     public static final String COL_INSTALLER_ID = "installer_id";
     public static final String COL_CORPORATION_ID = "corporation_id";
+    public static final String STATUS_ACTIVE = "active";
+    public static final String STATUS_CANCELLED = "cancelled";
+    public static final String STATUS_DELIVERED = "delivered";
+    public static final String STATUS_PAUSED = "paused";
+    public static final String STATUS_READY = "ready";
+    public static final String STATUS_REVERTED = "reverted";
     /**
      * 作业ID
      */
     @TableId(value = "job_id", type = IdType.AUTO)
     @Schema(description = "作业ID")
     private Long jobId;
+
+    /**
+     * 工业的活动ID
+     */
+    @TableField(value = "activity_id")
+    @Schema(description = "工业的活动ID")
+    private Integer activityId;
+
+    /**
+     * 活动类型
+     */
+    @TableField(value = "activity")
+    @Schema(description = "活动类型")
+    private String activity;
 
     /**
      * 蓝图itemID
@@ -68,11 +89,39 @@ public class IndustryJob implements Serializable {
     private String blueprintType;
 
     /**
+     * 产物类型ID
+     */
+    @TableField(value = "product_type_id")
+    @Schema(description = "产物类型ID")
+    private Integer productTypeId;
+
+    /**
+     * 产出物品类型
+     */
+    @TableField(value = "product_type")
+    @Schema(description = "产出物品类型")
+    private String productType;
+
+    /**
      * 花费
      */
     @TableField(value = "cost")
     @Schema(description = "花费")
     private Integer cost;
+
+    /**
+     * 作业时间
+     */
+    @TableField(value = "duration")
+    @Schema(description = "作业时间")
+    private Long duration;
+
+    /**
+     * 作业次数
+     */
+    @TableField(value = "runs")
+    @Schema(description = "作业次数")
+    private Integer runs;
 
     /**
      * 可用流程数
@@ -103,25 +152,11 @@ public class IndustryJob implements Serializable {
     private Long outputLocationId;
 
     /**
-     * 产出物品类型
-     */
-    @TableField(value = "product_type")
-    @Schema(description = "产出物品类型")
-    private String productType;
-
-    /**
      * 蓝图位置ID
      */
     @TableField(value = "blueprint_location_id")
     @Schema(description = "蓝图位置ID")
     private Long blueprintLocationId;
-
-    /**
-     * 作业时间
-     */
-    @TableField(value = "duration")
-    @Schema(description = "作业时间")
-    private Long duration;
 
     /**
      * 启动角色
@@ -138,25 +173,11 @@ public class IndustryJob implements Serializable {
     private String completedCharacter;
 
     /**
-     * 活动ID
-     */
-    @TableField(value = "activity")
-    @Schema(description = "活动ID")
-    private Long activity;
-
-    /**
      * 作业设施ID
      */
     @TableField(value = "facility_id")
     @Schema(description = "作业设施ID")
     private Long facilityId;
-
-    /**
-     * 作业次数
-     */
-    @TableField(value = "runs")
-    @Schema(description = "作业次数")
-    private Integer runs;
 
     /**
      * 开始日期
@@ -171,6 +192,13 @@ public class IndustryJob implements Serializable {
     @TableField(value = "end_date")
     @Schema(description = "结束日期")
     private OffsetDateTime endDate;
+
+    /**
+     * 完成时间
+     */
+    @TableField(value = "completed_date")
+    @Schema(description = "完成时间")
+    private OffsetDateTime completedDate;
 
     /**
      * active-活动 cancelled-取消 delivered-交付 paused-暂停 ready-准备好 reverted-恢复

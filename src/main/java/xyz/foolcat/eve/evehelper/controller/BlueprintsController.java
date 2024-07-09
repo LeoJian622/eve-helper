@@ -35,7 +35,7 @@ public class BlueprintsController {
     @Operation(summary = "蓝图数据-蓝图读取")
     @GetMapping("/{type}/{cid}")
     public Result addBlueprintsList(@PathVariable String type, @PathVariable String cid) throws ParseException {
-        blueprintsService.saveAndUpdateBlueprints(type, cid);
+//        blueprintsService.saveAndUpdateBlueprints(type, cid);
         return Result.success();
     }
 

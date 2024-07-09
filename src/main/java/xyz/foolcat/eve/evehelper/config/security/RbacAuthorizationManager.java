@@ -59,8 +59,8 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
          * 白名单路径
          */
         boolean isWhiteList = eveHelperSecurityConfig.getWhiteUrlList().stream()
-                .anyMatch(whilte -> {
-                    if (restfulPath.equals(whilte)) {
+                .anyMatch(white -> {
+                    if (restfulPath.equals(white)) {
                         return true;
                     }
                     return false;

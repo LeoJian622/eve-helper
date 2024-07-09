@@ -48,8 +48,9 @@ public class StructTask {
      */
     @Scheduled(cron = "0 0 0/1 * * ? ")
     public void updateStruct() {
+        log.info("updateStruct");
         try {
-            structureService.batchInsertOrUpdateFromEsi(2112818290, -1);
+            structureService.batchInsertOrUpdateFromEsi(2112818290);
         } catch (ParseException e) {
             log.error("【建筑】定时更新建筑信息失败：{}", e.getMessage());
         }
@@ -60,7 +61,7 @@ public class StructTask {
      */
     @Scheduled(cron = "0 0 18,22 * * ? ")
     public void noticeFuelExpires() {
-        log.debug("【建筑】通知建筑燃料信息");
+        log.info("noticeFuelExpires");
         List<Structure> structures = structureService.selectFuelExpiresList(24, 656880659);
 
         String message = structures.stream().filter(structure -> structure.getFuelExpires() == null)
@@ -82,7 +83,6 @@ public class StructTask {
         if (StrUtil.isEmpty(message)) {
             message = "燃料充足，建筑击毁报告不可用！";
         }
-        System.out.println("message = " + message);
         JSONObject group = BotUtil.generateMessage(null, 41772910L, BotUtil.MESSAGE_TYPE_GROUP, message,false);
         webSocket.sendOneMessage("napcat", group.toJSONString(4));
     }

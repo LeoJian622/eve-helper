@@ -4,9 +4,7 @@
   <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.EveAccount">
     <!--@mbg.generated-->
     <!--@Table eve_account-->
-    <id column="id" jdbcType="INTEGER" property="id" />
-    <result column="user_id" jdbcType="INTEGER" property="userId" />
-    <result column="character_id" jdbcType="INTEGER" property="characterId" />
+    <id column="character_id" jdbcType="INTEGER" property="characterId" />
     <result column="character_name" jdbcType="VARCHAR" property="characterName" />
     <result column="corp_id" jdbcType="INTEGER" property="corpId" />
     <result column="corp_name" jdbcType="VARCHAR" property="corpName" />
@@ -16,156 +14,208 @@
     <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
     <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
     <result column="type" jdbcType="INTEGER" property="type" />
+    <result column="qq" jdbcType="INTEGER" property="qq" />
+    <result column="user_id" jdbcType="INTEGER" property="userId" />
   </resultMap>
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
-    id, user_id, character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, 
-    refresh_token, gmt_create, gmt_modified,
-    `type`
+    character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, refresh_token, 
+    gmt_create, gmt_modified, `type`, qq, user_id
   </sql>
   <update id="updateBatch" parameterType="java.util.List">
     <!--@mbg.generated-->
     update eve_account
     <trim prefix="set" suffixOverrides=",">
-      <trim prefix="user_id = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=INTEGER} then #{item.userId,jdbcType=INTEGER}
-        </foreach>
-      </trim>
-      <trim prefix="character_id = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=INTEGER} then #{item.characterId,jdbcType=INTEGER}
-        </foreach>
-      </trim>
       <trim prefix="character_name = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=INTEGER} then #{item.characterName,jdbcType=VARCHAR}
+          when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.characterName,jdbcType=VARCHAR}
         </foreach>
       </trim>
       <trim prefix="corp_id = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=INTEGER} then #{item.corpId,jdbcType=INTEGER}
+          when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.corpId,jdbcType=INTEGER}
         </foreach>
       </trim>
       <trim prefix="corp_name = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=INTEGER} then #{item.corpName,jdbcType=VARCHAR}
+          when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.corpName,jdbcType=VARCHAR}
         </foreach>
       </trim>
       <trim prefix="alliance_id = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=INTEGER} then #{item.allianceId,jdbcType=INTEGER}
+          when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.allianceId,jdbcType=INTEGER}
         </foreach>
       </trim>
       <trim prefix="alliance_name = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=INTEGER} then #{item.allianceName,jdbcType=VARCHAR}
+          when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.allianceName,jdbcType=VARCHAR}
         </foreach>
       </trim>
       <trim prefix="refresh_token = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=INTEGER} then #{item.refreshToken,jdbcType=VARCHAR}
+          when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.refreshToken,jdbcType=VARCHAR}
         </foreach>
       </trim>
       <trim prefix="gmt_create = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=INTEGER} then #{item.gmtCreate,jdbcType=TIMESTAMP}
+          when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.gmtCreate,jdbcType=TIMESTAMP}
         </foreach>
       </trim>
       <trim prefix="gmt_modified = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=INTEGER} then #{item.gmtModified,jdbcType=TIMESTAMP}
+          when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.gmtModified,jdbcType=TIMESTAMP}
         </foreach>
       </trim>
       <trim prefix="`type` = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=INTEGER} then #{item.type,jdbcType=INTEGER}
+          when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.type,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="qq = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.qq,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="user_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.userId,jdbcType=INTEGER}
         </foreach>
       </trim>
     </trim>
-    where id in
+    where character_id in
     <foreach close=")" collection="list" item="item" open="(" separator=", ">
-      #{item.id,jdbcType=INTEGER}
+      #{item.characterId,jdbcType=INTEGER}
     </foreach>
   </update>
-  <insert id="batchInsert" keyColumn="id" keyProperty="id" parameterType="map" useGeneratedKeys="true">
+  <update id="updateBatchSelective" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update eve_account
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="character_name = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.characterName != null">
+            when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.characterName,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="corp_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.corpId != null">
+            when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.corpId,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="corp_name = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.corpName != null">
+            when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.corpName,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="alliance_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.allianceId != null">
+            when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.allianceId,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="alliance_name = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.allianceName != null">
+            when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.allianceName,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="refresh_token = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.refreshToken != null">
+            when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.refreshToken,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="gmt_create = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.gmtCreate != null">
+            when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.gmtCreate,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="gmt_modified = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.gmtModified != null">
+            when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.gmtModified,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="`type` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.type != null">
+            when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.type,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="qq = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.qq != null">
+            when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.qq,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="user_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.userId != null">
+            when character_id = #{item.characterId,jdbcType=INTEGER} then #{item.userId,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+    </trim>
+    where character_id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.characterId,jdbcType=INTEGER}
+    </foreach>
+  </update>
+  <insert id="batchInsert" parameterType="map">
     <!--@mbg.generated-->
     insert into eve_account
-    (user_id, character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, 
-      refresh_token, gmt_create, gmt_modified,
-      `type`)
+    (character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, refresh_token, 
+      gmt_create, gmt_modified, `type`, qq, user_id)
     values
     <foreach collection="list" item="item" separator=",">
-      (#{item.userId,jdbcType=INTEGER}, #{item.characterId,jdbcType=INTEGER}, #{item.characterName,jdbcType=VARCHAR}, 
-        #{item.corpId,jdbcType=INTEGER}, #{item.corpName,jdbcType=VARCHAR}, #{item.allianceId,jdbcType=INTEGER}, 
-        #{item.allianceName,jdbcType=VARCHAR}, #{item.refreshToken,jdbcType=VARCHAR}, #{item.gmtCreate,jdbcType=TIMESTAMP},
-        #{item.gmtModified,jdbcType=TIMESTAMP}, #{item.type,jdbcType=INTEGER})
+      (#{item.characterId,jdbcType=INTEGER}, #{item.characterName,jdbcType=VARCHAR}, #{item.corpId,jdbcType=INTEGER}, 
+        #{item.corpName,jdbcType=VARCHAR}, #{item.allianceId,jdbcType=INTEGER}, #{item.allianceName,jdbcType=VARCHAR}, 
+        #{item.refreshToken,jdbcType=VARCHAR}, #{item.gmtCreate,jdbcType=TIMESTAMP}, #{item.gmtModified,jdbcType=TIMESTAMP}, 
+        #{item.type,jdbcType=INTEGER}, #{item.qq,jdbcType=INTEGER}, #{item.userId,jdbcType=INTEGER}
+        )
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.domain.system.EveAccount" useGeneratedKeys="true">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.EveAccount">
     <!--@mbg.generated-->
     insert into eve_account
-    <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        id,
-      </if>
-      user_id,
-      character_id,
-      character_name,
-      corp_id,
-      corp_name,
-      alliance_id,
-      alliance_name,
-      refresh_token,
-      gmt_create,
-      gmt_modified,
-      `type`,
-    </trim>
+    (character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, refresh_token, 
+      gmt_create, gmt_modified, `type`, qq, user_id)
     values
-    <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        #{id,jdbcType=INTEGER},
-      </if>
-      #{userId,jdbcType=INTEGER},
-      #{characterId,jdbcType=INTEGER},
-      #{characterName,jdbcType=VARCHAR},
-      #{corpId,jdbcType=INTEGER},
-      #{corpName,jdbcType=VARCHAR},
-      #{allianceId,jdbcType=INTEGER},
-      #{allianceName,jdbcType=VARCHAR},
-      #{refreshToken,jdbcType=VARCHAR},
-      #{gmtCreate,jdbcType=TIMESTAMP},
-      #{gmtModified,jdbcType=TIMESTAMP},
-      #{type,jdbcType=INTEGER},
-    </trim>
+    (#{characterId,jdbcType=INTEGER}, #{characterName,jdbcType=VARCHAR}, #{corpId,jdbcType=INTEGER}, 
+      #{corpName,jdbcType=VARCHAR}, #{allianceId,jdbcType=INTEGER}, #{allianceName,jdbcType=VARCHAR}, 
+      #{refreshToken,jdbcType=VARCHAR}, #{gmtCreate,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP}, 
+      #{type,jdbcType=INTEGER}, #{qq,jdbcType=INTEGER}, #{userId,jdbcType=INTEGER})
     on duplicate key update 
-    <trim suffixOverrides=",">
-      <if test="id != null">
-        id = #{id,jdbcType=INTEGER},
-      </if>
-      user_id = #{userId,jdbcType=INTEGER},
-      character_id = #{characterId,jdbcType=INTEGER},
-      character_name = #{characterName,jdbcType=VARCHAR},
-      corp_id = #{corpId,jdbcType=INTEGER},
-      corp_name = #{corpName,jdbcType=VARCHAR},
-      alliance_id = #{allianceId,jdbcType=INTEGER},
-      alliance_name = #{allianceName,jdbcType=VARCHAR},
-      refresh_token = #{refreshToken,jdbcType=VARCHAR},
-      gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
-      gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
-      `type` = #{type,jdbcType=INTEGER},
-    </trim>
+    character_id = #{characterId,jdbcType=INTEGER}, 
+    character_name = #{characterName,jdbcType=VARCHAR}, 
+    corp_id = #{corpId,jdbcType=INTEGER}, 
+    corp_name = #{corpName,jdbcType=VARCHAR}, 
+    alliance_id = #{allianceId,jdbcType=INTEGER}, 
+    alliance_name = #{allianceName,jdbcType=VARCHAR}, 
+    refresh_token = #{refreshToken,jdbcType=VARCHAR}, 
+    gmt_create = #{gmtCreate,jdbcType=TIMESTAMP}, 
+    gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}, 
+    `type` = #{type,jdbcType=INTEGER}, 
+    qq = #{qq,jdbcType=INTEGER}, 
+    user_id = #{userId,jdbcType=INTEGER}
   </insert>
-  <insert id="insertOrUpdateSelective" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.domain.system.EveAccount" useGeneratedKeys="true">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.EveAccount">
     <!--@mbg.generated-->
     insert into eve_account
     <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        id,
-      </if>
-      <if test="userId != null">
-        user_id,
-      </if>
       <if test="characterId != null">
         character_id,
       </if>
@@ -196,15 +246,15 @@
       <if test="type != null">
         `type`,
       </if>
+      <if test="qq != null">
+        qq,
+      </if>
+      <if test="userId != null">
+        user_id,
+      </if>
     </trim>
     values
     <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        #{id,jdbcType=INTEGER},
-      </if>
-      <if test="userId != null">
-        #{userId,jdbcType=INTEGER},
-      </if>
       <if test="characterId != null">
         #{characterId,jdbcType=INTEGER},
       </if>
@@ -235,15 +285,15 @@
       <if test="type != null">
         #{type,jdbcType=INTEGER},
       </if>
+      <if test="qq != null">
+        #{qq,jdbcType=INTEGER},
+      </if>
+      <if test="userId != null">
+        #{userId,jdbcType=INTEGER},
+      </if>
     </trim>
     on duplicate key update 
     <trim suffixOverrides=",">
-      <if test="id != null">
-        id = #{id,jdbcType=INTEGER},
-      </if>
-      <if test="userId != null">
-        user_id = #{userId,jdbcType=INTEGER},
-      </if>
       <if test="characterId != null">
         character_id = #{characterId,jdbcType=INTEGER},
       </if>
@@ -273,6 +323,12 @@
       </if>
       <if test="type != null">
         `type` = #{type,jdbcType=INTEGER},
+      </if>
+      <if test="qq != null">
+        qq = #{qq,jdbcType=INTEGER},
+      </if>
+      <if test="userId != null">
+        user_id = #{userId,jdbcType=INTEGER},
       </if>
     </trim>
   </insert>

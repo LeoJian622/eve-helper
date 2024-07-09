@@ -5,9 +5,10 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
 import java.io.Serializable;
 import java.util.Date;
-import lombok.Data;
 
 /**
  * 游戏角色表
@@ -16,7 +17,6 @@ import lombok.Data;
 @Data
 @TableName(value = "eve_account")
 public class EveAccount implements Serializable {
-    public static final String COL_ID = "id";
     public static final String COL_USER_ID = "user_id";
     public static final String COL_CHARACTER_ID = "character_id";
     public static final String COL_CHARACTER_NAME = "character_name";
@@ -30,21 +30,10 @@ public class EveAccount implements Serializable {
     public static final String COL_GMT_CREATE = "gmt_create";
     public static final String COL_GMT_MODIFIED = "gmt_modified";
     public static final String COL_TYPE = "type";
-    @TableId(value = "id", type = IdType.AUTO)
-    @Schema(description = "")
-    private Integer id;
-
-    /**
-     * 用户ID
-     */
-    @TableField(value = "user_id")
-    @Schema(description = "用户ID")
-    private Integer userId;
-
     /**
      * 角色ID
      */
-    @TableField(value = "character_id")
+    @TableId(value = "character_id", type = IdType.AUTO)
     @Schema(description = "角色ID")
     private Integer characterId;
 
@@ -56,17 +45,17 @@ public class EveAccount implements Serializable {
     private String characterName;
 
     /**
-     * 公司ID
+     * 军团（公司）ID
      */
     @TableField(value = "corp_id")
-    @Schema(description = "公司ID")
+    @Schema(description = "军团（公司）ID")
     private Integer corpId;
 
     /**
-     * 公司名称
+     * 军团（公司）名称
      */
     @TableField(value = "corp_name")
-    @Schema(description = "公司名称")
+    @Schema(description = "军团（公司）名称")
     private String corpName;
 
     /**
@@ -111,6 +100,13 @@ public class EveAccount implements Serializable {
     @TableField(value = "qq")
     @Schema(description = "QQ号")
     private Integer qq;
+
+    /**
+     * 用户ID
+     */
+    @TableField(value = "user_id")
+    @Schema(description = "用户ID")
+    private Integer userId;
 
     private static final long serialVersionUID = 1L;
 }

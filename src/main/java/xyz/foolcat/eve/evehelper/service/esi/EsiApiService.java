@@ -144,7 +144,7 @@ public class EsiApiService {
 
         EveAccount eveAccount = new EveAccount();
         eveAccount.setUserId(userId);
-        eveAccount.setCharacterId(Integer.valueOf(characterId));
+        eveAccount.setCharacterId(characterId);
         eveAccount.setCharacterName(characterName);
         eveAccount.setCorpId(characterPublicInfoResponse.getCorporationId());
         eveAccount.setCorpName(universeNameMap.get(characterPublicInfoResponse.getCorporationId()));
