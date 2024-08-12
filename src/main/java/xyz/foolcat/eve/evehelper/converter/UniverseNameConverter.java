@@ -2,7 +2,7 @@ package xyz.foolcat.eve.evehelper.converter;
 
 import org.mapstruct.Mapper;
 import xyz.foolcat.eve.evehelper.domain.system.UniverseName;
-import xyz.foolcat.eve.evehelper.dto.esi.UniverseNameResponeDTO;
+import xyz.foolcat.eve.evehelper.esi.model.Id2NameResponse;
 
 /**
  * @author Leojan
@@ -12,9 +12,9 @@ import xyz.foolcat.eve.evehelper.dto.esi.UniverseNameResponeDTO;
 public interface UniverseNameConverter {
 
     /**
-     * universeNameResponeDTO 转换为 UniverseName
-     * @param universeNameResponeDTO
-     * @return
+     * Id2NameResponse 转换为 UniverseName
+     * @param id2NameResponse ESI 返回的ID名称对象
+     * @return UniverseName
      */
-    UniverseName universeNameResponeDTO2UniverseName(UniverseNameResponeDTO universeNameResponeDTO);
+    UniverseName id2NameResponse2UniverseName(Id2NameResponse id2NameResponse);
 }

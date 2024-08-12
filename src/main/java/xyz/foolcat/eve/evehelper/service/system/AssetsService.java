@@ -3,7 +3,6 @@ package xyz.foolcat.eve.evehelper.service.system;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,13 +17,9 @@ import xyz.foolcat.eve.evehelper.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.vo.AssetsVO;
 
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Flow;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.SubmissionPublisher;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -54,79 +49,7 @@ public class AssetsService extends ServiceImpl<AssetsMapper, Assets> {
         return baseMapper.batchInsertOrUpdate(list);
     }
 
-    /**
-     * 与ESI资产数据进行同步并返回
-     * 新方法查看{@link xyz.foolcat.eve.evehelper.service.system.AssetsService#saveAndUpdateAsserts(Integer,Integer)}
-     *
-     * @param type
-     * @param cid
-     * @return
-     */
-    @Deprecated
-    public void saveAndUpdateAsserts(String type, String cid) {
-
-        lambdaUpdate().eq(Assets::getOwnerId, cid).remove();
-
-        List<Assets> assetsList = new ArrayList<>();
-
-        SubmissionPublisher<Integer> submissionPublisher = new SubmissionPublisher<>(new ForkJoinPool(4), 4);
-        Flow.Subscriber<Integer> subscriber = new Flow.Subscriber<>() {
-
-            private Flow.Subscription subscription;
-
-            @Override
-            public void onSubscribe(Flow.Subscription subscription) {
-                this.subscription = subscription;
-                log.info("向数据发布者请求一个数据");
-                this.subscription.request(1);
-            }
-
-            @SneakyThrows
-            @Override
-            public void onNext(Integer item) {
-                log.info("处理页数：" + item);
-                //请求数据
-                List<Assets> assetsPageList = esiApiService.getAssetsList(type, item, cid);
-                Long ownId = Long.valueOf(cid);
-                assetsPageList.forEach(assets -> {
-                    assets.setOwnerId(ownId);
-                });
-                assetsList.addAll(assetsPageList);
-                log.info("进行下一条处理");
-                this.subscription.request(1);
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                log.info("取消订阅");
-                this.subscription.cancel();
-            }
-
-            @Override
-            public void onComplete() {
-            }
-        };
-
-        submissionPublisher.subscribe(subscriber);
-
-        int i = 1;
-        do {
-            try {
-                log.info("发送消息" + i);
-                submissionPublisher.submit(i++);
-            } catch (Exception e) {
-                log.info("订阅者取消订阅");
-            }
-
-        } while (submissionPublisher.isSubscribed(subscriber));
-
-        submissionPublisher.close();
-
-        saveBatch(assetsList);
-
-    }
-
-    /**
+     /**
      * 获取资产列表
      *
      * @param cid
@@ -168,12 +91,12 @@ public class AssetsService extends ServiceImpl<AssetsMapper, Assets> {
         /*
          * 获取总页数
          */
-        Integer max = assetsApi.queryCharactersAssetsMaxPage(eveAccount.getCharacterId(), EsiClient.SERENITY, accessToken);
+        Integer maxPage = assetsApi.queryCharactersAssetsMaxPage(eveAccount.getCharacterId(), EsiClient.SERENITY, accessToken);
 
         /*
          * 从ESI获取资产列表
          */
-        List<Assets> assets = Stream.iterate(1, i -> i + 1).limit(max)
+        List<Assets> assets = Stream.iterate(1, i -> i + 1).limit(maxPage)
                 .map(page -> assetsApi.queryCharactersAssets(eveAccount.getCharacterId(), EsiClient.SERENITY, page, accessToken).collectList())
                 .sequential()
                 .collect(Collectors.toList())

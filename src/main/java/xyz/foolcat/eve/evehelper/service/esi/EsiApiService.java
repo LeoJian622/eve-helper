@@ -2,7 +2,6 @@ package xyz.foolcat.eve.evehelper.service.esi;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONArray;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
@@ -12,10 +11,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.common.constant.GlobalConstants;
 import xyz.foolcat.eve.evehelper.common.result.ResultCode;
-import xyz.foolcat.eve.evehelper.domain.system.*;
-import xyz.foolcat.eve.evehelper.dto.esi.IndustryJobDTO;
+import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
 import xyz.foolcat.eve.evehelper.esi.EsiClient;
-import xyz.foolcat.eve.evehelper.esi.EsiNormalClient;
 import xyz.foolcat.eve.evehelper.esi.api.CharacterApi;
 import xyz.foolcat.eve.evehelper.esi.api.UniverseApi;
 import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
@@ -25,8 +22,6 @@ import xyz.foolcat.eve.evehelper.esi.model.CharacterPublicInfoResponse;
 import xyz.foolcat.eve.evehelper.esi.model.Id2NameResponse;
 import xyz.foolcat.eve.evehelper.exception.EsiException;
 import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
-import xyz.foolcat.eve.evehelper.strategy.esi.EsiClientStrategyContext;
-import xyz.foolcat.eve.evehelper.util.UserUtil;
 
 import java.text.ParseException;
 import java.util.List;
@@ -45,10 +40,6 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class EsiApiService {
-
-    private final EsiNormalClient esiNormalClient;
-
-    private final EsiClientStrategyContext strategyContext;
 
     private final RedisTemplate redisTemplate;
 
@@ -152,88 +143,6 @@ public class EsiApiService {
         eveAccount.setAllianceName(universeNameMap.get(characterPublicInfoResponse.getAllianceId()));
         eveAccount.setRefreshToken(characterRefreshToken);
         eveAccountService.insertOrUpdate(eveAccount);
-    }
-
-    /**
-     * 读取生产作业线列表
-     *
-     * @param type
-     * @param cid
-     * @return
-     * @throws ParseException
-     */
-    @Deprecated
-    public List<IndustryJobDTO> getJobList(String type, String cid) throws ParseException {
-        String accessToken = getAccessToken(cid, UserUtil.getUserId());
-        return strategyContext.getResource(type).getJobList(cid, accessToken);
-    }
-
-    /**
-     * 读取资产列表
-     *
-     * @param type
-     * @param cid
-     * @return
-     * @throws ParseException
-     */
-    @Deprecated
-    public List<Assets> getAssetsList(String type, int page, String cid) throws ParseException {
-        String accessToken = getAccessToken(cid, UserUtil.getUserId());
-        return strategyContext.getResource(type).getAssetsList(cid, page, accessToken);
-    }
-
-    /**
-     * 获取钱包记录
-     *
-     * @param type
-     * @param page
-     * @param cid
-     * @return
-     */
-    @Deprecated
-    public List<WalletJournal> getWalletJournalList(String type, Integer page, String cid) throws ParseException {
-        String accessToken = getAccessToken(cid, UserUtil.getUserId());
-        return strategyContext.getResource(type).getWalletJournalList(cid, page, accessToken);
-    }
-
-    /**
-     * 物品自定义名称获取
-     *
-     * @param type
-     * @param cid
-     * @return
-     * @throws ParseException
-     */
-    @Deprecated
-    public JSONArray getAssetsNamesList(String type, List itemIds, String cid) throws ParseException {
-        String accessToken = getAccessToken(cid, UserUtil.getUserId());
-        return strategyContext.getResource(type).getAssetsNamesList(cid, itemIds, accessToken);
-    }
-
-    /**
-     * 读取蓝图列表
-     *
-     * @param type
-     * @param cid
-     * @return
-     * @throws ParseException
-     */
-    @Deprecated
-    public List<Blueprints> getBlueprintsList(String type, int page, String cid) throws ParseException {
-        String accessToken = getAccessToken(cid, UserUtil.getUserId());
-        return strategyContext.getResource(type).getBlueprintsList(cid, page, accessToken);
-    }
-
-    /**
-     * 获取市场订单
-     *
-     * @param regionId
-     * @param page
-     * @return
-     */
-    @Deprecated
-    public List<MarketOrder> readMarketOrder(String regionId, Integer page, Integer typeId) {
-        return esiNormalClient.getMarketOrder(regionId, page, typeId);
     }
 
 }

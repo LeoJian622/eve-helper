@@ -4,10 +4,11 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.esi.EsiNormalClient;
 import xyz.foolcat.eve.evehelper.converter.UniverseNameConverter;
 import xyz.foolcat.eve.evehelper.domain.system.UniverseName;
-import xyz.foolcat.eve.evehelper.dto.esi.UniverseNameResponeDTO;
+import xyz.foolcat.eve.evehelper.esi.EsiClient;
+import xyz.foolcat.eve.evehelper.esi.api.UniverseApi;
+import xyz.foolcat.eve.evehelper.esi.model.Id2NameResponse;
 import xyz.foolcat.eve.evehelper.mapper.system.UniverseNameMapper;
 
 import java.util.ArrayList;
@@ -20,9 +21,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UniverseNameService extends ServiceImpl<UniverseNameMapper, UniverseName> {
 
-    private final EsiNormalClient esiNormalClient;
-
     private final UniverseNameConverter universeNameConverter;
+    private final UniverseApi universeApi;
 
     public int updateBatch(List<UniverseName> list) {
         return baseMapper.updateBatch(list);
@@ -45,8 +45,9 @@ public class UniverseNameService extends ServiceImpl<UniverseNameMapper, Univers
 
         List<UniverseName> newUnivereName = new ArrayList<>();
         if (!noInItems.isEmpty()) {
-            List<UniverseNameResponeDTO> newItems = esiNormalClient.getUniverseName(noInItems);
-            newUnivereName = newItems.stream().map(universeNameConverter::universeNameResponeDTO2UniverseName).collect(Collectors.toList());
+            List<Id2NameResponse> nameResponses = universeApi.queryUniverseNames(noInItems, EsiClient.SERENITY).collectList().block();
+            assert nameResponses != null;
+            newUnivereName = nameResponses.stream().map(universeNameConverter::id2NameResponse2UniverseName).collect(Collectors.toList());
             saveBatch(newUnivereName);
 
         }

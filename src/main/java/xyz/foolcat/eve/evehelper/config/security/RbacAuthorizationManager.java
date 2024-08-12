@@ -36,7 +36,7 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
 
     final SysPermissionMapper sysPermissionMapper;
 
-    final RedisTemplate redisTemplate;
+    final RedisTemplate<String, Object> redisTemplate;
 
     final EveHelperSecurityConfig eveHelperSecurityConfig;
 
@@ -83,15 +83,15 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
          * 缓存取 [URL权限-角色集合] 规则数据
          * urlPermRolesRules = [{'key':'GET:/api/v1/users/*','value':['ADMIN','TEST']},...]
          */
-        Map<String, Object> urlPermRolesRules = redisTemplate.opsForHash().entries(GlobalConstants.URL_PERM_ROLES_KEY);
+        Map<Object, Object> urlPermRolesRules = redisTemplate.opsForHash().entries(GlobalConstants.URL_PERM_ROLES_KEY);
 
         //根据请求路径判断有访问权限的角色列表
         List<String> authorizedRoles = new ArrayList<>();
 
         boolean personSourceVery = true;
 
-        for (Map.Entry<String, Object> permRoles : urlPermRolesRules.entrySet()) {
-            String perm = permRoles.getKey();
+        for (Map.Entry<Object, Object> permRoles : urlPermRolesRules.entrySet()) {
+            String perm = String.valueOf(permRoles.getKey());
             if (pathMatcher.match(perm, restfulPath)) {
                 List<String> roles = Convert.toList(String.class, permRoles.getValue());
                 authorizedRoles.addAll(roles);

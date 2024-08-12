@@ -6,6 +6,8 @@ import lombok.Data;
 import xyz.foolcat.eve.evehelper.esi.model.sub.DogmaAttributes;
 import xyz.foolcat.eve.evehelper.esi.model.sub.DogmaEffects;
 
+import java.util.List;
+
 /**
  * 类型ID详情
  *
@@ -22,10 +24,10 @@ public class TypeInfoResponse {
     private String description;
 
     @JsonProperty("dogma_attributes")
-    private DogmaAttributes dogmaAttributes;
+    private List<DogmaAttributes> dogmaAttributes;
 
     @JsonProperty("dogma_effects")
-    private DogmaEffects dogmaEffects;
+    private List<DogmaEffects> dogmaEffects;
 
     @JsonProperty("graphic_id")
     private Integer graphicId;

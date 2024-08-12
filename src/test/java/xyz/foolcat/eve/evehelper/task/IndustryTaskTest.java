@@ -21,7 +21,13 @@ class IndustryTaskTest {
     }
 
     @Test
-    void noticeJobComplete() {
-        industryTask.noticeJobComplete();
+    void noticeJobComplete0() {
+        industryTask.noticeJobComplete0();
     }
+
+    @Test
+    void noticeJobComplete24() {
+        industryTask.noticeJobComplete24();
+    }
+
 }

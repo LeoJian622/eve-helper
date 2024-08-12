@@ -10,31 +10,31 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import xyz.foolcat.eve.evehelper.common.constant.GlobalConstants;
 
 import javax.annotation.Resource;
-
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayName("权限查询服务")
 class SysPermissionServiceTest {
 
     @Resource
     private SysPermissionService sysPermissionService;
+
     @Resource
-    private RedisTemplate redisTemplate;
+    private RedisTemplate<String, Object> redisTemplate;
+
 
     @Test
     void refreshPermRolesRules() {
         sysPermissionService.refreshPermRolesRules();
 
-        Map<String, Object> urlPermRolesRules = redisTemplate.opsForHash().entries(GlobalConstants.URL_PERM_ROLES_KEY);
-        for (Map.Entry<String, Object> permRoles : urlPermRolesRules.entrySet()){
+        Map<Object, Object> urlPermRolesRules = redisTemplate.opsForHash().entries(GlobalConstants.URL_PERM_ROLES_KEY);
+        for (Map.Entry<Object, Object> permRoles : urlPermRolesRules.entrySet()){
             List<String> roles = Convert.toList(String.class,permRoles.getValue());
+            System.out.println("roles = " + roles);
         }
 
     }

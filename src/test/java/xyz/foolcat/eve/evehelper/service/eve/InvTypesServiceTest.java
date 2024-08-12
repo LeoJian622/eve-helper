@@ -12,7 +12,7 @@ import xyz.foolcat.eve.evehelper.service.system.InvTypesService;
 
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayName("typeId 物品信息读取")
 class InvTypesServiceTest {
 
@@ -26,6 +26,35 @@ class InvTypesServiceTest {
 
     @Test
     void selectIdByTypeName() {
-        System.out.println(invTypesService.lambdaQuery().eq(InvTypes::getTypeName,"毒蜥级").one());
+        System.out.println(invTypesService.lambdaQuery().eq(InvTypes::getName,"毒蜥级").one());
+    }
+
+    @Test
+    void updateBatch() {
+    }
+
+    @Test
+    void updateBatchSelective() {
+    }
+
+    @Test
+    void batchInsert() {
+    }
+
+    @Test
+    void insertOrUpdate() {
+    }
+
+    @Test
+    void insertOrUpdateSelective() {
+    }
+
+    @Test
+    void getNameByTypeIds() {
+    }
+
+    @Test
+    void updateTypeByTypeId() {
+        invTypesService.updateTypeByTypeId(75993);
     }
 }

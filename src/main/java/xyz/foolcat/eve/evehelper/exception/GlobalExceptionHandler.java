@@ -2,7 +2,6 @@ package xyz.foolcat.eve.evehelper.exception;
 
 
 import cn.hutool.json.JSONObject;
-import com.dtflys.forest.exceptions.ForestNetworkException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.TypeMismatchException;
@@ -145,12 +144,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TypeMismatchException.class)
     public <T> Result<T> processException(TypeMismatchException e) {
         log.error(e.getMessage());
-        return Result.failed(e.getMessage());
-    }
-
-    @ResponseStatus(HttpStatus.UNAUTHORIZED)
-    @ExceptionHandler(ForestNetworkException.class)
-    public Result processException(ForestNetworkException e) {
         return Result.failed(e.getMessage());
     }
 

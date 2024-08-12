@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import xyz.foolcat.eve.evehelper.domain.system.InvTypes;
+import xyz.foolcat.eve.evehelper.vo.InvTypesVO;
 
 import java.util.List;
 
@@ -19,5 +20,5 @@ public interface InvTypesMapper extends BaseMapper<InvTypes> {
 
     int insertOrUpdateSelective(InvTypes record);
 
-    List<InvTypes> selcetByMarketGroupId(@Param("marketGroupID") Long marketGroupID);
+    InvTypesVO selcetByMarketGroupId(@Param("marketGroupID") Long marketGroupID);
 }

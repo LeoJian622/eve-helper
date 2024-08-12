@@ -1,6 +1,8 @@
 package xyz.foolcat.eve.evehelper.converter.esi;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Mappings;
 import xyz.foolcat.eve.evehelper.domain.system.Assets;
 import xyz.foolcat.eve.evehelper.esi.model.AssetResponse;
 
@@ -17,6 +19,9 @@ public interface AssetsConverter {
      * @param assetResponse ESI返回的资产对象
      * @return Structure
      */
+    @Mappings({
+            @Mapping(target = "ownerId",ignore = true)
+    })
     Assets toAssets(AssetResponse assetResponse);
 
 }

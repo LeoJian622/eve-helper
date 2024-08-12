@@ -4,7 +4,6 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.domain.eve.Invuniquenames;
@@ -20,11 +19,13 @@ import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.service.system.StructureService;
 import xyz.foolcat.eve.evehelper.vo.ExtractionVO;
 
+import javax.validation.constraints.NotNull;
 import java.text.ParseException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -106,7 +107,7 @@ public class MiningTask {
         Integer maxPage = industryApi.queryCorporationMiningExtractionsMaxPage(corporationId, EsiClient.SERENITY, accessToken);
 
         /**
-         * 两天后的时间
+         * day天后的时间
          */
         OffsetDateTime startTime = OffsetDateTime.now();
         OffsetDateTime after1Day = startTime.plusDays(day);
@@ -127,7 +128,8 @@ public class MiningTask {
                     extractionVO.setStructureName(structure.getName());
                     extractionVO.setMoonName(invuniquenames.getItemname());
                     return extractionVO;
-                }).collect(Collectors.toList());
+                }).sorted(Comparator.comparing(ExtractionVO::getNaturalDecayTime))
+                .collect(Collectors.toList());
         return extractionVOS.stream().map(extractionVO -> extractionVO.getMoonName() + "," + extractionVO.getStructureName() + "将在" + extractionVO.getNaturalDecayTime().atZoneSameInstant(ZoneOffset.ofHours(8)).format(DateTimeFormatter.ofPattern("MM-dd HH:mm")) + "可以开采")
                 .collect(Collectors.joining("\n"));
     }

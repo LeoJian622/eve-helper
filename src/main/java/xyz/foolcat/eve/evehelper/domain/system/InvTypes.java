@@ -5,9 +5,8 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-
 import java.io.Serializable;
+import lombok.Data;
 
 /**
  * 物品表
@@ -16,7 +15,29 @@ import java.io.Serializable;
 @Data
 @TableName(value = "inv_types")
 public class InvTypes implements Serializable {
-    @TableId(value = "type_id")
+    public static final String COL_TYPE_ID = "type_id";
+    public static final String COL_GROUP_ID = "group_id";
+    public static final String COL_TYPE_NAME = "type_name";
+    public static final String COL_DESCRIPTION = "description";
+    public static final String COL_MASS = "mass";
+    public static final String COL_VOLUME = "volume";
+    public static final String COL_PACKAGED_VOLUME = "packaged_volume";
+    public static final String COL_CAPACITY = "capacity";
+    public static final String COL_PORTION_SIZE = "portion_size";
+    public static final String COL_FACTION_ID = "faction_id";
+    public static final String COL_RACE_ID = "race_id";
+    public static final String COL_BASE_PRICE = "base_price";
+    public static final String COL_PUBLISHED = "published";
+    public static final String COL_MARKET_GROUP_ID = "market_group_id";
+    public static final String COL_GRAPHIC_ID = "graphic_id";
+    public static final String COL_RADIUS = "radius";
+    public static final String COL_ICON_ID = "icon_id";
+    public static final String COL_SOUND_ID = "sound_id";
+    public static final String COL_SOF_FACTION_NAME = "sof_faction_name";
+    public static final String COL_SOF_MATERIAL_SET_ID = "sof_material_set_id";
+    public static final String COL_META_GROUP_ID = "meta_group_id";
+    public static final String COL_VARIATIONPARENT_TYPE_ID = "variationparent_type_id";
+    @TableId(value = "type_id", type = IdType.AUTO)
     @Schema(description = "")
     private Integer typeId;
 
@@ -24,9 +45,9 @@ public class InvTypes implements Serializable {
     @Schema(description = "")
     private Integer groupId;
 
-    @TableField(value = "type_name")
+    @TableField(value = "`name`")
     @Schema(description = "")
-    private String typeName;
+    private String name;
 
     @TableField(value = "description")
     @Schema(description = "")
@@ -105,48 +126,4 @@ public class InvTypes implements Serializable {
     private Integer variationparentTypeId;
 
     private static final long serialVersionUID = 1L;
-
-    public static final String COL_TYPE_ID = "type_id";
-
-    public static final String COL_GROUP_ID = "group_id";
-
-    public static final String COL_TYPE_NAME = "type_name";
-
-    public static final String COL_DESCRIPTION = "description";
-
-    public static final String COL_MASS = "mass";
-
-    public static final String COL_VOLUME = "volume";
-
-    public static final String COL_PACKAGED_VOLUME = "packaged_volume";
-
-    public static final String COL_CAPACITY = "capacity";
-
-    public static final String COL_PORTION_SIZE = "portion_size";
-
-    public static final String COL_FACTION_ID = "faction_id";
-
-    public static final String COL_RACE_ID = "race_id";
-
-    public static final String COL_BASE_PRICE = "base_price";
-
-    public static final String COL_PUBLISHED = "published";
-
-    public static final String COL_MARKET_GROUP_ID = "market_group_id";
-
-    public static final String COL_GRAPHIC_ID = "graphic_id";
-
-    public static final String COL_RADIUS = "radius";
-
-    public static final String COL_ICON_ID = "icon_id";
-
-    public static final String COL_SOUND_ID = "sound_id";
-
-    public static final String COL_SOF_FACTION_NAME = "sof_faction_name";
-
-    public static final String COL_SOF_MATERIAL_SET_ID = "sof_material_set_id";
-
-    public static final String COL_META_GROUP_ID = "meta_group_id";
-
-    public static final String COL_VARIATIONPARENT_TYPE_ID = "variationparent_type_id";
 }

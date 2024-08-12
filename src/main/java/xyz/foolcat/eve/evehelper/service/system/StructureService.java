@@ -76,12 +76,12 @@ public class StructureService extends ServiceImpl<StructureMapper, Structure> {
         /*
           获取总页数
          */
-        Integer max = corporationApi.queryCorporationStructuresMaxPage(eveAccount.getCorpId(), EsiClient.SERENITY, accessToken);
+        Integer maxPage = corporationApi.queryCorporationStructuresMaxPage(eveAccount.getCorpId(), EsiClient.SERENITY, accessToken);
 
         /*
           从ESI获取建筑列表
          */
-        List<Structure> structures = Stream.iterate(1, i -> i + 1).limit(max)
+        List<Structure> structures = Stream.iterate(1, i -> i + 1).limit(maxPage)
                 .map(i -> corporationApi.queryCorporationStructures(eveAccount.getCorpId(), EsiClient.SERENITY, "zh", i, accessToken)
                         .collectList().block())
                 .sequential().filter(Objects::nonNull)

@@ -80,9 +80,9 @@ public class IndustryJobService extends ServiceImpl<IndustryJobMapper, IndustryJ
             /*
              * 获取公司生产线
              */
-            Integer max = industryApi.queryCorporationIndustryJobsMaxPage(eveAccount.getCorpId(), EsiClient.SERENITY, includeCompleted, accessToken);
+            Integer maxPage = industryApi.queryCorporationIndustryJobsMaxPage(eveAccount.getCorpId(), EsiClient.SERENITY, includeCompleted, accessToken);
 
-            List<IndustryJob> industryJobs = Stream.iterate(1, i -> i + 1).limit(max).map(i -> industryApi.queryCorporationIndustryJobs(eveAccount.getCorpId(), EsiClient.SERENITY, true, accessToken).collectList().block())
+            List<IndustryJob> industryJobs = Stream.iterate(1, i -> i + 1).limit(maxPage).map(i -> industryApi.queryCorporationIndustryJobs(eveAccount.getCorpId(), EsiClient.SERENITY, true, accessToken).collectList().block())
                     .sequential().filter(Objects::nonNull)
                     .flatMap(Collection::stream)
                     .map(inJob -> industryJobConverter.toIndustryJob(inJob, eveAccount.getCorpId()))
@@ -102,7 +102,7 @@ public class IndustryJobService extends ServiceImpl<IndustryJobMapper, IndustryJ
 
     /**
      * 设置蓝图名称并保存
-     * @param industryJobs
+     * @param industryJobs 生产线对象列表
      */
     private void batchSaveAndSetBlueTypeName(List<IndustryJob> industryJobs) {
         Map<Integer, String> nameBlueprintByTypeIds = invTypesService.getNameByTypeIds(industryJobs.stream().map(IndustryJob::getBlueprintTypeId).collect(Collectors.toList()));

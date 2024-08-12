@@ -16,12 +16,13 @@ import xyz.foolcat.eve.evehelper.esi.model.send.NewLabel;
 import xyz.foolcat.eve.evehelper.esi.model.send.NewMail;
 import xyz.foolcat.eve.evehelper.esi.model.sub.Recipient;
 import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.util.AuthorizeUtil;
 
 import java.util.List;
 import java.util.Objects;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayName("ESI Mail Api Test")
 class MailApiTest {
 
@@ -53,12 +54,15 @@ class MailApiTest {
     @Test
     void addCharacterMail() {
         NewMail newMail = new NewMail();
-        newMail.setSubject("test");
-        newMail.setBody("新邮件测试");
+        newMail.setSubject("PVE调研，请务必填写，会影响改版后的可刷异常数量");
+        newMail.setBody("【腾讯文档】当前版本静寂谷、对舞、特布特、血特、新八的PVE异常调研\n" +
+                "https://docs.qq.com/form/page/DV3BpYUdRZXVmdXlZ\n" +
+                "\n" +
+                "请大家填写一下这个PVE调研表，该数据结果会影响改版后的联盟领地内的PVE插件。");
 
         Recipient recipient = new Recipient();
-        recipient.setRecipientId(2112818290);
-        recipient.setRecipientType("character");
+        recipient.setRecipientId(656880659);
+        recipient.setRecipientType("corporation");
         newMail.setRecipients(List.of(recipient));
 
         Integer integer = mailApi.addCharacterMail(2112818290, "serenity", newMail, at).block();

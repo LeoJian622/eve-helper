@@ -18,9 +18,4 @@ class WalletJournalServiceTest {
     @Resource
     WalletJournalService walletJournalService;
 
-    @Test
-    void saveAndUpdateWalletJournal() {
-        walletJournalService.saveAndUpdateWalletJournal("crop","656880659");
-//        walletJournalService.saveAndUpdateWalletJournal("char","2112818290");
-    }
 }
