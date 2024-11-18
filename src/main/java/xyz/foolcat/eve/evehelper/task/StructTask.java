@@ -36,6 +36,9 @@ public class StructTask {
 
     private final WebSocket webSocket;
 
+    /**
+     * 势力铁壁typeId
+     */
     private final Set<Integer> ignoreTypeIds = new HashSet<>() {{
         add(47513);
         add(47514);
