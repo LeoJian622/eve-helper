@@ -10,6 +10,10 @@ import xyz.foolcat.eve.evehelper.domain.system.WalletJournal;
 
 @Mapper
 public interface WalletJournalMapper extends BaseMapper<WalletJournal> {
+    int updateBatch(List<WalletJournal> list);
+
+    int updateBatchSelective(List<WalletJournal> list);
+
     int batchInsert(@Param("list") List<WalletJournal> list);
 
     int insertOrUpdate(WalletJournal record);

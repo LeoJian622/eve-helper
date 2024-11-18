@@ -28,5 +28,13 @@ public class WalletJournalService extends ServiceImpl<WalletJournalMapper, Walle
         return baseMapper.insertOrUpdateSelective(record);
     }
 
+    public int updateBatch(List<WalletJournal> list) {
+        return baseMapper.updateBatch(list);
+    }
+
+    public int updateBatchSelective(List<WalletJournal> list) {
+        return baseMapper.updateBatchSelective(list);
+    }
 }
+
 

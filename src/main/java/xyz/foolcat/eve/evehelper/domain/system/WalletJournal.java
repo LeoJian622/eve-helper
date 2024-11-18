@@ -13,7 +13,21 @@ import lombok.Data;
 @Data
 @TableName(value = "wallet_journal")
 public class WalletJournal implements Serializable {
-    @TableField(value = "id")
+    public static final String COL_ID = "id";
+    public static final String COL_AMOUNT = "amount";
+    public static final String COL_BALANCE = "balance";
+    public static final String COL_CONTEXT_ID = "context_id";
+    public static final String COL_CONTEXT_ID_TYPE = "context_id_type";
+    public static final String COL_DATE = "date";
+    public static final String COL_DESCRIPTION = "description";
+    public static final String COL_FIRST_PARTY_ID = "first_party_id";
+    public static final String COL_REASON = "reason";
+    public static final String COL_REF_TYPE = "ref_type";
+    public static final String COL_SECOND_PARTY_ID = "second_party_id";
+    public static final String COL_TAX = "tax";
+    public static final String COL_TAX_RECEIVER_ID = "tax_receiver_id";
+    public static final String COL_OWNER_ID = "owner_id";
+    @TableId(value = "id", type = IdType.AUTO)
     @Schema(description = "")
     private Long id;
 
@@ -65,37 +79,13 @@ public class WalletJournal implements Serializable {
     @Schema(description = "")
     private Integer taxReceiverId;
 
+    @TableField(value = "`character`")
+    @Schema(description = "")
+    private String character;
+
     @TableField(value = "owner_id")
     @Schema(description = "")
     private Long ownerId;
 
     private static final long serialVersionUID = 1L;
-
-    public static final String COL_ID = "id";
-
-    public static final String COL_AMOUNT = "amount";
-
-    public static final String COL_BALANCE = "balance";
-
-    public static final String COL_CONTEXT_ID = "context_id";
-
-    public static final String COL_CONTEXT_ID_TYPE = "context_id_type";
-
-    public static final String COL_DATE = "date";
-
-    public static final String COL_DESCRIPTION = "description";
-
-    public static final String COL_FIRST_PARTY_ID = "first_party_id";
-
-    public static final String COL_REASON = "reason";
-
-    public static final String COL_REF_TYPE = "ref_type";
-
-    public static final String COL_SECOND_PARTY_ID = "second_party_id";
-
-    public static final String COL_TAX = "tax";
-
-    public static final String COL_TAX_RECEIVER_ID = "tax_receiver_id";
-
-    public static final String COL_OWNER_ID = "owner_id";
 }
