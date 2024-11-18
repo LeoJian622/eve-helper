@@ -6,12 +6,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import xyz.foolcat.eve.evehelper.dto.system.TaxReturnDTO;
 
 import javax.annotation.Resource;
+import java.text.ParseException;
+import java.util.List;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
-@WithUserDetails("user1")
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@WithUserDetails("admin")
 @DisplayName("人物钱包交易记录")
 class WalletJournalServiceTest {
 
@@ -19,8 +22,13 @@ class WalletJournalServiceTest {
     WalletJournalService walletJournalService;
 
     @Test
-    void saveAndUpdateWalletJournal() {
-        walletJournalService.saveAndUpdateWalletJournal("crop","656880659");
-//        walletJournalService.saveAndUpdateWalletJournal("char","2112818290");
+    void batchInsertOrUpdateFromEsi() throws ParseException {
+        walletJournalService.batchInsertOrUpdateFromEsi(2112818290);
+    }
+
+    @Test
+    void countBoundsReturn() throws ParseException {
+        List<TaxReturnDTO> list = walletJournalService.countBoundsReturn("0.15", "0.99", "202411");
+        System.out.println("list = " + list);
     }
 }

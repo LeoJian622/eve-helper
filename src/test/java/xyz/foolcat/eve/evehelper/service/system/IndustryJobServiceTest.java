@@ -24,7 +24,7 @@ class IndustryJobServiceTest {
 
     @Test
     void batchInsertOrUpdateFromEsi() throws ParseException {
-        industryJobService.batchInsertOrUpdateFromEsi(98061457, UserUtil.getUserId(),true,true);
-        industryJobService.batchInsertOrUpdateFromEsi(98061457, UserUtil.getUserId(),true,false);
+        industryJobService.batchInsertOrUpdateFromEsi(98061457,true,true);
+        industryJobService.batchInsertOrUpdateFromEsi(98061457,true,false);
     }
 }

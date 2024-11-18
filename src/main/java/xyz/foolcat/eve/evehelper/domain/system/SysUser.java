@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import xyz.foolcat.eve.evehelper.common.base.BaseEntity;
@@ -17,6 +18,7 @@ import java.util.List;
  * 用户信息表
  * @author Leojan
  */
+@EqualsAndHashCode(callSuper = false)
 @Schema(description = "用户信息表")
 @Data
 @TableName(value = "sys_user")

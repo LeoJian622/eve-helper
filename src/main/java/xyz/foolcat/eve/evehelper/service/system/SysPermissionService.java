@@ -11,18 +11,20 @@ import xyz.foolcat.eve.evehelper.common.constant.GlobalConstants;
 import xyz.foolcat.eve.evehelper.domain.system.SysPermission;
 import xyz.foolcat.eve.evehelper.mapper.system.SysPermissionMapper;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * @author Leojan
+ */
 @Service
 @RequiredArgsConstructor
 @Transactional(rollbackFor = RuntimeException.class)
 public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPermission> {
 
-    private final RedisTemplate redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
 
     public int updateBatch(List<SysPermission> list) {
         return baseMapper.updateBatch(list);
@@ -36,7 +38,7 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
         return baseMapper.batchInsert(list);
     }
 
-    public boolean refreshPermRolesRules() {
+    public void refreshPermRolesRules() {
         redisTemplate.delete(List.of(GlobalConstants.URL_PERM_ROLES_KEY, GlobalConstants.BTN_PERM_ROLES_KEY));
         List<SysPermission> permissions = this.listPermRoles();
         if (CollectionUtil.isNotEmpty(permissions)) {
@@ -74,7 +76,6 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
             }
 
         }
-        return true;
     }
 
     private List<SysPermission> listPermRoles() {

@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import xyz.foolcat.eve.evehelper.common.result.Result;
 import xyz.foolcat.eve.evehelper.service.system.MiningDetailService;
-import xyz.foolcat.eve.evehelper.util.UserUtil;
 
 import java.text.ParseException;
 
@@ -31,13 +30,13 @@ public class MiningController {
     private final MiningDetailService miningDetailService;
 
     @Parameters({
-            @Parameter(name = "corporationId", description = "军团ID" ,required = true),
+            @Parameter(name = "characterId", description = "人物ID" ,required = true),
             @Parameter(name = "observerId", description = "月矿堡ID" ,required = true)
     })
     @Operation(summary = "月矿采掘-开采明细读取")
-    @GetMapping("/{corporationId}/{observerId}")
-    public Result readMinigDetail(@PathVariable Integer corporationId, @PathVariable Long observerId) throws ParseException {
-        miningDetailService.saveObserverMining(corporationId, observerId, UserUtil.getUserId());
+    @GetMapping("/{characterId}/{observerId}")
+    public Result updateMiningDetailByObserverId(@PathVariable Integer characterId, @PathVariable Long observerId) throws ParseException {
+        miningDetailService.saveObserverMining(characterId, observerId);
         return Result.success();
     }
 

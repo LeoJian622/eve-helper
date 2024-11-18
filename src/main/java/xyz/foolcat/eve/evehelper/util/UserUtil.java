@@ -15,6 +15,9 @@ public class UserUtil {
 
     public static Integer getUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return -1;
+        }
         Object principal = authentication.getPrincipal();
         if (principal instanceof SysUser) {
             return ((SysUser) principal).getId();

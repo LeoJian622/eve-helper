@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.apache.http.HttpHeaders;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -13,8 +13,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.common.result.ResultCode;
 import xyz.foolcat.eve.evehelper.esi.model.ErrorResponse;
-import xyz.foolcat.eve.evehelper.esi.model.send.Fitting;
 import xyz.foolcat.eve.evehelper.esi.model.FittingResponse;
+import xyz.foolcat.eve.evehelper.esi.model.send.Fitting;
 import xyz.foolcat.eve.evehelper.exception.EsiException;
 
 /**

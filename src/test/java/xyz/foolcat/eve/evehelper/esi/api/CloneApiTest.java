@@ -36,7 +36,7 @@ class CloneApiTest {
 
     @BeforeEach
     void initAccessToken() {
-        EveAccount entity = eveAccountService.lambdaQuery().eq(EveAccount::getId, 3).one();
+        EveAccount entity = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, 2112818290).one();
         Mono<AuthTokenResponse> authTokenResponseMono = authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, entity.getRefreshToken());
         at = at + Objects.requireNonNull(authTokenResponseMono.block()).getAccessToken();
         System.out.println("at = " + at);

@@ -21,6 +21,9 @@ public class EsiClient {
 
     public static final String SERENITY = "serenity";
 
+    public static final String ZH_CN = "zh";
+    public static final String EN_US = "en";
+
     @Bean
      WebClient authClient() {
         return WebClient.builder().clone().baseUrl(esiClientProperties.getAuthUrl())

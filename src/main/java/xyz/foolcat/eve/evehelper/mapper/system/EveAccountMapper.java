@@ -12,6 +12,8 @@ import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
 public interface EveAccountMapper extends BaseMapper<EveAccount> {
     int updateBatch(List<EveAccount> list);
 
+    int updateBatchSelective(List<EveAccount> list);
+
     int batchInsert(@Param("list") List<EveAccount> list);
 
     int insertOrUpdate(EveAccount record);

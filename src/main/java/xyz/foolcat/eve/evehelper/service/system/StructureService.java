@@ -11,6 +11,8 @@ import xyz.foolcat.eve.evehelper.esi.EsiClient;
 import xyz.foolcat.eve.evehelper.esi.api.CorporationApi;
 import xyz.foolcat.eve.evehelper.mapper.system.StructureMapper;
 import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
+import xyz.foolcat.eve.evehelper.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.util.UserUtil;
 
 import java.text.ParseException;
 import java.util.Collection;
@@ -24,6 +26,7 @@ import java.util.stream.Stream;
  * @author Leojan
  */
 @Service
+@Transactional(rollbackFor = RuntimeException.class)
 @RequiredArgsConstructor
 public class StructureService extends ServiceImpl<StructureMapper, Structure> {
 
@@ -32,8 +35,6 @@ public class StructureService extends ServiceImpl<StructureMapper, Structure> {
     private final EsiApiService esiApiService;
 
     private final CorporationApi corporationApi;
-
-    private final EveAccountService eveAccountService;
 
     public int updateBatch(List<Structure> list) {
         return baseMapper.updateBatch(list);
@@ -64,24 +65,23 @@ public class StructureService extends ServiceImpl<StructureMapper, Structure> {
      *
      * @param cId 角色ID
      */
-    @Transactional
-    public void batchInsertOrUpdateFromEsi(Integer cId, Integer userId) throws ParseException {
+    public void batchInsertOrUpdateFromEsi(Integer cId) throws ParseException {
 
         /*
           获取游戏人物信息及授权
          */
-        EveAccount eveAccount = eveAccountService.getAccountOne(cId, userId);
-        String accessToken = esiApiService.getAccessToken(cId, userId);
+        EveAccount eveAccount = AuthorizeUtil.authorize(cId);
+        String accessToken = esiApiService.getAccessToken(cId, eveAccount.getUserId());
 
         /*
           获取总页数
          */
-        Integer max = corporationApi.queryCorporationStructuresMaxPage(eveAccount.getCorpId(), EsiClient.SERENITY, accessToken);
+        Integer maxPage = corporationApi.queryCorporationStructuresMaxPage(eveAccount.getCorpId(), EsiClient.SERENITY, accessToken);
 
         /*
           从ESI获取建筑列表
          */
-        List<Structure> structures = Stream.iterate(1, i -> i + 1).limit(max)
+        List<Structure> structures = Stream.iterate(1, i -> i + 1).limit(maxPage)
                 .map(i -> corporationApi.queryCorporationStructures(eveAccount.getCorpId(), EsiClient.SERENITY, "zh", i, accessToken)
                         .collectList().block())
                 .sequential().filter(Objects::nonNull)
@@ -109,6 +109,7 @@ public class StructureService extends ServiceImpl<StructureMapper, Structure> {
      * @return 建筑列表
      */
     public List<Structure> selectFuelExpiresList(Integer hour, Integer corporationId) {
+        Integer userId = UserUtil.getUserId();
         return baseMapper.selectFuelExpiresList(hour, corporationId);
     }
 }

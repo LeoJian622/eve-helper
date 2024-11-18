@@ -8,7 +8,6 @@ import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -46,21 +45,17 @@ public class SecurityConfig {
     final SysUserService sysUserService;
 
     @PostConstruct
-    void setStrategyName(){
+    void setStrategyName() {
         SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
     }
 
     @Bean
-    WebSecurityCustomizer webSecurityCustomizer() {
-        return web -> web.ignoring().antMatchers("/swagger-ui.html"
-                , "/swagger-ui/**"
-                , "/v3/api-docs/**"
-        ,"/websocket/onebot/**");
-    }
-
-    @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        httpSecurity.authorizeHttpRequests().antMatchers("/swagger-ui.html"
+                        , "/swagger-ui/**"
+                        , "/v3/api-docs/**"
+                        , "/websocket/onebot/**").permitAll()
+                .and().sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest()
                         .access(authorizationManager))

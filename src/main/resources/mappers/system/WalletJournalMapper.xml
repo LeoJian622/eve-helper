@@ -4,7 +4,7 @@
   <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.WalletJournal">
     <!--@mbg.generated-->
     <!--@Table wallet_journal-->
-    <result column="id" jdbcType="BIGINT" property="id" />
+    <id column="id" jdbcType="BIGINT" property="id" />
     <result column="amount" jdbcType="DOUBLE" property="amount" />
     <result column="balance" jdbcType="DOUBLE" property="balance" />
     <result column="context_id" jdbcType="BIGINT" property="contextId" />
@@ -17,39 +17,228 @@
     <result column="second_party_id" jdbcType="INTEGER" property="secondPartyId" />
     <result column="tax" jdbcType="DOUBLE" property="tax" />
     <result column="tax_receiver_id" jdbcType="INTEGER" property="taxReceiverId" />
+    <result column="character" jdbcType="VARCHAR" property="character" />
     <result column="owner_id" jdbcType="BIGINT" property="ownerId" />
   </resultMap>
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
     id, amount, balance, context_id, context_id_type, `date`, description, first_party_id, 
-    reason, ref_type, second_party_id, tax, tax_receiver_id, owner_id
+    reason, ref_type, second_party_id, tax, tax_receiver_id, `character`, owner_id
   </sql>
+  <update id="updateBatch" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update wallet_journal
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="amount = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.amount,jdbcType=DOUBLE}
+        </foreach>
+      </trim>
+      <trim prefix="balance = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.balance,jdbcType=DOUBLE}
+        </foreach>
+      </trim>
+      <trim prefix="context_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.contextId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+      <trim prefix="context_id_type = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.contextIdType,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="`date` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.date,jdbcType=TIMESTAMP}
+        </foreach>
+      </trim>
+      <trim prefix="description = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.description,jdbcType=LONGVARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="first_party_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.firstPartyId,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="reason = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.reason,jdbcType=LONGVARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="ref_type = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.refType,jdbcType=LONGVARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="second_party_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.secondPartyId,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="tax = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.tax,jdbcType=DOUBLE}
+        </foreach>
+      </trim>
+      <trim prefix="tax_receiver_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.taxReceiverId,jdbcType=INTEGER}
+        </foreach>
+      </trim>
+      <trim prefix="`character` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.character,jdbcType=VARCHAR}
+        </foreach>
+      </trim>
+      <trim prefix="owner_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.ownerId,jdbcType=BIGINT}
+        </foreach>
+      </trim>
+    </trim>
+    where id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.id,jdbcType=BIGINT}
+    </foreach>
+  </update>
+  <update id="updateBatchSelective" parameterType="java.util.List">
+    <!--@mbg.generated-->
+    update wallet_journal
+    <trim prefix="set" suffixOverrides=",">
+      <trim prefix="amount = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.amount != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.amount,jdbcType=DOUBLE}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="balance = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.balance != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.balance,jdbcType=DOUBLE}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="context_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.contextId != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.contextId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="context_id_type = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.contextIdType != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.contextIdType,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="`date` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.date != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.date,jdbcType=TIMESTAMP}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="description = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.description != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.description,jdbcType=LONGVARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="first_party_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.firstPartyId != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.firstPartyId,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="reason = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.reason != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.reason,jdbcType=LONGVARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="ref_type = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.refType != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.refType,jdbcType=LONGVARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="second_party_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.secondPartyId != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.secondPartyId,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="tax = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.tax != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.tax,jdbcType=DOUBLE}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="tax_receiver_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.taxReceiverId != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.taxReceiverId,jdbcType=INTEGER}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="`character` = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.character != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.character,jdbcType=VARCHAR}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="owner_id = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.ownerId != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.ownerId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+    </trim>
+    where id in
+    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+      #{item.id,jdbcType=BIGINT}
+    </foreach>
+  </update>
   <insert id="batchInsert" parameterType="map">
     <!--@mbg.generated-->
     insert into wallet_journal
     (id, amount, balance, context_id, context_id_type, `date`, description, first_party_id, 
-      reason, ref_type, second_party_id, tax, tax_receiver_id, owner_id)
+      reason, ref_type, second_party_id, tax, tax_receiver_id, `character`, owner_id)
     values
     <foreach collection="list" item="item" separator=",">
       (#{item.id,jdbcType=BIGINT}, #{item.amount,jdbcType=DOUBLE}, #{item.balance,jdbcType=DOUBLE}, 
         #{item.contextId,jdbcType=BIGINT}, #{item.contextIdType,jdbcType=VARCHAR}, #{item.date,jdbcType=TIMESTAMP}, 
         #{item.description,jdbcType=LONGVARCHAR}, #{item.firstPartyId,jdbcType=INTEGER}, 
         #{item.reason,jdbcType=LONGVARCHAR}, #{item.refType,jdbcType=LONGVARCHAR}, #{item.secondPartyId,jdbcType=INTEGER}, 
-        #{item.tax,jdbcType=DOUBLE}, #{item.taxReceiverId,jdbcType=INTEGER}, #{item.ownerId,jdbcType=BIGINT}
-        )
+        #{item.tax,jdbcType=DOUBLE}, #{item.taxReceiverId,jdbcType=INTEGER}, #{item.character,jdbcType=VARCHAR}, 
+        #{item.ownerId,jdbcType=BIGINT})
     </foreach>
   </insert>
   <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.WalletJournal">
     <!--@mbg.generated-->
     insert into wallet_journal
     (id, amount, balance, context_id, context_id_type, `date`, description, first_party_id, 
-      reason, ref_type, second_party_id, tax, tax_receiver_id, owner_id)
+      reason, ref_type, second_party_id, tax, tax_receiver_id, `character`, owner_id)
     values
     (#{id,jdbcType=BIGINT}, #{amount,jdbcType=DOUBLE}, #{balance,jdbcType=DOUBLE}, #{contextId,jdbcType=BIGINT}, 
       #{contextIdType,jdbcType=VARCHAR}, #{date,jdbcType=TIMESTAMP}, #{description,jdbcType=LONGVARCHAR}, 
       #{firstPartyId,jdbcType=INTEGER}, #{reason,jdbcType=LONGVARCHAR}, #{refType,jdbcType=LONGVARCHAR}, 
       #{secondPartyId,jdbcType=INTEGER}, #{tax,jdbcType=DOUBLE}, #{taxReceiverId,jdbcType=INTEGER}, 
-      #{ownerId,jdbcType=BIGINT})
+      #{character,jdbcType=VARCHAR}, #{ownerId,jdbcType=BIGINT})
     on duplicate key update 
     id = #{id,jdbcType=BIGINT}, 
     amount = #{amount,jdbcType=DOUBLE}, 
@@ -64,6 +253,7 @@
     second_party_id = #{secondPartyId,jdbcType=INTEGER}, 
     tax = #{tax,jdbcType=DOUBLE}, 
     tax_receiver_id = #{taxReceiverId,jdbcType=INTEGER}, 
+    `character` = #{character,jdbcType=VARCHAR}, 
     owner_id = #{ownerId,jdbcType=BIGINT}
   </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.WalletJournal">
@@ -108,6 +298,9 @@
       </if>
       <if test="taxReceiverId != null">
         tax_receiver_id,
+      </if>
+      <if test="character != null">
+        `character`,
       </if>
       <if test="ownerId != null">
         owner_id,
@@ -154,6 +347,9 @@
       <if test="taxReceiverId != null">
         #{taxReceiverId,jdbcType=INTEGER},
       </if>
+      <if test="character != null">
+        #{character,jdbcType=VARCHAR},
+      </if>
       <if test="ownerId != null">
         #{ownerId,jdbcType=BIGINT},
       </if>
@@ -198,6 +394,9 @@
       </if>
       <if test="taxReceiverId != null">
         tax_receiver_id = #{taxReceiverId,jdbcType=INTEGER},
+      </if>
+      <if test="character != null">
+        `character` = #{character,jdbcType=VARCHAR},
       </if>
       <if test="ownerId != null">
         owner_id = #{ownerId,jdbcType=BIGINT},

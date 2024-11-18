@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import xyz.foolcat.eve.evehelper.common.result.Result;
 import xyz.foolcat.eve.evehelper.service.system.AssetsService;
-import xyz.foolcat.eve.evehelper.util.UserUtil;
 import xyz.foolcat.eve.evehelper.vo.AssetsVO;
 
 import java.text.ParseException;
@@ -35,7 +34,7 @@ public class AssetsController {
     @Operation(summary = "游戏资产-资产读取")
     @PutMapping("/{cid}")
     public Result addAssertsList( @PathVariable Integer cid) throws ParseException {
-        assetsService.saveAndUpdateAsserts(cid, UserUtil.getUserId());
+        assetsService.saveAndUpdateAsserts(cid);
         return Result.success();
     }
 

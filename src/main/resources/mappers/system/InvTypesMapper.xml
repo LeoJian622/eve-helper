@@ -6,7 +6,7 @@
     <!--@Table inv_types-->
     <id column="type_id" jdbcType="INTEGER" property="typeId" />
     <result column="group_id" jdbcType="INTEGER" property="groupId" />
-    <result column="type_name" jdbcType="VARCHAR" property="typeName" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
     <result column="description" jdbcType="LONGVARCHAR" property="description" />
     <result column="mass" jdbcType="FLOAT" property="mass" />
     <result column="volume" jdbcType="FLOAT" property="volume" />
@@ -29,7 +29,7 @@
   </resultMap>
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
-    type_id, group_id, type_name, description, mass, volume, packaged_volume, capacity, 
+    type_id, group_id, `name`, description, mass, volume, packaged_volume, capacity, 
     portion_size, faction_id, race_id, base_price, published, market_group_id, graphic_id, 
     radius, icon_id, sound_id, sof_faction_name, sof_material_set_id, meta_group_id, 
     variationparent_type_id
@@ -43,9 +43,9 @@
           when type_id = #{item.typeId,jdbcType=INTEGER} then #{item.groupId,jdbcType=INTEGER}
         </foreach>
       </trim>
-      <trim prefix="type_name = case" suffix="end,">
+      <trim prefix="`name` = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when type_id = #{item.typeId,jdbcType=INTEGER} then #{item.typeName,jdbcType=VARCHAR}
+          when type_id = #{item.typeId,jdbcType=INTEGER} then #{item.name,jdbcType=VARCHAR}
         </foreach>
       </trim>
       <trim prefix="description = case" suffix="end,">
@@ -160,10 +160,10 @@
           </if>
         </foreach>
       </trim>
-      <trim prefix="type_name = case" suffix="end,">
+      <trim prefix="`name` = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          <if test="item.typeName != null">
-            when type_id = #{item.typeId,jdbcType=INTEGER} then #{item.typeName,jdbcType=VARCHAR}
+          <if test="item.name != null">
+            when type_id = #{item.typeId,jdbcType=INTEGER} then #{item.name,jdbcType=VARCHAR}
           </if>
         </foreach>
       </trim>
@@ -309,13 +309,13 @@
   <insert id="batchInsert" parameterType="map">
     <!--@mbg.generated-->
     insert into inv_types
-    (type_id, group_id, type_name, description, mass, volume, packaged_volume, capacity, 
+    (type_id, group_id, `name`, description, mass, volume, packaged_volume, capacity, 
       portion_size, faction_id, race_id, base_price, published, market_group_id, graphic_id, 
       radius, icon_id, sound_id, sof_faction_name, sof_material_set_id, meta_group_id, 
       variationparent_type_id)
     values
     <foreach collection="list" item="item" separator=",">
-      (#{item.typeId,jdbcType=INTEGER}, #{item.groupId,jdbcType=INTEGER}, #{item.typeName,jdbcType=VARCHAR}, 
+      (#{item.typeId,jdbcType=INTEGER}, #{item.groupId,jdbcType=INTEGER}, #{item.name,jdbcType=VARCHAR}, 
         #{item.description,jdbcType=LONGVARCHAR}, #{item.mass,jdbcType=FLOAT}, #{item.volume,jdbcType=FLOAT}, 
         #{item.packagedVolume,jdbcType=FLOAT}, #{item.capacity,jdbcType=FLOAT}, #{item.portionSize,jdbcType=INTEGER}, 
         #{item.factionId,jdbcType=INTEGER}, #{item.raceId,jdbcType=INTEGER}, #{item.basePrice,jdbcType=FLOAT}, 
@@ -329,12 +329,12 @@
   <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.InvTypes">
     <!--@mbg.generated-->
     insert into inv_types
-    (type_id, group_id, type_name, description, mass, volume, packaged_volume, capacity, 
+    (type_id, group_id, `name`, description, mass, volume, packaged_volume, capacity, 
       portion_size, faction_id, race_id, base_price, published, market_group_id, graphic_id, 
       radius, icon_id, sound_id, sof_faction_name, sof_material_set_id, meta_group_id, 
       variationparent_type_id)
     values
-    (#{typeId,jdbcType=INTEGER}, #{groupId,jdbcType=INTEGER}, #{typeName,jdbcType=VARCHAR}, 
+    (#{typeId,jdbcType=INTEGER}, #{groupId,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, 
       #{description,jdbcType=LONGVARCHAR}, #{mass,jdbcType=FLOAT}, #{volume,jdbcType=FLOAT}, 
       #{packagedVolume,jdbcType=FLOAT}, #{capacity,jdbcType=FLOAT}, #{portionSize,jdbcType=INTEGER}, 
       #{factionId,jdbcType=INTEGER}, #{raceId,jdbcType=INTEGER}, #{basePrice,jdbcType=FLOAT}, 
@@ -345,7 +345,7 @@
     on duplicate key update 
     type_id = #{typeId,jdbcType=INTEGER}, 
     group_id = #{groupId,jdbcType=INTEGER}, 
-    type_name = #{typeName,jdbcType=VARCHAR}, 
+    `name` = #{name,jdbcType=VARCHAR}, 
     description = #{description,jdbcType=LONGVARCHAR}, 
     mass = #{mass,jdbcType=FLOAT}, 
     volume = #{volume,jdbcType=FLOAT}, 
@@ -376,8 +376,8 @@
       <if test="groupId != null">
         group_id,
       </if>
-      <if test="typeName != null">
-        type_name,
+      <if test="name != null">
+        `name`,
       </if>
       <if test="description != null">
         description,
@@ -445,8 +445,8 @@
       <if test="groupId != null">
         #{groupId,jdbcType=INTEGER},
       </if>
-      <if test="typeName != null">
-        #{typeName,jdbcType=VARCHAR},
+      <if test="name != null">
+        #{name,jdbcType=VARCHAR},
       </if>
       <if test="description != null">
         #{description,jdbcType=LONGVARCHAR},
@@ -514,8 +514,8 @@
       <if test="groupId != null">
         group_id = #{groupId,jdbcType=INTEGER},
       </if>
-      <if test="typeName != null">
-        type_name = #{typeName,jdbcType=VARCHAR},
+      <if test="name != null">
+        `name` = #{name,jdbcType=VARCHAR},
       </if>
       <if test="description != null">
         description = #{description,jdbcType=LONGVARCHAR},

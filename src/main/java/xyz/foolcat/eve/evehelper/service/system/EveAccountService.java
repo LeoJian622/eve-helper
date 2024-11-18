@@ -33,12 +33,12 @@ public class EveAccountService extends ServiceImpl<EveAccountMapper, EveAccount>
      * 根据人物或者公司ID以及用户ID或者QQ
      * 获取游戏账户信息
      *
-     * @param cId 人物或者公司ID
+     * @param cId    人物或者公司ID
      * @param userId 用户ID或者QQ
      * @return 游戏账户信息
-     * @exception EveHelperException 账户不存在则抛出异常
+     * @throws EveHelperException 账户不存在则抛出异常
      */
-    public EveAccount getAccountOne(Integer cId, Integer userId) {
+    public EveAccount getAccountOne(Integer userId, Integer cId) {
         EveAccount account = lambdaQuery()
                 .and(q -> q.eq(EveAccount::getUserId, userId).or().eq(EveAccount::getQq, userId))
                 .and(q -> q.eq(EveAccount::getCharacterId, cId).or().eq(EveAccount::getCorpId, cId))
@@ -48,4 +48,9 @@ public class EveAccountService extends ServiceImpl<EveAccountMapper, EveAccount>
         }
         return account;
     }
+
+    public int updateBatchSelective(List<EveAccount> list) {
+        return baseMapper.updateBatchSelective(list);
+    }
 }
+

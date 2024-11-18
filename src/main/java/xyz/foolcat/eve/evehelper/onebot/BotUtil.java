@@ -1,8 +1,9 @@
 package xyz.foolcat.eve.evehelper.onebot;
 
 import cn.hutool.json.JSONObject;
-import org.jetbrains.annotations.NotNull;
 import xyz.foolcat.eve.evehelper.onebot.model.MessageEvent;
+
+import javax.validation.constraints.NotNull;
 
 /**
  * oneBot 工具
@@ -33,7 +34,7 @@ public class BotUtil {
         return action;
     }
 
-    public static String atSomeone(Long userId) {
+    public static String atSomeone(String userId) {
         return "[CQ:at,qq=" + userId + "]";
     }
 }

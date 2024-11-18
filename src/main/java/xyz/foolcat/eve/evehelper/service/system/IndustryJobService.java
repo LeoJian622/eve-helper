@@ -7,14 +7,17 @@ import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.converter.esi.IndustryJobConverter;
 import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.system.IndustryJob;
+import xyz.foolcat.eve.evehelper.enums.IndustryActivityEnum;
 import xyz.foolcat.eve.evehelper.esi.EsiClient;
 import xyz.foolcat.eve.evehelper.esi.api.IndustryApi;
 import xyz.foolcat.eve.evehelper.mapper.system.IndustryJobMapper;
 import xyz.foolcat.eve.evehelper.service.esi.EsiApiService;
+import xyz.foolcat.eve.evehelper.util.AuthorizeUtil;
 
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,6 +37,7 @@ public class IndustryJobService extends ServiceImpl<IndustryJobMapper, IndustryJ
     private final IndustryApi industryApi;
 
     private final IndustryJobConverter industryJobConverter;
+    private final InvTypesService invTypesService;
 
     public int updateBatch(List<IndustryJob> list) {
         return baseMapper.updateBatch(list);
@@ -62,46 +66,58 @@ public class IndustryJobService extends ServiceImpl<IndustryJobMapper, IndustryJ
     /**
      * 获取ESI人物或公司生产线信息
      * @param cid
-     * @param userId
      * @param isCor
      * @throws ParseException
      */
-    public void batchInsertOrUpdateFromEsi(Integer cid, Integer userId, Boolean includeCompleted, Boolean isCor) throws ParseException {
+    public void batchInsertOrUpdateFromEsi(Integer cid, Boolean includeCompleted, Boolean isCor) throws ParseException {
         /**
          * 获取游戏人物信息及授权
          */
-        String accessToken = esiApiService.getAccessToken(cid, userId);
-        EveAccount eveAccount = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, cid).or().eq(EveAccount::getCorpId,cid).one();
+        EveAccount eveAccount = AuthorizeUtil.authorize(cid);
+        String accessToken = esiApiService.getAccessToken(cid, eveAccount.getUserId());
 
         if (isCor != null && isCor) {
             /*
              * 获取公司生产线
              */
-            Integer max = industryApi.queryCorporationIndustryJobsMaxPage(eveAccount.getCorpId(), EsiClient.SERENITY, includeCompleted, accessToken);
+            Integer maxPage = industryApi.queryCorporationIndustryJobsMaxPage(eveAccount.getCorpId(), EsiClient.SERENITY, includeCompleted, accessToken);
 
-            List<IndustryJob> industryJobs = Stream.iterate(1, i -> i + 1).limit(max).map(i -> industryApi.queryCorporationIndustryJobs(eveAccount.getCorpId(), EsiClient.SERENITY, true, accessToken).collectList().block())
+            List<IndustryJob> industryJobs = Stream.iterate(1, i -> i + 1).limit(maxPage).map(i -> industryApi.queryCorporationIndustryJobs(eveAccount.getCorpId(), EsiClient.SERENITY, true, accessToken).collectList().block())
                     .sequential().filter(Objects::nonNull)
                     .flatMap(Collection::stream)
                     .map(inJob -> industryJobConverter.toIndustryJob(inJob, eveAccount.getCorpId()))
                     .collect(Collectors.toList());
-            if (!industryJobs.isEmpty()) {
-                batchInsertOrUpdate(industryJobs);
-            }
+            batchSaveAndSetBlueTypeName(industryJobs);
         } else {
             /*
              * 获取人物生产线
              */
-
             List<IndustryJob> industryJobs = Objects.requireNonNull(industryApi.queryCharacterIndustryJobs(eveAccount.getCharacterId(), EsiClient.SERENITY, includeCompleted, accessToken).collectList().block())
                     .stream()
                     .map(industryJobPlacedResponse -> industryJobConverter.toIndustryJob(industryJobPlacedResponse, null))
                     .collect(Collectors.toList());
-            if (!industryJobs.isEmpty()) {
-                batchInsertOrUpdate(industryJobs);
-            }
+            batchSaveAndSetBlueTypeName(industryJobs);
         }
-
     }
+
+    /**
+     * 设置蓝图名称并保存
+     * @param industryJobs 生产线对象列表
+     */
+    private void batchSaveAndSetBlueTypeName(List<IndustryJob> industryJobs) {
+        Map<Integer, String> nameBlueprintByTypeIds = invTypesService.getNameByTypeIds(industryJobs.stream().map(IndustryJob::getBlueprintTypeId).collect(Collectors.toList()));
+        Map<Integer, String> nameProductByTypeIds = invTypesService.getNameByTypeIds(industryJobs.stream().map(IndustryJob::getProductTypeId).collect(Collectors.toList()));
+        industryJobs.forEach(industryJob -> {
+            industryJob.setBlueprintType(nameBlueprintByTypeIds.get(industryJob.getBlueprintTypeId()));
+            industryJob.setProductType(nameProductByTypeIds.get(industryJob.getProductTypeId()));
+            industryJob.setActivity(IndustryActivityEnum.getValue(industryJob.getActivityId()));
+        });
+        if (!industryJobs.isEmpty()) {
+            batchInsertOrUpdate(industryJobs);
+        }
+    }
+
+
 }
 
 
