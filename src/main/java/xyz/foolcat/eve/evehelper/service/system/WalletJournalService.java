@@ -138,7 +138,7 @@ public class WalletJournalService extends ServiceImpl<WalletJournalMapper, Walle
             BigDecimal multiply = amount.divide(new BigDecimal(nowTax).multiply(new BigDecimal("100000000")),0, RoundingMode.HALF_DOWN).multiply(BigDecimal.ONE.subtract(new BigDecimal(normalTax)));
             taxReturnDTO.setAmount(multiply.doubleValue());
             return taxReturnDTO;
-        }).sorted(Comparator.comparing(TaxReturnDTO::getAmount)).collect(Collectors.toList());
+        }).sorted(Comparator.comparing(TaxReturnDTO::getAmount).reversed()).collect(Collectors.toList());
     }
 
 }
