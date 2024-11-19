@@ -1,5 +1,6 @@
 package xyz.foolcat.eve.evehelper.service.system;
 
+import cn.hutool.json.JSONObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -7,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import xyz.foolcat.eve.evehelper.dto.system.TaxReturnDTO;
+import xyz.foolcat.eve.evehelper.onebot.BotUtil;
 
 import javax.annotation.Resource;
 import java.text.ParseException;
@@ -28,7 +30,14 @@ class WalletJournalServiceTest {
 
     @Test
     void countBoundsReturn() throws ParseException {
-        List<TaxReturnDTO> list = walletJournalService.countBoundsReturn("0.15", "0.99", "202411");
-        System.out.println("list = " + list);
+//        List<TaxReturnDTO> list = walletJournalService.countBoundsReturn("0.15", "0.99", "202411");
+        List<TaxReturnDTO> taxReturnDTOS = walletJournalService.countBoundsReturn("0.15", "0.99", "202411");
+        StringBuilder message = new StringBuilder("人物\t退税\t");
+        for (TaxReturnDTO tax :
+                taxReturnDTOS) {
+            message.append(tax.getName()).append("\t").append(tax.getAmount()).append("\n");
+        }
+        JSONObject entries = BotUtil.generateMessage(359635464L, null, "111", message.toString(), false);
+        System.out.println("list = " + entries);
     }
 }
