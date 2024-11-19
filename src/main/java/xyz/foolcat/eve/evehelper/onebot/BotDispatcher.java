@@ -106,14 +106,14 @@ public class BotDispatcher {
         }
         try {
             List<TaxReturnDTO> taxReturnDTOS = walletJournalService.countBoundsReturn(arg[0], arg[1], arg[2]);
-            StringBuilder message = new StringBuilder("人物\t退税\t");
+            StringBuilder message = new StringBuilder("人物\t退税\n");
             for (TaxReturnDTO tax :
                     taxReturnDTOS) {
                 message.append(tax.getName()).append("\t").append(tax.getAmount()).append("\n");
             }
             return BotUtil.generateMessage(messageEvent, message.toString(), false);
         } catch (ParseException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
             return BotUtil.generateMessage(messageEvent, e.getMessage(), false);
         }
     }
