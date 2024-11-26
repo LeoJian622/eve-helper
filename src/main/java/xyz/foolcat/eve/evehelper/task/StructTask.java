@@ -85,8 +85,6 @@ public class StructTask {
                 }).collect(Collectors.joining("\n"));
         if (StrUtil.isEmpty(message)) {
             message = "燃料充足，建筑击毁报告不可用！";
-        }else {
-            message += BotUtil.atSomeone("all");
         }
         JSONObject group = BotUtil.generateMessage(null, 41772910L, BotUtil.MESSAGE_TYPE_GROUP, message,false);
         webSocket.sendOneMessage("napcat", group.toJSONString(4));
