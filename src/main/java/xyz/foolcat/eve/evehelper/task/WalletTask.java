@@ -18,8 +18,7 @@ import java.text.ParseException;
 @RequiredArgsConstructor
 public class WalletTask {
 
-    private WalletJournalService walletJournalService;
-
+    private final WalletJournalService walletJournalService;
 
     /**
      * 更新钱包记录
