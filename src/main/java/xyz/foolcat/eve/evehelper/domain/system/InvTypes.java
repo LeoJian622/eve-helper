@@ -5,8 +5,9 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.Serializable;
 import lombok.Data;
+
+import java.io.Serializable;
 
 /**
  * 物品表
@@ -38,35 +39,35 @@ public class InvTypes implements Serializable {
     public static final String COL_META_GROUP_ID = "meta_group_id";
     public static final String COL_VARIATIONPARENT_TYPE_ID = "variationparent_type_id";
     @TableId(value = "type_id", type = IdType.AUTO)
-    @Schema(description = "")
+    @Schema(description = "物品ID")
     private Integer typeId;
 
     @TableField(value = "group_id")
-    @Schema(description = "")
+    @Schema(description = "物品组ID")
     private Integer groupId;
 
     @TableField(value = "`name`")
-    @Schema(description = "")
+    @Schema(description = "名称")
     private String name;
 
     @TableField(value = "description")
-    @Schema(description = "")
+    @Schema(description = "描述")
     private String description;
 
     @TableField(value = "mass")
-    @Schema(description = "")
+    @Schema(description = "质量")
     private Double mass;
 
     @TableField(value = "volume")
-    @Schema(description = "")
+    @Schema(description = "体积")
     private Double volume;
 
     @TableField(value = "packaged_volume")
-    @Schema(description = "")
+    @Schema(description = "打包体积")
     private Double packagedVolume;
 
     @TableField(value = "capacity")
-    @Schema(description = "")
+    @Schema(description = "类别")
     private Double capacity;
 
     @TableField(value = "portion_size")
@@ -82,7 +83,7 @@ public class InvTypes implements Serializable {
     private Integer raceId;
 
     @TableField(value = "base_price")
-    @Schema(description = "")
+    @Schema(description = "基础价格")
     private Double basePrice;
 
     @TableField(value = "published")
@@ -90,11 +91,11 @@ public class InvTypes implements Serializable {
     private Byte published;
 
     @TableField(value = "market_group_id")
-    @Schema(description = "")
+    @Schema(description = "市场组ID")
     private Integer marketGroupId;
 
     @TableField(value = "graphic_id")
-    @Schema(description = "")
+    @Schema(description = "图片ID")
     private Integer graphicId;
 
     @TableField(value = "radius")
@@ -102,11 +103,11 @@ public class InvTypes implements Serializable {
     private Double radius;
 
     @TableField(value = "icon_id")
-    @Schema(description = "")
+    @Schema(description = "图标ID")
     private Integer iconId;
 
     @TableField(value = "sound_id")
-    @Schema(description = "")
+    @Schema(description = "音乐ID")
     private Integer soundId;
 
     @TableField(value = "sof_faction_name")
