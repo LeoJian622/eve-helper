@@ -54,7 +54,7 @@ public enum ResultCode implements IResultCode, Serializable {
     ESI_AUTHORIZATION_FAILURE("ESI00400","ESI 未授权或授权过期，请重新授权"),
     ESI_SERVER_FAILURE("ESI00500","ESI 服务器请求失败"),
 
-    ;
+    ESI_AUTH_TOKEN_NULL("ESI00400", "ESI author Token为空");
 
     @Override
     public String getCode() {
