@@ -106,7 +106,7 @@ public class BotDispatcher {
         }
         try {
             List<TaxReturnDTO> taxReturnDTOS = walletJournalService.countBoundsReturn(arg[0], arg[1], arg[2]);
-            StringBuilder message = new StringBuilder("人物\t退税");
+            StringBuilder message = new StringBuilder("人物\t退税\t");
             for (TaxReturnDTO tax :
                     taxReturnDTOS) {
                 message.append(tax.getName()).append("\t").append(tax.getAmount()).append("\n");
