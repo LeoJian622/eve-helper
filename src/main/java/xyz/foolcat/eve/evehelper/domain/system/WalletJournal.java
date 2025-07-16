@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.OffsetDateTime;
 
 @Schema
 @Data
@@ -29,31 +29,31 @@ public class WalletJournal implements Serializable {
     public static final String COL_TAX_RECEIVER_ID = "tax_receiver_id";
     public static final String COL_OWNER_ID = "owner_id";
     @TableId(value = "id", type = IdType.AUTO)
-    @Schema(description = "")
+    @Schema(description = "id")
     private Long id;
 
     @TableField(value = "amount")
-    @Schema(description = "")
+    @Schema(description = "金额")
     private Double amount;
 
     @TableField(value = "balance")
-    @Schema(description = "")
+    @Schema(description = "账户余额")
     private Double balance;
 
     @TableField(value = "context_id")
-    @Schema(description = "")
+    @Schema(description = "合同ID")
     private Long contextId;
 
     @TableField(value = "context_id_type")
-    @Schema(description = "")
+    @Schema(description = "合同类型")
     private String contextIdType;
 
     @TableField(value = "`date`")
-    @Schema(description = "")
-    private Date date;
+    @Schema(description = "日期")
+    private OffsetDateTime date;
 
     @TableField(value = "description")
-    @Schema(description = "")
+    @Schema(description = "详情")
     private String description;
 
     @TableField(value = "first_party_id")
@@ -61,11 +61,11 @@ public class WalletJournal implements Serializable {
     private Integer firstPartyId;
 
     @TableField(value = "reason")
-    @Schema(description = "")
+    @Schema(description = "理由")
     private String reason;
 
     @TableField(value = "ref_type")
-    @Schema(description = "")
+    @Schema(description = "类型")
     private String refType;
 
     @TableField(value = "second_party_id")
@@ -73,19 +73,19 @@ public class WalletJournal implements Serializable {
     private Integer secondPartyId;
 
     @TableField(value = "tax")
-    @Schema(description = "")
+    @Schema(description = "税")
     private Double tax;
 
     @TableField(value = "tax_receiver_id")
-    @Schema(description = "")
+    @Schema(description = "税收")
     private Integer taxReceiverId;
 
     @TableField(value = "`character`")
-    @Schema(description = "")
+    @Schema(description = "人物")
     private String character;
 
     @TableField(value = "owner_id")
-    @Schema(description = "")
+    @Schema(description = "所有者")
     private Long ownerId;
 
     private static final long serialVersionUID = 1L;

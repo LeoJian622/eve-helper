@@ -7,13 +7,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import xyz.foolcat.eve.evehelper.domain.system.InvTypes;
+import xyz.foolcat.eve.evehelper.dto.system.TaxReturnDTO;
 import xyz.foolcat.eve.evehelper.onebot.model.MessageEvent;
 import xyz.foolcat.eve.evehelper.service.system.InvTypesService;
+import xyz.foolcat.eve.evehelper.service.system.WalletJournalService;
 
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.text.ParseException;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,6 +38,8 @@ public class BotDispatcher {
 
     private final InvTypesService invTypesService;
 
+    private final WalletJournalService walletJournalService;
+
     public JSONObject dispatchers(MessageEvent messageEvent) {
         if ("meta_event".equals(messageEvent.getPost_type()) || messageEvent.getRaw_message() == null) {
             return null;
@@ -51,6 +57,9 @@ public class BotDispatcher {
                     }
                     case ".admAddType":{
                         return addInvTypes(messageEvent, commandMatcher);
+                    }
+                    case ".tax":{
+
                     }
                     default:
                         break;
@@ -88,6 +97,25 @@ public class BotDispatcher {
         BigDecimal sellMin = BigDecimal.valueOf(price.getJSONObject("sell").getDouble("min"));
         String message = "物品国服售价（伏尔戈）：\n物品名称：" + invTypes.getName() + "\n收单价：" + decimalFormat.format(buyMax) + "\n卖单价：" + decimalFormat.format(sellMin) + "\n中位价：" + decimalFormat.format(buyMax.add(sellMin).divide(BigDecimal.valueOf(2), RoundingMode.HALF_UP));
         return BotUtil.generateMessage(messageEvent, message, false);
+    }
+
+    private @NotNull JSONObject queryTax(MessageEvent messageEvent, Matcher commandMatcher) {
+        String[] arg = commandMatcher.group(2).split(" ");
+        if (arg.length != 3){
+            return BotUtil.generateMessage(messageEvent, "参数为：军团税 现有税 年月(202411)", false);
+        }
+        try {
+            List<TaxReturnDTO> taxReturnDTOS = walletJournalService.countBoundsReturn(arg[0], arg[1], arg[2]);
+            StringBuilder message = new StringBuilder("人物\t退税");
+            for (TaxReturnDTO tax :
+                    taxReturnDTOS) {
+                message.append(tax.getName()).append("\t").append(tax.getAmount()).append("\n");
+            }
+            return BotUtil.generateMessage(messageEvent, message.toString(), false);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return BotUtil.generateMessage(messageEvent, e.getMessage(), false);
+        }
     }
 
 }

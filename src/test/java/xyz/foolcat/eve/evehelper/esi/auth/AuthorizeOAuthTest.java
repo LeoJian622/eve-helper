@@ -29,15 +29,14 @@ class AuthorizeOAuthTest {
         Assert.notNull(authorizeUrl);
         System.out.println("authorizeUrl = " + authorizeUrl);
     }
-
     @Test
-    void updateAccessTokenAuthorizationCode() throws InterruptedException {
-        AuthTokenResponse block = authorizeOAuth.updateAccessToken(GrantType.AUTHORIZATION_CODE, "G1TQ2BtQFkyRFFDb-lpoZg").log().block();
+    void updateAccessTokenAuthorizationCode() {
+        AuthTokenResponse block = authorizeOAuth.updateAccessToken(GrantType.AUTHORIZATION_CODE, "cBhCan6IUEK97cmhWN5lJg").log().block();
         System.out.println("block = " + block);
     }
 
     @Test
-    void updateAccessTokenRefreshToken() throws InterruptedException {
+    void updateAccessTokenRefreshToken() {
         AuthTokenResponse block = authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, "odZ2dRCzHUOJCa9KZqILQQ==").log().block();
         System.out.println("block = " + block);
     }

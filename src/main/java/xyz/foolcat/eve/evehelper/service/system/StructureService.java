@@ -26,6 +26,7 @@ import java.util.stream.Stream;
  * @author Leojan
  */
 @Service
+@Transactional(rollbackFor = RuntimeException.class)
 @RequiredArgsConstructor
 public class StructureService extends ServiceImpl<StructureMapper, Structure> {
 
@@ -64,7 +65,6 @@ public class StructureService extends ServiceImpl<StructureMapper, Structure> {
      *
      * @param cId 角色ID
      */
-    @Transactional
     public void batchInsertOrUpdateFromEsi(Integer cId) throws ParseException {
 
         /*
