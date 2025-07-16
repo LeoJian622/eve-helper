@@ -1,15 +1,20 @@
 package xyz.foolcat.eve.evehelper.onebot;
 
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.system.InvTypes;
+import xyz.foolcat.eve.evehelper.domain.system.Structure;
 import xyz.foolcat.eve.evehelper.dto.system.TaxReturnDTO;
 import xyz.foolcat.eve.evehelper.onebot.model.MessageEvent;
+import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.service.system.InvTypesService;
+import xyz.foolcat.eve.evehelper.service.system.StructureService;
 import xyz.foolcat.eve.evehelper.service.system.WalletJournalService;
 
 import javax.validation.constraints.NotNull;
@@ -17,9 +22,13 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.ParseException;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * 消息分发器
@@ -36,9 +45,13 @@ public class BotDispatcher {
     private final Pattern cqPattern = Pattern.compile("^\\[CQ:.*");
     private final Pattern commandPattern = Pattern.compile("(^\\.[a-zA-Z]+)\\s(.*)");
 
+    private final EveAccountService eveAccountService;
+
     private final InvTypesService invTypesService;
 
     private final WalletJournalService walletJournalService;
+
+    private final StructureService structureService;
 
     public JSONObject dispatchers(MessageEvent messageEvent) {
         if ("meta_event".equals(messageEvent.getPost_type()) || messageEvent.getRaw_message() == null) {
@@ -61,6 +74,9 @@ public class BotDispatcher {
                     case ".tax": {
                         return queryTax(messageEvent, commandMatcher);
                     }
+                    case ".struct": {
+                        return queryStructure(messageEvent, commandMatcher);
+                    }
                     default:
                         break;
                 }
@@ -70,6 +86,32 @@ public class BotDispatcher {
             }
         }
         return null;
+    }
+
+    private JSONObject queryStructure(MessageEvent messageEvent, Matcher commandMatcher) {
+
+        EveAccount eveAccount = eveAccountService.getOne(new QueryWrapper<EveAccount>().lambda().eq(EveAccount::getCharacterName, commandMatcher.group(2)));
+
+        List<Structure> structures = structureService.selectFuelExpiresList(24, eveAccount.getCorpId());
+
+        String message = structures.stream().filter(structure -> structure.getFuelExpires() == null)
+                .map(structure -> structure.getName() + ", 燃料耗尽")
+                .collect(Collectors.joining("\n"));
+
+            message += "\n============================\n";
+
+        message = message + structures.stream()
+                .filter(structure -> structure.getFuelExpires() != null)
+                .sorted(Comparator.comparing(Structure::getFuelExpires))
+                .map(structure -> {
+                    long between = ChronoUnit.HOURS.between(OffsetDateTime.now(), structure.getFuelExpires());
+                    return structure.getName() + ", 将在" + between + "小时后燃料耗尽";
+                }).collect(Collectors.joining("\n"));
+
+        if (StrUtil.isEmpty(message)) {
+            message = "燃料充足，建筑击毁报告不可用！";
+        }
+        return BotUtil.generateMessage(messageEvent, message,false);
     }
 
     private @NotNull JSONObject addInvTypes(MessageEvent messageEvent, Matcher commandMatcher) {
@@ -106,14 +148,14 @@ public class BotDispatcher {
         }
         try {
             List<TaxReturnDTO> taxReturnDTOS = walletJournalService.countBoundsReturn(arg[0], arg[1], arg[2]);
-            StringBuilder message = new StringBuilder("人物\t退税\t");
+            StringBuilder message = new StringBuilder("人物\t退税\n");
             for (TaxReturnDTO tax :
                     taxReturnDTOS) {
                 message.append(tax.getName()).append("\t").append(tax.getAmount()).append("\n");
             }
             return BotUtil.generateMessage(messageEvent, message.toString(), false);
         } catch (ParseException e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
             return BotUtil.generateMessage(messageEvent, e.getMessage(), false);
         }
     }
