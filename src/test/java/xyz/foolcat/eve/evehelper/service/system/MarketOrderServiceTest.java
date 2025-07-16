@@ -5,10 +5,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import xyz.foolcat.eve.evehelper.dto.system.MarketOrderDTO;
+import xyz.foolcat.eve.evehelper.application.dto.response.MarketOrderDTO;
+import xyz.foolcat.eve.evehelper.domain.service.system.MarketOrderService;
 
 import javax.annotation.Resource;
-
 import java.util.List;
 
 @ExtendWith(SpringExtension.class)

@@ -7,8 +7,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import xyz.foolcat.eve.evehelper.dto.system.TaxReturnDTO;
-import xyz.foolcat.eve.evehelper.onebot.BotUtil;
+import xyz.foolcat.eve.evehelper.application.dto.response.TaxReturnDTO;
+import xyz.foolcat.eve.evehelper.domain.service.system.WalletJournalService;
+import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotUtil;
 
 import javax.annotation.Resource;
 import java.text.ParseException;

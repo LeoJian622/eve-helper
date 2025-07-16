@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.eve.IndustryActivityProductsMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.eve.IndustryActivityProducts">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.eve.IndustryActivityProductsMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.IndustryActivityProductsPO">
     <!--@mbg.generated-->
-    <!--@Table industryActivityProducts-->
+    <!--@Table IndustryActivityProductsPO-->
     <result column="blueprintTypeID" jdbcType="INTEGER" property="blueprinttypeid" />
     <result column="activityID" jdbcType="TINYINT" property="activityid" />
     <result column="productTypeID" jdbcType="INTEGER" property="producttypeid" />
@@ -14,14 +14,14 @@
     <!--@mbg.generated-->
     blueprintTypeID, activityID, productTypeID, quantity, probability
   </sql>
-  <insert id="insert" parameterType="xyz.foolcat.eve.evehelper.domain.eve.IndustryActivityProducts">
+  <insert id="insert" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.IndustryActivityProductsPO">
     <!--@mbg.generated-->
     insert into industryActivityProducts (blueprintTypeID, activityID, productTypeID, 
       quantity, probability)
     values (#{blueprinttypeid,jdbcType=INTEGER}, #{activityid,jdbcType=TINYINT}, #{producttypeid,jdbcType=INTEGER}, 
       #{quantity,jdbcType=INTEGER}, #{probability,jdbcType=FLOAT})
   </insert>
-  <insert id="insertSelective" parameterType="xyz.foolcat.eve.evehelper.domain.eve.IndustryActivityProducts">
+  <insert id="insertSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.IndustryActivityProductsPO">
     <!--@mbg.generated-->
     insert into industryActivityProducts
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -58,5 +58,12 @@
         #{probability,jdbcType=FLOAT},
       </if>
     </trim>
+  </insert>
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.IndustryActivityProductsPO">
+    <!--@mbg.generated-->
+    insert into industryActivityProducts (blueprintTypeID, activityID, productTypeID, 
+      quantity, probability)
+    values (#{blueprinttypeid,jdbcType=INTEGER}, #{activityid,jdbcType=TINYINT}, #{producttypeid,jdbcType=INTEGER}, 
+      #{quantity,jdbcType=INTEGER}, #{probability,jdbcType=FLOAT})
   </insert>
 </mapper>

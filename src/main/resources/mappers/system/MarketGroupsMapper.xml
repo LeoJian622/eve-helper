@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.MarketGroupsMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.MarketGroups">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.MarketGroupsMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MarketGroupsPO">
     <!--@mbg.generated-->
     <!--@Table market_groups-->
     <result column="market_group_id" jdbcType="INTEGER" property="marketGroupId" />
@@ -26,7 +26,7 @@
         #{item.parentGroupId,jdbcType=INTEGER})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.MarketGroups">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MarketGroupsPO">
     <!--@mbg.generated-->
     insert into market_groups
     (market_group_id, description_id, has_types, icon_id, name_id, parent_group_id)
@@ -42,7 +42,7 @@
     name_id = #{nameId,jdbcType=LONGVARCHAR},
     parent_group_id = #{parentGroupId,jdbcType=INTEGER}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.MarketGroups">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MarketGroupsPO">
     <!--@mbg.generated-->
     insert into market_groups
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -108,15 +108,15 @@
       </if>
     </trim>
   </insert>
-  <resultMap id="TreeResultMap" type="xyz.foolcat.eve.evehelper.vo.MarketGroupsTreeVO">
+  <resultMap id="TreeResultMap" type="xyz.foolcat.eve.evehelper.interfaces.web.vo.MarketGroupsTreeVO">
     <id column="market_group_id" jdbcType="INTEGER" property="marketGroupId" />
 <!--    &amp;lt;result column="description_id" jdbcType="VARCHAR" property="descriptionid" /&amp;gt;-->
     <result column="has_types" jdbcType="TINYINT" property="hasTypes" />
     <result column="icon_id" jdbcType="INTEGER" property="iconId" />
     <result column="name_id" jdbcType="VARCHAR" property="nameId" />
     <result column="parent_group_id" jdbcType="INTEGER" property="parentGroupId" />
-    <collection column="market_group_id" ofType="xyz.foolcat.eve.evehelper.vo.MarketGroupsTreeVO" property="childrens" select="selectChildren" />
-    <collection column="market_group_id" ofType="xyz.foolcat.eve.evehelper.domain.system.InvTypes" property="goods" select="xyz.foolcat.eve.evehelper.mapper.system.InvTypesMapper.selcetByMarketGroupId" />
+    <collection column="market_group_id" ofType="xyz.foolcat.eve.evehelper.interfaces.web.vo.MarketGroupsTreeVO" property="childrens" select="selectChildren" />
+    <collection column="market_group_id" ofType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.InvTypes" property="goods" select="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.InvTypesMapper.selcetByMarketGroupId" />
   </resultMap>
   <select id="selectGroupTree" resultMap="TreeResultMap">
     select market_group_id,has_types,icon_id,name_id,parent_group_id

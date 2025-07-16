@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.StructureMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.Structure">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.StructureMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.StructurePO">
     <!--@mbg.generated-->
     <!--@Table `structure`-->
     <id column="structure_id" jdbcType="BIGINT" property="structureId" />
@@ -261,7 +261,7 @@
     unanchors_at = values(unanchors_at),
     services = values(services)
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.Structure">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.StructurePO">
     <!--@mbg.generated-->
     insert into `structure`
     (structure_id, corporation_id, fuel_expires, `name`, next_reinforce_apply, next_reinforce_hour, 
@@ -291,7 +291,7 @@
     unanchors_at = #{unanchorsAt,jdbcType=TIMESTAMP}, 
     services = #{services,jdbcType=VARCHAR}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.Structure">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.StructurePO">
     <!--@mbg.generated-->
     insert into `structure`
     <trim prefix="(" suffix=")" suffixOverrides=",">

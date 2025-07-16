@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.MarketOrderMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.MarketOrder">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.MarketOrderMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MarketOrderPO">
     <!--@mbg.generated-->
     <!--@Table market_order-->
     <id column="order_id" jdbcType="BIGINT" property="orderId" />
@@ -201,7 +201,7 @@
         #{item.regionId,jdbcType=BIGINT})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.MarketOrder">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MarketOrderPO">
     <!--@mbg.generated-->
     insert into market_order
     (order_id, duration, is_buy_order, issued, location_id, min_volume, price, order_range, 
@@ -227,7 +227,7 @@
     volume_total = #{volumeTotal,jdbcType=BIGINT}, 
     region_id = #{regionId,jdbcType=BIGINT}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.MarketOrder">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MarketOrderPO">
     <!--@mbg.generated-->
     insert into market_order
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -357,7 +357,7 @@
     </trim>
   </insert>
 
-    <select id="queryPrice" resultType="xyz.foolcat.eve.evehelper.dto.system.MarketOrderDTO">
+    <select id="queryPrice" resultType="xyz.foolcat.eve.evehelper.application.dto.response.MarketOrderDTO">
         select distinct mo.type_id, it.type_name, price_sale.price as sale_price, price_buy.price as buy_price
         from market_order mo
             left join inv_types it

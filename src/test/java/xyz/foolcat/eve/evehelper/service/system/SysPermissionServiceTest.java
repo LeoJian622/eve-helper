@@ -7,7 +7,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import xyz.foolcat.eve.evehelper.common.constant.GlobalConstants;
+import xyz.foolcat.eve.evehelper.domain.service.system.SysPermissionService;
+import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 
 import javax.annotation.Resource;
 import java.util.List;

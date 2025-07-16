@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.SysMenuMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.SysMenu">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.SysMenuMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysMenu">
     <!--@mbg.generated-->
     <!--@Table sys_menu-->
     <id column="id" jdbcType="BIGINT" property="id" />
@@ -174,7 +174,7 @@
         #{item.gmtModified,jdbcType=TIMESTAMP})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.domain.system.SysMenu" useGeneratedKeys="true">
+  <insert id="insertOrUpdate" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysMenu" useGeneratedKeys="true">
     <!--@mbg.generated-->
     insert into sys_menu
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -225,7 +225,7 @@
       gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
     </trim>
   </insert>
-  <insert id="insertOrUpdateSelective" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.domain.system.SysMenu" useGeneratedKeys="true">
+  <insert id="insertOrUpdateSelective" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysMenu" useGeneratedKeys="true">
     <!--@mbg.generated-->
     insert into sys_menu
     <trim prefix="(" suffix=")" suffixOverrides=",">

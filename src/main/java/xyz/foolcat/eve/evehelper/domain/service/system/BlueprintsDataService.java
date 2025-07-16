@@ -1,0 +1,59 @@
+package xyz.foolcat.eve.evehelper.domain.service.system;
+
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.springframework.cache.annotation.CacheConfig;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Service;
+import xyz.foolcat.eve.evehelper.application.dto.response.BlueprintCostDTO;
+import xyz.foolcat.eve.evehelper.application.dto.response.BlueprintFormulaDTO;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.BlueprintsData;
+import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.BlueprintsDataMapper;
+
+import java.util.List;
+
+@Service
+@CacheConfig(cacheNames = "BlueprintCostCache")
+public class BlueprintsDataService extends ServiceImpl<BlueprintsDataMapper, BlueprintsData> {
+
+
+    public int batchInsert(List<BlueprintsData> list) {
+        return baseMapper.batchInsert(list);
+    }
+
+    /**
+     * 查询卖单价，收单价，材料卖单总价，材料收单总价
+     *
+     * @return List<BlueprintCostDTO>
+     */
+    @Cacheable
+    public List<BlueprintCostDTO> queryAllBlueprintsCost() {
+        return baseMapper.calcluateCost(null);
+    }
+
+    /**
+     * 根据物品ID查询卖单价，收单价，材料卖单总价，材料收单总价
+     *
+     * @param typeId 物品ID
+     * @return BlueprintCostDTO
+     */
+    @Cacheable
+    public BlueprintCostDTO queryAllBlueprintsCostByBlueTypeId(Integer typeId) {
+        List<BlueprintCostDTO> result = baseMapper.calcluateCost(typeId);
+        return result.size() > 0 ? result.get(0) : new BlueprintCostDTO();
+    }
+
+
+    public BlueprintFormulaDTO queryBlueprintFormulaByTypeId(Integer typeId) {
+        return null;
+    }
+
+
+    public int insertOrUpdate(BlueprintsData record) {
+        return baseMapper.insertOrUpdate(record);
+    }
+
+    public int insertOrUpdateSelective(BlueprintsData record) {
+        return baseMapper.insertOrUpdateSelective(record);
+    }
+}
+

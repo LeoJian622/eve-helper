@@ -6,9 +6,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import xyz.foolcat.eve.evehelper.domain.service.system.BlueprintsService;
 
 import javax.annotation.Resource;
-
 import java.text.ParseException;
 
 

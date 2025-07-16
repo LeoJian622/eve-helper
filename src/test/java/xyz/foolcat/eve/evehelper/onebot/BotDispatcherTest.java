@@ -6,9 +6,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import xyz.foolcat.eve.evehelper.onebot.model.MessageEvent;
-
-import static org.junit.jupiter.api.Assertions.*;
+import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotDispatcher;
+import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.model.MessageEvent;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

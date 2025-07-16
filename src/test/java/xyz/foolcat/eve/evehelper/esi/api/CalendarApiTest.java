@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.esi.api;
+package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -8,15 +8,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
-import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
-import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
-import xyz.foolcat.eve.evehelper.esi.enums.CalendarEventEnum;
-import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
-import xyz.foolcat.eve.evehelper.esi.model.CalendarEventAttendeesResponse;
-import xyz.foolcat.eve.evehelper.esi.model.CalendarResponse;
-import xyz.foolcat.eve.evehelper.esi.model.CalendarEventResponse;
-import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CalendarEventAttendeesResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CalendarEventResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CalendarResponse;
 
 import java.util.List;
 import java.util.Objects;
@@ -60,7 +59,7 @@ class CalendarApiTest {
 
     @Test
     void updateCharactersCalendarEventId() {
-        Object o = calendarApi.updateCharactersCalendarEventId(2112818290, "serenity", 604077, CalendarEventEnum.ACCEPTED, at).block();
+        Object o = calendarApi.updateCharactersCalendarEventId(2112818290, "serenity", 604077, xyz.foolcat.eve.evehelper.esi.enums.CalendarEventEnum.ACCEPTED, at).block();
         System.out.println("o = " + o);
     }
 

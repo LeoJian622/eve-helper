@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.esi.api;
+package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -8,15 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
-import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
-import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
-import xyz.foolcat.eve.evehelper.esi.model.*;
-import xyz.foolcat.eve.evehelper.esi.model.send.NewLabel;
-import xyz.foolcat.eve.evehelper.esi.model.send.NewMail;
-import xyz.foolcat.eve.evehelper.esi.model.sub.Recipient;
-import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
-import xyz.foolcat.eve.evehelper.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.Recipient;
 
 import java.util.List;
 import java.util.Objects;
@@ -53,7 +50,7 @@ class MailApiTest {
 
     @Test
     void addCharacterMail() {
-        NewMail newMail = new NewMail();
+        xyz.foolcat.eve.evehelper.esi.model.send.NewMail newMail = new xyz.foolcat.eve.evehelper.esi.model.send.NewMail();
         newMail.setSubject("PVE调研，请务必填写，会影响改版后的可刷异常数量");
         newMail.setBody("【腾讯文档】当前版本静寂谷、对舞、特布特、血特、新八的PVE异常调研\n" +
                 "https://docs.qq.com/form/page/DV3BpYUdRZXVmdXlZ\n" +
@@ -95,7 +92,7 @@ class MailApiTest {
 
     @Test
     void addCharacterMailLabels() {
-        NewLabel newLabel = new NewLabel();
+        xyz.foolcat.eve.evehelper.esi.model.send.NewLabel newLabel = new xyz.foolcat.eve.evehelper.esi.model.send.NewLabel();
         newLabel.setName("test");
         Integer integer = mailApi.addCharacterMailLabels(2112818290, "serenity", newLabel, at).block();
         System.out.println("integer = " + integer);

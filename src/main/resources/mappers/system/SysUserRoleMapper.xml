@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.SysUserRoleMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.SysUserRole">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.SysUserRoleMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysUserRolePO">
     <!--@mbg.generated-->
     <!--@Table sys_user_role-->
     <id column="user_id" jdbcType="INTEGER" property="userId" />
@@ -67,7 +67,7 @@
         #{item.gmtModified,jdbcType=TIMESTAMP})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.SysUserRole">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysUserRolePO">
     <!--@mbg.generated-->
     insert into sys_user_role
     (user_id, role_id, gmt_create, gmt_modified)
@@ -80,7 +80,7 @@
     gmt_create = #{gmtCreate,jdbcType=TIMESTAMP}, 
     gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.SysUserRole">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysUserRolePO">
     <!--@mbg.generated-->
     insert into sys_user_role
     <trim prefix="(" suffix=")" suffixOverrides=",">

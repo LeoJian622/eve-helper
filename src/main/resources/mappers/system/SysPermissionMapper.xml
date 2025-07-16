@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.SysPermissionMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.SysPermission">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.SysPermissionMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysPermissionPO">
     <!--@mbg.generated-->
     <!--@Table sys_permission-->
     <id column="id" jdbcType="BIGINT" property="id" />
@@ -122,7 +122,7 @@
         )
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.domain.system.SysPermission" useGeneratedKeys="true">
+  <insert id="insertOrUpdate" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysPermissionPO" useGeneratedKeys="true">
     <!--@mbg.generated-->
     insert into sys_permission
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -161,7 +161,7 @@
       gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
     </trim>
   </insert>
-  <insert id="insertOrUpdateSelective" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.domain.system.SysPermission" useGeneratedKeys="true">
+  <insert id="insertOrUpdateSelective" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysPermissionPO" useGeneratedKeys="true">
     <!--@mbg.generated-->
     insert into sys_permission
     <trim prefix="(" suffix=")" suffixOverrides=",">

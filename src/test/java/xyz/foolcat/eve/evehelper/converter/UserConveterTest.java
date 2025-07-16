@@ -5,8 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import xyz.foolcat.eve.evehelper.domain.system.SysUser;
-import xyz.foolcat.eve.evehelper.dto.system.UserDTO;
+import xyz.foolcat.eve.evehelper.application.assembler.UserConverter;
+import xyz.foolcat.eve.evehelper.application.dto.response.UserDTO;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 
 import javax.annotation.Resource;
 

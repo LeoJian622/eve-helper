@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.eve.InvuniquenamesMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.eve.Invuniquenames">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.eve.InvuniquenamesMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.InvUniqueNamesPO">
     <!--@mbg.generated-->
     <!--@Table invuniquenames-->
     <id column="itemID" jdbcType="INTEGER" property="itemid" />
@@ -42,7 +42,7 @@
         )
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.eve.Invuniquenames">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.InvUniqueNamesPO">
     <!--@mbg.generated-->
     insert into invuniquenames
     (itemID, itemName, groupID)
@@ -54,7 +54,7 @@
     itemName = #{itemname,jdbcType=VARCHAR}, 
     groupID = #{groupid,jdbcType=INTEGER}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.eve.Invuniquenames">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.InvUniqueNamesPO">
     <!--@mbg.generated-->
     insert into invuniquenames
     <trim prefix="(" suffix=")" suffixOverrides=",">

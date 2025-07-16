@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.esi.api;
+package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -8,14 +8,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
-import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
-import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
-import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
-import xyz.foolcat.eve.evehelper.esi.model.CorporationWalletsResponse;
-import xyz.foolcat.eve.evehelper.esi.model.WalletJournalResponse;
-import xyz.foolcat.eve.evehelper.esi.model.WalletTransactionsResponse;
-import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CorporationWalletsResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.WalletJournalResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.WalletTransactionsResponse;
+import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 
 import java.util.List;
 import java.util.Objects;

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.SysRoleMenuMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.SysRoleMenu">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.SysRoleMenuMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysRoleMenuPO">
     <!--@mbg.generated-->
     <!--@Table sys_role_menu-->
     <result column="role_id" jdbcType="BIGINT" property="roleId" />
@@ -23,7 +23,7 @@
         #{item.gmtModified,jdbcType=TIMESTAMP})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.SysRoleMenu">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysRoleMenuPO">
     <!--@mbg.generated-->
     insert into sys_role_menu
     (role_id, menu_id, gmt_create, gmt_modified)
@@ -36,7 +36,7 @@
     gmt_create = #{gmtCreate,jdbcType=TIMESTAMP}, 
     gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.SysRoleMenu">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysRoleMenuPO">
     <!--@mbg.generated-->
     insert into sys_role_menu
     <trim prefix="(" suffix=")" suffixOverrides=",">

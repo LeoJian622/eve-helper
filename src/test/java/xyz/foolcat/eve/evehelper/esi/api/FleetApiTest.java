@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.esi.api;
+package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -8,13 +8,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
-import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
-import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
-import xyz.foolcat.eve.evehelper.esi.model.*;
-import xyz.foolcat.eve.evehelper.esi.model.send.FleetInvitationDetails;
-import xyz.foolcat.eve.evehelper.esi.model.send.FleetNewSetting;
-import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 
 import java.util.List;
 import java.util.Objects;
@@ -57,7 +55,7 @@ class FleetApiTest {
 
     @Test
     void updateFleet() {
-        FleetNewSetting fleetNewSetting = new FleetNewSetting();
+        xyz.foolcat.eve.evehelper.esi.model.send.FleetNewSetting fleetNewSetting = new xyz.foolcat.eve.evehelper.esi.model.send.FleetNewSetting();
         fleetNewSetting.setIsFreeMove(true);
         FleetDetailResponse fleetDetailResponse = fleetApi.updateFleet(1022810945368L, "serenity", fleetNewSetting, at).block();
         System.out.println("fleetDetailResponse = " + fleetDetailResponse);
@@ -71,7 +69,7 @@ class FleetApiTest {
 
     @Test
     void addFleetMember() {
-        FleetInvitationDetails fleetInvitationDetails = new FleetInvitationDetails();
+        xyz.foolcat.eve.evehelper.esi.model.send.FleetInvitationDetails fleetInvitationDetails = new xyz.foolcat.eve.evehelper.esi.model.send.FleetInvitationDetails();
         fleetInvitationDetails.setCharacterId(2112832425);
         fleetInvitationDetails.setRole("squad_member");
 //        fleetInvitationDetails.setSquadId(1L);
@@ -88,7 +86,7 @@ class FleetApiTest {
 
     @Test
     void updateFleetMember() {
-        FleetInvitationDetails fleetInvitationDetails = new FleetInvitationDetails();
+        xyz.foolcat.eve.evehelper.esi.model.send.FleetInvitationDetails fleetInvitationDetails = new xyz.foolcat.eve.evehelper.esi.model.send.FleetInvitationDetails();
         fleetInvitationDetails.setRole("squad_commander");
         fleetInvitationDetails.setSquadId(3052010945368L);
         fleetInvitationDetails.setWingId(2027110945368L);

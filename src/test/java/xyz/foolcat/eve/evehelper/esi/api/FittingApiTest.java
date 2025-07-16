@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.esi.api;
+package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -8,14 +8,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
-import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
-import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
-import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
-import xyz.foolcat.eve.evehelper.esi.model.FittingResponse;
-import xyz.foolcat.eve.evehelper.esi.model.send.Fitting;
-import xyz.foolcat.eve.evehelper.esi.model.sub.FittingItem;
-import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.FittingResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.FittingItem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +52,7 @@ class FittingApiTest {
 
     @Test
     void addCharacterFittings() {
-        Fitting fitting = new Fitting();
+        xyz.foolcat.eve.evehelper.esi.model.send.Fitting fitting = new xyz.foolcat.eve.evehelper.esi.model.send.Fitting();
         fitting.setDescription("test");
         fitting.setName("测试装配");
         fitting.setShipTypeId(626);

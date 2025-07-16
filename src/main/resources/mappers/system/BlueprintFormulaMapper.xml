@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.BlueprintFormulaMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.BlueprintFormula">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.BlueprintFormulaMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.BlueprintFormulaPO">
     <!--@mbg.generated-->
     <!--@Table blueprint_formula-->
     <result column="blueprint_id" jdbcType="INTEGER" property="blueprintId" />
@@ -24,7 +24,7 @@
         #{item.activityId,jdbcType=TINYINT}, #{item.quantity,jdbcType=INTEGER})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.BlueprintFormula">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.BlueprintFormulaPO">
     <!--@mbg.generated-->
     insert into blueprint_formula
     (blueprint_id, material_type_id, type_name, activity_id, quantity)
@@ -38,7 +38,7 @@
     activity_id = #{activityId,jdbcType=TINYINT}, 
     quantity = #{quantity,jdbcType=INTEGER}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.BlueprintFormula">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.BlueprintFormulaPO">
     <!--@mbg.generated-->
     insert into blueprint_formula
     <trim prefix="(" suffix=")" suffixOverrides=",">

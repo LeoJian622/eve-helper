@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.ObserverMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.Observer">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.ObserverMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.ObserverPO">
     <!--@mbg.generated-->
     <!--@Table observer-->
     <id column="observer_id" jdbcType="BIGINT" property="observerId" />
@@ -79,7 +79,7 @@
         #{item.croporationId,jdbcType=BIGINT})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.Observer">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.ObserverPO">
     <!--@mbg.generated-->
     insert into observer
     (observer_id, observer_type, last_updated, croporation_id)
@@ -92,7 +92,7 @@
     last_updated = #{lastUpdated,jdbcType=TIMESTAMP}, 
     croporation_id = #{croporationId,jdbcType=BIGINT}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.Observer">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.ObserverPO">
     <!--@mbg.generated-->
     insert into observer
     <trim prefix="(" suffix=")" suffixOverrides=",">

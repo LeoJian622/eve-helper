@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.InvTypesMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.InvTypes">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.InvTypesMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.InvTypesPO">
     <!--@mbg.generated-->
     <!--@Table inv_types-->
     <id column="type_id" jdbcType="INTEGER" property="typeId" />
@@ -326,7 +326,7 @@
         )
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.InvTypes">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.InvTypesPO">
     <!--@mbg.generated-->
     insert into inv_types
     (type_id, group_id, `name`, description, mass, volume, packaged_volume, capacity, 
@@ -366,7 +366,7 @@
     meta_group_id = #{metaGroupId,jdbcType=INTEGER}, 
     variationparent_type_id = #{variationparentTypeId,jdbcType=INTEGER}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.InvTypes">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.InvTypesPO">
     <!--@mbg.generated-->
     insert into inv_types
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -576,7 +576,7 @@
       </if>
     </trim>
   </insert>
-  <resultMap id="MarketTreeResultMap" type="xyz.foolcat.eve.evehelper.vo.InvTypesVO">
+  <resultMap id="MarketTreeResultMap" type="xyz.foolcat.eve.evehelper.interfaces.web.vo.InvTypesVO">
     <result column="type_Id" jdbcType="INTEGER" property="typeId" />
     <result column="type_name" jdbcType="VARCHAR" property="typeName" />
   </resultMap>

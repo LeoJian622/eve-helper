@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.BlueprintsDataMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.BlueprintsData">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.BlueprintsDataMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.BlueprintsDataPO">
     <!--@mbg.generated-->
     <!--@Table blueprints_data-->
     <result column="type_id" jdbcType="INTEGER" property="typeId" />
@@ -32,7 +32,7 @@
         )
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.BlueprintsData">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.BlueprintsDataPO">
     <!--@mbg.generated-->
     insert into blueprints_data
     (type_id, type_name, blueprint_type_id, blueprint_name, activity_id, quantity, probability, 
@@ -53,7 +53,7 @@
     `time` = #{time,jdbcType=INTEGER}, 
     max_production_limit = #{maxProductionLimit,jdbcType=INTEGER}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.BlueprintsData">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.BlueprintsDataPO">
     <!--@mbg.generated-->
     insert into blueprints_data
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -147,7 +147,7 @@
     </trim>
   </insert>
 
-    <select id="calcluateCost" resultType="xyz.foolcat.eve.evehelper.dto.system.BlueprintCostDTO">
+    <select id="calcluateCost" resultType="xyz.foolcat.eve.evehelper.application.dto.response.BlueprintCostDTO">
         select bf.type_id,
                bf.type_name,
                sale_price.sale                             sale,
@@ -189,7 +189,7 @@
         group by type_id, type_name, activity_id
     </select>
 
-    <select id="queryBlueprintFormulaByTypeId" resultType="xyz.foolcat.eve.evehelper.dto.system.BlueprintFormulaDTO">
+    <select id="queryBlueprintFormulaByTypeId" resultType="xyz.foolcat.eve.evehelper.application.dto.response.BlueprintFormulaDTO">
     </select>
 
     <!--    &amp;lt;select id="queryDetailList" resultType=""-->
