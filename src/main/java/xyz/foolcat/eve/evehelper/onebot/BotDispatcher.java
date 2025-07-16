@@ -55,11 +55,11 @@ public class BotDispatcher {
                     case ".jita": {
                         return queryJitaPrice(messageEvent, commandMatcher);
                     }
-                    case ".admAddType":{
+                    case ".admAddType": {
                         return addInvTypes(messageEvent, commandMatcher);
                     }
-                    case ".tax":{
-
+                    case ".tax": {
+                        return queryTax(messageEvent, commandMatcher);
                     }
                     default:
                         break;
@@ -73,14 +73,14 @@ public class BotDispatcher {
     }
 
     private @NotNull JSONObject addInvTypes(MessageEvent messageEvent, Matcher commandMatcher) {
-        if (!"359635464".equals(messageEvent.getUser_id().toString())){
+        if (!"359635464".equals(messageEvent.getUser_id().toString())) {
             return BotUtil.generateMessage(messageEvent, "没有权限", false);
         }
         InvTypes invTypes = invTypesService.updateTypeByTypeId(Integer.parseInt(commandMatcher.group(2)));
         String message;
         if (invTypes != null) {
             message = "添加物品：" + invTypes.getName() + "成功";
-        }else {
+        } else {
             message = "添加ID：" + commandMatcher.group(2) + "失败";
         }
         return BotUtil.generateMessage(messageEvent, message, false);
@@ -101,7 +101,7 @@ public class BotDispatcher {
 
     private @NotNull JSONObject queryTax(MessageEvent messageEvent, Matcher commandMatcher) {
         String[] arg = commandMatcher.group(2).split(" ");
-        if (arg.length != 3){
+        if (arg.length != 3) {
             return BotUtil.generateMessage(messageEvent, "参数为：军团税 现有税 年月(202411)", false);
         }
         try {
