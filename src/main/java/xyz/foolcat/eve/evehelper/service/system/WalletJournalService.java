@@ -65,6 +65,8 @@ public class WalletJournalService extends ServiceImpl<WalletJournalMapper, Walle
 
     private final Pattern bountyType = Pattern.compile("(.*)因在");
 
+    private final Pattern dedType = Pattern.compile(".*对(.*)的服务给予报酬。");
+
     /**
      * ESI获取的建筑列表批量获取数据
      *
@@ -104,6 +106,12 @@ public class WalletJournalService extends ServiceImpl<WalletJournalMapper, Walle
                             character = matcher.group(1);
                         }
                     }
+                    if ("corporate_reward_payout".equals(wallet.getRefType())) {
+                        Matcher matcher = dedType.matcher(wallet.getDescription());
+                        if (matcher.find()) {
+                            character = matcher.group(1);
+                        }
+                    }
                     return walletJournalConverter.conver(wallet, eveAccount.getCorpId(), character);
                 })
                 .collect(Collectors.toList());
@@ -127,7 +135,7 @@ public class WalletJournalService extends ServiceImpl<WalletJournalMapper, Walle
         List<Map<String, Object>> sumList = listMaps(new QueryWrapper<WalletJournal>()
                 .select("`character` as name,sum(amount) as amount")
                 .lambda()
-                .and(item -> item.eq(WalletJournal::getRefType, "bounty_prizes").or().eq(WalletJournal::getRefType, "ess_escrow_transfer"))
+                .and(item -> item.eq(WalletJournal::getRefType, "bounty_prizes").or().eq(WalletJournal::getRefType, "ess_escrow_transfer").or().eq(WalletJournal::getRefType, "corporate_reward_payout"))
                 .between(WalletJournal::getDate, start, end)
                 .groupBy(WalletJournal::getCharacter)
         );

@@ -10,6 +10,8 @@ import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
 
+import java.util.Set;
+
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayName("ESI AuthorizeOAuth Test")
@@ -21,11 +23,11 @@ class AuthorizeOAuthTest {
 
     @Test
     void authorizeUrl() {
-        String authorizeUrl = authorizeOAuth.authorizeUrl(SsoScopes.ALL);
-//        String authorizeUrl = authorizeOAuth.authorizeUrl(Set.of("esi-clones.read_clones.v1",
-//                "esi-location.read_location.v1",
-//                "esi-location.read_online.v1",
-//                "esi-location.read_ship_type.v1"));
+//        String authorizeUrl = authorizeOAuth.authorizeUrl(SsoScopes.ALL);
+        String authorizeUrl = authorizeOAuth.authorizeUrl(Set.of("esi-clones.read_clones.v1",
+                "esi-location.read_location.v1",
+                "esi-location.read_online.v1",
+                "esi-location.read_ship_type.v1"));
         Assert.notNull(authorizeUrl);
         System.out.println("authorizeUrl = " + authorizeUrl);
     }

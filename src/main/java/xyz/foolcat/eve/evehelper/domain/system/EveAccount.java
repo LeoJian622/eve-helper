@@ -80,11 +80,11 @@ public class EveAccount implements Serializable {
     private String refreshToken;
 
     @TableField(value = "gmt_create")
-    @Schema(description = "")
+    @Schema(description = "创建时间")
     private Date gmtCreate;
 
     @TableField(value = "gmt_modified")
-    @Schema(description = "")
+    @Schema(description = "修改时间")
     private Date gmtModified;
 
     /**
