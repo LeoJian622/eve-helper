@@ -21,4 +21,8 @@ public interface AssetsRepository {
     int batchInsertOrUpdate(List<Assets> list);
 
     List<Assets> selectAssertsInvtypeUniverse(String id, int pages, int rows);
-} 
+
+    void removeBatchByIds(List<Long> removeItemIds);
+
+    List<Assets> findByOwnerId(Integer characterId);
+}

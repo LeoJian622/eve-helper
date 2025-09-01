@@ -306,4 +306,15 @@
     quantity = values(quantity),
     owner_id = values(owner_id)
   </insert>
+
+  <delete id="removeByItemId">
+    Delete from assets
+    where item_id in #{list}
+    </delete>
+
+  <select id="findByOwnerId" resultType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.AssetsPO">
+    select <include refid="Base_Column_List"/>
+    from assets
+    where owner_id = #{characterId,jdbcType=INTEGER}
+  </select>
 </mapper>

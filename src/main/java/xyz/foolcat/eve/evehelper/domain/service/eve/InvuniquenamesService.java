@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.domain.model.entity.eve.Invuniquenames;
+import xyz.foolcat.eve.evehelper.domain.model.entity.eve.InvUniqueNames;
 import xyz.foolcat.eve.evehelper.domain.repository.eve.InvuniquenamesRepository;
 
 import java.util.List;
@@ -20,19 +20,19 @@ public class InvuniquenamesService {
 
     private final InvuniquenamesRepository invuniquenamesRepository;
 
-    public int updateBatch(List<Invuniquenames> list) {
+    public int updateBatch(List<InvUniqueNames> list) {
         return invuniquenamesRepository.updateBatch(list);
     }
 
-    public int batchInsert(List<Invuniquenames> list) {
+    public int batchInsert(List<InvUniqueNames> list) {
         return invuniquenamesRepository.batchInsert(list);
     }
 
-    public int insertOrUpdate(Invuniquenames record) {
+    public int insertOrUpdate(InvUniqueNames record) {
         return invuniquenamesRepository.insertOrUpdate(record);
     }
 
-    public int insertOrUpdateSelective(Invuniquenames record) {
+    public int insertOrUpdateSelective(InvUniqueNames record) {
         return invuniquenamesRepository.insertOrUpdateSelective(record);
     }
 }

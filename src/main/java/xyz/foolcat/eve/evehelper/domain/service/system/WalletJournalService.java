@@ -38,6 +38,8 @@ public class WalletJournalService extends ServiceImpl<WalletJournalMapper, Walle
 
     private final WalletJournalConverter walletJournalConverter;
 
+    private final AuthorizeUtil authorizeUtil;
+
     public int batchInsert(List<WalletJournal> list) {
         return baseMapper.batchInsert(list);
     }
@@ -76,7 +78,7 @@ public class WalletJournalService extends ServiceImpl<WalletJournalMapper, Walle
         /*
           获取游戏人物信息及授权
          */
-        EveAccount eveAccount = AuthorizeUtil.authorize(cId);
+        EveAccount eveAccount = authorizeUtil.authorize(cId);
         String accessToken = esiApiService.getAccessToken(cId, eveAccount.getUserId());
 
         /*

@@ -1,36 +1,42 @@
 package xyz.foolcat.eve.evehelper.domain.service.system;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EsiConfig;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.EsiConfigMapper;
+import xyz.foolcat.eve.evehelper.domain.repository.system.EsiConfigRepository;
 
+import javax.annotation.Resource;
 import java.util.List;
 
 @Service
+@Slf4j
 @Transactional(rollbackFor = RuntimeException.class)
-public class EsiConfigService extends ServiceImpl<EsiConfigMapper, EsiConfig> {
+@RequiredArgsConstructor
+public class EsiConfigService {
 
+    @Resource
+    private EsiConfigRepository esiConfigRepository;
 
     public int updateBatch(List<EsiConfig> list) {
-        return baseMapper.updateBatch(list);
+        return esiConfigRepository.updateBatch(list);
     }
 
     public int updateBatchSelective(List<EsiConfig> list) {
-        return baseMapper.updateBatchSelective(list);
+        return esiConfigRepository.updateBatchSelective(list);
     }
 
     public int batchInsert(List<EsiConfig> list) {
-        return baseMapper.batchInsert(list);
+        return esiConfigRepository.batchInsert(list);
     }
 
     public int insertOrUpdate(EsiConfig record) {
-        return baseMapper.insertOrUpdate(record);
+        return esiConfigRepository.insertOrUpdate(record);
     }
 
     public int insertOrUpdateSelective(EsiConfig record) {
-        return baseMapper.insertOrUpdateSelective(record);
+        return esiConfigRepository.insertOrUpdateSelective(record);
     }
 }
 

@@ -10,7 +10,8 @@ import java.io.Serializable;
 @Data
 @Accessors(chain = true)
 public class IndustryActivityMaterialsPO implements Serializable {
-    @Schema(name="")
+
+    @Schema(name="蓝图类型IO")
     private Integer blueprinttypeid;
 
     @Schema(name="")

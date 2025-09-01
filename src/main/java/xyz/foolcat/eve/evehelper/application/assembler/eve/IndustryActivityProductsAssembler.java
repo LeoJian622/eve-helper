@@ -13,7 +13,6 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.IndustryA
 public interface IndustryActivityProductsAssembler {
     /**
      * IndustryActivityProductsPO 转换为 IndustryActivityProducts
-     *
      * @param IndustryActivityProductsPO
      * @return
      */

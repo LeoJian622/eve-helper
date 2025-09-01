@@ -7,6 +7,8 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AssetResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.AssetsPO;
 
+import java.util.List;
+
 /**
  * @author Leojan
  * date 2024-06-24 11:49
@@ -29,5 +31,9 @@ public interface AssetsAssembler {
     AssetsPO entity2Po(Assets assets);
 
     Assets po2Entity(AssetsPO assetsPO);
+
+    List<AssetsPO> entity2Po(List<Assets> assets);
+
+    List<Assets> po2Entity(List<AssetsPO> assetsPO);
 
 }

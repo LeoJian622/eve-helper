@@ -5,10 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.application.assembler.system.BlueprintsAssembler;
-import xyz.foolcat.eve.evehelper.application.dto.query.BlueprintsQuery;
-import xyz.foolcat.eve.evehelper.application.dto.response.PageResultDTO;
+import xyz.foolcat.eve.evehelper.application.query.handler.BlueprintsQueryHandler;
+import xyz.foolcat.eve.evehelper.application.query.model.BlueprintsQuery;
 import xyz.foolcat.eve.evehelper.domain.service.system.BlueprintsService;
 import xyz.foolcat.eve.evehelper.interfaces.web.vo.BlueprintsVO;
+import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
+import xyz.foolcat.eve.evehelper.shared.util.PageResultUtil;
 
 /**
  * 蓝图应用服务
@@ -19,29 +21,25 @@ import xyz.foolcat.eve.evehelper.interfaces.web.vo.BlueprintsVO;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class BlueprintsApplicationService {
-    
+
     private final BlueprintsService blueprintsService;
+
+    private final BlueprintsQueryHandler blueprintsQueryHandler;
+
     private final BlueprintsAssembler blueprintsAssembler;
-    
+
     /**
      * 分页查询蓝图列表
-     * 
+     *
      * @param queryDTO 查询条件
      * @return 分页结果
      */
-    public PageResultDTO<BlueprintsVO> queryBlueprintsByPage(BlueprintsQuery queryDTO) {
+    public PageResult<BlueprintsVO> queryBlueprintsByPage(BlueprintsQuery queryDTO) {
         // 1. 参数验证（可以添加验证器）
         validateQueryParams(queryDTO);
-        
-        // 2. 转换为MyBatis Plus的Page对象
-
-        // 3. 调用领域服务进行查询
-        var pageResult = blueprintsService.getBlueprintsListById( queryDTO, queryDTO.getOwnerId());
-        
-        // 4. 转换为应用层的分页结果DTO
-        return PageResultDTO.fromMyBatisPage(pageResult);
+        return PageResultUtil.copy(blueprintsQueryHandler.handle(queryDTO), blueprintsAssembler::dto2Vo);
     }
-    
+
     /**
      * 验证查询参数
      */
@@ -50,7 +48,7 @@ public class BlueprintsApplicationService {
         if (queryDTO.getOwnerId() == null || queryDTO.getOwnerId().trim().isEmpty()) {
             throw new IllegalArgumentException("所有者ID不能为空");
         }
-        
+
         // 可以添加权限验证
         // validatePermission(queryDTO.getOwnerId());
     }

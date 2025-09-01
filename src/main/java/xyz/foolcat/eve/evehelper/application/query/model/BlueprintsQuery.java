@@ -1,11 +1,9 @@
-package xyz.foolcat.eve.evehelper.application.dto.query;
+package xyz.foolcat.eve.evehelper.application.query.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
-import xyz.foolcat.eve.evehelper.shared.kernel.base.PageQuery;
+import xyz.foolcat.eve.evehelper.application.dto.BlueprintsDTO;
+import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 
 import javax.validation.constraints.NotBlank;
 
@@ -18,7 +16,7 @@ import javax.validation.constraints.NotBlank;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BlueprintsQuery extends PageQuery {
+public class BlueprintsQuery extends PageQuery implements Query<PageResult<BlueprintsDTO>> {
     
     /**
      * 人物或军团的ID
@@ -39,10 +37,12 @@ public class BlueprintsQuery extends PageQuery {
     /**
      * 是否包含材料信息
      */
+    @Builder.Default
     private Boolean includeMaterials = false;
     
     /**
      * 是否包含产品信息
      */
+    @Builder.Default
     private Boolean includeProducts = false;
 } 

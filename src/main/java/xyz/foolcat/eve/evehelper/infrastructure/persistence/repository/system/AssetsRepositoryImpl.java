@@ -65,4 +65,13 @@ public class AssetsRepositoryImpl implements AssetsRepository {
         return assetsMapper.batchInsertOrUpdate(collect);
     }
 
+    @Override
+    public void removeBatchByIds(List<Long> itemIds) {
+        assetsMapper.removeByItemId(itemIds);
+    }
+
+    @Override
+    public List<Assets> findByOwnerId(Integer characterId) {
+        return assetsAssembler.po2Entity(assetsMapper.findByOwnerId(characterId));
+    }
 }

@@ -7,11 +7,13 @@
 ```
 application/
 ├── service/         # 应用服务（用例实现）
-│   ├── command/     # 命令处理
-│   └── query/       # 查询处理
+├── command/         # 命令
+│   ├── model        # 命令对象
+│   └── handler/     # 应用事件处理器
+├── query/           # 查询
+│   ├── model        # 查询对象
+│   └── handler/     # 应用事件处理器
 ├── dto/             # 数据传输对象
-│   ├── command/     # 命令DTO
-│   ├── query/       # 查询DTO
 │   └── response/    # 响应DTO
 ├── assembler/       # 组装器（DTO与领域对象转换）
 ├── event/           # 应用事件

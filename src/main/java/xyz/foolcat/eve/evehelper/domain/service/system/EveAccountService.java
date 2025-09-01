@@ -1,32 +1,38 @@
 package xyz.foolcat.eve.evehelper.domain.service.system;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.EveAccountMapper;
+import xyz.foolcat.eve.evehelper.domain.repository.system.EveAccountRepository;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
 import java.util.List;
 
 @Service
-public class EveAccountService extends ServiceImpl<EveAccountMapper, EveAccount> {
+@Slf4j
+@Transactional(rollbackFor = RuntimeException.class)
+@RequiredArgsConstructor
+public class EveAccountService  {
 
+    private final EveAccountRepository eveAccountRepository;
 
     public int updateBatch(List<EveAccount> list) {
-        return baseMapper.updateBatch(list);
+        return eveAccountRepository.updateBatch(list);
     }
 
     public int batchInsert(List<EveAccount> list) {
-        return baseMapper.batchInsert(list);
+        return eveAccountRepository.batchInsert(list);
     }
 
     public int insertOrUpdate(EveAccount record) {
-        return baseMapper.insertOrUpdate(record);
+        return eveAccountRepository.insertOrUpdate(record);
     }
 
     public int insertOrUpdateSelective(EveAccount record) {
-        return baseMapper.insertOrUpdateSelective(record);
+        return eveAccountRepository.insertOrUpdateSelective(record);
     }
 
     /**
@@ -39,10 +45,7 @@ public class EveAccountService extends ServiceImpl<EveAccountMapper, EveAccount>
      * @throws EveHelperException 账户不存在则抛出异常
      */
     public EveAccount getAccountOne(Integer userId, Integer cId) {
-        EveAccount account = lambdaQuery()
-                .and(q -> q.eq(EveAccount::getUserId, userId).or().eq(EveAccount::getQq, userId))
-                .and(q -> q.eq(EveAccount::getCharacterId, cId).or().eq(EveAccount::getCorpId, cId))
-                .one();
+        EveAccount account = eveAccountRepository.getAccount(userId, cId);
         if (account == null) {
             throw new EveHelperException(ResultCode.USER_ACCOUNT_NOT_EXIST);
         }
@@ -50,7 +53,7 @@ public class EveAccountService extends ServiceImpl<EveAccountMapper, EveAccount>
     }
 
     public int updateBatchSelective(List<EveAccount> list) {
-        return baseMapper.updateBatchSelective(list);
+        return eveAccountRepository.updateBatchSelective(list);
     }
 }
 

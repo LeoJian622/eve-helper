@@ -37,7 +37,10 @@ public class IndustryJobService extends ServiceImpl<IndustryJobMapper, IndustryJ
     private final IndustryApi industryApi;
 
     private final IndustryJobAssembler industryJobAssembler;
+
     private final InvTypesService invTypesService;
+
+    private final AuthorizeUtil authorizeUtil;
 
     public int updateBatch(List<IndustryJob> list) {
         return baseMapper.updateBatch(list);
@@ -73,7 +76,7 @@ public class IndustryJobService extends ServiceImpl<IndustryJobMapper, IndustryJ
         /**
          * 获取游戏人物信息及授权
          */
-        EveAccount eveAccount = AuthorizeUtil.authorize(cid);
+        EveAccount eveAccount = authorizeUtil.authorize(cid);
         String accessToken = esiApiService.getAccessToken(cid, eveAccount.getUserId());
 
         if (isCor != null && isCor) {

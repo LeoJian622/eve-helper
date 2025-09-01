@@ -37,12 +37,14 @@ public class MiningDetailService extends ServiceImpl<MiningDetailMapper, MiningD
 
     private final MiningDetailAssembler miningDetailAssembler;
 
+    private final AuthorizeUtil authorizeUtil;
+
     public int batchInsert(List<MiningDetail> list) {
         return baseMapper.batchInsert(list);
     }
 
     public void saveObserverMining(Integer characterId, Long observerId) throws ParseException {
-        EveAccount eveAccount = AuthorizeUtil.authorize(characterId);
+        EveAccount eveAccount = authorizeUtil.authorize(characterId);
         String accessToken = esiApiService.getAccessToken(characterId, eveAccount.getUserId());
 
         Integer maxPage = industryApi.queryCorporationMiningObserverMaxPage(eveAccount.getCorpId(), observerId, EsiClient.SERENITY, accessToken);

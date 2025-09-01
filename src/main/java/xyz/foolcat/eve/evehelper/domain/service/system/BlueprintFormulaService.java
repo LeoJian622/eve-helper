@@ -1,26 +1,32 @@
 package xyz.foolcat.eve.evehelper.domain.service.system;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.BlueprintFormula;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.BlueprintFormulaMapper;
+import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintFormulaRepository;
 
 import java.util.List;
 
 @Service
-public class BlueprintFormulaService extends ServiceImpl<BlueprintFormulaMapper, BlueprintFormula> {
+@Slf4j
+@Transactional(rollbackFor = RuntimeException.class)
+@RequiredArgsConstructor
+public class BlueprintFormulaService {
 
+    private final BlueprintFormulaRepository blueprintFormulaRepository;
 
     public int batchInsert(List<BlueprintFormula> list) {
-        return baseMapper.batchInsert(list);
+        return blueprintFormulaRepository.batchInsert(list);
     }
 
     public int insertOrUpdate(BlueprintFormula record) {
-        return baseMapper.insertOrUpdate(record);
+        return blueprintFormulaRepository.insertOrUpdate(record);
     }
 
     public int insertOrUpdateSelective(BlueprintFormula record) {
-        return baseMapper.insertOrUpdateSelective(record);
+        return blueprintFormulaRepository.insertOrUpdateSelective(record);
     }
 }
 

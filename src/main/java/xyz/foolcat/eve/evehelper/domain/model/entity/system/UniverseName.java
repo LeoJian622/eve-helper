@@ -1,8 +1,6 @@
 package xyz.foolcat.eve.evehelper.domain.model.entity.system;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 
 import java.io.Serializable;
 

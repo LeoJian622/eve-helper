@@ -6,6 +6,8 @@ import org.mapstruct.Mappings;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EsiConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EsiConfigPO;
 
+import java.util.List;
+
 /**
  * ESI配置转换器
  * @author Leojan
@@ -30,4 +32,8 @@ public interface EsiConfigAssembler {
             @Mapping(target = "gmtModified", ignore = true)
     })
     EsiConfigPO domain2Po(EsiConfig esiConfig);
+
+    List<EsiConfig> po2Domain(List<EsiConfigPO> esiConfigPO);
+
+    List<EsiConfigPO> domain2Po(List<EsiConfig> esiConfig);
 } 

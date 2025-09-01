@@ -10,7 +10,6 @@ import lombok.EqualsAndHashCode;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 
 import java.io.Serializable;
-import java.util.Date;
 
 /**
  * 游戏角色表

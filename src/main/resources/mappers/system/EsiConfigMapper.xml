@@ -105,7 +105,7 @@
         #{item.gmtCreate,jdbcType=TIMESTAMP}, #{item.gmtModified,jdbcType=TIMESTAMP})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EsiConfig" useGeneratedKeys="true">
+  <insert id="insertOrUpdate" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EsiConfigPO" useGeneratedKeys="true">
     <!--@mbg.generated-->
     insert into esi_config
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -141,7 +141,7 @@
       gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
     </trim>
   </insert>
-  <insert id="insertOrUpdateSelective" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EsiConfig" useGeneratedKeys="true">
+  <insert id="insertOrUpdateSelective" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EsiConfigPO" useGeneratedKeys="true">
     <!--@mbg.generated-->
     insert into esi_config
     <trim prefix="(" suffix=")" suffixOverrides=",">

@@ -1,7 +1,7 @@
 package xyz.foolcat.eve.evehelper.application.assembler.eve;
 
 import org.mapstruct.Mapper;
-import xyz.foolcat.eve.evehelper.domain.model.entity.eve.Invuniquenames;
+import xyz.foolcat.eve.evehelper.domain.model.entity.eve.InvUniqueNames;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.InvUniqueNamesPO;
 
 /**
@@ -15,12 +15,12 @@ public interface InvuniquenamesAssembler {
      * @param InvuniquenamesPO
      * @return
      */
-    Invuniquenames po2Entity(InvUniqueNamesPO InvuniquenamesPO);
+    InvUniqueNames po2Entity(InvUniqueNamesPO InvuniquenamesPO);
 
     /**
      * Invuniquenames 转换为 InvuniquenamesPO
      * @param Invuniquenames
      * @return
      */
-    InvUniqueNamesPO entity2Po(Invuniquenames Invuniquenames);
+    InvUniqueNamesPO entity2Po(InvUniqueNames Invuniquenames);
 }

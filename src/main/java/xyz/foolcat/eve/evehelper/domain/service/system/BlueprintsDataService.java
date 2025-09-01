@@ -1,23 +1,29 @@
 package xyz.foolcat.eve.evehelper.domain.service.system;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.application.dto.response.BlueprintCostDTO;
 import xyz.foolcat.eve.evehelper.application.dto.response.BlueprintFormulaDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.BlueprintsData;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.BlueprintsDataMapper;
+import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsDataRepository;
 
 import java.util.List;
 
 @Service
+@Slf4j
+@Transactional(rollbackFor = RuntimeException.class)
+@RequiredArgsConstructor
 @CacheConfig(cacheNames = "BlueprintCostCache")
-public class BlueprintsDataService extends ServiceImpl<BlueprintsDataMapper, BlueprintsData> {
+public class BlueprintsDataService {
 
+    private final BlueprintsDataRepository blueprintsDataRepository;
 
     public int batchInsert(List<BlueprintsData> list) {
-        return baseMapper.batchInsert(list);
+        return blueprintsDataRepository.batchInsert(list);
     }
 
     /**
@@ -27,7 +33,7 @@ public class BlueprintsDataService extends ServiceImpl<BlueprintsDataMapper, Blu
      */
     @Cacheable
     public List<BlueprintCostDTO> queryAllBlueprintsCost() {
-        return baseMapper.calcluateCost(null);
+        return blueprintsDataRepository.calcluateCost(null);
     }
 
     /**
@@ -38,8 +44,8 @@ public class BlueprintsDataService extends ServiceImpl<BlueprintsDataMapper, Blu
      */
     @Cacheable
     public BlueprintCostDTO queryAllBlueprintsCostByBlueTypeId(Integer typeId) {
-        List<BlueprintCostDTO> result = baseMapper.calcluateCost(typeId);
-        return result.size() > 0 ? result.get(0) : new BlueprintCostDTO();
+        List<BlueprintCostDTO> result = blueprintsDataRepository.calcluateCost(typeId);
+        return !result.isEmpty() ? result.get(0) : new BlueprintCostDTO();
     }
 
 
@@ -49,11 +55,11 @@ public class BlueprintsDataService extends ServiceImpl<BlueprintsDataMapper, Blu
 
 
     public int insertOrUpdate(BlueprintsData record) {
-        return baseMapper.insertOrUpdate(record);
+        return blueprintsDataRepository.insertOrUpdate(record);
     }
 
     public int insertOrUpdateSelective(BlueprintsData record) {
-        return baseMapper.insertOrUpdateSelective(record);
+        return blueprintsDataRepository.insertOrUpdateSelective(record);
     }
 }
 

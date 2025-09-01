@@ -6,6 +6,8 @@ import org.mapstruct.Mappings;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.BlueprintFormula;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.BlueprintFormulaPO;
 
+import java.util.List;
+
 /**
  * 蓝图配方转换器
  * @author Leojan
@@ -30,4 +32,9 @@ public interface BlueprintFormulaAssembler {
             @Mapping(target = "gmtModified", ignore = true)
     })
     BlueprintFormulaPO domain2Po(BlueprintFormula bluePrintFormula);
+
+    List<BlueprintFormula> po2Domain(List<BlueprintFormulaPO> bluePrintFormulaPOs);
+
+    List<BlueprintFormulaPO> domain2Po(List<BlueprintFormula> bluePrintFormulas);
+
 } 

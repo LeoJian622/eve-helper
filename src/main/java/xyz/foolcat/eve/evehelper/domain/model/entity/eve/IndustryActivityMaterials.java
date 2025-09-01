@@ -1,7 +1,6 @@
 package xyz.foolcat.eve.evehelper.domain.model.entity.eve;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 
@@ -11,35 +10,15 @@ import java.io.Serializable;
  */
 @Data
 public class IndustryActivityMaterials implements Serializable {
-    /**
-     * 主键ID
-     */
-    private Long id;
 
-    /**
-     * 蓝图类型ID
-     */
-    private Long blueprintTypeId;
+    private Integer blueprinttypeid;
 
-    /**
-     * 活动ID
-     */
-    private Integer activityId;
+    private Byte activityid;
 
-    /**
-     * 材料类型ID
-     */
-    private Long materialTypeId;
+    private Integer materialtypeid;
 
-    /**
-     * 材料类型名称
-     */
-    private String materialTypeName;
-
-    /**
-     * 数量
-     */
     private Integer quantity;
+
 
     private static final long serialVersionUID = 1L;
 } 

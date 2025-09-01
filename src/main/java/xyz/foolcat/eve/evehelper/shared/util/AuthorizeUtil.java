@@ -16,15 +16,15 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 @RequiredArgsConstructor
 public class AuthorizeUtil {
 
-    private final static EveAccountService eveAccountService = new EveAccountService();
+    private final EveAccountService eveAccountService;
 
-    public static EveAccount authorize(Integer cId) {
+    public EveAccount authorize(Integer cId) {
         Integer userId = UserUtil.getUserId();
         if (userId == -1) {
             /*
             -1 代表系统内部调用，不考虑用户，用于定时任务等使用
              */
-            return eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, cId).or().eq(EveAccount::getCorpId, cId).one();
+            return eveAccountService.getAccountOne(1, 2112818290);
         }
         return eveAccountService.getAccountOne(userId, cId);
     }

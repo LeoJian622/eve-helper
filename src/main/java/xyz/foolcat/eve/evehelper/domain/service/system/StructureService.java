@@ -37,6 +37,8 @@ public class StructureService extends ServiceImpl<StructureMapper, Structure> {
 
     private final CorporationApi corporationApi;
 
+    private final AuthorizeUtil authorizeUtil;
+
     public int updateBatch(List<Structure> list) {
         return baseMapper.updateBatch(list);
     }
@@ -71,7 +73,7 @@ public class StructureService extends ServiceImpl<StructureMapper, Structure> {
         /*
           获取游戏人物信息及授权
          */
-        EveAccount eveAccount = AuthorizeUtil.authorize(cId);
+        EveAccount eveAccount = authorizeUtil.authorize(cId);
         String accessToken = esiApiService.getAccessToken(cId, eveAccount.getUserId());
 
         /*

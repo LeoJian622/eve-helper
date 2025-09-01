@@ -2,31 +2,38 @@ package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.system;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
-import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsDataRepository;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.BlueprintsDataPO;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.BlueprintsDataMapper;
+import xyz.foolcat.eve.evehelper.application.assembler.system.BlueprintsDataAssembler;
 import xyz.foolcat.eve.evehelper.application.dto.response.BlueprintCostDTO;
 import xyz.foolcat.eve.evehelper.application.dto.response.BlueprintFormulaDTO;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.BlueprintsData;
+import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsDataRepository;
+import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.BlueprintsDataMapper;
+
+import javax.annotation.Resource;
 import java.util.List;
 
 @Repository
 public class BlueprintsDataRepositoryImpl implements BlueprintsDataRepository {
-    @Autowired
+
+    @Resource
     private BlueprintsDataMapper blueprintsDataMapper;
 
+    @Resource
+    private BlueprintsDataAssembler blueprintsDataAssembler;
+
     @Override
-    public int batchInsert(List<BlueprintsDataPO> list) {
-        return blueprintsDataMapper.batchInsert(list);
+    public int batchInsert(List<BlueprintsData> list) {
+        return blueprintsDataMapper.batchInsert(blueprintsDataAssembler.domain2Po(list));
     }
 
     @Override
-    public int insertOrUpdate(BlueprintsDataPO record) {
-        return blueprintsDataMapper.insertOrUpdate(record);
+    public int insertOrUpdate(BlueprintsData record) {
+        return blueprintsDataMapper.insertOrUpdate(blueprintsDataAssembler.domain2Po(record));
     }
 
     @Override
-    public int insertOrUpdateSelective(BlueprintsDataPO record) {
-        return blueprintsDataMapper.insertOrUpdateSelective(record);
+    public int insertOrUpdateSelective(BlueprintsData record) {
+        return blueprintsDataMapper.insertOrUpdateSelective(blueprintsDataAssembler.domain2Po(record));
     }
 
     @Override

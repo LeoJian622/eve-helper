@@ -22,5 +22,9 @@ public interface AssetsMapper extends BaseMapper<AssetsPO> {
     List<AssetsPO> selectAssertsInvtypeUniverse(IPage<AssetsPO> page, String id);
 
     int batchInsertOrUpdate(List<AssetsPO> list);
+
+    void removeByItemId(List<Long> itemIds);
+
+    List<AssetsPO> findByOwnerId(Integer characterId);
     // 只保留基础 CRUD
 }

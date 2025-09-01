@@ -1,6 +1,7 @@
 package xyz.foolcat.eve.evehelper.shared.kernel.base;
 
 import lombok.Builder;
+import lombok.Getter;
 
 import java.io.Serializable;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.List;
  * 适用于领域层、应用层，避免依赖任何ORM框架
  */
 @Builder
+@Getter
 public class PageResult<T> implements Serializable {
     /**
      * 数据列表

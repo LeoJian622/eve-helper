@@ -1,16 +1,16 @@
 package xyz.foolcat.eve.evehelper.domain.repository.eve;
 
-import xyz.foolcat.eve.evehelper.domain.model.entity.eve.Invuniquenames;
+import xyz.foolcat.eve.evehelper.domain.model.entity.eve.InvUniqueNames;
 
 import java.util.List;
 
 public interface InvuniquenamesRepository{
 
-    int updateBatch(List<Invuniquenames> list);
+    int updateBatch(List<InvUniqueNames> list);
 
-    int batchInsert(List<Invuniquenames> list);
+    int batchInsert(List<InvUniqueNames> list);
 
-    int insertOrUpdate(Invuniquenames record);
+    int insertOrUpdate(InvUniqueNames record);
 
-    int insertOrUpdateSelective(Invuniquenames record);
+    int insertOrUpdateSelective(InvUniqueNames record);
 } 

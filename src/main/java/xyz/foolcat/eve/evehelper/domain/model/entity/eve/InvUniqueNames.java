@@ -5,16 +5,17 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 工业蓝图表
- *
+ * 物品唯一名称表
  * @author Leojan
  */
 @Data
-public class IndustryBlueprints implements Serializable {
+public class InvUniqueNames implements Serializable {
 
-    private Integer blueprinttypeid;
+    private Integer itemId;
 
-    private Integer maxproductionlimit;
+    private String itemName;
+
+    private Integer groupId;
 
     private static final long serialVersionUID = 1L;
 } 

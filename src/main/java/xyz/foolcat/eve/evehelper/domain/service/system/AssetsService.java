@@ -1,7 +1,6 @@
 package xyz.foolcat.eve.evehelper.domain.service.system;
 
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,7 +12,6 @@ import xyz.foolcat.eve.evehelper.domain.repository.system.AssetsRepository;
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.AssetsApi;
-import xyz.foolcat.eve.evehelper.interfaces.web.vo.AssetsVO;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
 import java.text.ParseException;
@@ -40,6 +38,7 @@ public class AssetsService {
 
     private final AssetsRepository assetsRepository;
 
+    private final AuthorizeUtil authorizeUtil;
 
     public int batchInsert(List<Assets> list) {
         return assetsRepository.batchInsert(list);
@@ -85,7 +84,7 @@ public class AssetsService {
         /*
          * 获取游戏人物信息及授权
          */
-        EveAccount eveAccount = AuthorizeUtil.authorize(cid);
+        EveAccount eveAccount = authorizeUtil.authorize(cid);
         String accessToken = esiApiService.getAccessToken(String.valueOf(eveAccount.getCharacterId()), eveAccount.getUserId());
 
         /*
@@ -111,13 +110,12 @@ public class AssetsService {
          */
         Set<Long> itemIds = assets.stream().map(Assets::getItemId).collect(Collectors.toSet());
 
-
-        List<Long> removeItemIds = lambdaQuery().select(Assets::getItemId).eq(Assets::getOwnerId, eveAccount.getCharacterId()).list()
+        List<Long> removeItemIds = assetsRepository.findByOwnerId(eveAccount.getCharacterId())
                 .stream()
                 .map(Assets::getItemId)
                 .filter(itemId -> !itemIds.contains(itemId))
                 .collect(Collectors.toList());
-        removeBatchByIds(removeItemIds);
+        assetsRepository.removeBatchByIds(removeItemIds);
 
     }
 }
