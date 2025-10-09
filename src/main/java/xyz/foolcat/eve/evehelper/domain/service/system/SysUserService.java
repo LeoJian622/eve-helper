@@ -1,6 +1,6 @@
 package xyz.foolcat.eve.evehelper.domain.service.system;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -9,9 +9,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.SysUserMapper;
+import xyz.foolcat.eve.evehelper.domain.repository.system.SysUserRepository;
 
-import javax.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,26 +21,28 @@ import java.util.stream.Collectors;
  */
 @Service
 @Transactional(rollbackFor = RuntimeException.class)
-public class SysUserService extends ServiceImpl<SysUserMapper, SysUser> implements UserDetailsService {
+@RequiredArgsConstructor
+public class SysUserService  implements UserDetailsService {
 
-    @Resource
-    private SysRoleService sysRoleService;
+    private final SysRoleService sysRoleService;
+
+    private final SysUserRepository sysUserRepository;
 
     public int updateBatch(List<SysUser> list) {
-        return baseMapper.updateBatch(list);
+        return sysUserRepository.updateBatch(list);
     }
 
     public int updateBatchSelective(List<SysUser> list) {
-        return baseMapper.updateBatchSelective(list);
+        return sysUserRepository.updateBatchSelective(list);
     }
 
     public int batchInsert(List<SysUser> list) {
-        return baseMapper.batchInsert(list);
+        return sysUserRepository.batchInsert(list);
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        SysUser userDetails = this.baseMapper.queryByUsername(username);
+        SysUser userDetails = this.sysUserRepository.queryByUsername(username);
 
 
         List<String> roles = sysRoleService.queryRolesByUserId(userDetails.getId());
@@ -52,11 +53,15 @@ public class SysUserService extends ServiceImpl<SysUserMapper, SysUser> implemen
     }
 
     public int insertOrUpdate(SysUser record) {
-        return baseMapper.insertOrUpdate(record);
+        return sysUserRepository.insertOrUpdate(record);
     }
 
     public int insertOrUpdateSelective(SysUser record) {
-        return baseMapper.insertOrUpdateSelective(record);
+        return sysUserRepository.insertOrUpdateSelective(record);
+    }
+
+    public int insert(SysUser sysUser) {
+        return sysUserRepository.insert(sysUser);
     }
 }
 

@@ -15,12 +15,12 @@ public interface InvuniquenamesAssembler {
      * @param InvuniquenamesPO
      * @return
      */
-    InvUniqueNames po2Entity(InvUniqueNamesPO InvuniquenamesPO);
+    InvUniqueNames po2Domain(InvUniqueNamesPO InvuniquenamesPO);
 
     /**
      * Invuniquenames 转换为 InvuniquenamesPO
      * @param Invuniquenames
      * @return
      */
-    InvUniqueNamesPO entity2Po(InvUniqueNames Invuniquenames);
+    InvUniqueNamesPO domain2Po(InvUniqueNames Invuniquenames);
 }

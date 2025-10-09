@@ -3,9 +3,11 @@ package xyz.foolcat.eve.evehelper.domain.model.entity.system;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -15,11 +17,11 @@ import java.util.List;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class SysUser extends BaseEntity implements Serializable {
+public class SysUser extends BaseEntity implements UserDetails,Serializable {
     /**
      * 用户ID
      */
-    private Long id;
+    private Integer id;
 
     /**
      * 用户名
@@ -74,4 +76,29 @@ public class SysUser extends BaseEntity implements Serializable {
     private Date lastLoginTime;
 
     private static final long serialVersionUID = 1L;
-} 
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return authorities;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return this.status;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return this.deleted;
+    }
+}

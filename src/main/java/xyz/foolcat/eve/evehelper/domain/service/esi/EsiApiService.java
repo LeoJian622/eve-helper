@@ -10,6 +10,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
@@ -21,8 +22,8 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CharacterPublicInfoResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.Id2NameResponse;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
+import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
 import java.text.ParseException;
 import java.util.List;
@@ -52,6 +53,8 @@ public class EsiApiService {
 
     private final UniverseApi universeApi;
 
+    private final AuthorizeUtil authorizeUtil;
+
     /**
      * 获取ESI接口授权
      * <p>
@@ -75,7 +78,7 @@ public class EsiApiService {
             return accessToken;
         }
 
-        EveAccount character = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, code).or().eq(EveAccount::getCorpId,code).one();
+        EveAccount character = authorizeUtil.authorize(code);
         if (ObjectUtil.isNull(character)) {
             throw new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE);
         }

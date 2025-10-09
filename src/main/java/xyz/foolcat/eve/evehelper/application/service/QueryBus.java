@@ -1,5 +1,7 @@
 package xyz.foolcat.eve.evehelper.application.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.application.query.handler.QueryHandler;
@@ -20,6 +22,8 @@ import java.util.Map;
 
 @Component
 public class QueryBus implements InitializingBean {
+    
+    private static final Logger logger = LoggerFactory.getLogger(QueryBus.class);
 
     private final List<QueryHandler<?,?>> handlers;
     private final Map<Class<?>, QueryHandler<?,?>> queryHandlers = new HashMap<>();
@@ -55,10 +59,22 @@ public class QueryBus implements InitializingBean {
     }
 
     public <R> R dispatch(Query<R> query) {
-        QueryHandler<Query<R>, R> handler = (QueryHandler<Query<R>, R>) queryHandlers.get(query.getClass());
-        if (handler == null) {
+        QueryHandler<?, ?> rawHandler = queryHandlers.get(query.getClass());
+        if (rawHandler == null) {
+            logger.error("No handler found for query: {}", query.getClass().getSimpleName());
             throw new IllegalArgumentException("No handler found for query: " + query.getClass().getSimpleName());
         }
-        return handler.handle(query);
+        
+        try {
+            logger.debug("Dispatching query: {}", query.getClass().getSimpleName());
+            @SuppressWarnings("unchecked")
+            QueryHandler<Query<R>, R> handler = (QueryHandler<Query<R>, R>) rawHandler;
+            R result = handler.handle(query);
+            logger.debug("Query {} handled successfully", query.getClass().getSimpleName());
+            return result;
+        } catch (Exception e) {
+            logger.error("Error handling query: {}", query.getClass().getSimpleName(), e);
+            throw new RuntimeException("Error handling query: " + query.getClass().getSimpleName(), e);
+        }
     }
 }

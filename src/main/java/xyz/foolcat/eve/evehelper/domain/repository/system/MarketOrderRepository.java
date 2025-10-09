@@ -19,4 +19,7 @@ public interface MarketOrderRepository {
     List<MarketOrderDTO> queryPrice(Long locationId, Integer typeId);
 
     int batchInsertOrUpdate(List<MarketOrder> list);
-} 
+
+    int deleteColumValueNotIn(String colum, List<Long> ids);
+
+}

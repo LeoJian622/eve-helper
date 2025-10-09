@@ -1,19 +1,17 @@
 package xyz.foolcat.eve.evehelper.domain.service.system;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.application.assembler.esi.WalletJournalConverter;
+import xyz.foolcat.eve.evehelper.application.assembler.system.WalletJournalAssembler;
 import xyz.foolcat.eve.evehelper.application.dto.response.TaxReturnDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
+import xyz.foolcat.eve.evehelper.domain.repository.system.WalletJournalRepository;
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.WalletApi;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.WalletJournalMapper;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
 import java.math.BigDecimal;
@@ -30,34 +28,36 @@ import java.util.stream.Stream;
 @Slf4j
 @Transactional(rollbackFor = RuntimeException.class)
 @RequiredArgsConstructor
-public class WalletJournalService extends ServiceImpl<WalletJournalMapper, WalletJournal> {
+public class WalletJournalService {
 
     private final EsiApiService esiApiService;
 
     private final WalletApi walletApi;
 
-    private final WalletJournalConverter walletJournalConverter;
+    private final WalletJournalAssembler walletJournalAssembler;
 
     private final AuthorizeUtil authorizeUtil;
 
+    private final WalletJournalRepository walletJournalRepository;
+
     public int batchInsert(List<WalletJournal> list) {
-        return baseMapper.batchInsert(list);
+        return walletJournalRepository.batchInsert(list);
     }
 
     public int insertOrUpdate(WalletJournal record) {
-        return baseMapper.insertOrUpdate(record);
+        return walletJournalRepository.insertOrUpdate(record);
     }
 
     public int insertOrUpdateSelective(WalletJournal record) {
-        return baseMapper.insertOrUpdateSelective(record);
+        return walletJournalRepository.insertOrUpdateSelective(record);
     }
 
     public int updateBatch(List<WalletJournal> list) {
-        return baseMapper.updateBatch(list);
+        return walletJournalRepository.updateBatch(list);
     }
 
     public int updateBatchSelective(List<WalletJournal> list) {
-        return baseMapper.updateBatchSelective(list);
+        return walletJournalRepository.updateBatchSelective(list);
     }
 
     /**
@@ -114,10 +114,10 @@ public class WalletJournalService extends ServiceImpl<WalletJournalMapper, Walle
                             character = matcher.group(1);
                         }
                     }
-                    return walletJournalConverter.conver(wallet, eveAccount.getCorpId(), character);
+                    return walletJournalAssembler.toWalletJournal(wallet, eveAccount.getCorpId(), character);
                 })
                 .collect(Collectors.toList());
-        saveOrUpdateBatch(walletJournals);
+        walletJournalRepository.saveOrUpdateBatch(walletJournals);
     }
 
     /**
@@ -134,13 +134,7 @@ public class WalletJournalService extends ServiceImpl<WalletJournalMapper, Walle
         calendar.setTime(start);
         calendar.add(Calendar.MONTH,1);
         Date end = calendar.getTime();
-        List<Map<String, Object>> sumList = listMaps(new QueryWrapper<WalletJournal>()
-                .select("`character` as name,sum(amount) as amount")
-                .lambda()
-                .and(item -> item.eq(WalletJournal::getRefType, "bounty_prizes").or().eq(WalletJournal::getRefType, "ess_escrow_transfer").or().eq(WalletJournal::getRefType, "corporate_reward_payout"))
-                .between(WalletJournal::getDate, start, end)
-                .groupBy(WalletJournal::getCharacter)
-        );
+        List<Map<String, Object>> sumList = walletJournalRepository.selectMapByDatetime(start,end,List.of("bounty_prizes","ess_escrow_transfer","corporate_reward_payout"));
         return sumList.stream().map(item -> {
             TaxReturnDTO taxReturnDTO = new TaxReturnDTO();
             taxReturnDTO.setName(item.get("name").toString());

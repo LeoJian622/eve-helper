@@ -7,18 +7,19 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import xyz.foolcat.eve.evehelper.domain.model.entity.eve.InvUniqueNames;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
+import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.domain.service.eve.InvuniquenamesService;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.service.system.StructureService;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EveAccountPO;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.InvUniqueNamesPO;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.StructurePO;
-import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.WebSocket;
 import xyz.foolcat.eve.evehelper.interfaces.web.vo.ExtractionVO;
+import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
 import javax.validation.constraints.NotNull;
 import java.text.ParseException;
@@ -53,7 +54,10 @@ public class MiningTask {
     private final WebSocket webSocket;
 
     private final InvuniquenamesService invuniquenamesService;
+
     private final EveAccountService eveAccountService;
+
+    private final AuthorizeUtil authorizeUtil;
 
     /**
      * 通知卫星矿可开采时间
@@ -61,11 +65,10 @@ public class MiningTask {
     @Scheduled(cron = "0 0 19 * * ? ")
     public void noticeExtraction() {
         log.info("noticeExtraction");
-        Integer characterId = 2112818290;
-        EveAccountPO eveAccount = eveAccountService.getById(characterId);
+        EveAccount eveAccount = authorizeUtil.authorize(TaskConstant.CHARACTER_ID);
         String accessToken = null;
         try {
-            accessToken = esiApiService.getAccessToken(characterId, eveAccount.getUserId());
+            accessToken = esiApiService.getAccessToken(TaskConstant.CHARACTER_ID, eveAccount.getUserId());
         } catch (ParseException e) {
             log.error("【卫星矿通知】AccessToken异常{}", e.getMessage());
         }
@@ -85,7 +88,7 @@ public class MiningTask {
     public void noticeExtraction7Day() {
         log.info("noticeExtraction");
         Integer characterId = 2112818290;
-        EveAccountPO eveAccount = eveAccountService.getById(characterId);
+        EveAccount eveAccount = authorizeUtil.authorize(characterId);
         String accessToken = null;
         try {
             accessToken = esiApiService.getAccessToken(characterId, eveAccount.getUserId());
@@ -119,15 +122,15 @@ public class MiningTask {
                 .flatMap(Collection::stream)
                 .filter(chunkTimersResponse -> chunkTimersResponse.getChunkArrivalTime().isBefore(after1Day))
                 .map(chunkTimersResponse -> {
-                    StructurePO structure = structureService.getById(chunkTimersResponse.getStructureId());
-                    InvUniqueNamesPO invuniquenames = invuniquenamesService.getById(chunkTimersResponse.getMoonId());
+                    Structure structure = structureService.selectById(chunkTimersResponse.getStructureId());
+                    InvUniqueNames invuniquenames = invuniquenamesService.selectById(chunkTimersResponse.getMoonId());
                     ExtractionVO extractionVO = new ExtractionVO();
                     extractionVO.setChunkArrivalTime(chunkTimersResponse.getChunkArrivalTime());
                     extractionVO.setExtractionStartTime(chunkTimersResponse.getExtractionStartTime());
                     extractionVO.setNaturalDecayTime(chunkTimersResponse.getNaturalDecayTime());
                     extractionVO.setMoonId(chunkTimersResponse.getMoonId());
                     extractionVO.setStructureName(structure.getName());
-                    extractionVO.setMoonName(invuniquenames.getItemname());
+                    extractionVO.setMoonName(invuniquenames.getItemName());
                     return extractionVO;
                 }).sorted(Comparator.comparing(ExtractionVO::getNaturalDecayTime))
                 .collect(Collectors.toList());

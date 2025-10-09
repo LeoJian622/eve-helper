@@ -19,4 +19,6 @@ public interface SysMenuRepository  {
     int insertOrUpdate(SysMenu record);
 
     int insertOrUpdateSelective(SysMenu record);
+
+    int batchInsertOrUpdate(List<SysMenu> list);
 }

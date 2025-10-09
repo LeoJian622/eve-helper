@@ -13,4 +13,6 @@ public interface InvuniquenamesRepository{
     int insertOrUpdate(InvUniqueNames record);
 
     int insertOrUpdateSelective(InvUniqueNames record);
-} 
+
+    InvUniqueNames selectById(Integer id);
+}

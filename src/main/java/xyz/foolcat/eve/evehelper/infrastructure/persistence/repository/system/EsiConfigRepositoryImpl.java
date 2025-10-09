@@ -1,22 +1,21 @@
 package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.system;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xyz.foolcat.eve.evehelper.application.assembler.system.EsiConfigAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EsiConfig;
 import xyz.foolcat.eve.evehelper.domain.repository.system.EsiConfigRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.EsiConfigMapper;
 
-import javax.annotation.Resource;
 import java.util.List;
 
 @Repository
+@RequiredArgsConstructor
 public class EsiConfigRepositoryImpl implements EsiConfigRepository {
 
-    @Resource
-    private EsiConfigMapper esiConfigMapper;
+    private final EsiConfigMapper esiConfigMapper;
 
-    @Resource
-    private EsiConfigAssembler esiConfigAssembler;
+    private final EsiConfigAssembler esiConfigAssembler;
 
     @Override
     public int updateBatch(List<EsiConfig> list) {

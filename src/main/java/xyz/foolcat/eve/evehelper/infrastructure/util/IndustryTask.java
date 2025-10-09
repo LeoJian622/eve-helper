@@ -6,8 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.IndustryJob;
 import xyz.foolcat.eve.evehelper.domain.service.system.IndustryJobService;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.IndustryJobPO;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.WebSocket;
 
@@ -40,7 +40,7 @@ public class IndustryTask {
     public void updateIndustryJobs() {
         log.info("update industry jobs");
         try {
-            industryJobService.batchInsertOrUpdateFromEsi(98061457, true, true);
+            industryJobService.batchInsertOrUpdateFromEsi(TaskConstant.CHARACTER_ID, true, true);
 
         } catch (ParseException e) {
             log.error("【工业】定时更新工业信息失败：{}", e.getMessage());
@@ -50,9 +50,7 @@ public class IndustryTask {
     @Scheduled(cron = "0 0 18,20-23 ? * 1-5 ")
     @Scheduled(cron = "0 0 8-18,20-23 ? * 0,6 ")
     public void noticeJobComplete0() {
-        List<IndustryJobPO> industryJobs = industryJobService.lambdaQuery().eq(IndustryJobPO::getCorporationId, 98061457)
-                .ne(IndustryJobPO::getStatus, IndustryJobPO.STATUS_DELIVERED)
-                .list();
+        List<IndustryJob> industryJobs = industryJobService.selectByCorpIdAndStatus(98061457, IndustryJob.STATUS_DELIVERED);
         JSONObject group = queryCompeleteAfterHour(industryJobs, 0);
         if (!group.isEmpty()) {
             webSocket.sendOneMessage("napcat", group.toJSONString(4));
@@ -61,19 +59,17 @@ public class IndustryTask {
 
     @Scheduled(cron = "0 0 19 * * ? ")
     public void noticeJobComplete24() {
-        List<IndustryJobPO> industryJobs = industryJobService.lambdaQuery().eq(IndustryJobPO::getCorporationId, 98061457)
-                .ne(IndustryJobPO::getStatus, IndustryJobPO.STATUS_DELIVERED)
-                .list();
+        List<IndustryJob> industryJobs = industryJobService.selectByCorpIdAndStatus(98061457, IndustryJob.STATUS_DELIVERED);
         JSONObject group = queryCompeleteAfterHour(industryJobs, 24);
         if (!group.isEmpty()) {
             webSocket.sendOneMessage("napcat", group.toJSONString(4));
         }
     }
 
-    private static @NotNull JSONObject queryCompeleteAfterHour(List<IndustryJobPO> industryJobs, Integer hour) {
+    private static @NotNull JSONObject queryCompeleteAfterHour(List<IndustryJob> industryJobs, Integer hour) {
         String message = industryJobs.stream()
                 .filter(industryJob ->
-                        industryJob.getStatus().equals(IndustryJobPO.STATUS_ACTIVE) && industryJob.getEndDate().isBefore(OffsetDateTime.now(ZoneId.of("+0")).plusHours(hour))
+                        industryJob.getStatus().equals(IndustryJob.STATUS_ACTIVE) && industryJob.getEndDate().isBefore(OffsetDateTime.now(ZoneId.of("+0")).plusHours(hour))
                 )
                 .map(industryJob -> industryJob.getProductType() + " * " + industryJob.getRuns() + ",完成时间预计为：" + industryJob.getEndDate().atZoneSameInstant(ZoneOffset.ofHours(8)).format(DateTimeFormatter.ofPattern("MM-dd HH:mm")))
                 .collect(Collectors.joining("\n"));

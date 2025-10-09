@@ -1,12 +1,11 @@
 package xyz.foolcat.eve.evehelper.application.query.handler;
 
+import lombok.RequiredArgsConstructor;
 import xyz.foolcat.eve.evehelper.application.dto.BlueprintsDTO;
 import xyz.foolcat.eve.evehelper.application.query.model.BlueprintsQuery;
 import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsRepository;
 import xyz.foolcat.eve.evehelper.shared.kernel.annotation.QueryHandlers;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
-
-import javax.annotation.Resource;
 
 /**
  * @author yongj
@@ -14,10 +13,10 @@ import javax.annotation.Resource;
  */
 
 @QueryHandlers
+@RequiredArgsConstructor
 public class BlueprintsQueryHandler implements QueryHandler<BlueprintsQuery, PageResult<BlueprintsDTO>> {
 
-    @Resource
-    private BlueprintsRepository blueprintsRepository;
+    private final BlueprintsRepository blueprintsRepository;
 
     @Override
     public PageResult<BlueprintsDTO> handle(BlueprintsQuery query) {

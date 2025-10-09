@@ -1,6 +1,6 @@
 package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.system;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xyz.foolcat.eve.evehelper.application.assembler.system.BlueprintsDataAssembler;
 import xyz.foolcat.eve.evehelper.application.dto.response.BlueprintCostDTO;
@@ -9,17 +9,14 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.BlueprintsData;
 import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsDataRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.BlueprintsDataMapper;
 
-import javax.annotation.Resource;
 import java.util.List;
 
 @Repository
+@RequiredArgsConstructor
 public class BlueprintsDataRepositoryImpl implements BlueprintsDataRepository {
 
-    @Resource
-    private BlueprintsDataMapper blueprintsDataMapper;
-
-    @Resource
-    private BlueprintsDataAssembler blueprintsDataAssembler;
+    private final BlueprintsDataMapper blueprintsDataMapper;
+    private final BlueprintsDataAssembler blueprintsDataAssembler;
 
     @Override
     public int batchInsert(List<BlueprintsData> list) {

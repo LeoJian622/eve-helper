@@ -6,6 +6,8 @@ import org.mapstruct.Mappings;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysPermission;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysPermissionPO;
 
+import java.util.List;
+
 ;
 
 /**
@@ -20,7 +22,7 @@ public interface SysPermissionAssembler {
      * @param sysPermissionPO
      * @return
      */
-    SysPermission po2Entity(SysPermissionPO sysPermissionPO);
+    SysPermission po2Domain(SysPermissionPO sysPermissionPO);
 
     /**
      * SysPermission 转换为 SysPermissionPO
@@ -31,5 +33,19 @@ public interface SysPermissionAssembler {
             @Mapping(target = "gmtCreate", ignore = true),
             @Mapping(target = "gmtModified", ignore = true),
     })
-    SysPermissionPO entity2Po(SysPermission sysPermission);
+    SysPermissionPO domain2Po(SysPermission sysPermission);
+
+    /**
+     * SysPermissionPO列表 转换为 SysPermission列表
+     * @param sysPermissionPOList
+     * @return
+     */
+    List<SysPermission> po2Domain(List<SysPermissionPO> sysPermissionPOList);
+
+    /**
+     * SysPermission列表 转换为 SysPermissionPO列表
+     * @param sysPermissionList
+     * @return
+     */
+    List<SysPermissionPO> domain2Po(List<SysPermission> sysPermissionList);
 } 

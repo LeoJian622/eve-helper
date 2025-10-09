@@ -1,15 +1,14 @@
 package xyz.foolcat.eve.evehelper.domain.service.system;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.application.assembler.esi.InvTypesAssembler;
+import xyz.foolcat.eve.evehelper.application.assembler.system.InvTypesAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.InvTypes;
+import xyz.foolcat.eve.evehelper.domain.repository.system.InvTypesRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UniverseApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.TypeInfoResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.InvTypesMapper;
 
 import java.util.List;
 import java.util.Map;
@@ -21,46 +20,48 @@ import java.util.stream.Collectors;
 @Service
 @Transactional(rollbackFor = RuntimeException.class)
 @RequiredArgsConstructor
-public class InvTypesService extends ServiceImpl<InvTypesMapper, InvTypes> {
+public class InvTypesService {
 
     private final UniverseApi universeApi;
 
     private final InvTypesAssembler invTypesAssembler;
 
+    private final InvTypesRepository invTypesRepository;
+
     public int updateBatch(List<InvTypes> list) {
-        return baseMapper.updateBatch(list);
+        return invTypesRepository.updateBatch(list);
     }
 
     public int updateBatchSelective(List<InvTypes> list) {
-        return baseMapper.updateBatchSelective(list);
+        return invTypesRepository.updateBatchSelective(list);
     }
 
     public int batchInsert(List<InvTypes> list) {
-        return baseMapper.batchInsert(list);
+        return invTypesRepository.batchInsert(list);
     }
 
     public int insertOrUpdate(InvTypes record) {
-        return baseMapper.insertOrUpdate(record);
+        return invTypesRepository.insertOrUpdate(record);
     }
 
     public int insertOrUpdateSelective(InvTypes record) {
-        return baseMapper.insertOrUpdateSelective(record);
+        return invTypesRepository.insertOrUpdateSelective(record);
     }
 
     /**
      * 根据typeId获取物品名称
      * @param typeIds 物品类型ID
-     * @return
+     * @return 物品ID和名称的key-value对象
      */
     public Map<Integer,String> getNameByTypeIds(List<Integer> typeIds) {
-        return lambdaQuery().in(InvTypes::getTypeId, typeIds).list()
+        return invTypesRepository.selectTypeNameByIds(typeIds)
                 .stream()
                 .collect(Collectors.toMap(InvTypes::getTypeId, InvTypes::getName));
     }
 
     /**
      * 根据typeId获取物品属性并更新invType
-     * @param typeId
+     * @param typeId 物品ID
      * @return
      */
     public InvTypes updateTypeByTypeId(Integer typeId){
@@ -72,6 +73,14 @@ public class InvTypesService extends ServiceImpl<InvTypesMapper, InvTypes> {
         }else {
             return null;
         }
+    }
+
+    public InvTypes selectOneByName(String name) {
+        return invTypesRepository.selectOneByName(name);
+    }
+
+    public InvTypes selectOneById(int id) {
+        return invTypesRepository.selectOneById(id);
     }
 }
 

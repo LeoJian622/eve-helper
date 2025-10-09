@@ -6,8 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
 import xyz.foolcat.eve.evehelper.domain.service.system.StructureService;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.StructurePO;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.WebSocket;
 
@@ -53,7 +53,7 @@ public class StructTask {
     public void updateStruct() {
         log.info("updateStruct");
         try {
-            structureService.batchInsertOrUpdateFromEsi(2112818290);
+            structureService.batchInsertOrUpdateFromEsi(TaskConstant.CHARACTER_ID);
         } catch (ParseException e) {
             log.error("【建筑】定时更新建筑信息失败：{}", e.getMessage());
         }
@@ -65,7 +65,7 @@ public class StructTask {
     @Scheduled(cron = "0 0 18,22 * * ? ")
     public void noticeFuelExpires() {
         log.info("noticeFuelExpires");
-        List<StructurePO> structures = structureService.selectFuelExpiresList(24, 656880659);
+        List<Structure> structures = structureService.selectFuelExpiresList(24, 656880659);
 
         String message = structures.stream().filter(structure -> structure.getFuelExpires() == null)
                 .filter(structure -> !ignoreTypeIds.contains(structure.getTypeId()))
@@ -78,7 +78,7 @@ public class StructTask {
 
         message = message + structures.stream()
                 .filter(structure -> structure.getFuelExpires() != null)
-                .sorted(Comparator.comparing(StructurePO::getFuelExpires))
+                .sorted(Comparator.comparing(Structure::getFuelExpires))
                 .map(structure -> {
                     long between = ChronoUnit.HOURS.between(OffsetDateTime.now(), structure.getFuelExpires());
                     return structure.getName() + ", 将在" + between + "小时后燃料耗尽";

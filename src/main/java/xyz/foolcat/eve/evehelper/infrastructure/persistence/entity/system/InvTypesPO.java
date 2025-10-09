@@ -18,11 +18,11 @@ public class InvTypesPO implements Serializable {
 
     @TableField(value = "type_id")
     @Schema(description = "物品ID")
-    private Long typeId;
+    private Integer typeId;
 
     @TableField(value = "group_id")
     @Schema(description = "物品组ID")
-    private Long groupId;
+    private Integer groupId;
 
     @TableField(value = "`name`")
     @Schema(description = "名称")
@@ -54,11 +54,11 @@ public class InvTypesPO implements Serializable {
 
     @TableField(value = "faction_id")
     @Schema(description = "派系ID")
-    private Long factionId;
+    private Integer factionId;
 
     @TableField(value = "race_id")
     @Schema(description = "种族ID")
-    private Long raceId;
+    private Integer raceId;
 
     @TableField(value = "base_price")
     @Schema(description = "基础价格")
@@ -70,11 +70,11 @@ public class InvTypesPO implements Serializable {
 
     @TableField(value = "market_group_id")
     @Schema(description = "市场组ID")
-    private Long marketGroupId;
+    private Integer marketGroupId;
 
     @TableField(value = "graphic_id")
     @Schema(description = "图片ID")
-    private Long graphicId;
+    private Integer graphicId;
 
     @TableField(value = "radius")
     @Schema(description = "半径")
@@ -82,11 +82,11 @@ public class InvTypesPO implements Serializable {
 
     @TableField(value = "icon_id")
     @Schema(description = "图标ID")
-    private Long iconId;
+    private Integer iconId;
 
     @TableField(value = "sound_id")
     @Schema(description = "音乐ID")
-    private Long soundId;
+    private Integer soundId;
 
     @TableField(value = "sof_faction_name")
     @Schema(description = "SOF派系名称")
@@ -94,15 +94,15 @@ public class InvTypesPO implements Serializable {
 
     @TableField(value = "sof_material_set_id")
     @Schema(description = "SOF材料集ID")
-    private Long sofMaterialSetId;
+    private Integer sofMaterialSetId;
 
     @TableField(value = "meta_group_id")
     @Schema(description = "元组ID")
-    private Long metaGroupId;
+    private Integer metaGroupId;
 
     @TableField(value = "variationparent_type_id")
     @Schema(description = "变体父类型ID")
-    private Long variationparentTypeId;
+    private Integer variationparentTypeId;
 
     private static final long serialVersionUID = 1L;
 

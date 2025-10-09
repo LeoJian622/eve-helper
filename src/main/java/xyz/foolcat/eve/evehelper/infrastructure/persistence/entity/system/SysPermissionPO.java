@@ -10,6 +10,7 @@ import lombok.EqualsAndHashCode;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * 权限表
@@ -20,8 +21,12 @@ import java.io.Serializable;
 @Data
 @TableName(value = "sys_permission")
 public class SysPermissionPO extends BaseEntity implements Serializable {
+
+    /**
+     * 主键
+     */
     @TableId(value = "id", type = IdType.AUTO)
-    @Schema(description = "")
+    @Schema(description = "主键")
     private Long id;
 
     /**
@@ -30,50 +35,43 @@ public class SysPermissionPO extends BaseEntity implements Serializable {
     @TableField(value = "`name`")
     @Schema(description = "权限名称")
     private String name;
+    @TableField(exist = false)
+    @Schema(name = "人物列表")
+    private List<String> roles;
 
     /**
-     * 权限编码
+     * 菜单模块ID
      */
-    @TableField(value = "code")
-    @Schema(description = "权限编码")
-    private String code;
+    @TableField(value = "menu_id")
+    @Schema(description = "菜单模块ID")
+    private Long menuId;
 
     /**
-     * 权限类型：1-菜单 2-按钮
+     * URL权限标识
      */
-    @TableField(value = "type")
-    @Schema(description = "权限类型：1-菜单 2-按钮")
-    private Integer type;
+    @TableField(value = "url_perm")
+    @Schema(description = "URL权限标识")
+    private String urlPerm;
 
     /**
-     * 权限描述
+     * 按钮权限标识
      */
-    @TableField(value = "description")
-    @Schema(description = "权限描述")
-    private String description;
-
-    /**
-     * 状态：0-禁用 1-开启
-     */
-    @TableField(value = "status")
-    @Schema(description = "状态：0-禁用 1-开启")
-    private Boolean status;
-
-    private static final long serialVersionUID = 1L;
+    @TableField(value = "btn_perm")
+    @Schema(description = "按钮权限标识")
+    private String btnPerm;
 
     public static final String COL_ID = "id";
 
     public static final String COL_NAME = "name";
 
-    public static final String COL_CODE = "code";
+    public static final String COL_MENU_ID = "menu_id";
 
-    public static final String COL_TYPE = "type";
+    public static final String COL_URL_PERM = "url_perm";
 
-    public static final String COL_DESCRIPTION = "description";
-
-    public static final String COL_STATUS = "status";
+    public static final String COL_BTN_PERM = "btn_perm";
 
     public static final String COL_GMT_CREATE = "gmt_create";
 
     public static final String COL_GMT_MODIFIED = "gmt_modified";
+
 } 

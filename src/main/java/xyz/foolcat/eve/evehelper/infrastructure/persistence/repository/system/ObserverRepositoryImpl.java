@@ -1,39 +1,43 @@
 package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.system;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import xyz.foolcat.eve.evehelper.application.assembler.system.ObserverAssembler;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.Observer;
 import xyz.foolcat.eve.evehelper.domain.repository.system.ObserverRepository;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.ObserverPO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.ObserverMapper;
+
 import java.util.List;
 
 @Repository
+@RequiredArgsConstructor
 public class ObserverRepositoryImpl implements ObserverRepository {
-    @Autowired
-    private ObserverMapper observerMapper;
+
+    private final ObserverMapper observerMapper;
+    private final ObserverAssembler observerAssembler;
 
     @Override
-    public int updateBatch(List<ObserverPO> list) {
-        return observerMapper.updateBatch(list);
+    public int updateBatch(List<Observer> list) {
+        return observerMapper.updateBatch(observerAssembler.domain2Po(list));
     }
 
     @Override
-    public int updateBatchSelective(List<ObserverPO> list) {
-        return observerMapper.updateBatchSelective(list);
+    public int updateBatchSelective(List<Observer> list) {
+        return observerMapper.updateBatchSelective(observerAssembler.domain2Po(list));
     }
 
     @Override
-    public int batchInsert(List<ObserverPO> list) {
-        return observerMapper.batchInsert(list);
+    public int batchInsert(List<Observer> list) {
+        return observerMapper.batchInsert(observerAssembler.domain2Po(list));
     }
 
     @Override
-    public int insertOrUpdate(ObserverPO record) {
-        return observerMapper.insertOrUpdate(record);
+    public int insertOrUpdate(Observer record) {
+        return observerMapper.insertOrUpdate(observerAssembler.domain2Po(record));
     }
 
     @Override
-    public int insertOrUpdateSelective(ObserverPO record) {
-        return observerMapper.insertOrUpdateSelective(record);
+    public int insertOrUpdateSelective(Observer record) {
+        return observerMapper.insertOrUpdateSelective(observerAssembler.domain2Po(record));
     }
 } 

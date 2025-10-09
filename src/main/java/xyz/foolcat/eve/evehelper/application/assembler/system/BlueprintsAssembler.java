@@ -37,5 +37,7 @@ public interface BlueprintsAssembler {
 
     List<Blueprints> po2Domain(List<BlueprintsPO> po);
 
+    List<BlueprintsPO> domain2Po(List<Blueprints> blueprints);
+
     List<BlueprintsVO> dto2Vo(List<BlueprintsDTO> dtoList);
 } 

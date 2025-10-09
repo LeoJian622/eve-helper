@@ -4,6 +4,8 @@ import org.mapstruct.Mapper;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.MarketOrder;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MarketOrderPO;
 
+import java.util.List;
+
 ;
 
 /**
@@ -18,12 +20,26 @@ public interface MarketOrderAssembler {
      * @param marketOrderPO
      * @return
      */
-    MarketOrder po2Entity(MarketOrderPO marketOrderPO);
+    MarketOrder po2Domain(MarketOrderPO marketOrderPO);
 
     /**
      * MarketOrder 转换为 MarketOrderPO
      * @param marketOrder
      * @return
      */
-    MarketOrderPO entity2Po(MarketOrder marketOrder);
-} 
+    MarketOrderPO domain2Po(MarketOrder marketOrder);
+
+    /**
+     * MarketOrderPO 转换为 MarketOrder
+     * @param marketOrderPO
+     * @return
+     */
+    List<MarketOrder> po2Domain(List<MarketOrderPO> marketOrderPO);
+
+    /**
+     * MarketOrder 转换为 MarketOrderPO
+     * @param marketOrder
+     * @return
+     */
+    List<MarketOrderPO> domain2Po(List<MarketOrder> marketOrder);
+}

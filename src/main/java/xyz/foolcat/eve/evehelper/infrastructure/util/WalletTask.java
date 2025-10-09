@@ -27,7 +27,7 @@ public class WalletTask {
     public void updateWallet() {
         log.info("updateWallet");
         try {
-            walletJournalService.batchInsertOrUpdateFromEsi(2112818290);
+            walletJournalService.batchInsertOrUpdateFromEsi(TaskConstant.CHARACTER_ID);
         } catch (ParseException e) {
             log.error("【钱包】定时更新钱包记录失败：{}", e.getMessage());
         }

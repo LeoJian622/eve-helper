@@ -4,6 +4,7 @@ import cn.hutool.json.JSONObject;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -11,7 +12,6 @@ import xyz.foolcat.eve.evehelper.application.dto.response.TaxReturnDTO;
 import xyz.foolcat.eve.evehelper.domain.service.system.WalletJournalService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotUtil;
 
-import javax.annotation.Resource;
 import java.text.ParseException;
 import java.util.List;
 
@@ -21,7 +21,7 @@ import java.util.List;
 @DisplayName("人物钱包交易记录")
 class WalletJournalServiceTest {
 
-    @Resource
+    @Autowired
     WalletJournalService walletJournalService;
 
     @Test

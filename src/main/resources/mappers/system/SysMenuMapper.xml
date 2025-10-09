@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.SysMenuMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysMenu">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysMenuPO">
     <!--@mbg.generated-->
     <!--@Table sys_menu-->
     <id column="id" jdbcType="BIGINT" property="id" />
@@ -77,110 +77,14 @@
       </trim>
     </trim>
     where id in
-    <foreach close=")" collection="list" item="item" open="(" separator=", ">
+    <foreach close=")" collection="list" item="item" open="(" separator=",">
       #{item.id,jdbcType=BIGINT}
     </foreach>
   </update>
-  <update id="updateBatchSelective" parameterType="java.util.List">
-    <!--@mbg.generated-->
-    update sys_menu
-    <trim prefix="set" suffixOverrides=",">
-      <trim prefix="`name` = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.name != null">
-            when id = #{item.id,jdbcType=BIGINT} then #{item.name,jdbcType=VARCHAR}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="parent_id = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.parentId != null">
-            when id = #{item.id,jdbcType=BIGINT} then #{item.parentId,jdbcType=BIGINT}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="`path` = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.path != null">
-            when id = #{item.id,jdbcType=BIGINT} then #{item.path,jdbcType=VARCHAR}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="component = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.component != null">
-            when id = #{item.id,jdbcType=BIGINT} then #{item.component,jdbcType=VARCHAR}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="icon = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.icon != null">
-            when id = #{item.id,jdbcType=BIGINT} then #{item.icon,jdbcType=VARCHAR}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="sort = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.sort != null">
-            when id = #{item.id,jdbcType=BIGINT} then #{item.sort,jdbcType=INTEGER}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="visible = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.visible != null">
-            when id = #{item.id,jdbcType=BIGINT} then #{item.visible,jdbcType=BOOLEAN}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="redirect = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.redirect != null">
-            when id = #{item.id,jdbcType=BIGINT} then #{item.redirect,jdbcType=VARCHAR}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="gmt_create = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.gmtCreate != null">
-            when id = #{item.id,jdbcType=BIGINT} then #{item.gmtCreate,jdbcType=TIMESTAMP}
-          </if>
-        </foreach>
-      </trim>
-      <trim prefix="gmt_modified = case" suffix="end,">
-        <foreach collection="list" index="index" item="item">
-          <if test="item.gmtModified != null">
-            when id = #{item.id,jdbcType=BIGINT} then #{item.gmtModified,jdbcType=TIMESTAMP}
-          </if>
-        </foreach>
-      </trim>
-    </trim>
-    where id in
-    <foreach close=")" collection="list" item="item" open="(" separator=", ">
-      #{item.id,jdbcType=BIGINT}
-    </foreach>
-  </update>
-  <insert id="batchInsert" keyColumn="id" keyProperty="id" parameterType="map" useGeneratedKeys="true">
-    <!--@mbg.generated-->
-    insert into sys_menu
-    (`name`, parent_id, `path`, component, icon, sort, visible, redirect, gmt_create, 
-      gmt_modified)
-    values
-    <foreach collection="list" item="item" separator=",">
-      (#{item.name,jdbcType=VARCHAR}, #{item.parentId,jdbcType=BIGINT}, #{item.path,jdbcType=VARCHAR}, 
-        #{item.component,jdbcType=VARCHAR}, #{item.icon,jdbcType=VARCHAR}, #{item.sort,jdbcType=INTEGER}, 
-        #{item.visible,jdbcType=BOOLEAN}, #{item.redirect,jdbcType=VARCHAR}, #{item.gmtCreate,jdbcType=TIMESTAMP}, 
-        #{item.gmtModified,jdbcType=TIMESTAMP})
-    </foreach>
-  </insert>
-  <insert id="insertOrUpdate" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysMenu" useGeneratedKeys="true">
+  <insert id="batchInsert" keyColumn="id" keyProperty="id" parameterType="java.util.List" useGeneratedKeys="true">
     <!--@mbg.generated-->
     insert into sys_menu
     <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        id,
-      </if>
       `name`,
       parent_id,
       `path`,
@@ -193,147 +97,19 @@
       gmt_modified,
     </trim>
     values
-    <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        #{id,jdbcType=BIGINT},
-      </if>
-      #{name,jdbcType=VARCHAR},
-      #{parentId,jdbcType=BIGINT},
-      #{path,jdbcType=VARCHAR},
-      #{component,jdbcType=VARCHAR},
-      #{icon,jdbcType=VARCHAR},
-      #{sort,jdbcType=INTEGER},
-      #{visible,jdbcType=BOOLEAN},
-      #{redirect,jdbcType=VARCHAR},
-      #{gmtCreate,jdbcType=TIMESTAMP},
-      #{gmtModified,jdbcType=TIMESTAMP},
-    </trim>
-    on duplicate key update 
-    <trim suffixOverrides=",">
-      <if test="id != null">
-        id = #{id,jdbcType=BIGINT},
-      </if>
-      `name` = #{name,jdbcType=VARCHAR},
-      parent_id = #{parentId,jdbcType=BIGINT},
-      `path` = #{path,jdbcType=VARCHAR},
-      component = #{component,jdbcType=VARCHAR},
-      icon = #{icon,jdbcType=VARCHAR},
-      sort = #{sort,jdbcType=INTEGER},
-      visible = #{visible,jdbcType=BOOLEAN},
-      redirect = #{redirect,jdbcType=VARCHAR},
-      gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
-      gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
-    </trim>
-  </insert>
-  <insert id="insertOrUpdateSelective" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysMenu" useGeneratedKeys="true">
-    <!--@mbg.generated-->
-    insert into sys_menu
-    <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        id,
-      </if>
-      <if test="name != null">
-        `name`,
-      </if>
-      <if test="parentId != null">
-        parent_id,
-      </if>
-      <if test="path != null">
-        `path`,
-      </if>
-      <if test="component != null">
-        component,
-      </if>
-      <if test="icon != null">
-        icon,
-      </if>
-      <if test="sort != null">
-        sort,
-      </if>
-      <if test="visible != null">
-        visible,
-      </if>
-      <if test="redirect != null">
-        redirect,
-      </if>
-      <if test="gmtCreate != null">
-        gmt_create,
-      </if>
-      <if test="gmtModified != null">
-        gmt_modified,
-      </if>
-    </trim>
-    values
-    <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        #{id,jdbcType=BIGINT},
-      </if>
-      <if test="name != null">
-        #{name,jdbcType=VARCHAR},
-      </if>
-      <if test="parentId != null">
-        #{parentId,jdbcType=BIGINT},
-      </if>
-      <if test="path != null">
-        #{path,jdbcType=VARCHAR},
-      </if>
-      <if test="component != null">
-        #{component,jdbcType=VARCHAR},
-      </if>
-      <if test="icon != null">
-        #{icon,jdbcType=VARCHAR},
-      </if>
-      <if test="sort != null">
-        #{sort,jdbcType=INTEGER},
-      </if>
-      <if test="visible != null">
-        #{visible,jdbcType=BOOLEAN},
-      </if>
-      <if test="redirect != null">
-        #{redirect,jdbcType=VARCHAR},
-      </if>
-      <if test="gmtCreate != null">
-        #{gmtCreate,jdbcType=TIMESTAMP},
-      </if>
-      <if test="gmtModified != null">
-        #{gmtModified,jdbcType=TIMESTAMP},
-      </if>
-    </trim>
-    on duplicate key update 
-    <trim suffixOverrides=",">
-      <if test="id != null">
-        id = #{id,jdbcType=BIGINT},
-      </if>
-      <if test="name != null">
-        `name` = #{name,jdbcType=VARCHAR},
-      </if>
-      <if test="parentId != null">
-        parent_id = #{parentId,jdbcType=BIGINT},
-      </if>
-      <if test="path != null">
-        `path` = #{path,jdbcType=VARCHAR},
-      </if>
-      <if test="component != null">
-        component = #{component,jdbcType=VARCHAR},
-      </if>
-      <if test="icon != null">
-        icon = #{icon,jdbcType=VARCHAR},
-      </if>
-      <if test="sort != null">
-        sort = #{sort,jdbcType=INTEGER},
-      </if>
-      <if test="visible != null">
-        visible = #{visible,jdbcType=BOOLEAN},
-      </if>
-      <if test="redirect != null">
-        redirect = #{redirect,jdbcType=VARCHAR},
-      </if>
-      <if test="gmtCreate != null">
-        gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
-      </if>
-      <if test="gmtModified != null">
-        gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
-      </if>
-    </trim>
+    <foreach collection="list" item="item" separator=",">
+      <trim prefix="(" suffix=")" suffixOverrides=",">
+        #{item.name,jdbcType=VARCHAR},
+        #{item.parentId,jdbcType=BIGINT},
+        #{item.path,jdbcType=VARCHAR},
+        #{item.component,jdbcType=VARCHAR},
+        #{item.icon,jdbcType=VARCHAR},
+        #{item.sort,jdbcType=INTEGER},
+        #{item.visible,jdbcType=BOOLEAN},
+        #{item.redirect,jdbcType=VARCHAR},
+        #{item.gmtCreate,jdbcType=TIMESTAMP},
+        #{item.gmtModified,jdbcType=TIMESTAMP},
+      </trim>
+    </foreach>
   </insert>
 </mapper>

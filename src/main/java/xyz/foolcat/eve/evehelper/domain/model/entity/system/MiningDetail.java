@@ -14,12 +14,12 @@ public class MiningDetail  implements Serializable {
     /**
      * 主键ID
      */
-    private Long id;
+    private String id;
 
     /**
      * 人物ID
      */
-    private Long characterId;
+    private Integer characterId;
 
     /**
      * 人物名称
@@ -29,7 +29,7 @@ public class MiningDetail  implements Serializable {
     /**
      * 开采时该人物所属公司
      */
-    private Long recordedCorporationId;
+    private Integer recordedCorporationId;
 
     /**
      * 公司名称
@@ -39,12 +39,12 @@ public class MiningDetail  implements Serializable {
     /**
      * 物品类型ID
      */
-    private Long typeId;
+    private Integer typeId;
 
     /**
      * 开采数量
      */
-    private Long quantity;
+    private Integer quantity;
 
     /**
      * 观察者ID

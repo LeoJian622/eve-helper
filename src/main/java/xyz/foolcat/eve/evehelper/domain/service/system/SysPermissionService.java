@@ -2,13 +2,12 @@ package xyz.foolcat.eve.evehelper.domain.service.system;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysPermission;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.SysPermissionMapper;
+import xyz.foolcat.eve.evehelper.domain.repository.system.SysPermissionRepository;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 
 import java.util.HashMap;
@@ -22,20 +21,22 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(rollbackFor = RuntimeException.class)
-public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPermission> {
+public class SysPermissionService {
 
     private final RedisTemplate<String, Object> redisTemplate;
 
+    private final SysPermissionRepository rolePermissionRepository;
+
     public int updateBatch(List<SysPermission> list) {
-        return baseMapper.updateBatch(list);
+        return rolePermissionRepository.updateBatch(list);
     }
 
     public int updateBatchSelective(List<SysPermission> list) {
-        return baseMapper.updateBatchSelective(list);
+        return rolePermissionRepository.updateBatchSelective(list);
     }
 
     public int batchInsert(List<SysPermission> list) {
-        return baseMapper.batchInsert(list);
+        return rolePermissionRepository.batchInsert(list);
     }
 
     public void refreshPermRolesRules() {
@@ -79,15 +80,15 @@ public class SysPermissionService extends ServiceImpl<SysPermissionMapper, SysPe
     }
 
     private List<SysPermission> listPermRoles() {
-        return this.baseMapper.listPermRoles();
+        return rolePermissionRepository.listPermRoles();
     }
 
     public int insertOrUpdate(SysPermission record) {
-        return baseMapper.insertOrUpdate(record);
+        return rolePermissionRepository.insertOrUpdate(record);
     }
 
     public int insertOrUpdateSelective(SysPermission record) {
-        return baseMapper.insertOrUpdateSelective(record);
+        return rolePermissionRepository.insertOrUpdateSelective(record);
     }
 }
 

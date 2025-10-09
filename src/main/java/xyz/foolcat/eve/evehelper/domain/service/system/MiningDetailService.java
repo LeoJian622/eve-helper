@@ -1,17 +1,16 @@
 package xyz.foolcat.eve.evehelper.domain.service.system;
 
 import cn.hutool.crypto.digest.MD5;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.application.assembler.esi.MiningDetailAssembler;
+import xyz.foolcat.eve.evehelper.application.assembler.system.MiningDetailAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.MiningDetail;
+import xyz.foolcat.eve.evehelper.domain.repository.system.MiningDetailRepository;
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.MiningDetailMapper;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
 import java.nio.charset.StandardCharsets;
@@ -26,10 +25,9 @@ import java.util.stream.Stream;
 @Service
 @Transactional(rollbackFor = RuntimeException.class)
 @RequiredArgsConstructor
-public class MiningDetailService extends ServiceImpl<MiningDetailMapper, MiningDetail> {
+public class MiningDetailService  {
 
     private final EsiApiService esiApiService;
-
 
     private final UniverseNameService universeNameService;
 
@@ -39,8 +37,10 @@ public class MiningDetailService extends ServiceImpl<MiningDetailMapper, MiningD
 
     private final AuthorizeUtil authorizeUtil;
 
+    private final MiningDetailRepository miningDetailRepository;
+
     public int batchInsert(List<MiningDetail> list) {
-        return baseMapper.batchInsert(list);
+        return miningDetailRepository.batchInsert(list);
     }
 
     public void saveObserverMining(Integer characterId, Long observerId) throws ParseException {
@@ -72,23 +72,23 @@ public class MiningDetailService extends ServiceImpl<MiningDetailMapper, MiningD
             miningDetail.setCharacterName(universeName.get(miningDetail.getCharacterId()));
             miningDetail.setRecordedCorporationName(universeName.get(miningDetail.getRecordedCorporationId()));
         });
-        saveOrUpdateBatch(miningDetails);
+        miningDetailRepository.saveOrUpdateBatch(miningDetails);
     }
 
     public int updateBatch(List<MiningDetail> list) {
-        return baseMapper.updateBatch(list);
+        return miningDetailRepository.updateBatch(list);
     }
 
     public int updateBatchSelective(List<MiningDetail> list) {
-        return baseMapper.updateBatchSelective(list);
+        return miningDetailRepository.updateBatchSelective(list);
     }
 
     public int insertOrUpdate(MiningDetail record) {
-        return baseMapper.insertOrUpdate(record);
+        return miningDetailRepository.insertOrUpdate(record);
     }
 
     public int insertOrUpdateSelective(MiningDetail record) {
-        return baseMapper.insertOrUpdateSelective(record);
+        return miningDetailRepository.insertOrUpdateSelective(record);
     }
 }
 

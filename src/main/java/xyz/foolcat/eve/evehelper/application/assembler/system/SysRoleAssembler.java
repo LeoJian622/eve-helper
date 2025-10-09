@@ -6,6 +6,8 @@ import org.mapstruct.Mappings;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysRole;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysRolePO;
 
+import java.util.List;
+
 ;
 
 /**
@@ -20,7 +22,7 @@ public interface SysRoleAssembler {
      * @param sysRolePO
      * @return
      */
-    SysRole po2Entity(SysRolePO sysRolePO);
+    SysRole po2Domian(SysRolePO sysRolePO);
 
     /**
      * SysRole 转换为 SysRolePO
@@ -33,5 +35,25 @@ public interface SysRoleAssembler {
             @Mapping(target = "sort", ignore = true),
             @Mapping(target = "deleted", ignore = true)
     })
-    SysRolePO entity2Po(SysRole sysRole);
+    SysRolePO domian2Po(SysRole sysRole);
+
+    /**
+     * SysRolePO 转换为 SysRole
+     * @param sysRolePO
+     * @return
+     */
+    List<SysRole> po2Domian(List<SysRolePO> sysRolePO);
+
+    /**
+     * SysRole 转换为 SysRolePO
+     * @param sysRole
+     * @return
+     */
+    @Mappings({
+            @Mapping(target = "gmtCreate", ignore = true),
+            @Mapping(target = "gmtModified", ignore = true),
+            @Mapping(target = "sort", ignore = true),
+            @Mapping(target = "deleted", ignore = true)
+    })
+    List<SysRolePO> domian2Po(List<SysRole> sysRole);
 } 

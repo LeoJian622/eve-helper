@@ -9,8 +9,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.service.system.AssetsService;
-import xyz.foolcat.eve.evehelper.interfaces.web.vo.AssetsVO;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 
 import java.text.ParseException;
@@ -46,10 +46,10 @@ public class AssetsController {
     @Operation(summary = "游戏资产-资产清单")
     @GetMapping("/{cid}")
     public Result getAssetsList(@PathVariable String cid, @RequestParam(defaultValue = "0") Integer current, @RequestParam(defaultValue = "30") Integer size){
-        IPage<AssetsVO> page = new Page<>();
+        IPage<Assets> page = new Page<>();
         page.setCurrent(current);
         page.setSize(size);
-        page = assetsService.getAssertsListById(page,cid);
+        page.setRecords( assetsService.getAssertsListById(cid,current,size));
         return Result.success(page);
     }
 

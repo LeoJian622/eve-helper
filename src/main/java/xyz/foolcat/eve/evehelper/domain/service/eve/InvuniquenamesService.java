@@ -35,4 +35,8 @@ public class InvuniquenamesService {
     public int insertOrUpdateSelective(InvUniqueNames record) {
         return invuniquenamesRepository.insertOrUpdateSelective(record);
     }
+
+    public InvUniqueNames selectById(Integer id) {
+        return invuniquenamesRepository.selectById(id);
+    }
 }

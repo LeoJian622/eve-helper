@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import xyz.foolcat.eve.evehelper.application.assembler.UserConverter;
+import xyz.foolcat.eve.evehelper.application.assembler.system.SysUserAssembler;
 import xyz.foolcat.eve.evehelper.application.dto.response.UserDTO;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
@@ -30,7 +30,7 @@ public class UserController {
 
     private final SysUserService sysUserService;
 
-    private final UserConverter userConverter;
+    private final SysUserAssembler userAssembler;
 
     private final PasswordEncoder passwordEncoder;
 
@@ -39,13 +39,13 @@ public class UserController {
     @PostMapping
     public Result addUser(@RequestBody UserDTO user) {
 
-        SysUser sysUser = userConverter.userDto2SysUser(user);
+        SysUser sysUser = userAssembler.userDto2SysUser(user);
 
         if (sysUser == null) {
             return Result.failed("参数错误");
         }
         sysUser.setPassword(passwordEncoder.encode(sysUser.getPassword()));
-        sysUserService.save(sysUser);
+        sysUserService.insert(sysUser);
         return Result.success("注册成功");
     }
 }

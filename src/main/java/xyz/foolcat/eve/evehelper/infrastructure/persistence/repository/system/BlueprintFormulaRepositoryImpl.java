@@ -1,22 +1,20 @@
 package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.system;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xyz.foolcat.eve.evehelper.application.assembler.system.BlueprintFormulaAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.BlueprintFormula;
 import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintFormulaRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.BlueprintFormulaMapper;
 
-import javax.annotation.Resource;
 import java.util.List;
 
 @Repository
+@RequiredArgsConstructor
 public class BlueprintFormulaRepositoryImpl implements BlueprintFormulaRepository {
 
-    @Resource
-    private BlueprintFormulaMapper blueprintFormulaMapper;
-
-    @Resource
-    private BlueprintFormulaAssembler blueprintFormulaAssembler;
+    private final BlueprintFormulaMapper blueprintFormulaMapper;
+    private final BlueprintFormulaAssembler blueprintFormulaAssembler;
 
     @Override
     public int batchInsert(List<BlueprintFormula> list) {

@@ -1,46 +1,49 @@
 package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.system;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import xyz.foolcat.eve.evehelper.application.assembler.system.SysPermissionAssembler;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysPermission;
 import xyz.foolcat.eve.evehelper.domain.repository.system.SysPermissionRepository;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysPermissionPO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.SysPermissionMapper;
 
 import java.util.List;
 
 @Repository
+@RequiredArgsConstructor
 public class SysPermissionRepositoryImpl implements SysPermissionRepository {
 
-    @Autowired
-    private SysPermissionMapper sysPermissionMapper;
+    private final SysPermissionMapper sysPermissionMapper;
+
+    private final SysPermissionAssembler sysPermissionAssembler;
 
     @Override
-    public int updateBatch(List<SysPermissionPO> list) {
-        return 0;
+    public int updateBatch(List<SysPermission> list) {
+        return sysPermissionMapper.updateBatch(sysPermissionAssembler.domain2Po(list));
     }
 
     @Override
-    public int updateBatchSelective(List<SysPermissionPO> list) {
-        return 0;
+    public int updateBatchSelective(List<SysPermission> list) {
+        return sysPermissionMapper.updateBatchSelective(sysPermissionAssembler.domain2Po(list));
     }
 
     @Override
-    public int batchInsert(List<SysPermissionPO> list) {
-        return 0;
+    public int batchInsert(List<SysPermission> list) {
+        return sysPermissionMapper.batchInsert(sysPermissionAssembler.domain2Po(list));
     }
 
     @Override
-    public int insertOrUpdate(SysPermissionPO record) {
-        return 0;
+    public int insertOrUpdate(SysPermission record) {
+        return sysPermissionMapper.insertOrUpdate(sysPermissionAssembler.domain2Po(record));
     }
 
     @Override
-    public int insertOrUpdateSelective(SysPermissionPO record) {
-        return 0;
+    public int insertOrUpdateSelective(SysPermission record) {
+        return sysPermissionMapper.insertOrUpdateSelective(sysPermissionAssembler.domain2Po(record));
     }
 
     @Override
-    public List<SysPermissionPO> listPermRoles() {
-        return List.of();
+    public List<SysPermission> listPermRoles() {
+        return sysPermissionAssembler.po2Domain(sysPermissionMapper.listPermRoles());
     }
 }

@@ -1,29 +1,31 @@
 package xyz.foolcat.eve.evehelper.domain.service.system;
 
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysRolePermission;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.SysRolePermissionMapper;
+import xyz.foolcat.eve.evehelper.domain.repository.system.SysRolePermissionRepository;
 
 import java.util.List;
 
 @Service
 @Transactional(rollbackFor = RuntimeException.class)
-public class SysRolePermissionService extends ServiceImpl<SysRolePermissionMapper, SysRolePermission> {
+@RequiredArgsConstructor
+public class SysRolePermissionService{
 
+    private final SysRolePermissionRepository sysRolePermissionRepository;
 
     public int batchInsert(List<SysRolePermission> list) {
-        return baseMapper.batchInsert(list);
+        return sysRolePermissionRepository.batchInsert(list);
     }
 
     public int insertOrUpdate(SysRolePermission record) {
-        return baseMapper.insertOrUpdate(record);
+        return sysRolePermissionRepository.insertOrUpdate(record);
     }
 
     public int insertOrUpdateSelective(SysRolePermission record) {
-        return baseMapper.insertOrUpdateSelective(record);
+        return sysRolePermissionRepository.insertOrUpdateSelective(record);
     }
 }
 

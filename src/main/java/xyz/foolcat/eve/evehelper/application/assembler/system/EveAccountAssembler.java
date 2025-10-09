@@ -6,6 +6,8 @@ import org.mapstruct.Mappings;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EveAccountPO;
 
+import java.util.List;
+
 /**
  * EVE账户转换器
  * @author Leojan
@@ -30,4 +32,15 @@ public interface EveAccountAssembler {
             @Mapping(target = "gmtModified", ignore = true)
     })
     EveAccountPO domain2Po(EveAccount eveAccount);
+
+    /**
+     * EveAccount 转换为 EveAccountPO
+     * @param eveAccount
+     * @return
+     */
+    @Mappings({
+            @Mapping(target = "gmtCreate", ignore = true),
+            @Mapping(target = "gmtModified", ignore = true)
+    })
+    List<EveAccountPO> domain2Po(List<EveAccount> eveAccount);
 } 

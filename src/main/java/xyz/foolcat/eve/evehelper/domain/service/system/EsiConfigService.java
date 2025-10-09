@@ -7,7 +7,6 @@ import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EsiConfig;
 import xyz.foolcat.eve.evehelper.domain.repository.system.EsiConfigRepository;
 
-import javax.annotation.Resource;
 import java.util.List;
 
 @Service
@@ -16,8 +15,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class EsiConfigService {
 
-    @Resource
-    private EsiConfigRepository esiConfigRepository;
+    private final EsiConfigRepository esiConfigRepository;
 
     public int updateBatch(List<EsiConfig> list) {
         return esiConfigRepository.updateBatch(list);

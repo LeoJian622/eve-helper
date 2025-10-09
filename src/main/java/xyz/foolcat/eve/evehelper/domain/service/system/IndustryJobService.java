@@ -1,16 +1,15 @@
 package xyz.foolcat.eve.evehelper.domain.service.system;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.application.assembler.esi.IndustryJobAssembler;
+import xyz.foolcat.eve.evehelper.application.assembler.system.IndustryJobAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.IndustryJob;
+import xyz.foolcat.eve.evehelper.domain.repository.system.IndustryJobRepository;
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.IndustryJobMapper;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.IndustryActivityEnum;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
@@ -28,11 +27,9 @@ import java.util.Collection;
 @Service
 @RequiredArgsConstructor
 @Transactional(rollbackFor = RuntimeException.class)
-public class IndustryJobService extends ServiceImpl<IndustryJobMapper, IndustryJob> {
+public class IndustryJobService  {
 
     private final EsiApiService esiApiService;
-
-    private final EveAccountService eveAccountService;
 
     private final IndustryApi industryApi;
 
@@ -42,28 +39,30 @@ public class IndustryJobService extends ServiceImpl<IndustryJobMapper, IndustryJ
 
     private final AuthorizeUtil authorizeUtil;
 
+    private final IndustryJobRepository industryJobRepository;
+
     public int updateBatch(List<IndustryJob> list) {
-        return baseMapper.updateBatch(list);
+        return industryJobRepository.updateBatch(list);
     }
 
     public int updateBatchSelective(List<IndustryJob> list) {
-        return baseMapper.updateBatchSelective(list);
+        return industryJobRepository.updateBatchSelective(list);
     }
 
     public int batchInsert(List<IndustryJob> list) {
-        return baseMapper.batchInsert(list);
+        return industryJobRepository.batchInsert(list);
     }
 
     public int batchInsertOrUpdate(List<IndustryJob> list) {
-        return baseMapper.batchInsertOrUpdate(list);
+        return industryJobRepository.batchInsertOrUpdate(list);
     }
 
     public int insertOrUpdate(IndustryJob record) {
-        return baseMapper.insertOrUpdate(record);
+        return industryJobRepository.insertOrUpdate(record);
     }
 
     public int insertOrUpdateSelective(IndustryJob record) {
-        return baseMapper.insertOrUpdateSelective(record);
+        return industryJobRepository.insertOrUpdateSelective(record);
     }
 
     /**
@@ -121,6 +120,10 @@ public class IndustryJobService extends ServiceImpl<IndustryJobMapper, IndustryJ
     }
 
 
+    public List<IndustryJob> selectByCorpIdAndStatus(Integer corpId, String statusDelivered) {
+
+        return industryJobRepository.selectByCorpIdAndStatus(corpId, statusDelivered);
+    }
 }
 
 

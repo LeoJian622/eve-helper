@@ -1,5 +1,6 @@
 package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.eve;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xyz.foolcat.eve.evehelper.application.assembler.eve.IndustryBlueprintsAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.eve.IndustryBlueprints;
@@ -7,18 +8,15 @@ import xyz.foolcat.eve.evehelper.domain.repository.eve.IndustryBlueprintsReposit
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.IndustryBlueprintsPO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.eve.IndustryBlueprintsMapper;
 
-import javax.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Repository
+@RequiredArgsConstructor
 public class IndustryBlueprintsRepositoryImpl implements IndustryBlueprintsRepository {
 
-    @Resource
-    private IndustryBlueprintsMapper industryBlueprintsMapper;
-
-    @Resource
-    private IndustryBlueprintsAssembler industryBlueprintsAssembler;
+    private final IndustryBlueprintsMapper industryBlueprintsMapper;
+    private final IndustryBlueprintsAssembler industryBlueprintsAssembler;
 
     @Override
     public int deleteByPrimaryKey(Integer blueprinttypeid) {

@@ -3,11 +3,11 @@ package xyz.foolcat.eve.evehelper.service.system;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import xyz.foolcat.eve.evehelper.domain.service.system.MiningDetailService;
 
-import javax.annotation.Resource;
 import java.text.ParseException;
 
 
@@ -17,7 +17,7 @@ import java.text.ParseException;
 @DisplayName("观察者采掘详细")
 class MiningDetailServiceTest {
 
-    @Resource
+    @Autowired
     MiningDetailService miningDetailService;
 
     @Test

@@ -15,4 +15,10 @@ public interface MarketGroupsRepository {
     List<MarketGroupsTreeVO> selectGroupTree();
 
     List<MarketGroupsTreeVO> selectChildren(Integer marketgroupid);
-} 
+
+    int deleteById(Integer marketgroupid);
+
+    int insert(MarketGroups record);
+
+    MarketGroups selectById(Integer marketgroupid);
+}

@@ -6,6 +6,8 @@ import org.mapstruct.Mappings;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUserRole;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysUserRolePO;
 
+import java.util.List;
+
 ;
 
 /**
@@ -20,7 +22,7 @@ public interface SysUserRoleAssembler {
      * @param sysUserRolePO
      * @return
      */
-    SysUserRole po2Entity(SysUserRolePO sysUserRolePO);
+    SysUserRole po2Domain(SysUserRolePO sysUserRolePO);
 
     /**
      * SysUserRole 转换为 SysUserRolePO
@@ -31,5 +33,23 @@ public interface SysUserRoleAssembler {
             @Mapping(target = "gmtCreate", ignore = true),
             @Mapping(target = "gmtModified", ignore = true),
     })
-    SysUserRolePO entity2Po(SysUserRole sysUserRole);
+    SysUserRolePO domain2Po(SysUserRole sysUserRole);
+
+    /**
+     * SysUserRolePO 转换为 SysUserRole
+     * @param sysUserRolePO
+     * @return
+     */
+    List<SysUserRole> po2Domain(List<SysUserRolePO> sysUserRolePO);
+
+    /**
+     * SysUserRole 转换为 SysUserRolePO
+     * @param sysUserRole
+     * @return
+     */
+    @Mappings({
+            @Mapping(target = "gmtCreate", ignore = true),
+            @Mapping(target = "gmtModified", ignore = true),
+    })
+    List<SysUserRolePO> domain2Po(List<SysUserRole> sysUserRole);
 } 

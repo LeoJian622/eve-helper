@@ -6,6 +6,8 @@ import org.mapstruct.Mappings;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysRoleMenu;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysRoleMenuPO;
 
+import java.util.List;
+
 ;
 
 /**
@@ -20,7 +22,7 @@ public interface SysRoleMenuAssembler {
      * @param sysRoleMenuPO
      * @return
      */
-    SysRoleMenu po2Entity(SysRoleMenuPO sysRoleMenuPO);
+    SysRoleMenu po2Domain(SysRoleMenuPO sysRoleMenuPO);
 
     /**
      * SysRoleMenu 转换为 SysRoleMenuPO
@@ -31,5 +33,19 @@ public interface SysRoleMenuAssembler {
             @Mapping(target = "gmtCreate", ignore = true),
             @Mapping(target = "gmtModified", ignore = true),
     })
-    SysRoleMenuPO entity2Po(SysRoleMenu sysRoleMenu);
+    SysRoleMenuPO domain2Po(SysRoleMenu sysRoleMenu);
+
+    /**
+     * SysRoleMenuPO 列表转换为 SysRoleMenu 列表
+     * @param sysRoleMenuPOList
+     * @return
+     */
+    List<SysRoleMenu> po2Domain(List<SysRoleMenuPO> sysRoleMenuPOList);
+
+    /**
+     * SysRoleMenu 列表转换为 SysRoleMenuPO 列表
+     * @param sysRoleMenuList
+     * @return
+     */
+    List<SysRoleMenuPO> domain2Po(List<SysRoleMenu> sysRoleMenuList);
 } 

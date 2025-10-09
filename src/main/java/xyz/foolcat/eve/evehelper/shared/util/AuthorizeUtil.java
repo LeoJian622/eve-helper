@@ -24,7 +24,7 @@ public class AuthorizeUtil {
             /*
             -1 代表系统内部调用，不考虑用户，用于定时任务等使用
              */
-            return eveAccountService.getAccountOne(1, 2112818290);
+            return eveAccountService.getAccountOne(1, cId);
         }
         return eveAccountService.getAccountOne(userId, cId);
     }

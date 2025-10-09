@@ -14,4 +14,5 @@ public interface SysUserRoleRepository {
     int insertOrUpdate(SysUserRole record);
 
     int insertOrUpdateSelective(SysUserRole record);
-} 
+
+}

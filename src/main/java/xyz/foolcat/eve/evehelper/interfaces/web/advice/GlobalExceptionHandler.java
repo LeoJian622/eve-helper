@@ -5,6 +5,7 @@ import cn.hutool.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.TypeMismatchException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
@@ -26,6 +29,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * 全局异常处理器
+ *
  * @author Leojan
  * date 2021-08-11 9:57
  */
@@ -40,7 +45,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(BindException.class)
     public <T> Result<T> processException(BindException e) {
-        log.error(e.getMessage());
+        log.error("表单绑定异常: ", e);
         JSONObject msg = new JSONObject();
         e.getAllErrors().forEach(error -> {
             if (error instanceof FieldError) {
@@ -61,7 +66,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ConstraintViolationException.class)
     public <T> Result<T> processException(ConstraintViolationException e) {
-        log.error(e.getMessage());
+        log.error("参数校验异常: ", e);
         JSONObject msg = new JSONObject();
         e.getConstraintViolations().forEach(constraintViolation -> {
             String template = constraintViolation.getMessage();
@@ -74,7 +79,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ValidationException.class)
     public <T> Result<T> processException(ValidationException e) {
-        log.error(e.getMessage());
+        log.error("验证异常: ", e);
         return Result.failed(ResultCode.PARAM_ERROR, "参数校验失败");
     }
 
@@ -85,7 +90,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public <T> Result<T> processException(MissingServletRequestParameterException e) {
-        log.error(e.getMessage());
+        log.error("缺少必需参数异常: ", e);
         return Result.failed(ResultCode.PARAM_IS_NULL);
     }
 
@@ -95,7 +100,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public <T> Result<T> processException(MethodArgumentTypeMismatchException e) {
-        log.error(e.getMessage());
+        log.error("方法参数类型不匹配异常: ", e);
         return Result.failed(ResultCode.PARAM_ERROR, "类型错误");
     }
 
@@ -105,22 +110,22 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ServerException.class)
     public <T> Result<T> processException(ServletException e) {
-        log.error(e.getMessage());
+        log.error("服务器异常: ", e);
         return Result.failed(e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler({IllegalArgumentException.class})
     public Result handlerIllegalArgumentException(IllegalArgumentException e) {
-        log.error("非法参数异常，异常原因：{}", e.getMessage());
+        log.error("非法参数异常，异常原因：{}", e.getMessage(), e);
         return Result.failed(e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(JsonProcessingException.class)
     public Result handleJsonProcessingException(JsonProcessingException e) {
-        log.error("Json转换异常，异常原因：{}", e.getMessage());
-        return Result.failed(e.getMessage());
+        log.error("Json转换异常: ", e);
+        return Result.failed("JSON格式错误");
     }
 
     /**
@@ -129,7 +134,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public <T> Result<T> processException(HttpMessageNotReadableException e) {
-        log.error(e.getMessage());
+        log.error("HTTP消息不可读异常: ", e);
         String errorMessage = "请求体不可为空";
         Throwable cause = e.getCause();
         if (cause != null) {
@@ -144,22 +149,55 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(TypeMismatchException.class)
     public <T> Result<T> processException(TypeMismatchException e) {
-        log.error(e.getMessage());
-        return Result.failed(e.getMessage());
+        log.error("类型不匹配异常: ", e);
+        return Result.failed("参数类型错误");
     }
 
+    /**
+     * 数据库访问异常
+     */
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(DataAccessException.class)
+    public <T> Result<T> processException(DataAccessException e) {
+        log.error("数据库访问异常: ", e);
+        return Result.failed("数据访问异常，请稍后重试");
+    }
+
+    /**
+     * ESI接口异常
+     */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(EsiException.class)
     public Result handleEsiException(EsiException e) {
-        log.error("ESI登录失败：{}", e.getMessage());
+        log.error("ESI接口异常: ", e);
         return Result.result(e.getResultCode().getCode(), e.getMessage(), null);
     }
 
+    /**
+     * WebClient请求异常
+     */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(WebClientRequestException.class)
+    public Result handleWebClientRequestException(WebClientRequestException e) {
+        log.error("WebClient请求异常: ", e);
+        return Result.failed("网络请求异常，请稍后重试");
+    }
+
+    /**
+     * WebClient响应异常
+     */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(WebClientResponseException.class)
+    public Result handleWebClientResponseException(WebClientResponseException e) {
+        log.error("WebClient响应异常: ", e);
+        return Result.failed("外部服务响应异常，请稍后重试");
+    }
+
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(Exception.class)
     public Result handleException(Exception e) {
-        log.error("未知异常，异常原因：{}", e.getMessage());
-        return Result.failed(e.getMessage());
+        log.error("未知异常: ", e);
+        return Result.failed("系统内部错误，请联系管理员");
     }
 
 

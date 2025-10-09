@@ -2,20 +2,19 @@ package xyz.foolcat.eve.evehelper.infrastructure.external.onebot;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import xyz.foolcat.eve.evehelper.application.dto.response.TaxReturnDTO;
-import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
-import xyz.foolcat.eve.evehelper.domain.service.system.InvTypesService;
-import xyz.foolcat.eve.evehelper.domain.service.system.StructureService;
-import xyz.foolcat.eve.evehelper.domain.service.system.WalletJournalService;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.InvTypes;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
+import xyz.foolcat.eve.evehelper.domain.service.system.InvTypesService;
+import xyz.foolcat.eve.evehelper.domain.service.system.StructureService;
+import xyz.foolcat.eve.evehelper.domain.service.system.WalletJournalService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.model.MessageEvent;
+import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
@@ -45,13 +44,14 @@ public class BotDispatcher {
     private final Pattern cqPattern = Pattern.compile("^\\[CQ:.*");
     private final Pattern commandPattern = Pattern.compile("(^\\.[a-zA-Z]+)\\s(.*)");
 
-    private final EveAccountService eveAccountService;
 
     private final InvTypesService invTypesService;
 
     private final WalletJournalService walletJournalService;
 
     private final StructureService structureService;
+
+    private final AuthorizeUtil authorizeUtil;
 
     public JSONObject dispatchers(MessageEvent messageEvent) {
         if ("meta_event".equals(messageEvent.getPost_type()) || messageEvent.getRaw_message() == null) {
@@ -90,7 +90,12 @@ public class BotDispatcher {
 
     private JSONObject queryStructure(MessageEvent messageEvent, Matcher commandMatcher) {
 
-        EveAccount eveAccount = eveAccountService.getOne(new QueryWrapper<EveAccount>().lambda().eq(EveAccount::getCharacterName, commandMatcher.group(2)));
+        if (!(messageEvent.getUser_id() ==359635464) && !(messageEvent.getUser_id() ==610697865)){
+            return BotUtil.generateMessage(messageEvent, "垫下：母鸡呀",false);
+        }
+//暂时使用某人默认账号查询
+//        EveAccount eveAccount = eveAccountService.getOne(new QueryWrapper<EveAccount>().lambda().eq(EveAccount::getCharacterName, commandMatcher.group(2)));
+        EveAccount eveAccount = authorizeUtil.authorize(2112818290);
 
         List<Structure> structures = structureService.selectFuelExpiresList(24, eveAccount.getCorpId());
 
@@ -129,7 +134,7 @@ public class BotDispatcher {
     }
 
     private @NotNull JSONObject queryJitaPrice(MessageEvent messageEvent, Matcher commandMatcher) {
-        InvTypes invTypes = invTypesService.getOne(new QueryWrapper<InvTypes>().lambda().eq(InvTypes::getName, commandMatcher.group(2)));
+        InvTypes invTypes = invTypesService.selectOneByName(commandMatcher.group(2));
         WebClient request = WebClient.builder().build();
         JSONObject price = request.get().uri("https://www.ceve-market.org/api/market/region/{reg}/type/{id}.json", 10000002, invTypes.getTypeId())
                 .retrieve().bodyToMono(JSONObject.class).block();

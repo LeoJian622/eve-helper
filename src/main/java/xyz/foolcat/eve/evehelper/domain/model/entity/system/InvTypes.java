@@ -14,12 +14,12 @@ public class InvTypes implements Serializable {
     /**
      * 物品ID
      */
-    private Long typeId;
+    private Integer typeId;
 
     /**
      * 物品组ID
      */
-    private Long groupId;
+    private Integer groupId;
 
     /**
      * 名称
@@ -59,12 +59,12 @@ public class InvTypes implements Serializable {
     /**
      * 派系ID
      */
-    private Long factionId;
+    private Integer factionId;
 
     /**
      * 种族ID
      */
-    private Long raceId;
+    private Integer raceId;
 
     /**
      * 基础价格
@@ -79,12 +79,12 @@ public class InvTypes implements Serializable {
     /**
      * 市场组ID
      */
-    private Long marketGroupId;
+    private Integer marketGroupId;
 
     /**
      * 图片ID
      */
-    private Long graphicId;
+    private Integer graphicId;
 
     /**
      * 半径
@@ -94,12 +94,12 @@ public class InvTypes implements Serializable {
     /**
      * 图标ID
      */
-    private Long iconId;
+    private Integer iconId;
 
     /**
      * 音乐ID
      */
-    private Long soundId;
+    private Integer soundId;
 
     /**
      * SOF派系名称
@@ -109,17 +109,17 @@ public class InvTypes implements Serializable {
     /**
      * SOF材料集ID
      */
-    private Long sofMaterialSetId;
+    private Integer sofMaterialSetId;
 
     /**
      * 元组ID
      */
-    private Long metaGroupId;
+    private Integer metaGroupId;
 
     /**
      * 变体父类型ID
      */
-    private Long variationparentTypeId;
+    private Integer variationparentTypeId;
 
     private static final long serialVersionUID = 1L;
 } 

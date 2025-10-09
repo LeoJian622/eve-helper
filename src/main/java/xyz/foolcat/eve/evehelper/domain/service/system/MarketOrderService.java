@@ -1,7 +1,5 @@
 package xyz.foolcat.eve.evehelper.domain.service.system;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheConfig;
@@ -10,8 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.application.dto.response.MarketOrderDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.MarketOrder;
+import xyz.foolcat.eve.evehelper.domain.repository.system.MarketOrderRepository;
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.MarketOrderMapper;
 
 import java.util.List;
 
@@ -20,20 +18,22 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(rollbackFor = RuntimeException.class)
 @CacheConfig(cacheNames = "MarkerOrderCache")
-public class MarketOrderService extends ServiceImpl<MarketOrderMapper, MarketOrder> {
+public class MarketOrderService {
 
     private final EsiApiService esiApiService;
 
+    private final MarketOrderRepository marketOrderRepository;
+
     public int updateBatch(List<MarketOrder> list) {
-        return baseMapper.updateBatch(list);
+        return marketOrderRepository.updateBatch(list);
     }
 
     public int updateBatchSelective(List<MarketOrder> list) {
-        return baseMapper.updateBatchSelective(list);
+        return marketOrderRepository.updateBatchSelective(list);
     }
 
     public int batchInsert(List<MarketOrder> list) {
-        return baseMapper.batchInsert(list);
+        return marketOrderRepository.batchInsert(list);
     }
 
     /**
@@ -41,10 +41,8 @@ public class MarketOrderService extends ServiceImpl<MarketOrderMapper, MarketOrd
      *
      * @param ids
      */
-    public void deleteNotInIds(List<Long> ids) {
-        QueryWrapper<MarketOrder> marketOrderQueryWrapper = new QueryWrapper<>();
-        marketOrderQueryWrapper.notIn(MarketOrder.COL_ORDER_ID, ids);
-        baseMapper.delete(marketOrderQueryWrapper);
+    public int deleteNotInIds(List<Long> ids) {
+        return marketOrderRepository.deleteColumValueNotIn(MarketOrder.COL_ORDER_ID,ids);
     }
 
 
@@ -56,16 +54,20 @@ public class MarketOrderService extends ServiceImpl<MarketOrderMapper, MarketOrd
      */
     @Cacheable
     public List<MarketOrderDTO> querySaleAndBuyPrice(Long locationId, Integer typeId) {
-        return baseMapper.queryPrice(locationId, typeId);
+        return marketOrderRepository.queryPrice(locationId, typeId);
     }
 
 
     public int insertOrUpdate(MarketOrder record) {
-        return baseMapper.insertOrUpdate(record);
+        return marketOrderRepository.insertOrUpdate(record);
     }
 
     public int insertOrUpdateSelective(MarketOrder record) {
-        return baseMapper.insertOrUpdateSelective(record);
+        return marketOrderRepository.insertOrUpdateSelective(record);
+    }
+
+    public int saveOrUpdateBatch(List<MarketOrder> marketOrders) {
+        return marketOrderRepository.batchInsertOrUpdate(marketOrders);
     }
 }
 

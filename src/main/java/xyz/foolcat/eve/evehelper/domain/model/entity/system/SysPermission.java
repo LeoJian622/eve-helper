@@ -5,6 +5,7 @@ import lombok.EqualsAndHashCode;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * 权限表
@@ -14,7 +15,7 @@ import java.io.Serializable;
 @Data
 public class SysPermission extends BaseEntity implements Serializable {
     /**
-     * 权限ID
+     * 主键
      */
     private Long id;
 
@@ -24,24 +25,24 @@ public class SysPermission extends BaseEntity implements Serializable {
     private String name;
 
     /**
-     * 权限编码
+     * 角色列表
      */
-    private String code;
+    private List<String> roles;
 
     /**
-     * 权限类型：1-菜单 2-按钮
+     * 菜单模块ID
      */
-    private Integer type;
+    private Long menuId;
 
     /**
-     * 权限描述
+     * URL权限标识
      */
-    private String description;
+    private String urlPerm;
 
     /**
-     * 状态：0-禁用 1-开启
+     * 按钮权限标识
      */
-    private Boolean status;
+    private String btnPerm;
 
     private static final long serialVersionUID = 1L;
 } 

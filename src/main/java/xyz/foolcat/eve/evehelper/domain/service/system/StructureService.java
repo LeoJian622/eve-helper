@@ -1,17 +1,18 @@
 package xyz.foolcat.eve.evehelper.domain.service.system;
 
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.application.assembler.esi.StructureAssembler;
+import xyz.foolcat.eve.evehelper.application.assembler.system.StructureAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
+import xyz.foolcat.eve.evehelper.domain.repository.system.StructureRepository;
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CorporationApi;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.StructureMapper;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.shared.util.UserUtil;
 
@@ -29,7 +30,9 @@ import java.util.stream.Stream;
 @Service
 @Transactional(rollbackFor = RuntimeException.class)
 @RequiredArgsConstructor
-public class StructureService extends ServiceImpl<StructureMapper, Structure> {
+public class StructureService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(StructureService.class);
 
     private final StructureAssembler structureAssembler;
 
@@ -39,28 +42,53 @@ public class StructureService extends ServiceImpl<StructureMapper, Structure> {
 
     private final AuthorizeUtil authorizeUtil;
 
+    private final StructureRepository structureRepository;
+
     public int updateBatch(List<Structure> list) {
-        return baseMapper.updateBatch(list);
+        return structureRepository.updateBatch(list);
     }
 
     public int updateBatchSelective(List<Structure> list) {
-        return baseMapper.updateBatchSelective(list);
+        if (list == null) {
+            logger.warn("updateBatchSelective called with null list");
+            return 0;
+        }
+        
+        if (list.isEmpty()) {
+            logger.debug("updateBatchSelective called with empty list");
+            return 0;
+        }
+        
+        try {
+            logger.debug("Updating {} structures selectively", list.size());
+            int result = structureRepository.updateBatchSelective(list);
+            logger.debug("Successfully updated {} structures selectively", result);
+            return result;
+        } catch (Exception e) {
+            logger.error("Error updating structures selectively", e);
+            throw new RuntimeException("Error updating structures selectively", e);
+        }
     }
 
     public int batchInsert(List<Structure> list) {
-        return baseMapper.batchInsert(list);
+        return structureRepository.batchInsert(list);
     }
 
     public int batchInsertOrUpdate(List<Structure> list) {
-        return baseMapper.batchInsertOrUpdate(list);
+        return structureRepository.batchInsertOrUpdate(list);
     }
 
     public int insertOrUpdate(Structure record) {
-        return baseMapper.insertOrUpdate(record);
+        return structureRepository.insertOrUpdate(record);
     }
 
     public int insertOrUpdateSelective(Structure record) {
-        return baseMapper.insertOrUpdateSelective(record);
+        return structureRepository.insertOrUpdateSelective(record);
+    }
+
+
+    public void removeBatchByIds(List<Long> ids){
+        structureRepository.removeBatchByIds(ids);
     }
 
     /**
@@ -97,7 +125,7 @@ public class StructureService extends ServiceImpl<StructureMapper, Structure> {
          * 移除不在ESI列表的建筑
          */
         Set<Long> newStructureIds = structures.stream().map(Structure::getStructureId).collect(Collectors.toSet());
-        List<Long> structureIds = lambdaQuery().select(Structure::getStructureId).eq(Structure::getCorporationId, eveAccount.getCorpId()).list()
+        List<Long> structureIds = structureRepository.selectByCorporationId(eveAccount.getCorpId())
                 .stream()
                 .map(Structure::getStructureId)
                 .filter(id -> !newStructureIds.contains(id))
@@ -113,6 +141,10 @@ public class StructureService extends ServiceImpl<StructureMapper, Structure> {
      */
     public List<Structure> selectFuelExpiresList(Integer hour, Integer corporationId) {
         Integer userId = UserUtil.getUserId();
-        return baseMapper.selectFuelExpiresList(hour, corporationId);
+        return structureRepository.selectFuelExpiresList(hour, corporationId);
+    }
+
+    public Structure selectById(Long structureId) {
+        return structureRepository.selectByStructureId(structureId);
     }
 }

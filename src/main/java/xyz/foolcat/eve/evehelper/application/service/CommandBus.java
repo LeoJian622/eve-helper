@@ -1,5 +1,7 @@
 package xyz.foolcat.eve.evehelper.application.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.application.command.handler.CommandHandler;
@@ -20,6 +22,8 @@ import java.util.Map;
 
 @Component
 public class CommandBus implements InitializingBean {
+    
+    private static final Logger logger = LoggerFactory.getLogger(CommandBus.class);
 
     private final List<CommandHandler<?,?>> handlers;
 
@@ -59,10 +63,22 @@ public class CommandBus implements InitializingBean {
     }
 
     public <R> R dispatch(Command<R> command) {
-        CommandHandler<Command<R>, R> handler = (CommandHandler<Command<R>, R>) commandHandlers.get(command.getClass());
-        if (handler == null) {
+        CommandHandler<?, ?> rawHandler = commandHandlers.get(command.getClass());
+        if (rawHandler == null) {
+            logger.error("No handler found for command: {}", command.getClass().getSimpleName());
             throw new IllegalArgumentException("No handler found for command: " + command.getClass().getSimpleName());
         }
-        return handler.handle(command);
+        
+        try {
+            logger.debug("Dispatching command: {}", command.getClass().getSimpleName());
+            @SuppressWarnings("unchecked")
+            CommandHandler<Command<R>, R> handler = (CommandHandler<Command<R>, R>) rawHandler;
+            R result = handler.handle(command);
+            logger.debug("Command {} handled successfully", command.getClass().getSimpleName());
+            return result;
+        } catch (Exception e) {
+            logger.error("Error handling command: {}", command.getClass().getSimpleName(), e);
+            throw new RuntimeException("Error handling command: " + command.getClass().getSimpleName(), e);
+        }
     }
 }

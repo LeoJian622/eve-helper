@@ -13,7 +13,7 @@ public class UniverseName  implements Serializable {
     /**
      * 主键ID
      */
-    private Long id;
+    private Integer id;
 
     /**
      * 名称

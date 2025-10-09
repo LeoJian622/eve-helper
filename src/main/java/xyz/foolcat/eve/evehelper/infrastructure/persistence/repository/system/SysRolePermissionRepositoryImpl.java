@@ -1,29 +1,34 @@
 package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.system;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import xyz.foolcat.eve.evehelper.application.assembler.system.SysRolePermissionAssembler;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysRolePermission;
 import xyz.foolcat.eve.evehelper.domain.repository.system.SysRolePermissionRepository;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysRolePermissionPO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.SysRolePermissionMapper;
+
 import java.util.List;
 
 @Repository
+@RequiredArgsConstructor
 public class SysRolePermissionRepositoryImpl implements SysRolePermissionRepository {
-    @Autowired
-    private SysRolePermissionMapper sysRolePermissionMapper;
+
+    private final SysRolePermissionMapper sysRolePermissionMapper;
+
+    private final SysRolePermissionAssembler sysRolePermissionAssembler;
 
     @Override
-    public int batchInsert(List<SysRolePermissionPO> list) {
-        return sysRolePermissionMapper.batchInsert(list);
+    public int batchInsert(List<SysRolePermission> list) {
+        return sysRolePermissionMapper.batchInsert(sysRolePermissionAssembler.domain2Po(list));
     }
 
     @Override
-    public int insertOrUpdate(SysRolePermissionPO record) {
-        return sysRolePermissionMapper.insertOrUpdate(record);
+    public int insertOrUpdate(SysRolePermission record) {
+        return sysRolePermissionMapper.insertOrUpdate(sysRolePermissionAssembler.domain2Po(record));
     }
 
     @Override
-    public int insertOrUpdateSelective(SysRolePermissionPO record) {
-        return sysRolePermissionMapper.insertOrUpdateSelective(record);
+    public int insertOrUpdateSelective(SysRolePermission record) {
+        return sysRolePermissionMapper.insertOrUpdateSelective(sysRolePermissionAssembler.domain2Po(record));
     }
 } 

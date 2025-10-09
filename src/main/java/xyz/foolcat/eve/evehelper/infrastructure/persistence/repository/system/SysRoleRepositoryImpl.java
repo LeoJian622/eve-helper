@@ -1,33 +1,47 @@
 package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.system;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import xyz.foolcat.eve.evehelper.application.assembler.system.SysRoleAssembler;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysRole;
 import xyz.foolcat.eve.evehelper.domain.repository.system.SysRoleRepository;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysRolePO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.SysRoleMapper;
 
 import java.util.List;
 
 @Repository
+@RequiredArgsConstructor
 public class SysRoleRepositoryImpl implements SysRoleRepository {
-    @Autowired
-    private SysRoleMapper sysRoleMapper;
 
-    public int updateBatch(List<SysRolePO> list) {
-        return sysRoleMapper.updateBatch(list);
+    private final SysRoleMapper sysRoleMapper;
+    private final SysRoleAssembler sysRoleAssembler;
+
+    @Override
+    public int updateBatch(List<SysRole> list) {
+        return sysRoleMapper.updateBatch(sysRoleAssembler.domian2Po(list));
     }
-    public int updateBatchSelective(List<SysRolePO> list) {
-        return sysRoleMapper.updateBatchSelective(list);
+
+    @Override
+    public int updateBatchSelective(List<SysRole> list) {
+        return sysRoleMapper.updateBatchSelective(sysRoleAssembler.domian2Po(list));
     }
-    public int batchInsert(List<SysRolePO> list) {
-        return sysRoleMapper.batchInsert(list);
+
+    @Override
+    public int batchInsert(List<SysRole> list) {
+        return sysRoleMapper.batchInsert(sysRoleAssembler.domian2Po(list));
     }
-    public int insertOrUpdate(SysRolePO record) {
-        return sysRoleMapper.insertOrUpdate(record);
+
+    @Override
+    public int insertOrUpdate(SysRole record) {
+        return sysRoleMapper.insertOrUpdate(sysRoleAssembler.domian2Po(record));
     }
-    public int insertOrUpdateSelective(SysRolePO record) {
-        return sysRoleMapper.insertOrUpdateSelective(record);
+
+    @Override
+    public int insertOrUpdateSelective(SysRole record) {
+        return sysRoleMapper.insertOrUpdateSelective(sysRoleAssembler.domian2Po(record));
     }
+
+    @Override
     public List<String> queryRolesByUserId(Integer id) {
         return sysRoleMapper.queryRolesByUserId(id);
     }

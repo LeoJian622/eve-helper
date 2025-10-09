@@ -16,5 +16,11 @@ public interface InvTypesRepository {
 
     int insertOrUpdateSelective(InvTypes record);
 
-    InvTypesVO selcetByMarketGroupId(Long marketGroupID);
-} 
+    InvTypesVO selectByMarketGroupId(Long marketGroupID);
+
+    List<InvTypes> selectTypeNameByIds(List<Integer> typeIds);
+
+    InvTypes selectOneByName(String name);
+
+    InvTypes selectOneById(int id);
+}

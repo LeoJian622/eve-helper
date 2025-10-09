@@ -14,4 +14,8 @@ public interface UniverseNameRepository {
     int insertOrUpdate(UniverseName record);
 
     int insertOrUpdateSelective(UniverseName record);
-} 
+
+    int saveOrUpdateBatch(List<UniverseName> newUnivereName);
+
+    List<UniverseName> selectByIdIn(List<Integer> items);
+}

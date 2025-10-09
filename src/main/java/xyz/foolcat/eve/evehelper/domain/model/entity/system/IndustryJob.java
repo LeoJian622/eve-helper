@@ -143,4 +143,17 @@ public class IndustryJob implements Serializable {
     private Integer corporationId;
 
     private static final long serialVersionUID = 1L;
+
+
+    public static final String STATUS_ACTIVE = "active";
+
+    public static final String STATUS_CANCELLED = "cancelled";
+
+    public static final String STATUS_DELIVERED = "delivered";
+
+    public static final String STATUS_PAUSED = "paused";
+
+    public static final String STATUS_READY = "ready";
+
+    public static final String STATUS_REVERTED = "reverted";
 } 

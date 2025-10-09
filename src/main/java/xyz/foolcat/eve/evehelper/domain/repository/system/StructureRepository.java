@@ -18,6 +18,8 @@ public interface StructureRepository {
 
     int batchInsertOrUpdate(List<Structure> list);
 
+    Structure selectByStructureId(Long structureId);
+
     /**
      * 查询X小时后燃料耗尽的建筑
      *
@@ -25,4 +27,8 @@ public interface StructureRepository {
      * @return 建筑列表
      */
     List<Structure> selectFuelExpiresList(Integer hour, Integer corporationId);
-} 
+
+    int removeBatchByIds(List<Long> ids);
+
+    List<Structure> selectByCorporationId(Integer corporationId);
+}

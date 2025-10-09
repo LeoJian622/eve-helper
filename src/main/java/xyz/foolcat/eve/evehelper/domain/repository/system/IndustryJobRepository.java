@@ -1,14 +1,22 @@
 package xyz.foolcat.eve.evehelper.domain.repository.system;
 
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.IndustryJob;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.IndustryJobPO;
+
 import java.util.List;
 
 public interface IndustryJobRepository  {
-    int updateBatch(List<IndustryJobPO> list);
-    int updateBatchSelective(List<IndustryJobPO> list);
-    int batchInsert(List<IndustryJobPO> list);
-    int insertOrUpdate(IndustryJobPO record);
-    int insertOrUpdateSelective(IndustryJobPO record);
-    int batchInsertOrUpdate(List<IndustryJobPO> list);
-} 
+
+    int updateBatch(List<IndustryJob> list);
+
+    int updateBatchSelective(List<IndustryJob> list);
+
+    int batchInsert(List<IndustryJob> list);
+
+    int insertOrUpdate(IndustryJob record);
+
+    int insertOrUpdateSelective(IndustryJob record);
+
+    int batchInsertOrUpdate(List<IndustryJob> list);
+
+    List<IndustryJob> selectByCorpIdAndStatus(Integer corpId, String statusDelivered);
+}

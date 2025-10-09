@@ -445,4 +445,11 @@
     where (fuel_expires <![CDATA[<]]> date_add(now()+8,interval #{hour}-8 hour) or fuel_expires is null)
     and corporation_id = #{corporationId}
     </select>
+
+  <delete id="removeBatchByIds">
+      delete from structure where structure_id in
+      <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+        #{item}
+      </foreach>
+    </delete>
 </mapper>

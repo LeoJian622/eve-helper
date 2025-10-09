@@ -386,4 +386,32 @@
             </if>
         </where>
     </select>
+
+  <insert id="batchInsertOrUpdate" parameterType="map">
+      insert into market_order
+      (order_id, duration, is_buy_order, issued, location_id, min_volume, price, order_range,
+       system_id, type_id, volume_remain, volume_total, region_id)
+      values
+      <foreach collection="list" item="item" separator=",">
+          (#{item.orderId,jdbcType=BIGINT}, #{item.duration,jdbcType=BIGINT}, #{item.isBuyOrder,jdbcType=BOOLEAN},
+          #{item.issued,jdbcType=TIMESTAMP}, #{item.locationId,jdbcType=BIGINT}, #{item.minVolume,jdbcType=BIGINT},
+          #{item.price,jdbcType=BIGINT}, #{item.orderRange,jdbcType=VARCHAR}, #{item.systemId,jdbcType=BIGINT},
+          #{item.typeId,jdbcType=BIGINT}, #{item.volumeRemain,jdbcType=BIGINT}, #{item.volumeTotal,jdbcType=BIGINT},
+          #{item.regionId,jdbcType=BIGINT})
+      </foreach>
+      on duplicate key update
+      order_id = values(order_id),
+      duration = values(duration),
+      is_buy_order = values(is_buy_order),
+      issued = values(issued),
+      location_id = values(location_id),
+      min_volume = values(min_volume),
+      price = values(price),
+      order_range = values(order_range),
+      system_id = values(system_id),
+      type_id = values(type_id),
+      volume_remain = values(volume_remain),
+      volume_total = values(volume_total),
+      region_id = values(region_id)
+    </insert>
 </mapper>

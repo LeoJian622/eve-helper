@@ -243,4 +243,5 @@ public class IndustryJobPO implements Serializable {
     public static final String COL_COMPLETED_CHARACTER_ID = "completed_character_id";
 
     public static final String COL_SUCCESSFUL_RUNS = "successful_runs";
+
 } 

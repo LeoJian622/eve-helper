@@ -4,7 +4,15 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysRoleMenuPO;
 
+import java.util.List;
+
 @Mapper
 public interface SysRoleMenuMapper extends BaseMapper<SysRoleMenuPO> {
+
+    int batchInsert(List<SysRoleMenuPO> sysRoleMenuPOS);
+
+    int insertOrUpdate(SysRoleMenuPO sysRoleMenuPO);
+
+    int insertOrUpdateSelective(SysRoleMenuPO sysRoleMenuPO);
     // 只保留基础 CRUD
 }

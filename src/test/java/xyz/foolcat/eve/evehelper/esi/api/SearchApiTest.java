@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
+package xyz.foolcat.eve.evehelper.esi.api;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -9,11 +9,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.SearchApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.SearchResponse;
-import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
 import java.util.Objects;
 
@@ -26,7 +27,7 @@ class SearchApiTest {
     SearchApi searchApi;
 
     @Autowired
-    EveAccountService eveAccountService;
+    AuthorizeUtil authorizeUtil;
 
     @Autowired
     AuthorizeOAuth authorizeOAuth;
@@ -35,7 +36,7 @@ class SearchApiTest {
 
     @BeforeEach
     void initAccessToken() {
-        EveAccount entity = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, 2112818290).one();
+        EveAccount entity = authorizeUtil.authorize( 2112818290);
         Mono<AuthTokenResponse> authTokenResponseMono = authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, entity.getRefreshToken());
         at = at + Objects.requireNonNull(authTokenResponseMono.block()).getAccessToken();
         System.out.println("at = " + at);

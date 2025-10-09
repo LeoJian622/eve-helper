@@ -6,6 +6,8 @@ import org.mapstruct.Mappings;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysRolePermission;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysRolePermissionPO;
 
+import java.util.List;
+
 ;
 
 /**
@@ -32,4 +34,23 @@ public interface SysRolePermissionAssembler {
             @Mapping(target = "gmtModified", ignore = true)
     })
     SysRolePermissionPO domain2Po(SysRolePermission sysRolePermission);
+
+
+    /**
+     * SysRolePermissionPO 转换为 SysRolePermission
+     * @param sysRolePermissionPO
+     * @return
+     */
+    List<SysRolePermission> po2Domain(List<SysRolePermissionPO> sysRolePermissionPO);
+
+    /**
+     * SysRolePermission 转换为 SysRolePermissionPO
+     * @param sysRolePermission
+     * @return
+     */
+    @Mappings({
+            @Mapping(target = "gmtCreate", ignore = true),
+            @Mapping(target = "gmtModified", ignore = true)
+    })
+    List<SysRolePermissionPO> domain2Po(List<SysRolePermission> sysRolePermission);
 } 

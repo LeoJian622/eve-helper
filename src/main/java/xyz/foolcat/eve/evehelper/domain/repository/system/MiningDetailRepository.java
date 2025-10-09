@@ -14,4 +14,6 @@ public interface MiningDetailRepository {
     int insertOrUpdate(MiningDetail record);
 
     int insertOrUpdateSelective(MiningDetail record);
+
+    int saveOrUpdateBatch(List<MiningDetail> miningDetails);
 }

@@ -1,18 +1,20 @@
 package xyz.foolcat.eve.evehelper.domain.repository.system;
 
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysMenu;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysRole;
 
 import java.util.List;
 
 public interface SysRoleRepository {
 
-    int updateBatch(List<SysMenu> list);
+    int updateBatch(List<SysRole> list);
 
-    int updateBatchSelective(List<SysMenu> list);
+    int updateBatchSelective(List<SysRole> list);
 
-    int batchInsert(List<SysMenu> list);
+    int batchInsert(List<SysRole> list);
 
-    int insertOrUpdate(SysMenu record);
+    int insertOrUpdate(SysRole record);
 
-    int insertOrUpdateSelective(SysMenu record);
-} 
+    int insertOrUpdateSelective(SysRole record);
+
+    List<String> queryRolesByUserId(Integer id);
+}

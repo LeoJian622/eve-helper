@@ -4,13 +4,13 @@ import cn.hutool.core.convert.Convert;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysPermissionService;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 
-import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 
@@ -21,10 +21,10 @@ import java.util.Map;
 @DisplayName("权限查询服务")
 class SysPermissionServiceTest {
 
-    @Resource
+    @Autowired
     private SysPermissionService sysPermissionService;
 
-    @Resource
+    @Autowired
     private RedisTemplate<String, Object> redisTemplate;
 
 

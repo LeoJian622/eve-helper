@@ -1,44 +1,57 @@
 package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.system;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import xyz.foolcat.eve.evehelper.application.assembler.system.IndustryJobAssembler;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.IndustryJob;
 import xyz.foolcat.eve.evehelper.domain.repository.system.IndustryJobRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.IndustryJobPO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.IndustryJobMapper;
+
 import java.util.List;
 
 @Repository
+@RequiredArgsConstructor
 public class IndustryJobRepositoryImpl implements IndustryJobRepository {
-    @Autowired
-    private IndustryJobMapper industryJobMapper;
+
+    private final IndustryJobMapper industryJobMapper;
+    private final IndustryJobAssembler industryJobAssembler;
 
     @Override
-    public int updateBatch(List<IndustryJobPO> list) {
-        return industryJobMapper.updateBatch(list);
+    public int updateBatch(List<IndustryJob> list) {
+        return industryJobMapper.updateBatch(industryJobAssembler.entity2Po(list));
     }
 
     @Override
-    public int updateBatchSelective(List<IndustryJobPO> list) {
-        return industryJobMapper.updateBatchSelective(list);
+    public int updateBatchSelective(List<IndustryJob> list) {
+        return industryJobMapper.updateBatchSelective(industryJobAssembler.entity2Po(list));
     }
 
     @Override
-    public int batchInsert(List<IndustryJobPO> list) {
-        return industryJobMapper.batchInsert(list);
+    public int batchInsert(List<IndustryJob> list) {
+        return industryJobMapper.batchInsert(industryJobAssembler.entity2Po(list));
     }
 
     @Override
-    public int insertOrUpdate(IndustryJobPO record) {
-        return industryJobMapper.insertOrUpdate(record);
+    public int insertOrUpdate(IndustryJob record) {
+        return industryJobMapper.insertOrUpdate(industryJobAssembler.entity2Po(record));
     }
 
     @Override
-    public int insertOrUpdateSelective(IndustryJobPO record) {
-        return industryJobMapper.insertOrUpdateSelective(record);
+    public int insertOrUpdateSelective(IndustryJob record) {
+        return industryJobMapper.insertOrUpdateSelective(industryJobAssembler.entity2Po(record));
     }
 
     @Override
-    public int batchInsertOrUpdate(List<IndustryJobPO> list) {
-        return industryJobMapper.batchInsertOrUpdate(list);
+    public int batchInsertOrUpdate(List<IndustryJob> list) {
+        return industryJobMapper.batchInsertOrUpdate(industryJobAssembler.entity2Po(list));
+    }
+
+    @Override
+    public List<IndustryJob> selectByCorpIdAndStatus(Integer corpId, String statusDelivered) {
+        List<IndustryJobPO> industryJobPOS = industryJobMapper.selectList(new QueryWrapper<IndustryJobPO>().lambda().eq(IndustryJobPO::getCorporationId, corpId)
+                .ne(IndustryJobPO::getStatus, statusDelivered));
+        return industryJobAssembler.po2Entity(industryJobPOS);
     }
 } 
