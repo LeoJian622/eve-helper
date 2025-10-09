@@ -5,6 +5,9 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.MarketOrder;
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 public interface MarketOrderRepository {
     int updateBatch(List<MarketOrder> list);
 

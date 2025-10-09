@@ -7,7 +7,6 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.Univer
 
 import java.util.List;
 
-;
 
 /**
  * 宇宙名称转换器

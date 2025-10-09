@@ -8,7 +8,6 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysUse
 
 import java.util.List;
 
-;
 
 /**
  * SysUserRole 实体转换器

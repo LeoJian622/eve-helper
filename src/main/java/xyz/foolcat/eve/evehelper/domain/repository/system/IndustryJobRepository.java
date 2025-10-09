@@ -4,6 +4,9 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.IndustryJob;
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 public interface IndustryJobRepository  {
 
     int updateBatch(List<IndustryJob> list);

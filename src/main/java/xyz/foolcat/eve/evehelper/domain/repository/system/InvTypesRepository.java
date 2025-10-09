@@ -5,6 +5,9 @@ import xyz.foolcat.eve.evehelper.interfaces.web.vo.InvTypesVO;
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 public interface InvTypesRepository {
     int updateBatch(List<InvTypes> list);
 
@@ -16,7 +19,7 @@ public interface InvTypesRepository {
 
     int insertOrUpdateSelective(InvTypes record);
 
-    InvTypesVO selectByMarketGroupId(Long marketGroupID);
+    InvTypesVO selectByMarketGroupId(Long marketGroupId);
 
     List<InvTypes> selectTypeNameByIds(List<Integer> typeIds);
 

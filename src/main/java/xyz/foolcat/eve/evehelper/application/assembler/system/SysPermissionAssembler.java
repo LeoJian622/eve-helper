@@ -8,7 +8,6 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysPer
 
 import java.util.List;
 
-;
 
 /**
  * SysPermission 实体转换器

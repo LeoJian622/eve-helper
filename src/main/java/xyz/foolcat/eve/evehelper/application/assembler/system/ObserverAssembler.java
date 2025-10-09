@@ -8,8 +8,6 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.Observ
 
 import java.util.List;
 
-;
-
 /**
  * 观察者转换器
  * @author Leojan

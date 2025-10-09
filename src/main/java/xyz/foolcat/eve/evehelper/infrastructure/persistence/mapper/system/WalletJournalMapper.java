@@ -6,6 +6,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.Wallet
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Mapper
 public interface WalletJournalMapper extends BaseMapper<WalletJournalPO> {
     int updateBatch(List<WalletJournalPO> walletJournalPOS);

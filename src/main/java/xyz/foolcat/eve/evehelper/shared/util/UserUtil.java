@@ -20,7 +20,7 @@ public class UserUtil {
         }
         Object principal = authentication.getPrincipal();
         if (principal instanceof SysUser) {
-            return ((SysUser) principal).getId().intValue();
+            return ((SysUser) principal).getId();
         }
         return ((Long) principal).intValue();
     }

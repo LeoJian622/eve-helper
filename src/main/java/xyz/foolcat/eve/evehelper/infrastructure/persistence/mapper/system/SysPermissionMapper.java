@@ -6,6 +6,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysPer
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Mapper
 public interface SysPermissionMapper extends BaseMapper<SysPermissionPO> {
     // 只保留基础 CRUD

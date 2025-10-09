@@ -1,6 +1,5 @@
 package xyz.foolcat.eve.evehelper.interfaces.web.advice;
 
-
 import cn.hutool.json.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.extern.slf4j.Slf4j;
@@ -168,7 +167,7 @@ public class GlobalExceptionHandler {
      */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(EsiException.class)
-    public Result handleEsiException(EsiException e) {
+    public <T> Result<T> handleEsiException(EsiException e) {
         log.error("ESI接口异常: ", e);
         return Result.result(e.getResultCode().getCode(), e.getMessage(), null);
     }
@@ -178,7 +177,7 @@ public class GlobalExceptionHandler {
      */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(WebClientRequestException.class)
-    public Result handleWebClientRequestException(WebClientRequestException e) {
+    public <T> Result<T> handleWebClientRequestException(WebClientRequestException e) {
         log.error("WebClient请求异常: ", e);
         return Result.failed("网络请求异常，请稍后重试");
     }
@@ -188,14 +187,14 @@ public class GlobalExceptionHandler {
      */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(WebClientResponseException.class)
-    public Result handleWebClientResponseException(WebClientResponseException e) {
+    public <T> Result<T> handleWebClientResponseException(WebClientResponseException e) {
         log.error("WebClient响应异常: ", e);
         return Result.failed("外部服务响应异常，请稍后重试");
     }
 
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(Exception.class)
-    public Result handleException(Exception e) {
+    public <T> Result<T> handleException(Exception e) {
         log.error("未知异常: ", e);
         return Result.failed("系统内部错误，请联系管理员");
     }

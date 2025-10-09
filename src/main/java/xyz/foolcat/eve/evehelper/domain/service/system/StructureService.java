@@ -87,8 +87,8 @@ public class StructureService {
     }
 
 
-    public void removeBatchByIds(List<Long> ids){
-        structureRepository.removeBatchByIds(ids);
+    public int removeBatchByIds(List<Long> ids){
+        return structureRepository.removeBatchByIds(ids);
     }
 
     /**
@@ -130,7 +130,7 @@ public class StructureService {
                 .map(Structure::getStructureId)
                 .filter(id -> !newStructureIds.contains(id))
                 .collect(Collectors.toList());
-        removeBatchByIds(structureIds);
+        int number = removeBatchByIds(structureIds);
     }
 
     /**
@@ -140,7 +140,6 @@ public class StructureService {
      * @return 建筑列表
      */
     public List<Structure> selectFuelExpiresList(Integer hour, Integer corporationId) {
-        Integer userId = UserUtil.getUserId();
         return structureRepository.selectFuelExpiresList(hour, corporationId);
     }
 

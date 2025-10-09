@@ -13,6 +13,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @author Leojan
+ */
 @Repository
 @RequiredArgsConstructor
 public class WalletJournalRepositoryImpl implements WalletJournalRepository {

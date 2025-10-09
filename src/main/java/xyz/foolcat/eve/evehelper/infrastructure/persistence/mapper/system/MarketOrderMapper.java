@@ -2,6 +2,7 @@ package xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import xyz.foolcat.eve.evehelper.application.dto.response.MarketOrderDTO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MarketOrderPO;
 
@@ -25,6 +26,6 @@ public interface MarketOrderMapper extends BaseMapper<MarketOrderPO> {
 
     int batchInsertOrUpdate(List<MarketOrderPO> list);
 
-    List<MarketOrderDTO> queryPrice(Long locationId, Integer typeId);
+    List<MarketOrderDTO> queryPrice(@Param("locationId") Long locationId, @Param("typeId") Integer typeId);
 
 }

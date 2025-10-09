@@ -6,6 +6,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysRol
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Mapper
 public interface SysRolePermissionMapper extends BaseMapper<SysRolePermissionPO> {
     int batchInsert(List<SysRolePermissionPO> sysRolePermissionPOS);

@@ -22,9 +22,6 @@ import java.util.Objects;
 class PageTotalApiTest {
 
     @Autowired
-    PageTotalApi pageTotalApi;
-
-    @Autowired
     AuthorizeUtil authorizeUtil;
 
     @Autowired

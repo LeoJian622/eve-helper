@@ -8,7 +8,9 @@ import xyz.foolcat.eve.evehelper.domain.repository.system.SysPermissionRepositor
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.SysPermissionMapper;
 
 import java.util.List;
-
+/**
+ * @author Leojan
+ */
 @Repository
 @RequiredArgsConstructor
 public class SysPermissionRepositoryImpl implements SysPermissionRepository {

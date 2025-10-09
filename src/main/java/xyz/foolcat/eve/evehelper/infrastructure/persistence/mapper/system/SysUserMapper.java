@@ -7,6 +7,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysUse
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Mapper
 public interface SysUserMapper extends BaseMapper<SysUserPO> {
     int updateBatch(List<SysUser> list);

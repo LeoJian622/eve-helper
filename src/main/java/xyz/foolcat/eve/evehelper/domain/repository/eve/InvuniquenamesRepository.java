@@ -4,6 +4,9 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.eve.InvUniqueNames;
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 public interface InvuniquenamesRepository{
 
     int updateBatch(List<InvUniqueNames> list);

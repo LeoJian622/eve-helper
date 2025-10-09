@@ -39,11 +39,11 @@ public class StructTask {
     /**
      * 势力铁壁typeId
      */
-    private final Set<Integer> ignoreTypeIds = new HashSet<>() {{
-        add(47513);
-        add(47514);
-        add(47515);
-        add(47516);
+    private final Set<Long> ignoreTypeIds = new HashSet<>() {{
+        add(47513L);
+        add(47514L);
+        add(47515L);
+        add(47516L);
     }};
 
     /**

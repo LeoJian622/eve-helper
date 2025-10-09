@@ -14,6 +14,9 @@ import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Repository
 @RequiredArgsConstructor
 public class BlueprintsRepositoryImpl implements BlueprintsRepository {

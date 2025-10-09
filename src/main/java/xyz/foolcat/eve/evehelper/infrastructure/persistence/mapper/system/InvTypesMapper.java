@@ -7,6 +7,9 @@ import xyz.foolcat.eve.evehelper.interfaces.web.vo.InvTypesVO;
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Mapper
 public interface InvTypesMapper extends BaseMapper<InvTypesPO> {
     int updateBatch(List<InvTypesPO> list);

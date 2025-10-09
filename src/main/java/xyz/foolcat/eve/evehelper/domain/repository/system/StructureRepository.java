@@ -4,6 +4,9 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 public interface StructureRepository {
 
     int updateBatch(List<Structure> list);

@@ -9,6 +9,9 @@ import xyz.foolcat.eve.evehelper.domain.repository.system.EsiConfigRepository;
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Service
 @Slf4j
 @Transactional(rollbackFor = RuntimeException.class)

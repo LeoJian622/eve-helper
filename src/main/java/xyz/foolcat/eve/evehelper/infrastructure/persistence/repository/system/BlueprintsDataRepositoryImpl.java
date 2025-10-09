@@ -11,6 +11,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.Bluepr
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Repository
 @RequiredArgsConstructor
 public class BlueprintsDataRepositoryImpl implements BlueprintsDataRepository {

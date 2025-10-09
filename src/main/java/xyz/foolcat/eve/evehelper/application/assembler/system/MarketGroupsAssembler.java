@@ -8,7 +8,6 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.Market
 
 import java.util.List;
 
-;
 
 /**
  * 市场组转换器

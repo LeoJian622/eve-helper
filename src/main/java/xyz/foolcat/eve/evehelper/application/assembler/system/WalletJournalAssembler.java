@@ -9,7 +9,6 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.Wallet
 
 import java.util.List;
 
-;
 
 /**
  * 钱包日志转换器

@@ -12,6 +12,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.Market
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Repository
 @RequiredArgsConstructor
 public class MarketOrderRepositoryImpl implements MarketOrderRepository {

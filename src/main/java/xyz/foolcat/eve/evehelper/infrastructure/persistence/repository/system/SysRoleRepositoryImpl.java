@@ -9,6 +9,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.SysRol
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Repository
 @RequiredArgsConstructor
 public class SysRoleRepositoryImpl implements SysRoleRepository {

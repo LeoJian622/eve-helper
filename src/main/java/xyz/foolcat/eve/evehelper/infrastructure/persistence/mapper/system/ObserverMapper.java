@@ -5,7 +5,9 @@ import org.apache.ibatis.annotations.Mapper;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.ObserverPO;
 
 import java.util.List;
-
+/**
+ * @author Leojan
+ */
 @Mapper
 public interface ObserverMapper extends BaseMapper<ObserverPO> {
     int updateBatch(List<ObserverPO> list);

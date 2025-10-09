@@ -9,6 +9,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.Observ
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Repository
 @RequiredArgsConstructor
 public class ObserverRepositoryImpl implements ObserverRepository {

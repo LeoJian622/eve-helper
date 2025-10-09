@@ -11,6 +11,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.Indust
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Repository
 @RequiredArgsConstructor
 public class IndustryJobRepositoryImpl implements IndustryJobRepository {

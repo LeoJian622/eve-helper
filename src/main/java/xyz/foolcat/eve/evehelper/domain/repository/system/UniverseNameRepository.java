@@ -4,6 +4,9 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 public interface UniverseNameRepository {
     int updateBatch(List<UniverseName> list);
 

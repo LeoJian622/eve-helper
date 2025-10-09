@@ -6,6 +6,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.Indust
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Mapper
 public interface IndustryJobMapper extends BaseMapper<IndustryJobPO> {
     int updateBatch(List<IndustryJobPO> industryJobPOS);

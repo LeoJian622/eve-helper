@@ -7,6 +7,9 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.eve.IndustryActivityProduct
 import xyz.foolcat.eve.evehelper.domain.repository.eve.IndustryActivityProductsRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.eve.IndustryActivityProductsMapper;
 
+/**
+ * @author Leojan
+ */
 @Repository
 @RequiredArgsConstructor
 public class IndustryActivityProductsRepositoryImpl implements IndustryActivityProductsRepository {

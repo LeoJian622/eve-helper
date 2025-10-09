@@ -6,6 +6,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @author Leojan
+ */
 public interface WalletJournalRepository {
     int updateBatch(List<WalletJournal> list);
 

@@ -13,6 +13,9 @@ import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor

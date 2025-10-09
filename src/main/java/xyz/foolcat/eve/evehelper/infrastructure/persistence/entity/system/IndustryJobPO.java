@@ -10,6 +10,9 @@ import lombok.Data;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 
+/**
+ * @author Leojan
+ */
 @Schema
 @Data
 @TableName(value = "industry_job")

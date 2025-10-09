@@ -8,7 +8,6 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysRol
 
 import java.util.List;
 
-;
 
 /**
  * SysRoleMenu 实体转换器

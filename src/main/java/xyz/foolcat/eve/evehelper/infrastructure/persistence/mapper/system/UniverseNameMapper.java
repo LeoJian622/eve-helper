@@ -6,6 +6,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.Univer
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Mapper
 public interface UniverseNameMapper extends BaseMapper<UniverseNamePO> {
     int updateBatch(List<UniverseNamePO> universeNamePOS);

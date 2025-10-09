@@ -4,6 +4,9 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysRole;
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 public interface SysRoleRepository {
 
     int updateBatch(List<SysRole> list);

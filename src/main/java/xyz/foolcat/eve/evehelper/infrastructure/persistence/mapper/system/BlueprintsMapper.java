@@ -8,6 +8,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.Bluepr
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Mapper
 public interface BlueprintsMapper extends BaseMapper<BlueprintsPO> {
     IPage<BlueprintsDTO> selectBlueprintsInvtypeUniverse(IPage<BlueprintsDTO> page, String id, String sortField, String sortOrder);

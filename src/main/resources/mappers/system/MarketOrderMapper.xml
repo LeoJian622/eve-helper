@@ -358,7 +358,7 @@
   </insert>
 
     <select id="queryPrice" resultType="xyz.foolcat.eve.evehelper.application.dto.response.MarketOrderDTO">
-        select distinct mo.type_id, it.type_name, price_sale.price as sale_price, price_buy.price as buy_price
+        select distinct mo.type_id, it.name, price_sale.price as sale_price, price_buy.price as buy_price
         from market_order mo
             left join inv_types it
                       on mo.type_id = it.type_id

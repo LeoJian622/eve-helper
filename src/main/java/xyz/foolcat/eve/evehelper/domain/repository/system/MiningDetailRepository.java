@@ -4,6 +4,9 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.MiningDetail;
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 public interface MiningDetailRepository {
     int updateBatch(List<MiningDetail> list);
 

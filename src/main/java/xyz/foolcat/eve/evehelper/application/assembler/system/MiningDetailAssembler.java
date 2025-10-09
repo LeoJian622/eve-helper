@@ -9,7 +9,6 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.Mining
 
 import java.util.List;
 
-;
 
 /**
  * 采矿详情转换器

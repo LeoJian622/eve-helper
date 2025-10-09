@@ -5,6 +5,9 @@ import xyz.foolcat.eve.evehelper.interfaces.web.vo.MarketGroupsTreeVO;
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 public interface MarketGroupsRepository {
     int batchInsert(List<MarketGroups> list);
 
@@ -14,11 +17,11 @@ public interface MarketGroupsRepository {
 
     List<MarketGroupsTreeVO> selectGroupTree();
 
-    List<MarketGroupsTreeVO> selectChildren(Integer marketgroupid);
+    List<MarketGroupsTreeVO> selectChildren(Integer marketGroupId);
 
-    int deleteById(Integer marketgroupid);
+    int deleteById(Integer marketGroupId);
 
     int insert(MarketGroups record);
 
-    MarketGroups selectById(Integer marketgroupid);
+    MarketGroups selectById(Integer marketGroupId);
 }

@@ -11,6 +11,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.Univer
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Repository
 @RequiredArgsConstructor
 public class UniverseNameRepositoryImpl implements UniverseNameRepository {

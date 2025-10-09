@@ -7,6 +7,9 @@ import xyz.foolcat.eve.evehelper.interfaces.web.vo.MarketGroupsTreeVO;
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Mapper
 public interface MarketGroupsMapper extends BaseMapper<MarketGroupsPO> {
     int batchInsert(List<MarketGroupsPO> marketGroupsPOS);

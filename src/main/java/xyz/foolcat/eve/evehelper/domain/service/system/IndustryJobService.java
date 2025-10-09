@@ -72,7 +72,7 @@ public class IndustryJobService  {
      * @throws ParseException
      */
     public void batchInsertOrUpdateFromEsi(Integer cid, Boolean includeCompleted, Boolean isCor) throws ParseException {
-        /**
+        /*
          * 获取游戏人物信息及授权
          */
         EveAccount eveAccount = authorizeUtil.authorize(cid);

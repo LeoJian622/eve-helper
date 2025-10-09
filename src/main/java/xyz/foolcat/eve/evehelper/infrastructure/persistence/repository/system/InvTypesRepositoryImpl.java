@@ -13,6 +13,9 @@ import xyz.foolcat.eve.evehelper.interfaces.web.vo.InvTypesVO;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Repository
 @RequiredArgsConstructor
 public class InvTypesRepositoryImpl implements InvTypesRepository {
@@ -46,8 +49,8 @@ public class InvTypesRepositoryImpl implements InvTypesRepository {
     }
 
     @Override
-    public InvTypesVO selectByMarketGroupId(Long marketGroupID) {
-        return invTypesMapper.selcetByMarketGroupId(marketGroupID);
+    public InvTypesVO selectByMarketGroupId(Long marketGroupId) {
+        return invTypesMapper.selcetByMarketGroupId(marketGroupId);
     }
 
     @Override

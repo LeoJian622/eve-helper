@@ -13,6 +13,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.Assets
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * @author Leojan
+ */
 @Repository
 @RequiredArgsConstructor
 public class AssetsRepositoryImpl implements AssetsRepository {

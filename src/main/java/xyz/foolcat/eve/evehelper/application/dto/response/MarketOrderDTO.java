@@ -28,7 +28,7 @@ public class MarketOrderDTO implements Serializable {
      * 物品名
      */
     @Schema(name="物品类型ID")
-    private String typeName;
+    private String name;
 
 
     /**

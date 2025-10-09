@@ -9,7 +9,6 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.Struct
 
 import java.util.List;
 
-;
 
 /**
  * 建筑转换器

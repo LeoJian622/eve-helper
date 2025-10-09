@@ -110,7 +110,7 @@ public class MiningTask {
     private @NotNull String requestMiningExtractable(Integer corporationId, Integer day, String accessToken) {
         Integer maxPage = industryApi.queryCorporationMiningExtractionsMaxPage(corporationId, EsiClient.SERENITY, accessToken);
 
-        /**
+        /*
          * day天后的时间
          */
         OffsetDateTime startTime = OffsetDateTime.now();

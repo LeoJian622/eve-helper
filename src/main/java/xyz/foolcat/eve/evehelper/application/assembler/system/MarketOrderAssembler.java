@@ -6,8 +6,6 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.Market
 
 import java.util.List;
 
-;
-
 /**
  * MarketOrder 实体转换器
  * @author Leojan
@@ -17,29 +15,29 @@ public interface MarketOrderAssembler {
 
     /**
      * MarketOrderPO 转换为 MarketOrder
-     * @param marketOrderPO
-     * @return
+     * @param marketOrderPO 实例对象
+     * @return MarketOrder
      */
     MarketOrder po2Domain(MarketOrderPO marketOrderPO);
 
     /**
      * MarketOrder 转换为 MarketOrderPO
-     * @param marketOrder
-     * @return
+     * @param marketOrder 实例对象
+     * @return MarketOrderPO
      */
     MarketOrderPO domain2Po(MarketOrder marketOrder);
 
     /**
      * MarketOrderPO 转换为 MarketOrder
-     * @param marketOrderPO
-     * @return
+     * @param marketOrderPO 实例对象
+     * @return List<MarketOrder>
      */
     List<MarketOrder> po2Domain(List<MarketOrderPO> marketOrderPO);
 
     /**
      * MarketOrder 转换为 MarketOrderPO
-     * @param marketOrder
-     * @return
+     * @param marketOrder 实例对象
+     * @return List<MarketOrderPO>
      */
     List<MarketOrderPO> domain2Po(List<MarketOrder> marketOrder);
 }

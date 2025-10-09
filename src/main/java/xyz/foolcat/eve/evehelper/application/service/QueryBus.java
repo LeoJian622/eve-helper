@@ -33,7 +33,7 @@ public class QueryBus implements InitializingBean {
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() throws Exception{
         handlers.forEach(handler -> {
             Class<?> queryType = getQueryType(handler);
             if (queryType != null) {

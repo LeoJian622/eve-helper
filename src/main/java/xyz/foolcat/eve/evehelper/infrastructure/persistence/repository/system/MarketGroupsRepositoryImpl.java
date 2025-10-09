@@ -10,6 +10,9 @@ import xyz.foolcat.eve.evehelper.interfaces.web.vo.MarketGroupsTreeVO;
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Repository
 @RequiredArgsConstructor
 public class MarketGroupsRepositoryImpl implements MarketGroupsRepository {
@@ -53,7 +56,7 @@ public class MarketGroupsRepositoryImpl implements MarketGroupsRepository {
     }
 
     @Override
-    public MarketGroups selectById(Integer marketgroupid) {
+    public MarketGroups selectById(Integer marketGroupId) {
         return null;
     }
 }

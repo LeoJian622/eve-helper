@@ -9,6 +9,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.EsiCon
 
 import java.util.List;
 
+/**
+ * @author Leojan
+ */
 @Repository
 @RequiredArgsConstructor
 public class EsiConfigRepositoryImpl implements EsiConfigRepository {
