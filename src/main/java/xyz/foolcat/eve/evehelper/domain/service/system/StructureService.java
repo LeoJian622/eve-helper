@@ -2,8 +2,7 @@ package xyz.foolcat.eve.evehelper.domain.service.system;
 
 
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.application.assembler.system.StructureAssembler;
@@ -14,7 +13,6 @@ import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CorporationApi;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
-import xyz.foolcat.eve.evehelper.shared.util.UserUtil;
 
 import java.text.ParseException;
 import java.util.Collection;
@@ -30,9 +28,8 @@ import java.util.stream.Stream;
 @Service
 @Transactional(rollbackFor = RuntimeException.class)
 @RequiredArgsConstructor
+@Slf4j
 public class StructureService {
-    
-    private static final Logger logger = LoggerFactory.getLogger(StructureService.class);
 
     private final StructureAssembler structureAssembler;
 
@@ -50,22 +47,22 @@ public class StructureService {
 
     public int updateBatchSelective(List<Structure> list) {
         if (list == null) {
-            logger.warn("updateBatchSelective called with null list");
+            log.warn("updateBatchSelective called with null list");
             return 0;
         }
         
         if (list.isEmpty()) {
-            logger.debug("updateBatchSelective called with empty list");
+            log.debug("updateBatchSelective called with empty list");
             return 0;
         }
         
         try {
-            logger.debug("Updating {} structures selectively", list.size());
+            log.debug("Updating {} structures selectively", list.size());
             int result = structureRepository.updateBatchSelective(list);
-            logger.debug("Successfully updated {} structures selectively", result);
+            log.debug("Successfully updated {} structures selectively", result);
             return result;
         } catch (Exception e) {
-            logger.error("Error updating structures selectively", e);
+            log.error("Error updating structures selectively", e);
             throw new RuntimeException("Error updating structures selectively", e);
         }
     }
@@ -87,8 +84,21 @@ public class StructureService {
     }
 
 
-    public int removeBatchByIds(List<Long> ids){
-        return structureRepository.removeBatchByIds(ids);
+    public int removeBatchByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            log.debug("removeBatchByIds called with null or empty list");
+            return 0;
+        }
+        
+        try {
+            log.debug("Removing {} structures by IDs", ids.size());
+            int result = structureRepository.removeBatchByIds(ids);
+            log.debug("Successfully removed {} structures by IDs", result);
+            return result;
+        } catch (Exception e) {
+            log.error("Error removing structures by IDs", e);
+            throw new RuntimeException("Error removing structures by IDs", e);
+        }
     }
 
     /**
@@ -119,7 +129,8 @@ public class StructureService {
                 .flatMap(Collection::stream)
                 .map(structureAssembler::toStructure)
                 .collect(Collectors.toList());
-        batchInsertOrUpdate(structures);
+        int updateCount = batchInsertOrUpdate(structures);
+        log.info("更新{}条建筑数据", updateCount);
 
         /*
          * 移除不在ESI列表的建筑
@@ -130,7 +141,8 @@ public class StructureService {
                 .map(Structure::getStructureId)
                 .filter(id -> !newStructureIds.contains(id))
                 .collect(Collectors.toList());
-        int number = removeBatchByIds(structureIds);
+            int number = removeBatchByIds(structureIds);
+            log.info("移除{}条建筑数据", number);
     }
 
     /**
