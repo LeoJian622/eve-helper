@@ -6,8 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import xyz.foolcat.eve.evehelper.domain.system.InvTypes;
-import xyz.foolcat.eve.evehelper.service.system.InvTypesService;
+import xyz.foolcat.eve.evehelper.domain.service.system.InvTypesService;
 
 
 
@@ -21,12 +20,12 @@ class InvTypesServiceTest {
 
     @Test
     void selectByPrimaryKey() {
-        System.out.println(invTypesService.lambdaQuery().eq(InvTypes::getTypeId,50).one());
+        System.out.println(invTypesService.selectOneById(50));
     }
 
     @Test
     void selectIdByTypeName() {
-        System.out.println(invTypesService.lambdaQuery().eq(InvTypes::getName,"毒蜥级").one());
+        System.out.println(invTypesService.selectOneByName("毒蜥级"));
     }
 
     @Test

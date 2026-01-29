@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.eve.IndustryActivityMaterialsMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.eve.IndustryActivityMaterials">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.eve.IndustryActivityMaterialsMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.IndustryActivityMaterialsPO">
     <!--@mbg.generated-->
     <!--@Table industryActivityMaterials-->
     <result column="blueprintTypeID" jdbcType="INTEGER" property="blueprinttypeid" />
@@ -13,14 +13,14 @@
     <!--@mbg.generated-->
     blueprintTypeID, activityID, materialTypeID, quantity
   </sql>
-  <insert id="insert" parameterType="xyz.foolcat.eve.evehelper.domain.eve.IndustryActivityMaterials">
+  <insert id="insert" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.IndustryActivityMaterialsPO">
     <!--@mbg.generated-->
     insert into industryActivityMaterials (blueprintTypeID, activityID, materialTypeID, 
       quantity)
     values (#{blueprinttypeid,jdbcType=INTEGER}, #{activityid,jdbcType=TINYINT}, #{materialtypeid,jdbcType=INTEGER}, 
       #{quantity,jdbcType=INTEGER})
   </insert>
-  <insert id="insertSelective" parameterType="xyz.foolcat.eve.evehelper.domain.eve.IndustryActivityMaterials">
+  <insert id="insertSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.IndustryActivityMaterialsPO">
     <!--@mbg.generated-->
     insert into industryActivityMaterials
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -51,5 +51,12 @@
         #{quantity,jdbcType=INTEGER},
       </if>
     </trim>
+  </insert>
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.IndustryActivityMaterialsPO">
+    <!--@mbg.generated-->
+    insert into industryActivityMaterials (blueprintTypeID, activityID, materialTypeID, 
+      quantity)
+    values (#{blueprinttypeid,jdbcType=INTEGER}, #{activityid,jdbcType=TINYINT}, #{materialtypeid,jdbcType=INTEGER}, 
+      #{quantity,jdbcType=INTEGER})
   </insert>
 </mapper>

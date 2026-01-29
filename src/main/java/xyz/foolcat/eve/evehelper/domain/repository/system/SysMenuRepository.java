@@ -1,0 +1,24 @@
+package xyz.foolcat.eve.evehelper.domain.repository.system;
+
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysMenu;
+
+import java.util.List;
+
+/**
+ * @author yongj
+ * date 2025-07-10 15:12
+ */
+
+public interface SysMenuRepository  {
+    int updateBatch(List<SysMenu> list);
+
+    int updateBatchSelective(List<SysMenu> list);
+
+    int batchInsert( List<SysMenu> list);
+
+    int insertOrUpdate(SysMenu record);
+
+    int insertOrUpdateSelective(SysMenu record);
+
+    int batchInsertOrUpdate(List<SysMenu> list);
+}

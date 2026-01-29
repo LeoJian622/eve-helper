@@ -6,9 +6,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import xyz.foolcat.eve.evehelper.esi.model.SovereigntyCampaignsResponse;
-import xyz.foolcat.eve.evehelper.esi.model.SovereigntyMapResponse;
-import xyz.foolcat.eve.evehelper.esi.model.SovereigntyStructuresResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.SovereigntyApi;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.SovereigntyCampaignsResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.SovereigntyMapResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.SovereigntyStructuresResponse;
 
 import java.util.List;
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.AssetsMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.Assets">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.AssetsMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.AssetsPO">
     <!--@mbg.generated-->
     <!--@Table assets-->
     <id column="item_id" jdbcType="BIGINT" property="itemId" />
@@ -148,7 +148,7 @@
         )
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.Assets">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.AssetsPO">
     <!--@mbg.generated-->
     insert into assets
     (item_id, type_id, location_id, location_type, location_flag, is_singleton, is_blueprint_copy, 
@@ -169,7 +169,7 @@
     quantity = #{quantity,jdbcType=BIGINT}, 
     owner_id = #{ownerId,jdbcType=BIGINT}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.Assets">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.AssetsPO">
     <!--@mbg.generated-->
     insert into assets
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -263,7 +263,7 @@
     </trim>
   </insert>
 
-    <select id="selectAssertsInvtypeUniverse" resultType="xyz.foolcat.eve.evehelper.vo.AssetsVO">
+    <select id="selectAssertsInvtypeUniverse" resultType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.AssetsPO">
         select ass.item_id,
                ass.type_id,
                it.type_name,
@@ -306,4 +306,15 @@
     quantity = values(quantity),
     owner_id = values(owner_id)
   </insert>
+
+  <delete id="removeByItemId">
+    Delete from assets
+    where item_id in #{list}
+    </delete>
+
+  <select id="findByOwnerId" resultType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.AssetsPO">
+    select <include refid="Base_Column_List"/>
+    from assets
+    where owner_id = #{characterId,jdbcType=INTEGER}
+  </select>
 </mapper>

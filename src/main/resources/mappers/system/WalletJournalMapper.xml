@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.WalletJournalMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.WalletJournal">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.WalletJournalMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletJournalPO">
     <!--@mbg.generated-->
     <!--@Table wallet_journal-->
     <id column="id" jdbcType="BIGINT" property="id" />
@@ -228,7 +228,7 @@
         #{item.ownerId,jdbcType=BIGINT})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.WalletJournal">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletJournalPO">
     <!--@mbg.generated-->
     insert into wallet_journal
     (id, amount, balance, context_id, context_id_type, `date`, description, first_party_id, 
@@ -256,7 +256,7 @@
     `character` = #{character,jdbcType=VARCHAR}, 
     owner_id = #{ownerId,jdbcType=BIGINT}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.WalletJournal">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletJournalPO">
     <!--@mbg.generated-->
     insert into wallet_journal
     <trim prefix="(" suffix=")" suffixOverrides=",">

@@ -8,14 +8,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
-import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
-import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
-import xyz.foolcat.eve.evehelper.esi.model.AuthTokenResponse;
-import xyz.foolcat.eve.evehelper.esi.model.FittingResponse;
-import xyz.foolcat.eve.evehelper.esi.model.send.Fitting;
-import xyz.foolcat.eve.evehelper.esi.model.sub.FittingItem;
-import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.FittingApi;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.FittingResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.Fitting;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.FittingItem;
+import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,7 @@ class FittingApiTest {
     FittingApi fittingApi;
 
     @Autowired
-    EveAccountService eveAccountService;
+    AuthorizeUtil authorizeUtil;
 
     @Autowired
     AuthorizeOAuth authorizeOAuth;
@@ -39,7 +40,7 @@ class FittingApiTest {
 
     @BeforeEach
     void initAccessToken() {
-        EveAccount entity = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, 2112818290).one();
+        EveAccount entity = authorizeUtil.authorize( 2112818290);
         Mono<AuthTokenResponse> authTokenResponseMono = authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, entity.getRefreshToken());
         at = at + Objects.requireNonNull(authTokenResponseMono.block()).getAccessToken();
         System.out.println("at = " + at);

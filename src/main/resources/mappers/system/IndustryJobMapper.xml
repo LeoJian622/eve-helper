@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.IndustryJobMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.IndustryJob">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.IndustryJobMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.IndustryJobPO">
     <!--@mbg.generated-->
     <!--@Table industry_job-->
     <id column="job_id" jdbcType="BIGINT" property="jobId" />
@@ -380,7 +380,7 @@
         #{item.installerId,jdbcType=BIGINT}, #{item.corporationId,jdbcType=INTEGER})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.IndustryJob">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.IndustryJobPO">
     <!--@mbg.generated-->
     insert into industry_job
     (job_id, activity_id, activity, blueprint_id, blueprint_type_id, blueprint_type, 
@@ -426,7 +426,7 @@
     installer_id = #{installerId,jdbcType=BIGINT}, 
     corporation_id = #{corporationId,jdbcType=INTEGER}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.IndustryJob">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.IndustryJobPO">
     <!--@mbg.generated-->
     insert into industry_job
     <trim prefix="(" suffix=")" suffixOverrides=",">

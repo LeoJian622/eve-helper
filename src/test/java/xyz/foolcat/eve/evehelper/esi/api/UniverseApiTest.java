@@ -8,17 +8,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.domain.system.EveAccount;
-import xyz.foolcat.eve.evehelper.esi.auth.AuthorizeOAuth;
-import xyz.foolcat.eve.evehelper.esi.auth.GrantType;
-import xyz.foolcat.eve.evehelper.esi.model.*;
-import xyz.foolcat.eve.evehelper.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UniverseApi;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
+import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
 import java.util.List;
 import java.util.Objects;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayName("ESI Universe Api Test")
 class UniverseApiTest {
 
@@ -26,7 +27,7 @@ class UniverseApiTest {
     UniverseApi universeApi;
 
     @Autowired
-    EveAccountService eveAccountService;
+    AuthorizeUtil authorizeUtil;
 
     @Autowired
     AuthorizeOAuth authorizeOAuth;
@@ -35,7 +36,7 @@ class UniverseApiTest {
 
     @BeforeEach
     void initAccessToken() {
-        EveAccount entity = eveAccountService.lambdaQuery().eq(EveAccount::getCharacterId, 2112818290).one();
+        EveAccount entity = authorizeUtil.authorize( 2112818290);
         Mono<AuthTokenResponse> authTokenResponseMono = authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, entity.getRefreshToken());
         at = at + Objects.requireNonNull(authTokenResponseMono.block()).getAccessToken();
         System.out.println("at = " + at);
@@ -181,7 +182,8 @@ class UniverseApiTest {
 
     @Test
     void queryUniverseStructure() {
-        StructureInfoResponse structureInfoResponse = universeApi.queryUniverseStructure(1015148880281L, "serenity", at).block();
+//        StructureInfoResponse structureInfoResponse = universeApi.queryUniverseStructure(1015148880281L, "serenity", at).block();
+        StructureInfoResponse structureInfoResponse = universeApi.queryUniverseStructure(1019803301818L, "serenity", at).block();
         System.out.println("structureInfoResponse = " + structureInfoResponse);
     }
 

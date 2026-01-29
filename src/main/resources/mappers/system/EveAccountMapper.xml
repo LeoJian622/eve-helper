@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.EveAccountMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.EveAccount">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.EveAccountMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EveAccountPO">
     <!--@mbg.generated-->
     <!--@Table eve_account-->
     <id column="character_id" jdbcType="INTEGER" property="characterId" />
@@ -180,7 +180,7 @@
     (character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, refresh_token, 
       gmt_create, gmt_modified, `type`, qq, user_id)
     values
-    <foreach collection="list" item="item" separator=",">
+    <foreach collection="collection" item="item" separator=",">
       (#{item.characterId,jdbcType=INTEGER}, #{item.characterName,jdbcType=VARCHAR}, #{item.corpId,jdbcType=INTEGER}, 
         #{item.corpName,jdbcType=VARCHAR}, #{item.allianceId,jdbcType=INTEGER}, #{item.allianceName,jdbcType=VARCHAR}, 
         #{item.refreshToken,jdbcType=VARCHAR}, #{item.gmtCreate,jdbcType=TIMESTAMP}, #{item.gmtModified,jdbcType=TIMESTAMP}, 
@@ -188,7 +188,7 @@
         )
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.EveAccount">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EveAccountPO">
     <!--@mbg.generated-->
     insert into eve_account
     (character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, refresh_token, 
@@ -212,7 +212,7 @@
     qq = #{qq,jdbcType=INTEGER}, 
     user_id = #{userId,jdbcType=INTEGER}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.EveAccount">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EveAccountPO">
     <!--@mbg.generated-->
     insert into eve_account
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -332,4 +332,10 @@
       </if>
     </trim>
   </insert>
+
+  <select id="queryOneUserIdAndCharacterId" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>
+    from eve_account
+    where user_id = #{userId,jdbcType=INTEGER} and character_id = #{cId,jdbcType=INTEGER}
+  </select>
 </mapper>

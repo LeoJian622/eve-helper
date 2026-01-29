@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.MiningDetailMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.MiningDetail">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.MiningDetailMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MiningDetailPO">
     <!--@mbg.generated-->
     <!--@Table mining_detail-->
     <id column="id" jdbcType="VARCHAR" property="id" />
@@ -148,7 +148,7 @@
         #{item.lastUpdated,jdbcType=DATE})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.domain.system.MiningDetail">
+  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MiningDetailPO">
     <!--@mbg.generated-->
     insert into mining_detail
     (id, character_id, character_name, recorded_corporation_id, recorded_corporation_name, 
@@ -169,7 +169,7 @@
     observer_id = #{observerId,jdbcType=BIGINT}, 
     last_updated = #{lastUpdated,jdbcType=DATE}
   </insert>
-  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.domain.system.MiningDetail">
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MiningDetailPO">
     <!--@mbg.generated-->
     insert into mining_detail
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -262,4 +262,27 @@
       </if>
     </trim>
   </insert>
+
+    <insert id="batchInsertOrUpdate" parameterType="map">
+        insert into mining_detail
+        (id, character_id, character_name, recorded_corporation_id, recorded_corporation_name,
+         type_id, quantity, observer_id, last_updated)
+        values
+        <foreach collection="list" item="item" separator=",">
+            (#{item.id,jdbcType=VARCHAR}, #{item.characterId,jdbcType=INTEGER}, #{item.characterName,jdbcType=VARCHAR},
+             #{item.recordedCorporationId,jdbcType=INTEGER}, #{item.recordedCorporationName,jdbcType=VARCHAR},
+             #{item.typeId,jdbcType=INTEGER}, #{item.quantity,jdbcType=BIGINT}, #{item.observerId,jdbcType=BIGINT},
+             #{item.lastUpdated,jdbcType=DATE})
+        </foreach>
+        on duplicate key update
+        id = values(id),
+        character_id = values(character_id),
+        character_name = values(character_name),
+        recorded_corporation_id = values(recorded_corporation_id),
+        recorded_corporation_name = values(recorded_corporation_name),
+        type_id = values(type_id),
+        quantity = values(quantity),
+        observer_id = values(observer_id),
+        last_updated = values(last_updated)
+    </insert>
 </mapper>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="xyz.foolcat.eve.evehelper.mapper.system.EsiConfigMapper">
-  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.domain.system.EsiConfig">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.EsiConfigMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EsiConfigPO">
     <!--@mbg.generated-->
     <!--@Table esi_config-->
     <id column="id" jdbcType="INTEGER" property="id" />
@@ -105,7 +105,7 @@
         #{item.gmtCreate,jdbcType=TIMESTAMP}, #{item.gmtModified,jdbcType=TIMESTAMP})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.domain.system.EsiConfig" useGeneratedKeys="true">
+  <insert id="insertOrUpdate" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EsiConfigPO" useGeneratedKeys="true">
     <!--@mbg.generated-->
     insert into esi_config
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -141,7 +141,7 @@
       gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
     </trim>
   </insert>
-  <insert id="insertOrUpdateSelective" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.domain.system.EsiConfig" useGeneratedKeys="true">
+  <insert id="insertOrUpdateSelective" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EsiConfigPO" useGeneratedKeys="true">
     <!--@mbg.generated-->
     insert into esi_config
     <trim prefix="(" suffix=")" suffixOverrides=",">
