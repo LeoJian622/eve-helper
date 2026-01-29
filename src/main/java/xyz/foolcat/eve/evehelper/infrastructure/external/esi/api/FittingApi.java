@@ -11,10 +11,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ErrorResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.FittingResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ErrorResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.FittingResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.Fitting;
 
 /**
  * ESI 舰船装配接口
@@ -71,10 +72,10 @@ public class FittingApi {
 
     })
     @Operation(summary = "ESI-添加人物舰船装配信息")
-    public Mono<FittingResponse> addCharacterFittings(Integer characterId, String datasource, xyz.foolcat.eve.evehelper.esi.model.send.Fitting fitting, String accessesToken) {
+    public Mono<FittingResponse> addCharacterFittings(Integer characterId, String datasource, Fitting fitting, String accessesToken) {
         return apiClient.post().uri("/characters/{character_id}/fittings/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
-                .body(Mono.just(fitting), xyz.foolcat.eve.evehelper.esi.model.send.Fitting.class)
+                .body(Mono.just(fitting), Fitting.class)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

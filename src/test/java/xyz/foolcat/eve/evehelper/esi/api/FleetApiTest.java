@@ -13,6 +13,8 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.FleetApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.FleetInvitationDetails;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.FleetNewSetting;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
 import java.util.List;
@@ -56,7 +58,7 @@ class FleetApiTest {
 
     @Test
     void updateFleet() {
-        xyz.foolcat.eve.evehelper.esi.model.send.FleetNewSetting fleetNewSetting = new xyz.foolcat.eve.evehelper.esi.model.send.FleetNewSetting();
+        FleetNewSetting fleetNewSetting = new FleetNewSetting();
         fleetNewSetting.setIsFreeMove(true);
         FleetDetailResponse fleetDetailResponse = fleetApi.updateFleet(1022810945368L, "serenity", fleetNewSetting, at).block();
         System.out.println("fleetDetailResponse = " + fleetDetailResponse);
@@ -70,7 +72,7 @@ class FleetApiTest {
 
     @Test
     void addFleetMember() {
-        xyz.foolcat.eve.evehelper.esi.model.send.FleetInvitationDetails fleetInvitationDetails = new xyz.foolcat.eve.evehelper.esi.model.send.FleetInvitationDetails();
+        FleetInvitationDetails fleetInvitationDetails = new FleetInvitationDetails();
         fleetInvitationDetails.setCharacterId(2112832425);
         fleetInvitationDetails.setRole("squad_member");
 //        fleetInvitationDetails.setSquadId(1L);
@@ -87,7 +89,7 @@ class FleetApiTest {
 
     @Test
     void updateFleetMember() {
-        xyz.foolcat.eve.evehelper.esi.model.send.FleetInvitationDetails fleetInvitationDetails = new xyz.foolcat.eve.evehelper.esi.model.send.FleetInvitationDetails();
+        FleetInvitationDetails fleetInvitationDetails = new FleetInvitationDetails();
         fleetInvitationDetails.setRole("squad_commander");
         fleetInvitationDetails.setSquadId(3052010945368L);
         fleetInvitationDetails.setWingId(2027110945368L);

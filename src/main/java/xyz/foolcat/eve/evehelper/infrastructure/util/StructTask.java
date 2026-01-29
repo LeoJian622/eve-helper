@@ -68,7 +68,8 @@ public class StructTask {
         List<Structure> structures = structureService.selectFuelExpiresList(24, 656880659);
 
         String message = structures.stream().filter(structure -> structure.getFuelExpires() == null)
-                .filter(structure -> !ignoreTypeIds.contains(structure.getTypeId()))
+                .filter(structure ->
+                        !ignoreTypeIds.contains(structure.getTypeId()))
                 .map(structure -> structure.getName() + ", 燃料耗尽")
                 .collect(Collectors.joining("\n"));
 

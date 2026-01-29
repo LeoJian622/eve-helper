@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.esi.model.send;
+package xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;

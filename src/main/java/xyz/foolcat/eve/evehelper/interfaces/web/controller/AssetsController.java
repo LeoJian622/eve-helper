@@ -22,7 +22,7 @@ import java.text.ParseException;
 @Tag(name = "游戏资产")
 @RestController
 @Slf4j
-@RequestMapping("/*/assert")
+@RequestMapping("/assert")
 @RequiredArgsConstructor
 public class AssetsController {
 

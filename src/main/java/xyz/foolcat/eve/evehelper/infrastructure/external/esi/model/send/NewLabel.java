@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.esi.model.send;
+package xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;

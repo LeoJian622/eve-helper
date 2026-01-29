@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Objects;
 
 @ExtendWith(SpringExtension.class)
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayName("ESI Universe Api Test")
 class UniverseApiTest {
 
@@ -182,7 +182,8 @@ class UniverseApiTest {
 
     @Test
     void queryUniverseStructure() {
-        StructureInfoResponse structureInfoResponse = universeApi.queryUniverseStructure(1015148880281L, "serenity", at).block();
+//        StructureInfoResponse structureInfoResponse = universeApi.queryUniverseStructure(1015148880281L, "serenity", at).block();
+        StructureInfoResponse structureInfoResponse = universeApi.queryUniverseStructure(1019803301818L, "serenity", at).block();
         System.out.println("structureInfoResponse = " + structureInfoResponse);
     }
 

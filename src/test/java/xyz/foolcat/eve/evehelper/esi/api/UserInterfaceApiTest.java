@@ -13,6 +13,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UserInterfaceAp
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.NewMailUI;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
 import java.util.List;
@@ -65,7 +66,7 @@ class UserInterfaceApiTest {
 
     @Test
     void openNewMail() {
-        xyz.foolcat.eve.evehelper.esi.model.send.NewMailUI newMailUI = new xyz.foolcat.eve.evehelper.esi.model.send.NewMailUI();
+        NewMailUI newMailUI = new NewMailUI();
         newMailUI.setRecipients(List.of(2112818290));
         newMailUI.setSubject("test");
         newMailUI.setBody("测试");

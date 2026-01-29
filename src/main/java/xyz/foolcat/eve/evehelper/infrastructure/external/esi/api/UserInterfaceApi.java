@@ -10,9 +10,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ErrorResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ErrorResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.NewMailUI;
 
 /**
  * ESI 用户界面操作接口
@@ -150,11 +151,11 @@ public class UserInterfaceApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-根据请求中的设置（如果适用）打开“新建邮件”窗口")
-    public Mono<Object> openNewMail(String datasource, xyz.foolcat.eve.evehelper.esi.model.send.NewMailUI newMail, String accessesToken) {
+    public Mono<Object> openNewMail(String datasource, NewMailUI newMail, String accessesToken) {
         return apiClient.post().uri("/ui/openwindow/newmail/?datasource={datasource}",
                         datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
-                .body(Mono.just(newMail), xyz.foolcat.eve.evehelper.esi.model.send.NewMailUI.class)
+                .body(Mono.just(newMail), NewMailUI.class)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

@@ -11,9 +11,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.FleetInvitationDetails;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.FleetNewSetting;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -101,10 +103,10 @@ public class FleetApi {
 
     })
     @Operation(summary = "ESI-更新舰队登记信息")
-    public Mono<FleetDetailResponse> updateFleet(Long fleetId, String datasource, xyz.foolcat.eve.evehelper.esi.model.send.FleetNewSetting fleetNewSetting, String accessesToken) {
+    public Mono<FleetDetailResponse> updateFleet(Long fleetId, String datasource, FleetNewSetting fleetNewSetting, String accessesToken) {
         return apiClient.put().uri("/fleets/{fleet_id}/?datasource={datasource}", fleetId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
-                .body(Mono.just(fleetNewSetting), xyz.foolcat.eve.evehelper.esi.model.send.FleetNewSetting.class)
+                .body(Mono.just(fleetNewSetting), FleetNewSetting.class)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -159,10 +161,10 @@ public class FleetApi {
 
     })
     @Operation(summary = "ESI-邀请加入舰队")
-    public Mono<Object> addFleetMember(Long fleetId, String datasource, xyz.foolcat.eve.evehelper.esi.model.send.FleetInvitationDetails invitation, String accessesToken) {
+    public Mono<Object> addFleetMember(Long fleetId, String datasource, FleetInvitationDetails invitation, String accessesToken) {
         return apiClient.post().uri("/fleets/{fleet_id}/members/?datasource={datasource}", fleetId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
-                .body(Mono.just(invitation), xyz.foolcat.eve.evehelper.esi.model.send.FleetInvitationDetails.class)
+                .body(Mono.just(invitation), FleetInvitationDetails.class)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -218,10 +220,10 @@ public class FleetApi {
 
     })
     @Operation(summary = "ESI-移动或授予舰队成员职位")
-    public Mono<Object> updateFleetMember(Long fleetId, String datasource, Integer characterId, xyz.foolcat.eve.evehelper.esi.model.send.FleetInvitationDetails movement, String accessesToken) {
+    public Mono<Object> updateFleetMember(Long fleetId, String datasource, Integer characterId, FleetInvitationDetails movement, String accessesToken) {
         return apiClient.put().uri("/fleets/{fleet_id}/members/{member_id}/?datasource={datasource}", fleetId, characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
-                .body(Mono.just(movement), xyz.foolcat.eve.evehelper.esi.model.send.FleetInvitationDetails.class)
+                .body(Mono.just(movement), FleetInvitationDetails.class)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

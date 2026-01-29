@@ -11,9 +11,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.NewLabel;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.NewMail;
 
 import java.util.HashMap;
 import java.util.List;
@@ -78,10 +80,10 @@ public class MailApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-发送新邮件")
-    public Mono<Integer> addCharacterMail(Integer characterId, String datasource, xyz.foolcat.eve.evehelper.esi.model.send.NewMail newMail, String accessesToken) {
+    public Mono<Integer> addCharacterMail(Integer characterId, String datasource, NewMail newMail, String accessesToken) {
         return apiClient.post().uri("/characters/{character_id}/mail/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
-                .body(Mono.just(newMail), xyz.foolcat.eve.evehelper.esi.model.send.NewMail.class)
+                .body(Mono.just(newMail), NewMail.class)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -222,10 +224,10 @@ public class MailApi {
             @Parameter(name = "accessesToken", description = "授权Token", required = true),
     })
     @Operation(summary = "ESI-新增邮件标签")
-    public Mono<Integer> addCharacterMailLabels(Integer characterId, String datasource, xyz.foolcat.eve.evehelper.esi.model.send.NewLabel newLabel, String accessesToken) {
+    public Mono<Integer> addCharacterMailLabels(Integer characterId, String datasource, NewLabel newLabel, String accessesToken) {
         return apiClient.post().uri("/characters/{character_id}/mail/labels/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
-                .body(Mono.just(newLabel), xyz.foolcat.eve.evehelper.esi.model.send.NewMail.class)
+                .body(Mono.just(newLabel), NewMail.class)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

@@ -14,6 +14,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.FittingResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.Fitting;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.FittingItem;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
@@ -53,7 +54,7 @@ class FittingApiTest {
 
     @Test
     void addCharacterFittings() {
-        xyz.foolcat.eve.evehelper.esi.model.send.Fitting fitting = new xyz.foolcat.eve.evehelper.esi.model.send.Fitting();
+        Fitting fitting = new Fitting();
         fitting.setDescription("test");
         fitting.setName("测试装配");
         fitting.setShipTypeId(626);

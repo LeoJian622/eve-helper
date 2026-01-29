@@ -22,7 +22,7 @@ import java.text.ParseException;
 @Tag(name ="蓝图数据")
 @RestController
 @Slf4j
-@RequestMapping("/*/blueprints")
+@RequestMapping("/blueprints")
 @RequiredArgsConstructor
 public class BlueprintsController {
 
