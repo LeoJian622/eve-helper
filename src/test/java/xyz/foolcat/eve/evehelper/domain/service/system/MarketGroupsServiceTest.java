@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.infrastructure.util;
+package xyz.foolcat.eve.evehelper.domain.service.system;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -7,29 +7,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.ActiveProfiles;
+import xyz.foolcat.eve.evehelper.domain.service.system.MarketGroupsService;
 
-
+@ExtendWith({SpringExtension.class})
 @ActiveProfiles("test")
 @SpringBootTest
-@DisplayName("工业定时任务测试")
-class IndustryTaskTest {
+@DisplayName("市场组获取测试")
+class MarketGroupsServiceTest {
 
     @Autowired
-    private IndustryTask industryTask;
+    private MarketGroupsService marketGroupsService;
 
     @Test
-    void updateIndustryJobs() {
-        industryTask.updateIndustryJobs();
+    void selectMarketGroupTree() {
+        System.out.println(marketGroupsService.selectMarketGroupTree());
     }
-
-    @Test
-    void noticeJobComplete0() {
-        industryTask.noticeJobComplete0();
-    }
-
-    @Test
-    void noticeJobComplete24() {
-        industryTask.noticeJobComplete24();
-    }
-
 }

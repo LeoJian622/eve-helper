@@ -1,0 +1,30 @@
+package xyz.foolcat.eve.evehelper.domain.service.system;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.ActiveProfiles;
+import xyz.foolcat.eve.evehelper.domain.service.system.IndustryJobService;
+
+import java.text.ParseException;
+
+
+@ActiveProfiles("test")
+@SpringBootTest
+@DisplayName("工业服务")
+@WithUserDetails("user1")
+class IndustryJobServiceTest {
+
+    @Autowired
+    private IndustryJobService industryJobService;
+
+    @Test
+    void batchInsertOrUpdateFromEsi() throws ParseException {
+        industryJobService.batchInsertOrUpdateFromEsi(98061457,true,true);
+        industryJobService.batchInsertOrUpdateFromEsi(98061457,true,false);
+    }
+}

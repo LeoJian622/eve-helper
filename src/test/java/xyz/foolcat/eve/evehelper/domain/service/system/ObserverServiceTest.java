@@ -1,29 +1,20 @@
-package xyz.foolcat.eve.evehelper.infrastructure.util;
+package xyz.foolcat.eve.evehelper.domain.service.system;
 
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.ActiveProfiles;
+import xyz.foolcat.eve.evehelper.domain.service.system.ObserverService;
 
 
 @ActiveProfiles("test")
 @SpringBootTest
-@DisplayName("卫星矿相关任务")
-class MiningTaskTest {
+@DisplayName("读取观察者对象")
+class ObserverServiceTest {
 
     @Autowired
-    private MiningTask miningTask;
+    ObserverService observerService;
 
-    @Test
-    void noticeExtraction() {
-        miningTask.noticeExtraction();
-    }
-
-    @Test
-    void noticeExtraction7Day() {
-        miningTask.noticeExtraction7Day();
-    }
 }
