@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git mv:*)",
+      "Bash(for file in *Test.java)",
+      "Bash(do sed -i 's/package xyz\\\\.foolcat\\\\.eve\\\\.evehelper\\\\.esi\\\\.api;/package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;/' \"$file\")",
+      "Bash(done)",
+      "Bash(do git mv \"$file\" \"../../infrastructure/external/esi/api/$file\")",
+      "Bash(do sed -i 's/package xyz\\\\.foolcat\\\\.eve\\\\.evehelper\\\\.service\\\\.system;/package xyz.foolcat.eve.evehelper.domain.service.system;/' \"$file\")",
+      "Bash(do git mv \"$file\" \"../../domain/service/system/$file\")",
+      "Bash(do sed -i 's/package xyz\\\\.foolcat\\\\.eve\\\\.evehelper\\\\.controller;/package xyz.foolcat.eve.evehelper.interfaces.web.controller;/' \"$file\")",
+      "Bash(do git mv \"$file\" \"../interfaces/web/controller/$file\")",
+      "Bash(mvn test:*)",
+      "Bash(tree:*)",
+      "Bash(git add:*)",
+      "Bash(git restore:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nrefactor: 重构测试目录结构以匹配DDD架构\n\n将测试目录从传统三层架构迁移到DDD架构，使测试目录结构与源代码目录结构完全一致。\n\n变更内容：\n- 迁移 converter/ → application/assembler/ \\(1个文件\\)\n- 迁移 service/system/ → domain/service/system/ \\(11个文件\\)\n- 迁移 service/esi/ → domain/service/esi/ \\(1个文件\\)\n- 迁移 service/eve/ → domain/service/eve/ \\(1个文件\\)\n- 迁移 service/thread/ → domain/service/thread/ \\(1个文件\\)\n- 迁移 esi/ → infrastructure/external/esi/ \\(31个文件\\)\n- 迁移 onebot/ → infrastructure/external/onebot/ \\(1个文件\\)\n- 迁移 controller/ → interfaces/web/controller/ \\(3个文件\\)\n- 更新所有测试文件的包声明以匹配新位置\n- 删除旧的空目录\n\n总计：54个测试文件已迁移\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)"
+    ]
+  }
+}

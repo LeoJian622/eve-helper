@@ -7,11 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
 
 
 
-@ExtendWith(SpringExtension.class)
+
+@ActiveProfiles("test")
 @SpringBootTest
 @DisplayName("用户服务测试")
 class SysUserServiceTest {

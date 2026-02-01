@@ -8,14 +8,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
 
 import java.util.Set;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+
+@ActiveProfiles("test")
+@SpringBootTest
 @DisplayName("ESI AuthorizeOAuth Test")
 @WithUserDetails("user1")
 class AuthorizeOAuthTest {

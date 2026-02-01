@@ -7,13 +7,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.domain.service.system.BlueprintsService;
 
 import java.text.ParseException;
 
 
 
-@ExtendWith(SpringExtension.class)
+
+@ActiveProfiles("test")
 @SpringBootTest
 @WithUserDetails("admin")
 @DisplayName("blurprints 蓝图信息读取")

@@ -3,13 +3,11 @@ package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.ActiveProfiles;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CorporationApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
@@ -18,8 +16,9 @@ import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 import java.util.List;
 import java.util.Objects;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+
+@ActiveProfiles("test")
+@SpringBootTest
 @DisplayName("ESI Corporation Api Test")
 class CorporationApiTest {
 

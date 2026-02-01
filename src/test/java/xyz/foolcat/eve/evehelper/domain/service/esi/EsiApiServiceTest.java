@@ -7,12 +7,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.shared.util.UserUtil;
 
 import java.text.ParseException;
 
-@ExtendWith(SpringExtension.class)
+
+@ActiveProfiles("test")
 @SpringBootTest
 @DisplayName("ESI 请求服务测试")
 @WithUserDetails("user1")

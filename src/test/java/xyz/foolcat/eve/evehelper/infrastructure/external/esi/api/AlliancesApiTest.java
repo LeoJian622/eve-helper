@@ -3,18 +3,17 @@ package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 import cn.hutool.core.lang.Assert;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.AlliancesApi;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AlliancesResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.IconResponse;
 
 import java.util.List;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+
+@ActiveProfiles("test")
+@SpringBootTest
 @DisplayName("ESI Alliance Api Test")
 class AlliancesApiTest {
 

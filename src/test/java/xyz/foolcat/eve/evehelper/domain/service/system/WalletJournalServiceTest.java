@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.application.dto.response.TaxReturnDTO;
 import xyz.foolcat.eve.evehelper.domain.service.system.WalletJournalService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotUtil;
@@ -15,8 +16,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotUtil;
 import java.text.ParseException;
 import java.util.List;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+
+@ActiveProfiles("test")
+@SpringBootTest
 @WithUserDetails("admin")
 @DisplayName("人物钱包交易记录")
 class WalletJournalServiceTest {

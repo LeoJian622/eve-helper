@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.ActiveProfiles;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.PageTotalApi;
@@ -16,7 +17,8 @@ import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
 import java.util.Objects;
 
-@ExtendWith(SpringExtension.class)
+
+@ActiveProfiles("test")
 @SpringBootTest
 @DisplayName("ESI Opportunities Api Test")
 class PageTotalApiTest {
