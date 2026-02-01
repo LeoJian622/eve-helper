@@ -1,0 +1,31 @@
+package xyz.foolcat.eve.evehelper.domain.service.system;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import xyz.foolcat.eve.evehelper.domain.service.system.MiningDetailService;
+
+import java.text.ParseException;
+
+
+
+@ExtendWith({SpringExtension.class})
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@DisplayName("观察者采掘详细")
+class MiningDetailServiceTest {
+
+    @Autowired
+    MiningDetailService miningDetailService;
+
+    @Test
+    void saveAllObserverMining() {
+    }
+
+    @Test
+    void saveObserverMining() throws ParseException {
+        miningDetailService.saveObserverMining(2112818290,1014017747012L);
+    }
+}

@@ -1,0 +1,28 @@
+package xyz.foolcat.eve.evehelper.domain.service.system;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
+
+
+
+@ExtendWith(SpringExtension.class)
+@SpringBootTest
+@DisplayName("用户服务测试")
+class SysUserServiceTest {
+
+    @Autowired
+    SysUserService service;
+
+    @Test
+    void loadUserByUsername() {
+        UserDetails result = service.loadUserByUsername("user2");
+        System.out.println(result);
+    }
+
+}
