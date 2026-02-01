@@ -239,7 +239,7 @@ src/test/java/xyz/foolcat/eve/evehelper/
 
 - **测试类**: `{ClassName}Test.java`
 - **测试方法**: 使用描述性名称,通常为中文
-- **测试框架**: JUnit + Spring Boot Test + Mockito
+- **测试框架**: JUnit + Spring Boot Test
 
 ### 测试覆盖重点
 
