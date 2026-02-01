@@ -19,6 +19,8 @@ public interface SysUserRepository {
 
     SysUser queryByUsername(String username);
 
+    SysUser queryById(Integer id);
+
     int insertOrUpdate(SysUser record);
 
     int insertOrUpdateSelective(SysUser record);

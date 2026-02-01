@@ -6,7 +6,7 @@ spring:
     druid:
       system:
         username: lyj
-        password: a.123456
+        password: ${DB_SYSTEM_PASSWORD}
         url: jdbc:mysql://192.168.12.249:3307/eve_helper?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
         driverClassName: com.mysql.cj.jdbc.Driver
         #初始化连接池的连接数量 大小，最小，最大
@@ -36,7 +36,7 @@ spring:
             slow-sql-millis: 5000
       eve:
         username: lyj
-        password: a.123456
+        password: ${DB_EVE_PASSWORD}
         url: jdbc:mysql://192.168.12.249:3307/eve?useUnicode=true&characterEncoding=utf8
         driverClassName: com.mysql.cj.jdbc.Driver
         #初始化连接池的连接数量 大小，最小，最大
@@ -87,7 +87,7 @@ spring:
   redis:
     host: 192.168.12.249
     port: 6379
-    password: axent666
+    password: ${REDIS_PASSWORD}
   cache:
     redis:
       time-to-live: 3000s
@@ -112,6 +112,16 @@ jwt-token:
   issuer: eve-helper.xyz
   subject: eve-helper
   expirationTime: 7200
+  accessTokenExpirationTime: 900  # 15分钟
+  refreshTokenExpirationTime: 604800  # 7天
+
+security:
+  keystore:
+    location: eve-jwt.jks
+    password: ${KEYSTORE_PASSWORD}
+    alias: eve-jwt
+    key-password: ${KEY_PASSWORD}
+
 eve:
   helper:
     whiteUrlList:

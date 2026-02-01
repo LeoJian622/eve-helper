@@ -37,3 +37,8 @@ build/
 
 ### rebel ###
 rebel.xml
+
+### Environment Variables ###
+.env
+*.env
+!.env.example

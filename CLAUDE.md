@@ -2,325 +2,369 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## 项目概述
 
-EVE Helper is a Java Spring Boot application for EVE Online players to read and analyze character/corporation orders, assets, and market data. The project integrates with the EVE Online ESI (EVE Swagger Interface) API and has been migrated to Domain-Driven Design (DDD) architecture.
+EVE Helper 是一个基于 Java Spring Boot 的应用程序,用于 EVE Online 玩家读取和分析角色/军团的订单、资产和市场数据。项目集成了 EVE Online ESI (EVE Swagger Interface) API,并已迁移到领域驱动设计 (DDD) 架构。
 
-**Current Branch**: `ddd-migration` - The DDD architecture migration has been finalized (0.0.2-SNAPSHOT).
+**版本**: 0.0.2-SNAPSHOT
+**Java**: 11
+**Spring Boot**: 2.7.18
 
-## Build and Development Commands
+## 构建和开发命令
 
-### Build and Run
+### 构建和运行
 ```bash
-# Build the project
+# 构建项目
 mvn clean package
 
-# Run the application (dev profile active by default)
+# 运行应用 (默认使用 dev profile)
 mvn spring-boot:run
 
-# Run with specific profile
+# 使用指定 profile 运行
 mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
-# Run tests
+# 运行所有测试
 mvn test
 
-# Run a single test class
+# 运行单个测试类
 mvn test -Dtest=ClassName
 
-# Run a single test method
+# 运行单个测试方法
 mvn test -Dtest=ClassName#methodName
-```
 
-### Development
-```bash
-# Compile only
-mvn compile
-
-# Clean build artifacts
-mvn clean
-
-# Skip tests during build
+# 跳过测试构建
 mvn package -DskipTests
-
-# Generate MapStruct mappers (happens automatically during compile)
-mvn compile
 ```
 
-### Access Points
-- **Application**: http://localhost:9999
+### 访问端点
+- **应用**: http://localhost:9999
 - **Swagger UI**: http://localhost:9999/swagger-ui.html
-- **API Docs**: http://localhost:9999/v3/api-docs
+- **API 文档**: http://localhost:9999/v3/api-docs
 
-## Architecture Overview
+## DDD 架构概览
 
-### DDD Layered Architecture
+### 分层架构
 
-The project follows Domain-Driven Design with four distinct layers:
+项目遵循领域驱动设计,分为五个层次:
 
 ```
 xyz.foolcat.eve.evehelper/
-├── domain/          # Domain Layer - Core business logic (no dependencies)
-├── application/     # Application Layer - Use case coordination
-├── infrastructure/  # Infrastructure Layer - Technical implementation
-├── interfaces/      # Interface Layer - User interaction (REST, WebSocket)
-└── shared/          # Shared Layer - Common components
+├── domain/          # 领域层 - 核心业务逻辑 (无外部依赖)
+├── application/     # 应用层 - 用例协调
+├── infrastructure/  # 基础设施层 - 技术实现
+├── interfaces/      # 接口层 - 用户交互 (REST, WebSocket)
+└── shared/          # 共享层 - 通用组件
 ```
 
-**Dependency Rule**: `Interfaces → Application → Domain ← Infrastructure`
+**依赖规则**: `Interfaces → Application → Domain ← Infrastructure`
 
-### Domain Layer (`domain/`)
+领域层是核心,不依赖任何其他层。基础设施层实现领域层定义的接口。
 
-Contains the core business logic and domain models:
+### 领域层 (domain/)
 
-- **`model/entity/`**: Domain entities with unique identifiers
-  - `eve/`: EVE Online game data entities (IndustryBlueprints, IndustryActivityMaterials, etc.)
-  - `system/`: Application entities (Blueprints, Assets, EveAccount, SysUser, etc.)
-- **`model/valueobject/`**: Immutable value objects
-- **`model/aggregate/`**: Aggregate roots managing entity clusters
-- **`repository/`**: Repository interfaces (implementations in infrastructure)
-  - `eve/`: EVE game data repositories
-  - `system/`: Application data repositories
-- **`service/`**: Domain services for business logic
-  - `esi/`: ESI API integration services
-  - `eve/`: EVE game data services
-  - `system/`: System business logic services
-  - `thread/`: Async operation services (e.g., MarketOrderAsyncService)
-- **`specification/`**: Business rule specifications (e.g., BlueprintsSpecification)
+包含核心业务逻辑和领域模型:
 
-### Application Layer (`application/`)
+- **`model/entity/`**: 具有唯一标识的领域实体
+  - `eve/`: EVE 游戏静态数据实体 (IndustryBlueprints, IndustryActivityMaterials 等)
+  - `system/`: 应用实体 (Blueprints, Assets, EveAccount, SysUser, MarketOrder 等)
+  - 所有实体继承 `BaseEntity` (包含 gmtCreate, gmtModified)
 
-Orchestrates use cases and coordinates domain objects:
+- **`repository/`**: 仓储接口 (实现在 infrastructure 层)
+  - `eve/`: EVE 游戏数据仓储
+  - `system/`: 应用数据仓储
+  - 定义数据访问契约,不涉及具体实现
 
-- **`service/`**: Application services (e.g., BlueprintsApplicationService)
-- **`dto/`**: Data Transfer Objects for inter-layer communication
-- **`assembler/`**: MapStruct assemblers for object mapping (26+ assemblers)
-  - `eve/`: EVE data assemblers
-  - `system/`: System data assemblers
-- **`command/`**: Command handlers (CQRS write operations)
-- **`query/`**: Query handlers (CQRS read operations, e.g., BlueprintsQueryHandler)
-- **`validator/`**: Input validation logic
+- **`service/`**: 领域服务 - 跨实体的业务逻辑
+  - `esi/`: ESI API 集成服务
+  - `eve/`: EVE 游戏数据服务
+  - `system/`: 系统业务逻辑服务
+  - `security/`: 安全相关服务 (TokenService, TokenBlacklistService, LoginRateLimiterService)
+  - `thread/`: 异步操作服务
 
-### Infrastructure Layer (`infrastructure/`)
+- **`specification/`**: 规格模式 - 封装业务规则
 
-Technical implementations and external integrations:
+### 应用层 (application/)
 
-- **`persistence/`**: Database access implementation
-  - `mapper/`: MyBatis mappers (26+ XML mappers)
-    - `eve/`: EVE game data mappers
-    - `system/`: Application data mappers
-  - `repository/`: Repository implementations
-  - `entity/`: Persistence Objects (PO) - database entities
-- **`external/`**: External service integrations
-  - `esi/`: EVE Online ESI API client (30+ API classes)
-    - OAuth 2.0 with PKCE authentication
-    - Support for Serenity (Chinese) and Tranquility servers
-  - `onebot/`: OneBot messaging integration
-- **`config/`**: Configuration classes
-  - `druid/`: Database connection pool configuration
-  - `mybatis/`: MyBatis Plus configuration
-  - `security/`: Spring Security configuration
+协调用例并编排领域对象:
 
-### Interfaces Layer (`interfaces/`)
+- **`service/`**: 应用服务 (如 BlueprintsApplicationService)
+  - `CommandBus`: 命令总线 - 使用泛型反射自动分发命令
+  - `QueryBus`: 查询总线 - 使用泛型反射自动分发查询
 
-User-facing interfaces:
+- **`dto/`**: 数据传输对象
+  - `request/`: 请求 DTO (如 RefreshTokenRequest)
+  - `response/`: 响应 DTO (如 TokenPair)
 
-- **`web/controller/`**: REST controllers (9 controllers)
+- **`assembler/`**: MapStruct 组装器 (26+ 个)
+  - 转换 Domain Entity ↔ Persistence Object (PO)
+  - 转换 DTO ↔ Domain Entity
+  - 编译时自动生成实现
+
+- **`command/`**: 命令处理器 (CQRS 写操作)
+  - `model/Command`: 命令接口 (泛型)
+  - `handler/CommandHandler`: 命令处理器接口
+
+- **`query/`**: 查询处理器 (CQRS 读操作)
+  - `model/Query`: 查询接口 (泛型)
+  - `handler/QueryHandler`: 查询处理器接口
+
+### 基础设施层 (infrastructure/)
+
+技术实现和外部集成:
+
+- **`persistence/`**: 数据库访问实现
+  - `entity/`: 持久化对象 (PO) - 数据库实体
+  - `mapper/`: MyBatis 映射器 (26+ XML 映射器)
+  - `repository/`: 仓储实现 - 使用 Mapper 和 Assembler
+
+- **`external/`**: 外部服务集成
+  - `esi/`: EVE Online ESI API 客户端 (30+ API 类)
+    - OAuth 2.0 with PKCE 认证
+    - 支持晨曦 (Serenity) 和宁静 (Tranquility) 服务器
+  - `onebot/`: OneBot 消息集成
+
+- **`config/`**: 配置类
+  - `druid/`: 多数据源配置 (EveDataSourceConfig, SystemDatasourceConfig)
+  - `mybatis/`: MyBatis Plus 配置
+  - `security/`: Spring Security 配置
+    - `SecurityConfig`: 安全配置
+    - `JwtTokenProperties`: JWT 属性
+    - `KeyPairConfig`: RSA 密钥对配置
+    - `RbacAuthorizationManager`: RBAC 授权管理器
+    - `filter/JwtAuthorizationTokenFilter`: JWT 过滤器
+    - `handler/`: 认证成功/失败处理器
+
+### 接口层 (interfaces/)
+
+用户交互接口:
+
+- **`web/controller/`**: REST 控制器
+  - AuthController: 认证控制器 (登出, 刷新 Token)
   - BlueprintsController, AssetsController, CharacterController
   - JobController, MarketController, MiningController
   - ObserverController, UserController
-- **`web/filter/`**: Web filters (e.g., JwtAuthorizationTokenFilter)
-- **`web/advice/`**: Global exception handling
-- **`web/vo/`**: View Objects for API responses
-- **`websocket/`**: WebSocket endpoints
 
-### Shared Layer (`shared/`)
+- **`web/filter/`**: Web 过滤器
+- **`web/advice/`**: 全局异常处理
+- **`web/vo/`**: 视图对象
 
-Common components used across all layers:
+### 共享层 (shared/)
 
-- **`kernel/`**: Core components
-  - `base/`: Base classes
-  - `enums/`: Enumerations
-  - `exception/`: Exception definitions
-  - `constants/`: Constants
-  - `annotation/`: Custom annotations
-- **`result/`**: Unified result wrapper
-- **`util/`**: Common utilities
+跨层通用组件:
 
-## Key Technical Details
+- **`kernel/`**: 核心组件
+  - `base/BaseEntity`: 基础实体 (gmtCreate, gmtModified)
+  - `base/PageResult`: 分页结果
+  - `enums/`: 枚举 (CorporationActivityEnum, IndustryActivityEnum)
+  - `exception/EveHelperException`: 自定义异常
+  - `constants/`: 常量 (GlobalConstants, SecurityConstant)
+  - `annotation/`: 自定义注解 (CommandHandlers, QueryHandlers)
 
-### Multi-Database Configuration
+- **`result/`**: 统一返回结果
+  - `Result<T>`: 通用返回结果
+  - `ResultCode`: 返回码枚举
 
-Two separate MySQL databases:
-- **`eve`**: EVE Online static game data (read-only reference data)
-- **`eve_helper`**: Application runtime data (user data, orders, assets)
+- **`util/`**: 工具类
 
-MyBatis Plus is configured with separate mappers for each database.
+## 关键技术细节
 
-### Authentication & Authorization
+### 多数据源配置
 
-**JWT Authentication**:
-- RSA key pair signing (stored in `eve-jwt.jks`)
-- Token expiration: 7200 seconds (2 hours)
-- Custom filter: `JwtAuthorizationTokenFilter`
-- Token format: `Bearer <token>`
+两个独立的 MySQL 数据库:
+- **`eve`**: EVE Online 静态游戏数据 (只读参考数据)
+- **`eve_helper`**: 应用运行时数据 (用户数据、订单、资产)
 
-**OAuth 2.0 (ESI Integration)**:
+MyBatis Plus 为每个数据库配置了独立的 Mapper。
+
+### 认证和授权
+
+**JWT 认证**:
+- RSA-256 密钥对签名 (存储在 `eve-jwt.jks`)
+- Access Token 过期时间: 900 秒 (15 分钟)
+- Refresh Token 过期时间: 604800 秒 (7 天)
+- Refresh Token 存储在 Redis
+- Token 黑名单机制 (登出时加入黑名单)
+- 登录限流 (LoginRateLimiterService)
+- 自定义过滤器: `JwtAuthorizationTokenFilter`
+- Token 格式: `Bearer <token>`
+
+**OAuth 2.0 (ESI 集成)**:
 - Authorization Code flow with PKCE
-- Refresh tokens stored in database
-- Access tokens cached in Redis (19-minute TTL)
-- Extensive scopes for character and corporation data
+- Refresh tokens 存储在数据库
+- Access tokens 缓存在 Redis (19 分钟 TTL)
+- 广泛的角色和军团数据权限范围
 
-**RBAC Authorization**:
-- `RbacAuthorizationManager`: Custom authorization manager
-- URL-permission-role mapping cached in Redis
-- RESTful permission format: `METHOD:PATH`
-- White list for public endpoints configured in `application-dev.yml`
+**RBAC 授权**:
+- `RbacAuthorizationManager`: 自定义授权管理器
+- URL-权限-角色映射缓存在 Redis
+- RESTful 权限格式: `METHOD:PATH`
+- 白名单配置在 `application-dev.yml`
 
-### ESI API Integration
+### ESI API 集成
 
-Located in `infrastructure/external/esi/`:
+位于 `infrastructure/external/esi/`:
 
-- **30+ specialized API classes**: CharacterApi, CorporationApi, MarketApi, IndustryApi, AssetsApi, WalletApi, etc.
-- **OAuth flow**: `AuthorizeOAuth` handles token generation and refresh
-- **Error handling**: Custom `EsiException` for API errors
-- **Caching**: Character/corporation info cached in Redis
-- **Automatic token refresh**: Transparent to application layer
+- **30+ 专用 API 类**: CharacterApi, CorporationApi, MarketApi, IndustryApi, AssetsApi, WalletApi 等
+- **OAuth 流程**: `AuthorizeOAuth` 处理 token 生成和刷新
+- **错误处理**: 自定义 `EsiException`
+- **缓存**: 角色/军团信息缓存在 Redis
+- **自动 token 刷新**: 对应用层透明
 
-### MapStruct Object Mapping
+### MapStruct 对象映射
 
-26+ assemblers handle conversions between:
+26+ 组装器处理以下转换:
 - Domain Entity ↔ Persistence Object (PO)
 - DTO ↔ View Object (VO)
 - Domain Entity ↔ DTO
 
-Assemblers are automatically generated during compilation via annotation processing.
+组装器在编译期通过注解处理自动生成。
 
-### Caching Strategy
+### 缓存策略
 
-- **Redis**: Primary cache store
-- **TTL**: 3000 seconds default
-- **Cached data**:
-  - Permission-role mappings
+- **Redis**: 主要缓存存储
+- **TTL**: 默认 3000 秒
+- **缓存数据**:
+  - 权限-角色映射
   - ESI access tokens
-  - Character/corporation information
+  - 角色/军团信息
 
-### Async Processing
+### 异步处理
 
-- `@EnableScheduling`: Scheduled tasks enabled
-- `AsyncConfiguration`: Async method execution
-- Thread pools for market order processing
-- Domain service: `MarketOrderAsyncService`
+- `@EnableScheduling`: 启用定时任务
+- `AsyncConfiguration`: 异步方法执行
+- 市场订单处理的线程池
+- 领域服务: `MarketOrderAsyncService`
 
-## Development Guidelines
+## 开发指南
 
-### Working with Domain Models
+### 使用领域模型
 
-1. **Entities** are in `domain/model/entity/` (eve/ and system/)
-2. **Repository interfaces** are in `domain/repository/` (implementations in infrastructure)
-3. **Domain services** contain business logic that doesn't fit in entities
-4. Never let domain layer depend on infrastructure or application layers
+1. **实体** 在 `domain/model/entity/` (eve/ 和 system/)
+2. **仓储接口** 在 `domain/repository/` (实现在 infrastructure)
+3. **领域服务** 包含不适合放在实体中的业务逻辑
+4. 领域层永远不依赖基础设施层或应用层
 
-### Adding New Features
+### 添加新功能
 
-1. Start with domain model (entities, value objects, aggregates)
-2. Define repository interfaces in domain layer
-3. Create application service to orchestrate use case
-4. Implement repository in infrastructure layer
-5. Create MapStruct assembler for object mapping
-6. Add controller in interfaces layer
-7. Write MyBatis mapper XML for database queries
+1. 从领域模型开始 (实体、值对象、聚合)
+2. 在领域层定义仓储接口
+3. 创建应用服务来协调用例
+4. 在基础设施层实现仓储
+5. 创建 MapStruct 组装器进行对象映射
+6. 在接口层添加控制器
+7. 编写 MyBatis mapper XML 进行数据库查询
 
-### CQRS Pattern
+### CQRS 模式
 
-- **Commands**: Write operations (create, update, delete)
-- **Queries**: Read operations with pagination support
-- Query handlers in `application/query/` (e.g., BlueprintsQueryHandler)
-- Separate models for reads and writes when beneficial
+- **Commands**: 写操作 (创建、更新、删除)
+- **Queries**: 读操作,支持分页
+- 查询处理器在 `application/query/`
+- 命令和查询通过 CommandBus 和 QueryBus 分发
 
-### Security Considerations
+### 安全考虑
 
-- All endpoints require JWT authentication except those in white list
-- RBAC checks performed by `RbacAuthorizationManager`
-- ESI tokens are sensitive - stored encrypted in database
-- Never commit credentials or tokens to repository
+- 除白名单外,所有端点都需要 JWT 认证
+- RBAC 检查由 `RbacAuthorizationManager` 执行
+- ESI tokens 敏感 - 加密存储在数据库
+- 永远不要提交凭证或 tokens 到仓库
+- 使用环境变量配置敏感信息 (见 `.env.example`)
 
-### Database Migrations
+### 数据库操作
 
-- MyBatis Plus handles basic CRUD operations
-- Custom queries in mapper XML files
-- Use `MyMetaObjectHandler` for automatic timestamp fields
-- Batch operations available for bulk insert/update
+- MyBatis Plus 处理基本 CRUD 操作
+- 自定义查询在 mapper XML 文件中
+- 使用 `MyMetaObjectHandler` 自动填充时间戳字段
+- 批量操作可用于批量插入/更新
 
-## Important Files
+## 重要文件
 
-- **`pom.xml`**: Maven dependencies and build configuration
-- **`src/main/resources/application.yml`**: Profile selection (active: dev)
-- **`src/main/resources/application-dev.yml`**: Development configuration
-- **`DDD_ARCHITECTURE_MIGRATION.md`**: DDD migration guide and mapping
-- **`DDD_MIGRATION_PLAN.md`**: Migration plan and status
-- **`eve-jwt.jks`**: JWT signing key (not in repository)
+- **`pom.xml`**: Maven 依赖和构建配置
+- **`src/main/resources/application.yml`**: Profile 选择 (active: dev)
+- **`src/main/resources/application-dev.yml`**: 开发环境配置
+- **`.env.example`**: 环境变量示例
+- **`eve-jwt.jks`**: JWT 签名密钥 (不在仓库中)
 
-## Technology Stack
+## 技术栈
 
-- **Java 11**: Language version
-- **Spring Boot 2.7.18**: Core framework
-- **Spring Security**: Authentication and authorization
-- **Spring WebFlux**: Reactive HTTP client for ESI
-- **MyBatis Plus 3.5.4**: ORM with pagination
-- **Druid 1.2.8**: Database connection pooling
-- **MySQL 8.0.28**: Database
-- **Redis**: Caching and session storage
-- **Lombok 1.18.22**: Boilerplate reduction
-- **MapStruct 1.5.5**: Object mapping
-- **Hutool 5.8.25**: Java utility library
-- **SpringDoc OpenAPI 1.7.0**: API documentation
+- **Java 11**: 语言版本
+- **Spring Boot 2.7.18**: 核心框架
+- **Spring Security**: 认证和授权
+- **Spring WebFlux**: ESI 的响应式 HTTP 客户端
+- **MyBatis Plus 3.5.4**: ORM 框架,支持分页
+- **Druid 1.2.8**: 数据库连接池
+- **MySQL 8.0.28**: 数据库
+- **Redis**: 缓存和会话存储
+- **Lombok 1.18.22**: 减少样板代码
+- **MapStruct 1.5.5**: 对象映射
+- **Hutool 5.8.25**: Java 工具库
+- **SpringDoc OpenAPI 1.7.0**: API 文档
+- **Nimbus JOSE JWT 10.0.2**: JWT 处理
 
-## Common Patterns
+## 常见模式
 
-### Repository Pattern
+### 仓储模式
 ```java
-// Interface in domain/repository/
-public interface BlueprintsRepository {
-    Blueprints save(Blueprints blueprints);
+// 接口在 domain/repository/
+public interface SysUserRepository {
+    SysUser queryById(Integer id);
+    SysUser queryByUsername(String username);
+    int insert(SysUser sysUser);
 }
 
-// Implementation in infrastructure/persistence/repository/
-public class BlueprintsRepositoryImpl implements BlueprintsRepository {
-    // Uses MyBatis mapper and assembler
-}
-```
+// 实现在 infrastructure/persistence/repository/
+@Repository
+public class SysUserRepositoryImpl implements SysUserRepository {
+    private final SysUserMapper mapper;
+    private final SysUserAssembler assembler;
 
-### Specification Pattern
-```java
-// In domain/specification/
-public class BlueprintsSpecification {
-    public boolean isSatisfiedBy(Blueprints blueprints) {
-        // Business rule validation
+    public SysUser queryById(Integer id) {
+        return assembler.po2Domain(mapper.selectById(id));
     }
 }
 ```
 
-### Application Service Pattern
+### 应用服务模式
 ```java
-// In application/service/
+// 在 application/service/
+@Service
 public class BlueprintsApplicationService {
-    // Orchestrates domain objects and repositories
-    // Handles transactions
-    // Returns DTOs
+    // 协调领域对象和仓储
+    // 处理事务
+    // 返回 DTOs
 }
 ```
 
-## ESI OAuth Scopes
+### CQRS 模式
+```java
+// 命令
+@CommandHandlers
+public class CreateBlueprintCommandHandler implements CommandHandler<CreateBlueprintCommand, Void> {
+    public Void handle(CreateBlueprintCommand command) {
+        // 处理命令
+    }
+}
 
-The application requires extensive ESI scopes for both character and corporation data. See README.md for the complete list of required scopes including:
-- Character: assets, blueprints, wallet, market orders, industry jobs, etc.
-- Corporation: assets, contracts, industry jobs, market orders, wallets, etc.
+// 查询
+@QueryHandlers
+public class BlueprintsQueryHandler implements QueryHandler<BlueprintsQuery, PageResult<BlueprintsDTO>> {
+    public PageResult<BlueprintsDTO> handle(BlueprintsQuery query) {
+        // 处理查询
+    }
+}
+```
 
-## Notes
+## ESI OAuth 权限范围
 
-- The project is actively maintained and follows DDD principles
-- All Chinese comments and documentation are intentional (target audience)
-- The codebase uses both English and Chinese naming conventions
-- MapStruct processors must run during compilation for assemblers to work
-- Redis must be running for the application to start
-- Both MySQL databases (eve and eve_helper) must be accessible
+应用需要广泛的 ESI 权限范围用于角色和军团数据。详见 README.md 中的完整权限列表,包括:
+- 角色: assets, blueprints, wallet, market orders, industry jobs 等
+- 军团: assets, contracts, industry jobs, market orders, wallets 等
+
+## 注意事项
+
+- 项目积极维护并遵循 DDD 原则
+- 所有中文注释和文档都是有意的 (目标受众)
+- 代码库使用英文和中文命名约定
+- MapStruct 处理器必须在编译期运行才能生成组装器
+- Redis 必须运行才能启动应用
+- 两个 MySQL 数据库 (eve 和 eve_helper) 必须可访问
+- 使用 `.env.example` 作为环境变量配置参考

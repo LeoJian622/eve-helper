@@ -57,4 +57,9 @@ public class SysUserRepositoryImpl implements SysUserRepository {
     public int insert(SysUser record) {
         return sysUserMapper.insert(sysUserAssembler.domain2Po(record));
     }
+
+    @Override
+    public SysUser queryById(Integer id) {
+        return sysUserAssembler.po2Domain(sysUserMapper.selectById(id));
+    }
 }

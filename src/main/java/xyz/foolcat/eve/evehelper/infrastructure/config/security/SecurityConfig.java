@@ -18,30 +18,29 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.filter.JwtAuthorizationTokenFilter;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.handler.AccessDeniedServletHandler;
+import xyz.foolcat.eve.evehelper.infrastructure.config.security.handler.AuthenticationFailureServletHandler;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.handler.AuthenticationSuccessServletHandler;
 
 import javax.annotation.PostConstruct;
 
 /**
+ * Spring Security配置
+ * 配置认证、授权、过滤器等
+ *
  * @author Leojan
  * date 2023-07-20 15:05
  */
-
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     final RbacAuthorizationManager authorizationManager;
-
     final AuthenticationSuccessServletHandler authenticationSuccessServletHandler;
-
+    final AuthenticationFailureServletHandler authenticationFailureServletHandler;
     final AccessDeniedServletHandler accessDeniedServletHandler;
-
     final AuthenticationServletEntryPoint authenticationServletEntryPoint;
-
     final JwtAuthorizationTokenFilter jwtAuthorizationTokenFilter;
-
     final SysUserService sysUserService;
 
     @PostConstruct
@@ -60,7 +59,8 @@ public class SecurityConfig {
                         .anyRequest()
                         .access(authorizationManager))
                 .formLogin(form -> form.permitAll()
-                        .successHandler(authenticationSuccessServletHandler))
+                        .successHandler(authenticationSuccessServletHandler)
+                        .failureHandler(authenticationFailureServletHandler))
                 .exceptionHandling(except -> except.accessDeniedHandler(accessDeniedServletHandler)
                         .authenticationEntryPoint(authenticationServletEntryPoint))
                 .logout(LogoutConfigurer::permitAll)
@@ -88,7 +88,5 @@ public class SecurityConfig {
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-
     }
-
 }

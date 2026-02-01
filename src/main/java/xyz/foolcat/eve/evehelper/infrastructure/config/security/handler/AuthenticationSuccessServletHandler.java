@@ -1,108 +1,60 @@
 package xyz.foolcat.eve.evehelper.infrastructure.config.security.handler;
 
-import cn.hutool.core.lang.UUID;
-import com.nimbusds.jose.*;
-import com.nimbusds.jose.crypto.RSASSASigner;
-import com.nimbusds.jose.crypto.RSASSAVerifier;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import xyz.foolcat.eve.evehelper.infrastructure.config.security.KeyStoreKeyFactory;
+import xyz.foolcat.eve.evehelper.application.dto.response.TokenPair;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
-import xyz.foolcat.eve.evehelper.shared.kernel.constants.SecurityConstant;
-import xyz.foolcat.eve.evehelper.shared.util.ResponseUtils;
+import xyz.foolcat.eve.evehelper.domain.service.security.LoginRateLimiterService;
+import xyz.foolcat.eve.evehelper.domain.service.security.TokenService;
+import xyz.foolcat.eve.evehelper.shared.result.Result;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.security.KeyPair;
-import java.security.PublicKey;
-import java.security.interfaces.RSAPublicKey;
-import java.text.ParseException;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.nio.charset.StandardCharsets;
 
 /**
+ * 认证成功处理器
+ * 生成JWT token并清除登录失败记录
+ *
  * @author Leojan
  * date 2022-01-12 14:57
  */
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class AuthenticationSuccessServletHandler implements AuthenticationSuccessHandler {
 
-    private final KeyPair keyPair;
+    private final TokenService tokenService;
+    private final LoginRateLimiterService loginRateLimiterService;
+    private final ObjectMapper objectMapper;
 
-    private final xyz.foolcat.eve.evehelper.config.security.JwtTokenProperties jwtTokenProperties;
-
-    @SneakyThrows
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+                                        Authentication authentication) throws IOException, ServletException {
         SysUser sysUser = (SysUser) authentication.getPrincipal();
 
-        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-                .subject(jwtTokenProperties.getSubject())
-                .issuer(jwtTokenProperties.getIssuer())
-                .jwtID(UUID.randomUUID().toString())
-                .claim(SecurityConstant.USER_ID_KEY, sysUser.getId())
-                .claim(SecurityConstant.USER_NAME_KEY, sysUser.getUsername())
-                .claim(SecurityConstant.JWT_AUTHORITIES_KEY, sysUser.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
-//                .claim("esi-authorise", List.of("qwe", "asd", "zxc"))
-                .expirationTime(new Date(System.currentTimeMillis() + jwtTokenProperties.getExpirationTime() * 1000))
-                .build();
+        // 清除登录失败记录
+        loginRateLimiterService.clearAttempts(sysUser.getUsername());
 
-        SignedJWT signedJwt = new SignedJWT(
-                new JWSHeader.Builder(JWSAlgorithm.RS256).type(JOSEObjectType.JWT).build(),
-                claimsSet);
-        JWSSigner jwsSigner = new RSASSASigner(keyPair.getPrivate());
-        signedJwt.sign(jwsSigner);
+        // 生成Token对
+        TokenPair tokenPair = tokenService.generateTokenPair(sysUser);
 
-        ResponseUtils.writeTokenInfo(response, signedJwt);
-    }
+        log.info("用户登录成功: userId={}, username={}", sysUser.getId(), sysUser.getUsername());
 
-    /**
-     * JWT 创建与校验测试
-     * @param args
-     * @throws JOSEException
-     * @throws ParseException
-     */
-    public static void main(String[] args) throws JOSEException, ParseException {
-        KeyStoreKeyFactory factory = new KeyStoreKeyFactory(new ClassPathResource("jwt.jks"), "123456".toCharArray());
-        KeyPair keyPair1 = factory.getKeyPair("jwt", "123456".toCharArray());
+        // 返回JSON响应
+        response.setStatus(HttpStatus.OK.value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
-        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
-                .subject("alice")
-                .jwtID(UUID.randomUUID().toString())
-                .issuer("https://c2id.com")
-                .claim(SecurityConstant.USER_ID_KEY, "1")
-                .claim(SecurityConstant.USER_NAME_KEY, "admin")
-                .claim(SecurityConstant.JWT_AUTHORITIES_KEY, List.of("qwe", "asd", "zxc"))
-                .claim("esi-authorise", List.of("qwe", "asd", "zxc"))
-                .expirationTime(new Date(System.currentTimeMillis() + 60 * 1000))
-                .build();
-
-        SignedJWT signedJwt = new SignedJWT(
-                new JWSHeader.Builder(JWSAlgorithm.RS256).type(JOSEObjectType.JWT).build(),
-                claimsSet);
-        JWSSigner jwsSigner = new RSASSASigner(keyPair1.getPrivate());
-
-        signedJwt.sign(jwsSigner);
-
-
-        SignedJWT signedJwtParse = SignedJWT.parse(signedJwt.serialize());
-
-        PublicKey publicKey = keyPair1.getPublic();
-        JWSVerifier verifier = new RSASSAVerifier((RSAPublicKey) publicKey);
-
+        Result<TokenPair> result = Result.success(tokenPair);
+        response.getWriter().write(objectMapper.writeValueAsString(result));
     }
 }

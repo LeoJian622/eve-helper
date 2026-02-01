@@ -44,6 +44,24 @@ public class SysUserService  implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         SysUser userDetails = this.sysUserRepository.queryByUsername(username);
 
+        List<String> roles = sysRoleService.queryRolesByUserId(userDetails.getId());
+        List<GrantedAuthority> authorities = roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+        userDetails.setAuthorities(authorities);
+
+        return userDetails;
+    }
+
+    /**
+     * 通过用户ID加载用户信息
+     *
+     * @param userId 用户ID
+     * @return 用户详情
+     */
+    public SysUser loadUserById(Integer userId) {
+        SysUser userDetails = this.sysUserRepository.queryById(userId);
+        if (userDetails == null) {
+            throw new UsernameNotFoundException("用户不存在: userId=" + userId);
+        }
 
         List<String> roles = sysRoleService.queryRolesByUserId(userDetails.getId());
         List<GrantedAuthority> authorities = roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
