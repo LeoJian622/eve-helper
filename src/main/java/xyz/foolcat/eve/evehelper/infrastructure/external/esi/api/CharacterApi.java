@@ -6,15 +6,15 @@ import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 
 import java.util.List;
 
@@ -50,9 +50,9 @@ public class CharacterApi {
     public Mono<CharacterPublicInfoResponse> queryCharacter(Integer characterId, String datasource) {
         return apiClient.get().uri("/characters/{character_id}/?datasource={datasource}", characterId, datasource)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(CharacterPublicInfoResponse.class);
     }
@@ -75,9 +75,9 @@ public class CharacterApi {
         return apiClient.get().uri("/characters/{character_id}/agents_research/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(AgentsResearchResponse.class);
     }
@@ -120,9 +120,9 @@ public class CharacterApi {
         return apiClient.get().uri("/characters/{character_id}/blueprints/?datasource={datasource}&page={page}", characterId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(BlueprintResponse.class);
     }
@@ -142,9 +142,9 @@ public class CharacterApi {
     public Flux<CorporationHistoryResponse> queryCharacterCorporationHistory(Integer characterId, String datasource) {
         return apiClient.get().uri("/characters/{character_id}/corporationhistory/?datasource={datasource}", characterId, datasource)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(CorporationHistoryResponse.class);
     }
@@ -171,9 +171,9 @@ public class CharacterApi {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(characters), List.class)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(Float.class);
     }
@@ -196,9 +196,9 @@ public class CharacterApi {
         return apiClient.get().uri("/characters/{character_id}/fatigue/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(FatigueResponse.class);
     }
@@ -221,9 +221,9 @@ public class CharacterApi {
         return apiClient.get().uri("/characters/{character_id}/medals/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(MedalResponse.class);
     }
@@ -246,9 +246,9 @@ public class CharacterApi {
         return apiClient.get().uri("/characters/{character_id}/notifications/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(NotificationResponse.class);
     }
@@ -271,9 +271,9 @@ public class CharacterApi {
         return apiClient.get().uri("/characters/{character_id}/notifications/contacts/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(NotificationContactResponse.class);
     }
@@ -293,9 +293,9 @@ public class CharacterApi {
     public Mono<IconResponse> queryCharacterPortrait(Integer characterId, String datasource) {
         return apiClient.get().uri("/characters/{character_id}/portrait/?datasource={datasource}", characterId, datasource)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(IconResponse.class);
     }
@@ -318,9 +318,9 @@ public class CharacterApi {
         return apiClient.get().uri("/characters/{character_id}/roles/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(RoleResponse.class);
     }
@@ -345,9 +345,9 @@ public class CharacterApi {
         return apiClient.get().uri("/characters/{character_id}/standings/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(StandingResponse.class);
     }
@@ -371,9 +371,9 @@ public class CharacterApi {
         return apiClient.get().uri("/characters/{character_id}/titles/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(TitleResponse.class);
     }
@@ -395,9 +395,9 @@ public class CharacterApi {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(characters), List.class)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(AffiliationResponse.class);
     }

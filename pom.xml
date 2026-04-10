@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.18</version>
+        <version>3.5.13</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>xyz.foolcat.eve</groupId>
@@ -14,31 +14,37 @@
     <name>eve-helper</name>
     <description>eve-helper</description>
     <properties>
-        <java.version>11</java.version>
+        <java.version>17</java.version>
         <spring-cloud-starter-oauth2.version>2.2.5.RELEASE</spring-cloud-starter-oauth2.version>
-        <lombok.version>1.18.22</lombok.version>
+        <lombok.version>1.18.40</lombok.version>
         <!-- 删除手动指定的 jackson 版本 -->
         <nimbus-jose-jwt.version>10.0.2</nimbus-jose-jwt.version>
-        <mybatis-plus-boot-starter.version>3.5.4</mybatis-plus-boot-starter.version>
-        <druid.version>1.2.8</druid.version>
-        <hutool-all.version>5.8.25</hutool-all.version>
-        <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <mybatis-plus-boot3-starter.version>3.5.15</mybatis-plus-boot3-starter.version>
+        <druid.version>1.2.24</druid.version>
+        <hutool-all.version>5.8.44</hutool-all.version>
+        <mapstruct.version>1.6.3</mapstruct.version>
         <knife4j.version>4.1.0</knife4j.version>
-        <springdco.version>1.7.0</springdco.version>
-        <mysql.version>8.0.28</mysql.version>
+        <springdco.version>2.8.16</springdco.version>
+        <mysql.version>9.6.0</mysql.version>
         <snakeyaml.version>2.1</snakeyaml.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-bom</artifactId>
+                <version>${mybatis-plus-boot3-starter.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.yaml</groupId>
-                    <artifactId>snakeyaml</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -67,7 +73,6 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -93,7 +98,7 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>
@@ -101,47 +106,26 @@
         </dependency>
         <dependency>
             <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
-            <version>${mybatis-plus-boot-starter.version}</version>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-jsqlparser</artifactId>
         </dependency>
         <dependency>
             <groupId>com.alibaba</groupId>
-            <artifactId>druid-spring-boot-starter</artifactId>
+            <artifactId>druid-spring-boot-3-starter</artifactId>
             <version>${druid.version}</version>
         </dependency>
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>${mysql.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.google.protobuf</groupId>
-                    <artifactId>protobuf-java</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-            <version>4.26.0</version>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-ui -->
         <dependency>
             <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-ui</artifactId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>${springdco.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.yaml</groupId>
-                    <artifactId>snakeyaml</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/org.yaml/snakeyaml -->
-        <dependency>
-            <groupId>org.yaml</groupId>
-            <artifactId>snakeyaml</artifactId>
-            <version>${snakeyaml.version}</version>
         </dependency>
         <dependency>
             <groupId>cn.hutool</groupId>
@@ -161,7 +145,8 @@
                 <exclusion>
                     <groupId>com.jayway.jsonpath</groupId>
                     <artifactId>json-path</artifactId>
-                </exclusion></exclusions>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
@@ -188,15 +173,23 @@
             <version>1.0.0</version>
         </dependency>
         <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.websocket</groupId>
+            <artifactId>jakarta.websocket-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.prometheus</groupId>
             <artifactId>prometheus-metrics-exporter-httpserver</artifactId>
             <version>1.0.0</version>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
+
     </dependencies>
 
     <build>
@@ -228,6 +221,23 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.openrewrite.maven</groupId>
+                <artifactId>rewrite-maven-plugin</artifactId>
+                <version>6.35.1</version>
+                <configuration>
+                    <activeRecipes>
+                        <recipe>org.openrewrite.java.spring.boot3.UpgradeSpringBoot_3_5</recipe>
+                    </activeRecipes>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.openrewrite.recipe</groupId>
+                        <artifactId>rewrite-spring</artifactId>
+                        <version>6.28.2</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>

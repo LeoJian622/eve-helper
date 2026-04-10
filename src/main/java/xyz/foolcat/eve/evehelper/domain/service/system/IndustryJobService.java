@@ -57,7 +57,7 @@ public class IndustryJobService  {
         return industryJobRepository.batchInsertOrUpdate(list);
     }
 
-    public int insertOrUpdate(IndustryJob record) {
+    public boolean insertOrUpdate(IndustryJob record) {
         return industryJobRepository.insertOrUpdate(record);
     }
 

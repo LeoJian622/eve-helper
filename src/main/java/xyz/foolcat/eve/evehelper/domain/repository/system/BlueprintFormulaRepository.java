@@ -7,7 +7,7 @@ import java.util.List;
 public interface BlueprintFormulaRepository {
     int batchInsert(List<BlueprintFormula> list);
 
-    int insertOrUpdate(BlueprintFormula record);
+    public boolean insertOrUpdate(BlueprintFormula record);
 
     int insertOrUpdateSelective(BlueprintFormula record);
 } 

@@ -79,19 +79,6 @@
         #{item.croporationId,jdbcType=BIGINT})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.ObserverPO">
-    <!--@mbg.generated-->
-    insert into observer
-    (observer_id, observer_type, last_updated, croporation_id)
-    values
-    (#{observerId,jdbcType=BIGINT}, #{observerType,jdbcType=VARCHAR}, #{lastUpdated,jdbcType=TIMESTAMP}, 
-      #{croporationId,jdbcType=BIGINT})
-    on duplicate key update 
-    observer_id = #{observerId,jdbcType=BIGINT}, 
-    observer_type = #{observerType,jdbcType=VARCHAR}, 
-    last_updated = #{lastUpdated,jdbcType=TIMESTAMP}, 
-    croporation_id = #{croporationId,jdbcType=BIGINT}
-  </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.ObserverPO">
     <!--@mbg.generated-->
     insert into observer

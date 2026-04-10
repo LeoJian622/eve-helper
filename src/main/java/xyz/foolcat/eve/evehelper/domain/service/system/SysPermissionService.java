@@ -83,7 +83,7 @@ public class SysPermissionService {
         return rolePermissionRepository.listPermRoles();
     }
 
-    public int insertOrUpdate(SysPermission record) {
+    public boolean insertOrUpdate(SysPermission record) {
         return rolePermissionRepository.insertOrUpdate(record);
     }
 

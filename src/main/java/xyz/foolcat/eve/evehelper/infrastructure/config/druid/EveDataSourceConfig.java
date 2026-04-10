@@ -5,6 +5,7 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionTemplate;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
@@ -32,6 +33,7 @@ public class EveDataSourceConfig {
     }
 
     @Bean
+    @DependsOnDatabaseInitialization
     public DataSourceTransactionManager eveDataSourceTransactionManager(@Qualifier("eveDataSource") DataSource dataSource) {
         return new DataSourceTransactionManager(dataSource);
     }

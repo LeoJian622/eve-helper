@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
@@ -48,9 +48,9 @@ public class FactionWarfareApi {
         return apiClient.get().uri("/characters/{character_id}/fw/stats/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(FactionWarfareStatisticsResponse.class);
     }
@@ -74,9 +74,9 @@ public class FactionWarfareApi {
         return apiClient.get().uri("/corporations/{corporation_id}/fw/stats/?datasource={datasource}", corporationId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(FactionWarfareStatisticsResponse.class);
     }
@@ -95,9 +95,9 @@ public class FactionWarfareApi {
     public Mono<LeaderboardResponse> queryFactionWarfareLeaderboards(String datasource) {
         return apiClient.get().uri("/fw/leaderboards/?datasource={datasource}", datasource)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(LeaderboardResponse.class);
     }
@@ -116,9 +116,9 @@ public class FactionWarfareApi {
     public Mono<LeaderboardCharacterResponse> queryFactionWarfareCharacterLeaderboards(String datasource) {
         return apiClient.get().uri("/fw/leaderboards/characters/?datasource={datasource}", datasource)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(LeaderboardCharacterResponse.class);
     }
@@ -137,9 +137,9 @@ public class FactionWarfareApi {
     public Mono<LeaderboardCorporationResponse> queryFactionWarfareCorporationLeaderboards(String datasource) {
         return apiClient.get().uri("/fw/leaderboards/corporations/?datasource={datasource}", datasource)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(LeaderboardCorporationResponse.class);
     }
@@ -158,9 +158,9 @@ public class FactionWarfareApi {
     public Flux<FactionWarfareStatisticsResponse> queryFactionWarfareStats(String datasource) {
         return apiClient.get().uri("/fw/stats/?datasource={datasource}", datasource)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(FactionWarfareStatisticsResponse.class);
     }
@@ -179,9 +179,9 @@ public class FactionWarfareApi {
     public Flux<FactionWarfareSolarSystemsResponse> queryFactionWarfareSystems(String datasource) {
         return apiClient.get().uri("/fw/systems/?datasource={datasource}", datasource)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(FactionWarfareSolarSystemsResponse.class);
     }
@@ -201,9 +201,9 @@ public class FactionWarfareApi {
     public Flux<NpcFactionsAtWarResponse> queryFactionWarfareWars(String datasource) {
         return apiClient.get().uri("/fw/wars/?datasource={datasource}", datasource)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(NpcFactionsAtWarResponse.class);
     }

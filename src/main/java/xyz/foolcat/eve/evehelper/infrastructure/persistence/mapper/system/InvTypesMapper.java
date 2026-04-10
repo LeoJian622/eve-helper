@@ -18,8 +18,6 @@ public interface InvTypesMapper extends BaseMapper<InvTypesPO> {
 
     int batchInsert(List<InvTypesPO> list);
 
-    int insertOrUpdate(InvTypesPO record);
-
     int insertOrUpdateSelective(InvTypesPO record);
 
     InvTypesVO selcetByMarketGroupId(Long marketGroupID);

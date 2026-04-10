@@ -15,7 +15,7 @@ public interface SysRoleRepository {
 
     int batchInsert(List<SysRole> list);
 
-    int insertOrUpdate(SysRole record);
+    public boolean insertOrUpdate(SysRole record);
 
     int insertOrUpdateSelective(SysRole record);
 

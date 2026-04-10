@@ -37,7 +37,7 @@ public class IndustryJobRepositoryImpl implements IndustryJobRepository {
     }
 
     @Override
-    public int insertOrUpdate(IndustryJob record) {
+    public boolean insertOrUpdate(IndustryJob record) {
         return industryJobMapper.insertOrUpdate(industryJobAssembler.entity2Po(record));
     }
 

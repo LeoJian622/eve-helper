@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.InvTypes;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
@@ -39,5 +40,6 @@ public class MarketGroupsTreeVO implements Serializable {
     @Schema(name="物品清单")
     private List<InvTypes> goods;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 }

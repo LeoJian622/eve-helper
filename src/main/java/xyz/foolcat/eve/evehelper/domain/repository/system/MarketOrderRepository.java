@@ -15,7 +15,7 @@ public interface MarketOrderRepository {
 
     int batchInsert(List<MarketOrder> list);
 
-    int insertOrUpdate(MarketOrder record);
+    public boolean insertOrUpdate(MarketOrder record);
 
     int insertOrUpdateSelective(MarketOrder record);
 

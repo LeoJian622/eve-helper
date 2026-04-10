@@ -2,6 +2,7 @@ package xyz.foolcat.eve.evehelper.domain.model.entity.system;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -76,6 +77,7 @@ public class MarketOrder implements Serializable {
      */
     private Long regionId;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public static final String COL_ORDER_ID = "order_id";

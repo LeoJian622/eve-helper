@@ -20,9 +20,9 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
-import javax.servlet.ServletException;
-import javax.validation.ConstraintViolationException;
-import javax.validation.ValidationException;
+import jakarta.servlet.ServletException;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.ValidationException;
 import java.rmi.ServerException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,8 +47,7 @@ public class GlobalExceptionHandler {
         log.error("表单绑定异常: ", e);
         JSONObject msg = new JSONObject();
         e.getAllErrors().forEach(error -> {
-            if (error instanceof FieldError) {
-                FieldError fieldError = (FieldError) error;
+            if (error instanceof FieldError fieldError) {
                 msg.set(fieldError.getField(),
                         fieldError.getDefaultMessage());
             } else {

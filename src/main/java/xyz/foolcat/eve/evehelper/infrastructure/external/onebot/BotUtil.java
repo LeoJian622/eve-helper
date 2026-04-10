@@ -3,7 +3,7 @@ package xyz.foolcat.eve.evehelper.infrastructure.external.onebot;
 import cn.hutool.json.JSONObject;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.model.MessageEvent;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * oneBot 工具

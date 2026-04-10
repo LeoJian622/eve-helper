@@ -380,52 +380,6 @@
         #{item.installerId,jdbcType=BIGINT}, #{item.corporationId,jdbcType=INTEGER})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.IndustryJobPO">
-    <!--@mbg.generated-->
-    insert into industry_job
-    (job_id, activity_id, activity, blueprint_id, blueprint_type_id, blueprint_type, 
-      product_type_id, product_type, cost, duration, runs, licensed_runs, probability, 
-      station_id, output_location_id, blueprint_location_id, installer, completed_character, 
-      facility_id, start_date, end_date, completed_date, `status`, pause_date, installer_id, 
-      corporation_id)
-    values
-    (#{jobId,jdbcType=BIGINT}, #{activityId,jdbcType=INTEGER}, #{activity,jdbcType=VARCHAR}, 
-      #{blueprintId,jdbcType=BIGINT}, #{blueprintTypeId,jdbcType=INTEGER}, #{blueprintType,jdbcType=VARCHAR}, 
-      #{productTypeId,jdbcType=INTEGER}, #{productType,jdbcType=VARCHAR}, #{cost,jdbcType=INTEGER}, 
-      #{duration,jdbcType=BIGINT}, #{runs,jdbcType=INTEGER}, #{licensedRuns,jdbcType=INTEGER}, 
-      #{probability,jdbcType=DECIMAL}, #{stationId,jdbcType=BIGINT}, #{outputLocationId,jdbcType=BIGINT}, 
-      #{blueprintLocationId,jdbcType=BIGINT}, #{installer,jdbcType=VARCHAR}, #{completedCharacter,jdbcType=VARCHAR}, 
-      #{facilityId,jdbcType=BIGINT}, #{startDate,jdbcType=TIMESTAMP}, #{endDate,jdbcType=TIMESTAMP}, 
-      #{completedDate,jdbcType=TIMESTAMP}, #{status,jdbcType=VARCHAR}, #{pauseDate,jdbcType=TIMESTAMP}, 
-      #{installerId,jdbcType=BIGINT}, #{corporationId,jdbcType=INTEGER})
-    on duplicate key update 
-    job_id = #{jobId,jdbcType=BIGINT}, 
-    activity_id = #{activityId,jdbcType=INTEGER}, 
-    activity = #{activity,jdbcType=VARCHAR}, 
-    blueprint_id = #{blueprintId,jdbcType=BIGINT}, 
-    blueprint_type_id = #{blueprintTypeId,jdbcType=INTEGER}, 
-    blueprint_type = #{blueprintType,jdbcType=VARCHAR}, 
-    product_type_id = #{productTypeId,jdbcType=INTEGER}, 
-    product_type = #{productType,jdbcType=VARCHAR}, 
-    cost = #{cost,jdbcType=INTEGER}, 
-    duration = #{duration,jdbcType=BIGINT}, 
-    runs = #{runs,jdbcType=INTEGER}, 
-    licensed_runs = #{licensedRuns,jdbcType=INTEGER}, 
-    probability = #{probability,jdbcType=DECIMAL}, 
-    station_id = #{stationId,jdbcType=BIGINT}, 
-    output_location_id = #{outputLocationId,jdbcType=BIGINT}, 
-    blueprint_location_id = #{blueprintLocationId,jdbcType=BIGINT}, 
-    installer = #{installer,jdbcType=VARCHAR}, 
-    completed_character = #{completedCharacter,jdbcType=VARCHAR}, 
-    facility_id = #{facilityId,jdbcType=BIGINT}, 
-    start_date = #{startDate,jdbcType=TIMESTAMP}, 
-    end_date = #{endDate,jdbcType=TIMESTAMP}, 
-    completed_date = #{completedDate,jdbcType=TIMESTAMP}, 
-    `status` = #{status,jdbcType=VARCHAR}, 
-    pause_date = #{pauseDate,jdbcType=TIMESTAMP}, 
-    installer_id = #{installerId,jdbcType=BIGINT}, 
-    corporation_id = #{corporationId,jdbcType=INTEGER}
-  </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.IndustryJobPO">
     <!--@mbg.generated-->
     insert into industry_job

@@ -14,8 +14,6 @@ public interface EsiConfigMapper extends BaseMapper<EsiConfigPO> {
 
     int batchInsert(List<EsiConfigPO> esiConfigPOS);
 
-    int insertOrUpdate(EsiConfigPO esiConfigPO);
-
     int insertOrUpdateSelective(EsiConfigPO esiConfigPO);
     // 只保留基础 CRUD
 }

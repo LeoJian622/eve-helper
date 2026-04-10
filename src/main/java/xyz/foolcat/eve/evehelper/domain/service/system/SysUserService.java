@@ -70,7 +70,7 @@ public class SysUserService  implements UserDetailsService {
         return userDetails;
     }
 
-    public int insertOrUpdate(SysUser record) {
+    public boolean insertOrUpdate(SysUser record) {
         return sysUserRepository.insertOrUpdate(record);
     }
 

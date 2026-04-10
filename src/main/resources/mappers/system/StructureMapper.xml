@@ -261,36 +261,6 @@
     unanchors_at = values(unanchors_at),
     services = values(services)
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.StructurePO">
-    <!--@mbg.generated-->
-    insert into `structure`
-    (structure_id, corporation_id, fuel_expires, `name`, next_reinforce_apply, next_reinforce_hour, 
-      profile_id, reinforce_hour, `state`, state_timer_end, state_timer_start, system_id, 
-      type_id, unanchors_at, services)
-    values
-    (#{structureId,jdbcType=BIGINT}, #{corporationId,jdbcType=INTEGER}, #{fuelExpires,jdbcType=TIMESTAMP}, 
-      #{name,jdbcType=VARCHAR}, #{nextReinforceApply,jdbcType=TIMESTAMP}, #{nextReinforceHour,jdbcType=INTEGER}, 
-      #{profileId,jdbcType=INTEGER}, #{reinforceHour,jdbcType=INTEGER}, #{state,jdbcType=VARCHAR}, 
-      #{stateTimerEnd,jdbcType=TIMESTAMP}, #{stateTimerStart,jdbcType=TIMESTAMP}, #{systemId,jdbcType=INTEGER}, 
-      #{typeId,jdbcType=INTEGER}, #{unanchorsAt,jdbcType=TIMESTAMP}, #{services,jdbcType=VARCHAR}
-      )
-    on duplicate key update 
-    structure_id = #{structureId,jdbcType=BIGINT}, 
-    corporation_id = #{corporationId,jdbcType=INTEGER}, 
-    fuel_expires = #{fuelExpires,jdbcType=TIMESTAMP}, 
-    `name` = #{name,jdbcType=VARCHAR}, 
-    next_reinforce_apply = #{nextReinforceApply,jdbcType=TIMESTAMP}, 
-    next_reinforce_hour = #{nextReinforceHour,jdbcType=INTEGER}, 
-    profile_id = #{profileId,jdbcType=INTEGER}, 
-    reinforce_hour = #{reinforceHour,jdbcType=INTEGER}, 
-    `state` = #{state,jdbcType=VARCHAR}, 
-    state_timer_end = #{stateTimerEnd,jdbcType=TIMESTAMP}, 
-    state_timer_start = #{stateTimerStart,jdbcType=TIMESTAMP}, 
-    system_id = #{systemId,jdbcType=INTEGER}, 
-    type_id = #{typeId,jdbcType=INTEGER}, 
-    unanchors_at = #{unanchorsAt,jdbcType=TIMESTAMP}, 
-    services = #{services,jdbcType=VARCHAR}
-  </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.StructurePO">
     <!--@mbg.generated-->
     insert into `structure`

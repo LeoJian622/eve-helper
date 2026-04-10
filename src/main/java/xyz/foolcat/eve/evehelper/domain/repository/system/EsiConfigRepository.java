@@ -12,7 +12,7 @@ public interface EsiConfigRepository{
 
     int batchInsert(List<EsiConfig> list);
 
-    int insertOrUpdate(EsiConfig record);
+    public boolean insertOrUpdate(EsiConfig record);
 
     int insertOrUpdateSelective(EsiConfig record);
 }

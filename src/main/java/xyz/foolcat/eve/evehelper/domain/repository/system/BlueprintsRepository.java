@@ -14,7 +14,7 @@ public interface BlueprintsRepository {
 
     int batchInsert(List<Blueprints> list);
 
-    int insertOrUpdate(Blueprints record);
+    public boolean insertOrUpdate(Blueprints record);
 
     int insertOrUpdateSelective(Blueprints record);
 

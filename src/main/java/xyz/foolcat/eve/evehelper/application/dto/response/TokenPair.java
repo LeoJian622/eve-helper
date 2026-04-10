@@ -29,6 +29,7 @@ public class TokenPair {
     @Schema(description = "访问令牌过期时间(秒)", example = "900")
     private Long expiresIn;
 
+    @Builder.Default
     @Schema(description = "令牌类型", example = "Bearer")
     private String tokenType = "Bearer";
 }

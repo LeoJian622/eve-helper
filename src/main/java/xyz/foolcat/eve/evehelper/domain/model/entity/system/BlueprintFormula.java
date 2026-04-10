@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -43,5 +44,6 @@ public class BlueprintFormula extends BaseEntity implements Serializable {
      */
     private Integer quantity;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 } 

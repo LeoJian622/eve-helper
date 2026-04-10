@@ -6,14 +6,14 @@ import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 
 /**
  * ESI 工业生产接口
@@ -51,9 +51,9 @@ public class IndustryApi {
         return apiClient.get().uri("/characters/{character_id}/industry/jobs/?datasource={datasource}&include_completed={include_completed}", characterId, datasource, includeCompleted)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(IndustryJobPlacedResponse.class);
     }
@@ -98,9 +98,9 @@ public class IndustryApi {
         return apiClient.get().uri("/characters/{character_id}/mining/?datasource={datasource}&page={page}", characterId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(MiningLedgerResponse.class);
     }
@@ -144,9 +144,9 @@ public class IndustryApi {
         return apiClient.get().uri("/corporation/{corporation_id}/mining/extractions/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(ChunkTimersResponse.class);
     }
@@ -190,9 +190,9 @@ public class IndustryApi {
         return apiClient.get().uri("/corporation/{corporation_id}/mining/observers/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(CorporationObserverResponse.class);
     }
@@ -240,9 +240,9 @@ public class IndustryApi {
         return apiClient.get().uri("/corporation/{corporation_id}/mining/observers/{observer_id}/?datasource={datasource}&page={page}", corporationId, observerId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(ObserverMiningLedgerResponse.class);
     }
@@ -286,9 +286,9 @@ public class IndustryApi {
         return apiClient.get().uri("/corporations/{corporation_id}/industry/jobs/?datasource={datasource}&include_completed={include_completed}", corporationId, datasource, includeCompleted)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(IndustryJobPlacedResponse.class);
     }
@@ -307,9 +307,9 @@ public class IndustryApi {
     public Flux<FacilitiesResponse> queryIndustryFacilities(String datasource) {
         return apiClient.get().uri("/industry/facilities/?datasource={datasource}", datasource)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(FacilitiesResponse.class);
     }
@@ -327,9 +327,9 @@ public class IndustryApi {
     public Flux<CostIndiciesResponse> queryIndustrySystems(String datasource) {
         return apiClient.get().uri("/industry/systems/?datasource={datasource}", datasource)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(CostIndiciesResponse.class);
     }

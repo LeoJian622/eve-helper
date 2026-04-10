@@ -7,6 +7,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.HomeLocat
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.JumpClones;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 /**
  * 人物克隆信息响应体
@@ -23,7 +24,7 @@ public class CloneResponse {
     private HomeLocation homeLocation;
 
     @JsonProperty("jump_clones")
-    private JumpClones jumpClones;
+    private List<JumpClones> jumpClones;
 
     @JsonProperty("last_clone_jump_date")
     private OffsetDateTime lastCloneJumpDate;

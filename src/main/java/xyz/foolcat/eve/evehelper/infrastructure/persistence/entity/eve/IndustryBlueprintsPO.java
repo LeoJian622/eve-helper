@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @Schema(title="industryBlueprints",hidden = true)
@@ -19,5 +20,6 @@ public class IndustryBlueprintsPO implements Serializable {
     @Schema(name="")
     private Integer maxproductionlimit;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 } 

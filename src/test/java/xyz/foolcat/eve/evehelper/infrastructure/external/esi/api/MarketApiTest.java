@@ -6,14 +6,17 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.GroupItemResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.HistoricalMarketStatisticsResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.MarketOrderResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.PriceResponse;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -22,7 +25,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -33,7 +35,8 @@ import static org.mockito.Mockito.*;
  *
  * @author Leojan
  */
-@ExtendWith(MockitoExtension.class)
+@ActiveProfiles("test")
+@SpringBootTest
 @DisplayName("ESI Market Api Mock Unit Test")
 class MarketApiTest {
 

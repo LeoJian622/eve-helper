@@ -45,12 +45,11 @@ public class QueryBus implements InitializingBean {
     private Class<?> getQueryType(QueryHandler<?,?> handler) {
         Type[] genericInterfaces = handler.getClass().getGenericInterfaces();
         for (Type genericInterface : genericInterfaces) {
-            if (genericInterface instanceof ParameterizedType) {
-                ParameterizedType parameterizedType = (ParameterizedType) genericInterface;
+            if (genericInterface instanceof ParameterizedType parameterizedType) {
                 if (parameterizedType.getRawType().equals(QueryHandler.class)) {
                     Type queryType = parameterizedType.getActualTypeArguments()[0];
-                    if (queryType instanceof Class) {
-                        return (Class<?>) queryType;
+                    if (queryType instanceof Class<?> classType) {
+                        return classType;
                     }
                 }
             }

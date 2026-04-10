@@ -25,7 +25,7 @@ public class BlueprintFormulaRepositoryImpl implements BlueprintFormulaRepositor
     }
 
     @Override
-    public int insertOrUpdate(BlueprintFormula record) {
+    public boolean insertOrUpdate(BlueprintFormula record) {
         return blueprintFormulaMapper.insertOrUpdate(blueprintFormulaAssembler.domain2Po(record));
     }
 

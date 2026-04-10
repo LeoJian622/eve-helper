@@ -34,7 +34,7 @@ public class SysRoleService {
         return sysRoleRepository.queryRolesByUserId(id);
     }
 
-    public int insertOrUpdate(SysRole record) {
+    public boolean insertOrUpdate(SysRole record) {
         return sysRoleRepository.insertOrUpdate(record);
     }
 

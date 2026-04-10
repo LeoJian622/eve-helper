@@ -30,7 +30,7 @@ public class SysUserRoleService  {
         return sysUserRoleRepository.batchInsert(list);
     }
 
-    public int insertOrUpdate(SysUserRole record) {
+    public boolean insertOrUpdate(SysUserRole record) {
         return sysUserRoleRepository.insertOrUpdate(record);
     }
 

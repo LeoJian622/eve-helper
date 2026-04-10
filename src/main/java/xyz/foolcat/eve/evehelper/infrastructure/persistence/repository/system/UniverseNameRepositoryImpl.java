@@ -8,6 +8,8 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
 import xyz.foolcat.eve.evehelper.domain.repository.system.UniverseNameRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.UniverseNamePO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.UniverseNameMapper;
+import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
+import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
 import java.util.List;
 
@@ -37,7 +39,7 @@ public class UniverseNameRepositoryImpl implements UniverseNameRepository {
     }
 
     @Override
-    public int insertOrUpdate(UniverseName record) {
+    public boolean insertOrUpdate(UniverseName record) {
         return universeNameMapper.insertOrUpdate(universeNameAssembler.domain2Po(record));
     }
 
@@ -53,6 +55,9 @@ public class UniverseNameRepositoryImpl implements UniverseNameRepository {
 
     @Override
     public List<UniverseName> selectByIdIn(List<Integer> items) {
+        if (items.isEmpty()){
+            throw new EveHelperException(ResultCode.SYSTEM_PARAM_IS_NULL);
+        }
         return universeNameAssembler.po2Domain(universeNameMapper.selectList(new QueryWrapper<UniverseNamePO>().lambda()
                 .in(UniverseNamePO::getId, items)));
     }

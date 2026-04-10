@@ -1,17 +1,17 @@
 package xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientProperties;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ErrorResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ErrorResponse;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -84,9 +84,9 @@ public class AuthorizeOAuth {
                 .uri(URI_ACCESS_TOKEN)
                 .bodyValue(parameters)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(AuthTokenResponse.class);
     }

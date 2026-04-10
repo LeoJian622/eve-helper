@@ -13,7 +13,7 @@ public interface InvuniquenamesRepository{
 
     int batchInsert(List<InvUniqueNames> list);
 
-    int insertOrUpdate(InvUniqueNames record);
+    public boolean insertOrUpdate(InvUniqueNames record);
 
     int insertOrUpdateSelective(InvUniqueNames record);
 

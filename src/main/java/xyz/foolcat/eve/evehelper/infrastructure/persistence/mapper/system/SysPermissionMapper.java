@@ -21,7 +21,5 @@ public interface SysPermissionMapper extends BaseMapper<SysPermissionPO> {
 
     int batchInsert(List<SysPermissionPO> sysPermissionPOS);
 
-    int insertOrUpdate(SysPermissionPO sysPermissionPO);
-
     int insertOrUpdateSelective(SysPermissionPO sysPermissionPO);
 }

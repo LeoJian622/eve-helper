@@ -26,7 +26,7 @@ public class SysRoleMenuRepositoryImpl implements SysRoleMenuRepository {
     }
 
     @Override
-    public int insertOrUpdate(SysRoleMenu record) {
+    public boolean insertOrUpdate(SysRoleMenu record) {
         return sysRoleMenuMapper.insertOrUpdate(sysRoleMenuAssembler.domain2Po(record));
     }
 

@@ -8,7 +8,7 @@ import org.springframework.http.MediaType;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;

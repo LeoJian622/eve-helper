@@ -66,17 +66,6 @@
         )
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.UniverseNamePO">
-    <!--@mbg.generated-->
-    insert into universe_name
-    (id, `name`, category)
-    values
-    (#{id,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{category,jdbcType=VARCHAR})
-    on duplicate key update 
-    id = #{id,jdbcType=INTEGER}, 
-    `name` = #{name,jdbcType=VARCHAR}, 
-    category = #{category,jdbcType=VARCHAR}
-  </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.UniverseNamePO">
     <!--@mbg.generated-->
     insert into universe_name

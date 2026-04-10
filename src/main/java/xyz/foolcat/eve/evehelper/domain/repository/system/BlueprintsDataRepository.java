@@ -10,7 +10,7 @@ public interface BlueprintsDataRepository {
 
     int batchInsert(List<BlueprintsData> list);
 
-    int insertOrUpdate(BlueprintsData record);
+    public boolean insertOrUpdate(BlueprintsData record);
 
     int insertOrUpdateSelective(BlueprintsData record);
 

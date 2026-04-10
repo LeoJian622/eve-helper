@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -56,9 +56,9 @@ public class CalendarApi {
         return apiClient.get().uri("/characters/{character_id}/calendar/?datasource={datasource}&from_event={fromEventId}", characterId, datasource, fromEventId)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(CalendarResponse.class);
     }
@@ -83,9 +83,9 @@ public class CalendarApi {
         return apiClient.get().uri("/characters/{character_id}/calendar/{event_id}/?datasource={datasource}", characterId, eventId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(CalendarEventResponse.class);
     }
@@ -117,9 +117,9 @@ public class CalendarApi {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(responseReply), Map.class)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(Object.class)
                 ;
@@ -145,9 +145,9 @@ public class CalendarApi {
         return apiClient.get().uri("/characters/{character_id}/calendar/{event_id}/attendees/?datasource={datasource}", characterId, eventId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(CalendarEventAttendeesResponse.class);
     }

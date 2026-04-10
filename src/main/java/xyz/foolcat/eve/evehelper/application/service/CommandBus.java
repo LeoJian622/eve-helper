@@ -48,13 +48,12 @@ public class CommandBus implements InitializingBean {
     private Class<?> getCommandType(CommandHandler<?,?> handler) {
         Type[] genericInterfaces = handler.getClass().getGenericInterfaces();
         for (Type genericInterface : genericInterfaces) {
-            if (genericInterface instanceof ParameterizedType) {
-                ParameterizedType parameterizedType = (ParameterizedType) genericInterface;
+            if (genericInterface instanceof ParameterizedType parameterizedType) {
                 if (parameterizedType.getRawType().equals(CommandHandler.class)) {
                     // 获取CommandHandler<C, R>中的第一个泛型参数C
                     Type commandType = parameterizedType.getActualTypeArguments()[0];
-                    if (commandType instanceof Class) {
-                        return (Class<?>) commandType;
+                    if (commandType instanceof Class<?> classType) {
+                        return classType;
                     }
                 }
             }

@@ -34,7 +34,7 @@ public class InvuniquenamesRepositoryImpl implements InvuniquenamesRepository {
     }
 
     @Override
-    public int insertOrUpdate(InvUniqueNames record) {
+    public boolean insertOrUpdate(InvUniqueNames record) {
         return invuniquenamesMapper.insertOrUpdate(invuniquenamesAssembler.domain2Po(record));
     }
 

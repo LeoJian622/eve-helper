@@ -36,7 +36,7 @@ public class EsiConfigRepositoryImpl implements EsiConfigRepository {
     }
 
     @Override
-    public int insertOrUpdate(EsiConfig record) {
+    public boolean insertOrUpdate(EsiConfig record) {
         return esiConfigMapper.insertOrUpdate(esiConfigAssembler.domain2Po(record));
     }
 

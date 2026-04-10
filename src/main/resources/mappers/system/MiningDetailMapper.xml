@@ -148,27 +148,6 @@
         #{item.lastUpdated,jdbcType=DATE})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MiningDetailPO">
-    <!--@mbg.generated-->
-    insert into mining_detail
-    (id, character_id, character_name, recorded_corporation_id, recorded_corporation_name, 
-      type_id, quantity, observer_id, last_updated)
-    values
-    (#{id,jdbcType=VARCHAR}, #{characterId,jdbcType=INTEGER}, #{characterName,jdbcType=VARCHAR}, 
-      #{recordedCorporationId,jdbcType=INTEGER}, #{recordedCorporationName,jdbcType=VARCHAR}, 
-      #{typeId,jdbcType=INTEGER}, #{quantity,jdbcType=BIGINT}, #{observerId,jdbcType=BIGINT}, 
-      #{lastUpdated,jdbcType=DATE})
-    on duplicate key update 
-    id = #{id,jdbcType=VARCHAR}, 
-    character_id = #{characterId,jdbcType=INTEGER}, 
-    character_name = #{characterName,jdbcType=VARCHAR}, 
-    recorded_corporation_id = #{recordedCorporationId,jdbcType=INTEGER}, 
-    recorded_corporation_name = #{recordedCorporationName,jdbcType=VARCHAR}, 
-    type_id = #{typeId,jdbcType=INTEGER}, 
-    quantity = #{quantity,jdbcType=BIGINT}, 
-    observer_id = #{observerId,jdbcType=BIGINT}, 
-    last_updated = #{lastUpdated,jdbcType=DATE}
-  </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MiningDetailPO">
     <!--@mbg.generated-->
     insert into mining_detail

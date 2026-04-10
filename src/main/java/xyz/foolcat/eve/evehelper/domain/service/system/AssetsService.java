@@ -66,7 +66,7 @@ public class AssetsService {
         return assetsRepository.updateBatchSelective(list);
     }
 
-    public int insertOrUpdate(Assets record) {
+    public boolean insertOrUpdate(Assets record) {
         return assetsRepository.insertOrUpdate(record);
     }
 

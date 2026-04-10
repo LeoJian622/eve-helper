@@ -21,7 +21,7 @@ public interface SysUserRepository {
 
     SysUser queryById(Integer id);
 
-    int insertOrUpdate(SysUser record);
+    public boolean insertOrUpdate(SysUser record);
 
     int insertOrUpdateSelective(SysUser record);
 

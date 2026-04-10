@@ -14,8 +14,6 @@ import java.util.List;
 public interface MarketGroupsMapper extends BaseMapper<MarketGroupsPO> {
     int batchInsert(List<MarketGroupsPO> marketGroupsPOS);
 
-    int insertOrUpdate(MarketGroupsPO marketGroupsPO);
-
     int insertOrUpdateSelective(MarketGroupsPO marketGroupsPO);
 
     List<MarketGroupsTreeVO> selectChildren(Integer marketgroupid);

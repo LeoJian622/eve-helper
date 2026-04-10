@@ -13,8 +13,6 @@ import java.util.List;
 public interface BlueprintsDataMapper extends BaseMapper<BlueprintsDataPO> {
     int batchInsert(List<BlueprintsDataPO> blueprintsDataPOS);
 
-    int insertOrUpdate(BlueprintsDataPO blueprintsDataPO);
-
     int insertOrUpdateSelective(BlueprintsDataPO blueprintsDataPO);
 
     List<BlueprintCostDTO> calcluateCost(Integer typeId);

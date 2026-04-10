@@ -38,7 +38,7 @@ public class StructureRepositoryImpl implements StructureRepository {
     }
 
     @Override
-    public int insertOrUpdate(Structure record) {
+    public boolean insertOrUpdate(Structure record) {
         return structureMapper.insertOrUpdate(structureAssembler.domain2Po(record));
     }
 

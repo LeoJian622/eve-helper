@@ -20,8 +20,6 @@ public interface MarketOrderMapper extends BaseMapper<MarketOrderPO> {
 
     int batchInsert(List<MarketOrderPO> list);
 
-    int insertOrUpdate(MarketOrderPO record);
-
     int insertOrUpdateSelective(MarketOrderPO record);
 
     int batchInsertOrUpdate(List<MarketOrderPO> list);

@@ -26,7 +26,7 @@ public class MarketGroupsRepositoryImpl implements MarketGroupsRepository {
     }
 
     @Override
-    public int insertOrUpdate(MarketGroups record) {
+    public boolean insertOrUpdate(MarketGroups record) {
         return marketGroupsMapper.insertOrUpdate(marketGroupsAssembler.domain2Po(record));
     }
 

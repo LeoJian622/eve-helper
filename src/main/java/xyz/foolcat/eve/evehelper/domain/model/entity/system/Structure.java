@@ -2,6 +2,7 @@ package xyz.foolcat.eve.evehelper.domain.model.entity.system;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 
@@ -87,5 +88,6 @@ public class Structure  implements Serializable {
      */
     private String services;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 } 

@@ -23,7 +23,7 @@ public class SysRolePermissionService{
         return sysRolePermissionRepository.batchInsert(list);
     }
 
-    public int insertOrUpdate(SysRolePermission record) {
+    public boolean insertOrUpdate(SysRolePermission record) {
         return sysRolePermissionRepository.insertOrUpdate(record);
     }
 

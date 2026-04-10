@@ -11,6 +11,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 
+import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
 
@@ -119,6 +120,7 @@ public class SysUserPO extends BaseEntity implements UserDetails {
         return this.deleted;
     }
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public static final String COL_ID = "id";

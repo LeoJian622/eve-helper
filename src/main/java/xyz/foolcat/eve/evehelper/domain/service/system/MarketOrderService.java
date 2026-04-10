@@ -61,7 +61,7 @@ public class MarketOrderService {
     }
 
 
-    public int insertOrUpdate(MarketOrder record) {
+    public boolean insertOrUpdate(MarketOrder record) {
         return marketOrderRepository.insertOrUpdate(record);
     }
 

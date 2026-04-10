@@ -28,7 +28,7 @@ public class InvuniquenamesService {
         return invuniquenamesRepository.batchInsert(list);
     }
 
-    public int insertOrUpdate(InvUniqueNames record) {
+    public boolean insertOrUpdate(InvUniqueNames record) {
         return invuniquenamesRepository.insertOrUpdate(record);
     }
 

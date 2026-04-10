@@ -75,7 +75,7 @@ public class StructureService {
         return structureRepository.batchInsertOrUpdate(list);
     }
 
-    public int insertOrUpdate(Structure record) {
+    public boolean insertOrUpdate(Structure record) {
         return structureRepository.insertOrUpdate(record);
     }
 

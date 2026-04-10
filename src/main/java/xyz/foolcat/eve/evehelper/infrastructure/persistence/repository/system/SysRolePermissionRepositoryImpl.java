@@ -26,7 +26,7 @@ public class SysRolePermissionRepositoryImpl implements SysRolePermissionReposit
     }
 
     @Override
-    public int insertOrUpdate(SysRolePermission record) {
+    public boolean insertOrUpdate(SysRolePermission record) {
         return sysRolePermissionMapper.insertOrUpdate(sysRolePermissionAssembler.domain2Po(record));
     }
 

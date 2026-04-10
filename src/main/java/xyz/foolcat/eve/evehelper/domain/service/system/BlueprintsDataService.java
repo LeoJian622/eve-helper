@@ -54,7 +54,7 @@ public class BlueprintsDataService {
     }
 
 
-    public int insertOrUpdate(BlueprintsData record) {
+    public boolean insertOrUpdate(BlueprintsData record) {
         return blueprintsDataRepository.insertOrUpdate(record);
     }
 

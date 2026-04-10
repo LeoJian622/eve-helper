@@ -2,6 +2,7 @@ package xyz.foolcat.eve.evehelper.domain.model.entity.system;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -56,5 +57,6 @@ public class MiningDetail  implements Serializable {
      */
     private Date lastUpdated;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 } 

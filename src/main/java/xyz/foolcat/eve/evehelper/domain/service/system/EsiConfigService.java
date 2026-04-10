@@ -32,7 +32,7 @@ public class EsiConfigService {
         return esiConfigRepository.batchInsert(list);
     }
 
-    public int insertOrUpdate(EsiConfig record) {
+    public boolean insertOrUpdate(EsiConfig record) {
         return esiConfigRepository.insertOrUpdate(record);
     }
 

@@ -41,7 +41,7 @@ public class BlueprintsRepositoryImpl implements BlueprintsRepository {
     }
 
     @Override
-    public int insertOrUpdate(Blueprints record) {
+    public boolean insertOrUpdate(Blueprints record) {
         return blueprintsMapper.insertOrUpdate(blueprintsAssembler.domain2Po(record));
     }
 

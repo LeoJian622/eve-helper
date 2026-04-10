@@ -39,7 +39,7 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
     }
 
     @Override
-    public int insertOrUpdate(WalletJournal record) {
+    public boolean insertOrUpdate(WalletJournal record) {
         return walletJournalMapper.insertOrUpdate(walletJournalAssembler.domain2Po(record));
     }
 
@@ -68,8 +68,9 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
         return walletJournalMapper.selectMaps(new QueryWrapper<WalletJournalPO>()
                 .select("`character` as name,sum(amount) as amount")
                 .lambda()
-                .and(item -> item.in(WalletJournalPO::getRefType, refType)
+                .and(item -> item.in(WalletJournalPO::getRefType, refType))
                 .between(WalletJournalPO::getDate, start, end)
-                .groupBy(WalletJournalPO::getCharacter)));
+                .groupBy(WalletJournalPO::getCharacter));
+
     }
 } 

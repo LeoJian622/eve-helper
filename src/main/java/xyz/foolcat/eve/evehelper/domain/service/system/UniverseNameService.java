@@ -2,6 +2,7 @@ package xyz.foolcat.eve.evehelper.domain.service.system;
 
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.application.assembler.system.UniverseNameAssembler;
@@ -10,8 +11,10 @@ import xyz.foolcat.eve.evehelper.domain.repository.system.UniverseNameRepository
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UniverseApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.Id2NameResponse;
+import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -20,6 +23,7 @@ import java.util.stream.Collectors;
  * @author Leojan
  */
 @Service
+@Slf4j
 @Transactional(rollbackFor = RuntimeException.class)
 @RequiredArgsConstructor
 public class UniverseNameService  {
@@ -43,6 +47,9 @@ public class UniverseNameService  {
     }
 
     public Map<Integer, String> getUniverseName(List<Integer> items) {
+        if (items.isEmpty()){
+            return Collections.emptyMap();
+        }
         List<UniverseName> database = universeNameRepository.selectByIdIn(items);
 
         List<Integer> inItems = database.stream().map(universeName -> universeName.getId().intValue()).collect(Collectors.toList());
@@ -54,8 +61,11 @@ public class UniverseNameService  {
             List<Id2NameResponse> nameResponses = universeApi.queryUniverseNames(noInItems, EsiClient.SERENITY).collectList().block();
             assert nameResponses != null;
             newUnivereName = nameResponses.stream().map(universeNameAssembler::id2NameResponse2UniverseName).collect(Collectors.toList());
-            universeNameRepository.saveOrUpdateBatch(newUnivereName);
-
+            try {
+                universeNameRepository.saveOrUpdateBatch(newUnivereName);
+            } catch (EveHelperException e) {
+                log.warn("newUnivereName记录长度为0, 错误: {}", e.getMessage(), e);
+            }
         }
 
         database.addAll(newUnivereName);
@@ -64,7 +74,7 @@ public class UniverseNameService  {
 
     }
 
-    public int insertOrUpdate(UniverseName record) {
+    public boolean insertOrUpdate(UniverseName record) {
         return universeNameRepository.insertOrUpdate(record);
     }
 

@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -104,6 +105,7 @@ public class MarketOrderPO implements Serializable {
     @Schema(description = "星域ID")
     private Long regionId;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public static final String COL_ORDER_ID = "order_id";

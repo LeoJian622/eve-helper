@@ -1,37 +1,39 @@
 package xyz.foolcat.eve.evehelper.domain.service.system;
 
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysMenu;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.SysMenuMapper;
+import xyz.foolcat.eve.evehelper.domain.repository.system.SysMenuRepository;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 @Transactional(rollbackFor = RuntimeException.class)
-public class SysMenuService extends ServiceImpl<SysMenuMapper, SysMenu> {
+public class SysMenuService{
 
+    private final SysMenuRepository sysMenuRepository;
 
     public int updateBatch(List<SysMenu> list) {
-        return baseMapper.updateBatch(list);
+        return sysMenuRepository.updateBatch(list);
     }
 
     public int updateBatchSelective(List<SysMenu> list) {
-        return baseMapper.updateBatchSelective(list);
+        return sysMenuRepository.updateBatchSelective(list);
     }
 
     public int batchInsert(List<SysMenu> list) {
-        return baseMapper.batchInsert(list);
+        return sysMenuRepository.batchInsert(list);
     }
 
-    public int insertOrUpdate(SysMenu record) {
-        return baseMapper.insertOrUpdate(record);
+    public boolean insertOrUpdate(SysMenu record) {
+        return sysMenuRepository.insertOrUpdate(record);
     }
 
     public int insertOrUpdateSelective(SysMenu record) {
-        return baseMapper.insertOrUpdateSelective(record);
+        return sysMenuRepository.insertOrUpdateSelective(record);
     }
 }
 

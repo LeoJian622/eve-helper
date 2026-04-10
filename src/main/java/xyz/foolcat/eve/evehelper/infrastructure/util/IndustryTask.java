@@ -11,7 +11,7 @@ import xyz.foolcat.eve.evehelper.domain.service.system.IndustryJobService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.WebSocket;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.text.ParseException;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;

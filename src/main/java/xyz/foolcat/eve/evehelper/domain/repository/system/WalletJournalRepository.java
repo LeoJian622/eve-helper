@@ -16,7 +16,7 @@ public interface WalletJournalRepository {
 
     int batchInsert(List<WalletJournal> list);
 
-    int insertOrUpdate(WalletJournal record);
+    public boolean insertOrUpdate(WalletJournal record);
 
     int insertOrUpdateSelective(WalletJournal record);
 

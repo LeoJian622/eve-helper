@@ -6,17 +6,17 @@ import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ErrorResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.OpportunitiesGroupResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.OpportunitiesResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.OpportunitiesTaskResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 
 /**
  * ESI 机遇系统接口
@@ -50,9 +50,9 @@ public class OpportunitiesApi {
         return apiClient.get().uri("/characters/{character_id}/opportunities/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(OpportunitiesResponse.class);
     }
@@ -70,9 +70,9 @@ public class OpportunitiesApi {
     public Flux<Integer> queryOpportunitiesGroups(String datasource) {
         return apiClient.get().uri("/opportunities/groups/?datasource={datasource}", datasource)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(Integer.class);
     }
@@ -94,9 +94,9 @@ public class OpportunitiesApi {
     public Mono<OpportunitiesGroupResponse> queryOpportunitiesGroupsDetails(Integer groupId, String datasource, String language) {
         return apiClient.get().uri("/opportunities/groups/{group_id}/?datasource={datasource}&language={language}", groupId, datasource, language)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(OpportunitiesGroupResponse.class);
     }
@@ -114,9 +114,9 @@ public class OpportunitiesApi {
     public Flux<Integer> queryOpportunitiesTasks(String datasource) {
         return apiClient.get().uri("/opportunities/tasks/?datasource={datasource}", datasource)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToFlux(Integer.class);
     }
@@ -138,9 +138,9 @@ public class OpportunitiesApi {
     public Mono<OpportunitiesTaskResponse> queryOpportunitiesTaskDetails(Integer taskId, String datasource, String language) {
         return apiClient.get().uri("/opportunities/tasks/{task_id}/?datasource={datasource}&language={language}", taskId, datasource, language)
                 .retrieve()
-                .onStatus(HttpStatus::is4xxClientError, response ->
+                .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatus::is5xxServerError, response ->
+                .onStatus(HttpStatusCode::is5xxServerError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
                 .bodyToMono(OpportunitiesTaskResponse.class);
     }

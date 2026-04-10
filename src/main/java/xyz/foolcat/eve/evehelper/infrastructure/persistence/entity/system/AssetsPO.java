@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @Schema
@@ -69,6 +70,7 @@ public class AssetsPO implements Serializable {
     @Schema(description = "所有者ID")
     private Long ownerId;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public static final String COL_ITEM_ID = "item_id";

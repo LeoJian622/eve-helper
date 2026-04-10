@@ -72,10 +72,10 @@ public class LoginRateLimiterService {
             return 0;
         }
 
-        if (attemptsObj instanceof Integer) {
-            return (Integer) attemptsObj;
-        } else if (attemptsObj instanceof Long) {
-            return ((Long) attemptsObj).intValue();
+        if (attemptsObj instanceof Integer number) {
+            return number;
+        } else if (attemptsObj instanceof Long number) {
+            return number.intValue();
         } else {
             try {
                 return Integer.parseInt(attemptsObj.toString());

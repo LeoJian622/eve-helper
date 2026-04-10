@@ -39,7 +39,7 @@ public class InvTypesRepositoryImpl implements InvTypesRepository {
     }
 
     @Override
-    public int insertOrUpdate(InvTypes record) {
+    public boolean insertOrUpdate(InvTypes record) {
         return invTypesMapper.insertOrUpdate(invTypesAssembler.domain2Po(record));
     }
 
@@ -64,7 +64,9 @@ public class InvTypesRepositoryImpl implements InvTypesRepository {
 
     @Override
     public InvTypes selectOneByName(String name) {
-        return invTypesAssembler.po2Domain(invTypesMapper.selectOne(new QueryWrapper<InvTypesPO>().lambda().eq(InvTypesPO::getName,name)));
+        return invTypesAssembler.po2Domain(invTypesMapper.selectOne(new QueryWrapper<InvTypesPO>().lambda()
+                .eq(InvTypesPO::getName, name)
+                .and(item -> item.ne(InvTypesPO::getGroupId, 1975))));
     }
 
     @Override

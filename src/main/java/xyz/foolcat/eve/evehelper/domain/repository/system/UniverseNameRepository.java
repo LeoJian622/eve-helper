@@ -14,7 +14,7 @@ public interface UniverseNameRepository {
 
     int batchInsert(List<UniverseName> list);
 
-    int insertOrUpdate(UniverseName record);
+    public boolean insertOrUpdate(UniverseName record);
 
     int insertOrUpdateSelective(UniverseName record);
 

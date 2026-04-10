@@ -15,7 +15,7 @@ public interface IndustryJobRepository  {
 
     int batchInsert(List<IndustryJob> list);
 
-    int insertOrUpdate(IndustryJob record);
+    public boolean insertOrUpdate(IndustryJob record);
 
     int insertOrUpdateSelective(IndustryJob record);
 

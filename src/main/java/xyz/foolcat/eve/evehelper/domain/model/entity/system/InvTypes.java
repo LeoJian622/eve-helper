@@ -2,6 +2,7 @@ package xyz.foolcat.eve.evehelper.domain.model.entity.system;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -121,5 +122,6 @@ public class InvTypes implements Serializable {
      */
     private Integer variationparentTypeId;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 } 

@@ -14,7 +14,7 @@ public interface AssetsRepository {
 
     int batchInsert(List<Assets> list);
 
-    int insertOrUpdate(Assets record);
+    public boolean insertOrUpdate(Assets record);
 
     int insertOrUpdateSelective(Assets record);
 

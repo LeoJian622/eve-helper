@@ -57,10 +57,11 @@ class MailApiTest {
     void addCharacterMail() {
         NewMail newMail = new NewMail();
         newMail.setSubject("PVE调研，请务必填写，会影响改版后的可刷异常数量");
-        newMail.setBody("【腾讯文档】当前版本静寂谷、对舞、特布特、血特、新八的PVE异常调研\n" +
-                "https://docs.qq.com/form/page/DV3BpYUdRZXVmdXlZ\n" +
-                "\n" +
-                "请大家填写一下这个PVE调研表，该数据结果会影响改版后的联盟领地内的PVE插件。");
+        newMail.setBody("""
+                【腾讯文档】当前版本静寂谷、对舞、特布特、血特、新八的PVE异常调研
+                https://docs.qq.com/form/page/DV3BpYUdRZXVmdXlZ
+                
+                请大家填写一下这个PVE调研表，该数据结果会影响改版后的联盟领地内的PVE插件。""");
 
         Recipient recipient = new Recipient();
         recipient.setRecipientId(656880659);

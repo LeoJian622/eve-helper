@@ -47,7 +47,7 @@ public class WalletJournalService {
         return walletJournalRepository.batchInsert(list);
     }
 
-    public int insertOrUpdate(WalletJournal record) {
+    public boolean insertOrUpdate(WalletJournal record) {
         return walletJournalRepository.insertOrUpdate(record);
     }
 

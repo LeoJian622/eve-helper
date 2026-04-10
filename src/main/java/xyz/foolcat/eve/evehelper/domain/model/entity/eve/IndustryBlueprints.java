@@ -2,6 +2,7 @@ package xyz.foolcat.eve.evehelper.domain.model.entity.eve;
 
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -16,5 +17,6 @@ public class IndustryBlueprints implements Serializable {
 
     private Integer maxproductionlimit;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 } 

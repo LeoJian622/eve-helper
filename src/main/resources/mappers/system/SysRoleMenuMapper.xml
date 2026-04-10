@@ -23,19 +23,6 @@
         #{item.gmtModified,jdbcType=TIMESTAMP})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysRoleMenuPO">
-    <!--@mbg.generated-->
-    insert into sys_role_menu
-    (role_id, menu_id, gmt_create, gmt_modified)
-    values
-    (#{roleId,jdbcType=BIGINT}, #{menuId,jdbcType=BIGINT}, #{gmtCreate,jdbcType=TIMESTAMP}, 
-      #{gmtModified,jdbcType=TIMESTAMP})
-    on duplicate key update 
-    role_id = #{roleId,jdbcType=BIGINT}, 
-    menu_id = #{menuId,jdbcType=BIGINT}, 
-    gmt_create = #{gmtCreate,jdbcType=TIMESTAMP}, 
-    gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}
-  </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysRoleMenuPO">
     <!--@mbg.generated-->
     insert into sys_role_menu

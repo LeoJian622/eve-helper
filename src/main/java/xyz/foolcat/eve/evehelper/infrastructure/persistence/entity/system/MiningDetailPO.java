@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -72,6 +73,7 @@ public class MiningDetailPO  implements Serializable {
     @Schema(description = "上次更新时间")
     private Date lastUpdated;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public static final String COL_ID = "id";

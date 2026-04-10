@@ -39,7 +39,7 @@ public class MarketOrderRepositoryImpl implements MarketOrderRepository {
     }
 
     @Override
-    public int insertOrUpdate(MarketOrder record) {
+    public boolean insertOrUpdate(MarketOrder record) {
         return marketOrderMapper.insertOrUpdate(marketOrderAssembler.domain2Po(record));
     }
 

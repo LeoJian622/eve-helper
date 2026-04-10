@@ -11,7 +11,7 @@ public interface SysPermissionRepository {
 
     int batchInsert(List<SysPermission> list);
 
-    int insertOrUpdate(SysPermission record);
+    public boolean insertOrUpdate(SysPermission record);
 
     int insertOrUpdateSelective(SysPermission record);
 

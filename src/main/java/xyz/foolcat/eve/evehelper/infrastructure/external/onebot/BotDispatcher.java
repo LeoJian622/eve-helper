@@ -16,7 +16,7 @@ import xyz.foolcat.eve.evehelper.domain.service.system.WalletJournalService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.model.MessageEvent;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;

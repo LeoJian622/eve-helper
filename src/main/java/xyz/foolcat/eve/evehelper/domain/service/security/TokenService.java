@@ -139,8 +139,8 @@ public class TokenService {
         }
 
         Integer userId;
-        if (userIdObj instanceof Integer) {
-            userId = (Integer) userIdObj;
+        if (userIdObj instanceof Integer number) {
+            userId = number;
         } else {
             userId = Integer.parseInt(userIdObj.toString());
         }
@@ -165,8 +165,8 @@ public class TokenService {
             throw new IllegalArgumentException("Refresh Token无效或已过期");
         }
 
-        if (userIdObj instanceof Integer) {
-            return (Integer) userIdObj;
+        if (userIdObj instanceof Integer number) {
+            return number;
         } else {
             return Integer.parseInt(userIdObj.toString());
         }
@@ -192,8 +192,8 @@ public class TokenService {
 
         // 验证用户ID是否匹配
         Integer storedUserId;
-        if (userIdObj instanceof Integer) {
-            storedUserId = (Integer) userIdObj;
+        if (userIdObj instanceof Integer number) {
+            storedUserId = number;
         } else {
             storedUserId = Integer.parseInt(userIdObj.toString());
         }

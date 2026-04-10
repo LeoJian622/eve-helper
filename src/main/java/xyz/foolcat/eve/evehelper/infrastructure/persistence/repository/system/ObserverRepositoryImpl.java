@@ -35,7 +35,7 @@ public class ObserverRepositoryImpl implements ObserverRepository {
     }
 
     @Override
-    public int insertOrUpdate(Observer record) {
+    public boolean insertOrUpdate(Observer record) {
         return observerMapper.insertOrUpdate(observerAssembler.domain2Po(record));
     }
 

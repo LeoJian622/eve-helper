@@ -1,10 +1,12 @@
 package xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -16,7 +18,7 @@ import java.io.Serializable;
 @TableName(value = "inv_types")
 public class InvTypesPO implements Serializable {
 
-    @TableField(value = "type_id")
+    @TableId(value = "type_id")
     @Schema(description = "物品ID")
     private Integer typeId;
 
@@ -104,6 +106,7 @@ public class InvTypesPO implements Serializable {
     @Schema(description = "变体父类型ID")
     private Integer variationparentTypeId;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public static final String COL_ID = "id";

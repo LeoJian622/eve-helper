@@ -2,12 +2,9 @@ package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.ActiveProfiles;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.SovereigntyApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.SovereigntyCampaignsResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.SovereigntyMapResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.SovereigntyStructuresResponse;

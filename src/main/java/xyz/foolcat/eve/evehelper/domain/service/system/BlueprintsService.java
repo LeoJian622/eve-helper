@@ -64,7 +64,7 @@ public class BlueprintsService {
         return blueprintsDataRepository.updateBatchSelective(list);
     }
 
-    public int insertOrUpdate(Blueprints record) {
+    public boolean insertOrUpdate(Blueprints record) {
         return blueprintsDataRepository.insertOrUpdate(record);
     }
 

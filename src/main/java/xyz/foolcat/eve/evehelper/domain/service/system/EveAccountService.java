@@ -27,7 +27,7 @@ public class EveAccountService  {
         return eveAccountRepository.batchInsert(list);
     }
 
-    public int insertOrUpdate(EveAccount record) {
+    public boolean insertOrUpdate(EveAccount record) {
         return eveAccountRepository.insertOrUpdate(record);
     }
 

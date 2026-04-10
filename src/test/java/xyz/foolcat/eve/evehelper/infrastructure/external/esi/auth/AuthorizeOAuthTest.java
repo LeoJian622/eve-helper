@@ -3,14 +3,10 @@ package xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth;
 import cn.hutool.core.lang.Assert;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithUserDetails;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.ActiveProfiles;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
 
 import java.util.Set;
@@ -19,7 +15,7 @@ import java.util.Set;
 @ActiveProfiles("test")
 @SpringBootTest
 @DisplayName("ESI AuthorizeOAuth Test")
-@WithUserDetails("user1")
+@WithUserDetails("admin")
 class AuthorizeOAuthTest {
 
     @Autowired

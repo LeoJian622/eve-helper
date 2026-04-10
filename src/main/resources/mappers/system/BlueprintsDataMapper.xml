@@ -32,27 +32,6 @@
         )
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.BlueprintsDataPO">
-    <!--@mbg.generated-->
-    insert into blueprints_data
-    (type_id, type_name, blueprint_type_id, blueprint_name, activity_id, quantity, probability, 
-      `time`, max_production_limit)
-    values
-    (#{typeId,jdbcType=INTEGER}, #{typeName,jdbcType=VARCHAR}, #{blueprintTypeId,jdbcType=INTEGER}, 
-      #{blueprintName,jdbcType=VARCHAR}, #{activityId,jdbcType=TINYINT}, #{quantity,jdbcType=INTEGER}, 
-      #{probability,jdbcType=FLOAT}, #{time,jdbcType=INTEGER}, #{maxProductionLimit,jdbcType=INTEGER}
-      )
-    on duplicate key update 
-    type_id = #{typeId,jdbcType=INTEGER}, 
-    type_name = #{typeName,jdbcType=VARCHAR}, 
-    blueprint_type_id = #{blueprintTypeId,jdbcType=INTEGER}, 
-    blueprint_name = #{blueprintName,jdbcType=VARCHAR}, 
-    activity_id = #{activityId,jdbcType=TINYINT}, 
-    quantity = #{quantity,jdbcType=INTEGER}, 
-    probability = #{probability,jdbcType=FLOAT}, 
-    `time` = #{time,jdbcType=INTEGER}, 
-    max_production_limit = #{maxProductionLimit,jdbcType=INTEGER}
-  </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.BlueprintsDataPO">
     <!--@mbg.generated-->
     insert into blueprints_data

@@ -6,6 +6,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Date;
@@ -75,6 +76,7 @@ public class SysUser extends BaseEntity implements UserDetails,Serializable {
      */
     private Date lastLoginTime;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Override

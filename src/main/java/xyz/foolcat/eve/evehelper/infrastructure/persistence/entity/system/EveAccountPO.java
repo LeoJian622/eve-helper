@@ -1,6 +1,5 @@
 package xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
@@ -9,6 +8,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -20,14 +20,11 @@ import java.io.Serializable;
 @Data
 @TableName(value = "eve_account")
 public class EveAccountPO extends BaseEntity implements Serializable {
-    @TableId(value = "id", type = IdType.AUTO)
-    @Schema(description = "主键ID")
-    private Long id;
 
     /**
      * 角色ID
      */
-    @TableField(value = "character_id")
+    @TableId(value = "character_id")
     @Schema(description = "角色ID")
     private Long characterId;
 
@@ -94,6 +91,7 @@ public class EveAccountPO extends BaseEntity implements Serializable {
     @Schema(description = "用户ID")
     private Long userId;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public static final String COL_ID = "id";

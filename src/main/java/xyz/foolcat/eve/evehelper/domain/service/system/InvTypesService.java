@@ -40,7 +40,7 @@ public class InvTypesService {
         return invTypesRepository.batchInsert(list);
     }
 
-    public int insertOrUpdate(InvTypes record) {
+    public boolean insertOrUpdate(InvTypes record) {
         return invTypesRepository.insertOrUpdate(record);
     }
 
@@ -67,8 +67,8 @@ public class InvTypesService {
     public InvTypes updateTypeByTypeId(Integer typeId){
         TypeInfoResponse typeInfoResponse = universeApi.queryUniverseType(typeId, EsiClient.SERENITY, EsiClient.ZH_CN).block();
         InvTypes invTypes = invTypesAssembler.toInvTypes(typeInfoResponse);
-        int update = this.insertOrUpdate(invTypes);
-        if (update != 0) {
+        boolean update = this.insertOrUpdate(invTypes);
+        if (update) {
             return invTypes;
         }else {
             return null;

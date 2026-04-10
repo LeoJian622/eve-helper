@@ -21,8 +21,6 @@ public interface BlueprintsMapper extends BaseMapper<BlueprintsPO> {
 
     int batchInsert(List<BlueprintsPO> list);
 
-    int insertOrUpdate(BlueprintsPO record);
-
     int insertOrUpdateSelective(BlueprintsPO record);
 
     // 只保留基础 CRUD

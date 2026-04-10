@@ -12,7 +12,7 @@ public interface ObserverRepository {
 
     int batchInsert(List<Observer> list);
 
-    int insertOrUpdate(Observer record);
+    public boolean insertOrUpdate(Observer record);
 
     int insertOrUpdateSelective(Observer record);
 } 

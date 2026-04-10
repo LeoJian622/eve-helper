@@ -17,8 +17,6 @@ public interface UniverseNameMapper extends BaseMapper<UniverseNamePO> {
 
     int batchInsert(List<UniverseNamePO> universeNamePOS);
 
-    int insertOrUpdate(UniverseNamePO universeNamePO);
-
     int insertOrUpdateSelective(UniverseNamePO universeNamePO);
 
     int batchInsertOrUpdate(List<UniverseNamePO> universeNamePOS);

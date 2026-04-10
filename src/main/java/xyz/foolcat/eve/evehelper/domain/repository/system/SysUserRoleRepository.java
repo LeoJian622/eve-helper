@@ -14,7 +14,7 @@ public interface SysUserRoleRepository {
 
     int batchInsert(List<SysUserRole> list);
 
-    int insertOrUpdate(SysUserRole record);
+    public boolean insertOrUpdate(SysUserRole record);
 
     int insertOrUpdateSelective(SysUserRole record);
 

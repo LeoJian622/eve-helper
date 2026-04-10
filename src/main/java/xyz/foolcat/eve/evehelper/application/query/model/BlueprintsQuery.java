@@ -5,7 +5,7 @@ import lombok.experimental.SuperBuilder;
 import xyz.foolcat.eve.evehelper.application.dto.BlueprintsDTO;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * 蓝图查询DTO

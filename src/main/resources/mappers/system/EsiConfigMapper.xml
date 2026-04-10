@@ -105,42 +105,6 @@
         #{item.gmtCreate,jdbcType=TIMESTAMP}, #{item.gmtModified,jdbcType=TIMESTAMP})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EsiConfigPO" useGeneratedKeys="true">
-    <!--@mbg.generated-->
-    insert into esi_config
-    <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        id,
-      </if>
-      base_url,
-      version,
-      `type`,
-      gmt_create,
-      gmt_modified,
-    </trim>
-    values
-    <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        #{id,jdbcType=INTEGER},
-      </if>
-      #{baseUrl,jdbcType=VARCHAR},
-      #{version,jdbcType=VARCHAR},
-      #{type,jdbcType=INTEGER},
-      #{gmtCreate,jdbcType=TIMESTAMP},
-      #{gmtModified,jdbcType=TIMESTAMP},
-    </trim>
-    on duplicate key update 
-    <trim suffixOverrides=",">
-      <if test="id != null">
-        id = #{id,jdbcType=INTEGER},
-      </if>
-      base_url = #{baseUrl,jdbcType=VARCHAR},
-      version = #{version,jdbcType=VARCHAR},
-      `type` = #{type,jdbcType=INTEGER},
-      gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
-      gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
-    </trim>
-  </insert>
   <insert id="insertOrUpdateSelective" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EsiConfigPO" useGeneratedKeys="true">
     <!--@mbg.generated-->
     insert into esi_config

@@ -17,8 +17,6 @@ public interface IndustryJobMapper extends BaseMapper<IndustryJobPO> {
 
     int batchInsert(List<IndustryJobPO> industryJobPOS);
 
-    int insertOrUpdate(IndustryJobPO industryJobPO);
-
     int insertOrUpdateSelective(IndustryJobPO industryJobPO);
 
     int batchInsertOrUpdate(List<IndustryJobPO> industryJobPOS);

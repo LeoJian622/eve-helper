@@ -17,8 +17,6 @@ public interface SysRoleMapper extends BaseMapper<SysRolePO> {
 
     int batchInsert(List<SysRolePO> list);
 
-    int insertOrUpdate(SysRolePO record);
-
     int insertOrUpdateSelective(SysRolePO record);
 
     List<String> queryRolesByUserId(Integer id);

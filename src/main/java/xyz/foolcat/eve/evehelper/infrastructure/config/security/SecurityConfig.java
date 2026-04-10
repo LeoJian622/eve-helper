@@ -21,7 +21,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.config.security.handler.AccessDe
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.handler.AuthenticationFailureServletHandler;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.handler.AuthenticationSuccessServletHandler;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 
 /**
  * Spring Security配置
@@ -50,11 +50,10 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity.authorizeHttpRequests().antMatchers("/swagger-ui.html"
+        httpSecurity.authorizeHttpRequests(requests -> requests.requestMatchers("/swagger-ui.html"
                         , "/swagger-ui/**"
                         , "/v3/api-docs/**"
-                        , "/websocket/onebot/**").permitAll()
-                .and().sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        , "/websocket/onebot/**").permitAll()).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest()
                         .access(authorizationManager))
@@ -72,10 +71,9 @@ public class SecurityConfig {
 
     @Bean
     AuthenticationManager authenticationManager() {
-        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
+        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider(sysUserService);
         // 是否隐藏用户不存在异常，默认:true-隐藏；false-抛出异常；
         daoAuthenticationProvider.setHideUserNotFoundExceptions(false);
-        daoAuthenticationProvider.setUserDetailsService(sysUserService);
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
         return new ProviderManager(daoAuthenticationProvider);
     }

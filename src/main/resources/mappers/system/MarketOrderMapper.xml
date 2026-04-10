@@ -201,32 +201,6 @@
         #{item.regionId,jdbcType=BIGINT})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MarketOrderPO">
-    <!--@mbg.generated-->
-    insert into market_order
-    (order_id, duration, is_buy_order, issued, location_id, min_volume, price, order_range, 
-      system_id, type_id, volume_remain, volume_total, region_id)
-    values
-    (#{orderId,jdbcType=BIGINT}, #{duration,jdbcType=BIGINT}, #{isBuyOrder,jdbcType=BOOLEAN}, 
-      #{issued,jdbcType=TIMESTAMP}, #{locationId,jdbcType=BIGINT}, #{minVolume,jdbcType=BIGINT}, 
-      #{price,jdbcType=BIGINT}, #{orderRange,jdbcType=VARCHAR}, #{systemId,jdbcType=BIGINT}, 
-      #{typeId,jdbcType=BIGINT}, #{volumeRemain,jdbcType=BIGINT}, #{volumeTotal,jdbcType=BIGINT}, 
-      #{regionId,jdbcType=BIGINT})
-    on duplicate key update 
-    order_id = #{orderId,jdbcType=BIGINT}, 
-    duration = #{duration,jdbcType=BIGINT}, 
-    is_buy_order = #{isBuyOrder,jdbcType=BOOLEAN}, 
-    issued = #{issued,jdbcType=TIMESTAMP}, 
-    location_id = #{locationId,jdbcType=BIGINT}, 
-    min_volume = #{minVolume,jdbcType=BIGINT}, 
-    price = #{price,jdbcType=BIGINT}, 
-    order_range = #{orderRange,jdbcType=VARCHAR}, 
-    system_id = #{systemId,jdbcType=BIGINT}, 
-    type_id = #{typeId,jdbcType=BIGINT}, 
-    volume_remain = #{volumeRemain,jdbcType=BIGINT}, 
-    volume_total = #{volumeTotal,jdbcType=BIGINT}, 
-    region_id = #{regionId,jdbcType=BIGINT}
-  </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MarketOrderPO">
     <!--@mbg.generated-->
     insert into market_order

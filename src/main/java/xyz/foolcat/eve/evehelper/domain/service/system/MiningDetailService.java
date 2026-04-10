@@ -2,6 +2,7 @@ package xyz.foolcat.eve.evehelper.domain.service.system;
 
 import cn.hutool.crypto.digest.MD5;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.application.assembler.system.MiningDetailAssembler;
@@ -11,6 +12,7 @@ import xyz.foolcat.eve.evehelper.domain.repository.system.MiningDetailRepository
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
+import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
 import java.nio.charset.StandardCharsets;
@@ -23,6 +25,7 @@ import java.util.stream.Stream;
  * @author yongj
  */
 @Service
+@Slf4j
 @Transactional(rollbackFor = RuntimeException.class)
 @RequiredArgsConstructor
 public class MiningDetailService  {
@@ -72,7 +75,13 @@ public class MiningDetailService  {
             miningDetail.setCharacterName(universeName.get(miningDetail.getCharacterId()));
             miningDetail.setRecordedCorporationName(universeName.get(miningDetail.getRecordedCorporationId()));
         });
-        miningDetailRepository.saveOrUpdateBatch(miningDetails);
+
+        try {
+            miningDetailRepository.saveOrUpdateBatch(miningDetails);
+        } catch (EveHelperException e) {
+            log.warn("MiningDetais记录长度为0, 错误: {}", e.getMessage(), e);
+        }
+
     }
 
     public int updateBatch(List<MiningDetail> list) {
@@ -83,7 +92,7 @@ public class MiningDetailService  {
         return miningDetailRepository.updateBatchSelective(list);
     }
 
-    public int insertOrUpdate(MiningDetail record) {
+    public boolean insertOrUpdate(MiningDetail record) {
         return miningDetailRepository.insertOrUpdate(record);
     }
 

@@ -12,7 +12,7 @@ public interface EveAccountRepository  {
 
     int batchInsert(List<EveAccount> list);
 
-    int insertOrUpdate(EveAccount record);
+    boolean insertOrUpdate(EveAccount record);
 
     int insertOrUpdateSelective(EveAccount record);
 

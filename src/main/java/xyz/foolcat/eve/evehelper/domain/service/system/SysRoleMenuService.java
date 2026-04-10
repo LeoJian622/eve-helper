@@ -20,7 +20,7 @@ public class SysRoleMenuService  {
         return sysRoleMenuRepository.batchInsert(list);
     }
 
-    public int insertOrUpdate(SysRoleMenu record) {
+    public boolean insertOrUpdate(SysRoleMenu record) {
         return sysRoleMenuRepository.insertOrUpdate(record);
     }
 

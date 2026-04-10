@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -45,6 +46,7 @@ public class EsiConfigPO extends BaseEntity implements Serializable {
     @Schema(description = "CH:0 EU:1")
     private Integer type;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public static final String COL_ID = "id";

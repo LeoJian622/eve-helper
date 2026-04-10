@@ -27,7 +27,7 @@ public class BlueprintsDataRepositoryImpl implements BlueprintsDataRepository {
     }
 
     @Override
-    public int insertOrUpdate(BlueprintsData record) {
+    public boolean insertOrUpdate(BlueprintsData record) {
         return blueprintsDataMapper.insertOrUpdate(blueprintsDataAssembler.domain2Po(record));
     }
 

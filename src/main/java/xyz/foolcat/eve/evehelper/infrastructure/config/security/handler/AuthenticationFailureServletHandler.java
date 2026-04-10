@@ -14,9 +14,9 @@ import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.domain.service.security.LoginRateLimiterService;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
@@ -49,7 +49,7 @@ public class AuthenticationFailureServletHandler implements AuthenticationFailur
         String message;
         if (isLocked) {
             long remainingTime = loginRateLimiterService.getLockRemainingTime(username);
-            message = String.format("账户已锁定，请在%d分钟后重试", remainingTime / 60);
+            message = "账户已锁定，请在%d分钟后重试".formatted(remainingTime / 60);
         } else {
             int remainingAttempts = loginRateLimiterService.getRemainingAttempts(username);
             if (exception instanceof AccountExpiredException) {
@@ -57,7 +57,7 @@ public class AuthenticationFailureServletHandler implements AuthenticationFailur
             } else if (exception instanceof UsernameNotFoundException) {
                 message = "用户名或密码错误";
             } else if (exception instanceof BadCredentialsException) {
-                message = String.format("用户名或密码错误，剩余尝试次数: %d", remainingAttempts);
+                message = "用户名或密码错误，剩余尝试次数: %d".formatted(remainingAttempts);
             } else if (exception instanceof CredentialsExpiredException) {
                 message = "密码已过期";
             } else if (exception instanceof DisabledException) {

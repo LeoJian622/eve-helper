@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -13,10 +14,6 @@ import java.io.Serializable;
 @EqualsAndHashCode(callSuper = true)
 @Data
 public class EveAccount extends BaseEntity implements Serializable {
-    /**
-     * 主键ID
-     */
-    private Long id;
 
     /**
      * 角色ID
@@ -68,5 +65,6 @@ public class EveAccount extends BaseEntity implements Serializable {
      */
     private Integer userId;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 } 

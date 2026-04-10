@@ -122,45 +122,6 @@
         )
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysPermissionPO" useGeneratedKeys="true">
-    <!--@mbg.generated-->
-    insert into sys_permission
-    <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        id,
-      </if>
-      `name`,
-      menu_id,
-      url_perm,
-      btn_perm,
-      gmt_create,
-      gmt_modified,
-    </trim>
-    values
-    <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        #{id,jdbcType=BIGINT},
-      </if>
-      #{name,jdbcType=VARCHAR},
-      #{menuId,jdbcType=BIGINT},
-      #{urlPerm,jdbcType=VARCHAR},
-      #{btnPerm,jdbcType=VARCHAR},
-      #{gmtCreate,jdbcType=TIMESTAMP},
-      #{gmtModified,jdbcType=TIMESTAMP},
-    </trim>
-    on duplicate key update 
-    <trim suffixOverrides=",">
-      <if test="id != null">
-        id = #{id,jdbcType=BIGINT},
-      </if>
-      `name` = #{name,jdbcType=VARCHAR},
-      menu_id = #{menuId,jdbcType=BIGINT},
-      url_perm = #{urlPerm,jdbcType=VARCHAR},
-      btn_perm = #{btnPerm,jdbcType=VARCHAR},
-      gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
-      gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
-    </trim>
-  </insert>
   <insert id="insertOrUpdateSelective" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysPermissionPO" useGeneratedKeys="true">
     <!--@mbg.generated-->
     insert into sys_permission

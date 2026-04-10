@@ -7,7 +7,7 @@ import java.util.List;
 public interface SysRoleMenuRepository {
     int batchInsert(List<SysRoleMenu> list);
 
-    int insertOrUpdate(SysRoleMenu record);
+    public boolean insertOrUpdate(SysRoleMenu record);
 
     int insertOrUpdateSelective(SysRoleMenu record);
 } 

@@ -228,34 +228,6 @@
         #{item.ownerId,jdbcType=BIGINT})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletJournalPO">
-    <!--@mbg.generated-->
-    insert into wallet_journal
-    (id, amount, balance, context_id, context_id_type, `date`, description, first_party_id, 
-      reason, ref_type, second_party_id, tax, tax_receiver_id, `character`, owner_id)
-    values
-    (#{id,jdbcType=BIGINT}, #{amount,jdbcType=DOUBLE}, #{balance,jdbcType=DOUBLE}, #{contextId,jdbcType=BIGINT}, 
-      #{contextIdType,jdbcType=VARCHAR}, #{date,jdbcType=TIMESTAMP}, #{description,jdbcType=LONGVARCHAR}, 
-      #{firstPartyId,jdbcType=INTEGER}, #{reason,jdbcType=LONGVARCHAR}, #{refType,jdbcType=LONGVARCHAR}, 
-      #{secondPartyId,jdbcType=INTEGER}, #{tax,jdbcType=DOUBLE}, #{taxReceiverId,jdbcType=INTEGER}, 
-      #{character,jdbcType=VARCHAR}, #{ownerId,jdbcType=BIGINT})
-    on duplicate key update 
-    id = #{id,jdbcType=BIGINT}, 
-    amount = #{amount,jdbcType=DOUBLE}, 
-    balance = #{balance,jdbcType=DOUBLE}, 
-    context_id = #{contextId,jdbcType=BIGINT}, 
-    context_id_type = #{contextIdType,jdbcType=VARCHAR}, 
-    `date` = #{date,jdbcType=TIMESTAMP}, 
-    description = #{description,jdbcType=LONGVARCHAR}, 
-    first_party_id = #{firstPartyId,jdbcType=INTEGER}, 
-    reason = #{reason,jdbcType=LONGVARCHAR}, 
-    ref_type = #{refType,jdbcType=LONGVARCHAR}, 
-    second_party_id = #{secondPartyId,jdbcType=INTEGER}, 
-    tax = #{tax,jdbcType=DOUBLE}, 
-    tax_receiver_id = #{taxReceiverId,jdbcType=INTEGER}, 
-    `character` = #{character,jdbcType=VARCHAR}, 
-    owner_id = #{ownerId,jdbcType=BIGINT}
-  </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletJournalPO">
     <!--@mbg.generated-->
     insert into wallet_journal

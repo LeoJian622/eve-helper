@@ -5,9 +5,9 @@ spring:
   datasource:
     druid:
       system:
-        username: lyj
+        username: ${DB_SYSTEM_USERNAME}
         password: ${DB_SYSTEM_PASSWORD}
-        url: jdbc:mysql://192.168.12.249:3307/eve_helper?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
+        url: jdbc:mysql://${DB_HOST}:${DB_PORT}/eve_helper?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
         driverClassName: com.mysql.cj.jdbc.Driver
         #初始化连接池的连接数量 大小，最小，最大
         initial-size: 5
@@ -21,7 +21,7 @@ spring:
         min-evictable-idle-time-millis: 30000
         # 配置一个连接在池中最大生存的时间，单位是毫秒
         max-evictable-idle-time-millis: 300000
-        validation-query: SELECT 1 FROM user
+        validation-query: SELECT 1
         test-while-idle: true
         test-on-borrow: true
         test-on-return: false
@@ -35,9 +35,9 @@ spring:
             merge-sql: true
             slow-sql-millis: 5000
       eve:
-        username: lyj
+        username: ${DB_SYSTEM_USERNAME}
         password: ${DB_EVE_PASSWORD}
-        url: jdbc:mysql://192.168.12.249:3307/eve?useUnicode=true&characterEncoding=utf8
+        url: jdbc:mysql://${DB_HOST}:${DB_PORT}/eve?useUnicode=true&characterEncoding=utf8
         driverClassName: com.mysql.cj.jdbc.Driver
         #初始化连接池的连接数量 大小，最小，最大
         initial-size: 5
@@ -51,7 +51,7 @@ spring:
         min-evictable-idle-time-millis: 30000
         # 配置一个连接在池中最大生存的时间，单位是毫秒
         max-evictable-idle-time-millis: 300000
-        validation-query: SELECT 1 FROM user
+        validation-query: SELECT 1
         test-while-idle: true
         test-on-borrow: true
         test-on-return: false
@@ -67,30 +67,20 @@ spring:
       #3.基础监控配置
       web-stat-filter:
         enabled: false
-#        url-pattern: /*
-        #设置不统计哪些URL
-#        exclusions: "*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*"
-#        session-stat-enable: true
-#        session-stat-max-count: 100
       stat-view-servlet:
         enabled: false
-#        url-pattern: /druid/*
-#        reset-enable: true
-        #设置监控页面的登录名和密码
-#        login-username: admin
-#        login-password: admin
-#        allow: 127.0.0.1
-        #deny: 192.168.1.100
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
-  redis:
-    host: 192.168.12.249
-    port: 6379
-    password: ${REDIS_PASSWORD}
   cache:
     redis:
       time-to-live: 3000s
+  ai:
+    dashscope:
+      api-key: ${AI_DASHSCOPE_API_KEY}
+  data.redis.host: ${REDIS_HOST}
+  data.redis.password: ${REDIS_PASSWORD}
+  data.redis.port: 6379
 # 日志配置
 logging:
   level:
@@ -136,6 +126,6 @@ springdoc:
   api-docs:
     path: /v3/api-docs
   group-configs:
-    - group: ''
+    - group: default
       paths-to-match: '/**'
       packages-to-scan: xyz.foolcat.eve.evehelper

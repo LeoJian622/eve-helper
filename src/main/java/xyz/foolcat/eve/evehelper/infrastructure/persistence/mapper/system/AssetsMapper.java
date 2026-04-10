@@ -15,8 +15,6 @@ public interface AssetsMapper extends BaseMapper<AssetsPO> {
 
     int batchInsert(List<AssetsPO> list);
 
-    int insertOrUpdate(AssetsPO record);
-
     int insertOrUpdateSelective(AssetsPO record);
 
     List<AssetsPO> selectAssertsInvtypeUniverse(IPage<AssetsPO> page, String id);

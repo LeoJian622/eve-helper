@@ -81,13 +81,4 @@
       #{item.blueprinttypeid,jdbcType=INTEGER}
     </foreach>
   </update>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.IndustryBlueprintsPO">
-    <!--@mbg.generated-->
-    insert into industryBlueprints (blueprintTypeID, maxProductionLimit
-      )
-    values (#{blueprinttypeid,jdbcType=INTEGER}, #{maxproductionlimit,jdbcType=INTEGER}
-      )
-    on duplicate key update
-    maxProductionLimit = #{maxproductionlimit,jdbcType=INTEGER}
-  </insert>
 </mapper>

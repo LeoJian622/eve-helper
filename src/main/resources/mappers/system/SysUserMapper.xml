@@ -196,60 +196,6 @@
         #{item.gmtCreate,jdbcType=TIMESTAMP}, #{item.gmtModified,jdbcType=TIMESTAMP})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysUserPO" useGeneratedKeys="true">
-    <!--@mbg.generated-->
-    insert into sys_user
-    <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        id,
-      </if>
-      username,
-      nickname,
-      gender,
-      `password`,
-      avatar,
-      mobile,
-      `status`,
-      email,
-      deleted,
-      gmt_create,
-      gmt_modified,
-    </trim>
-    values
-    <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="id != null">
-        #{id,jdbcType=INTEGER},
-      </if>
-      #{username,jdbcType=VARCHAR},
-      #{nickname,jdbcType=VARCHAR},
-      #{gender,jdbcType=BOOLEAN},
-      #{password,jdbcType=VARCHAR},
-      #{avatar,jdbcType=VARCHAR},
-      #{mobile,jdbcType=VARCHAR},
-      #{status,jdbcType=BOOLEAN},
-      #{email,jdbcType=VARCHAR},
-      #{deleted,jdbcType=BOOLEAN},
-      #{gmtCreate,jdbcType=TIMESTAMP},
-      #{gmtModified,jdbcType=TIMESTAMP},
-    </trim>
-    on duplicate key update 
-    <trim suffixOverrides=",">
-      <if test="id != null">
-        id = #{id,jdbcType=INTEGER},
-      </if>
-      username = #{username,jdbcType=VARCHAR},
-      nickname = #{nickname,jdbcType=VARCHAR},
-      gender = #{gender,jdbcType=BOOLEAN},
-      `password` = #{password,jdbcType=VARCHAR},
-      avatar = #{avatar,jdbcType=VARCHAR},
-      mobile = #{mobile,jdbcType=VARCHAR},
-      `status` = #{status,jdbcType=BOOLEAN},
-      email = #{email,jdbcType=VARCHAR},
-      deleted = #{deleted,jdbcType=BOOLEAN},
-      gmt_create = #{gmtCreate,jdbcType=TIMESTAMP},
-      gmt_modified = #{gmtModified,jdbcType=TIMESTAMP},
-    </trim>
-  </insert>
   <insert id="insertOrUpdateSelective" keyColumn="id" keyProperty="id" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysUserPO" useGeneratedKeys="true">
     <!--@mbg.generated-->
     insert into sys_user

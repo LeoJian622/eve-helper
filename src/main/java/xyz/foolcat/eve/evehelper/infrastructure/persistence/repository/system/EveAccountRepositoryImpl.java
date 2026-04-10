@@ -36,7 +36,7 @@ public class EveAccountRepositoryImpl implements EveAccountRepository {
     }
 
     @Override
-    public int insertOrUpdate(EveAccount record) {
+    public boolean insertOrUpdate(EveAccount record) {
         return eveAccountMapper.insertOrUpdate(eveAccountAssembler.domain2Po(record));
     }
 

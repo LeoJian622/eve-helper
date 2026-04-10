@@ -26,22 +26,6 @@
         #{item.parentGroupId,jdbcType=INTEGER})
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MarketGroupsPO">
-    <!--@mbg.generated-->
-    insert into market_groups
-    (market_group_id, description_id, has_types, icon_id, name_id, parent_group_id)
-    values
-    (#{marketGroupId,jdbcType=INTEGER}, #{descriptionId,jdbcType=LONGVARCHAR}, #{hasTypes,jdbcType=TINYINT},
-      #{iconId,jdbcType=INTEGER}, #{nameId,jdbcType=LONGVARCHAR}, #{parentGroupId,jdbcType=INTEGER}
-      )
-    on duplicate key update
-    market_group_id = #{marketGroupId,jdbcType=INTEGER},
-    description_id = #{descriptionId,jdbcType=LONGVARCHAR},
-    has_types = #{hasTypes,jdbcType=TINYINT},
-    icon_id = #{iconId,jdbcType=INTEGER},
-    name_id = #{nameId,jdbcType=LONGVARCHAR},
-    parent_group_id = #{parentGroupId,jdbcType=INTEGER}
-  </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MarketGroupsPO">
     <!--@mbg.generated-->
     insert into market_groups

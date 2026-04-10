@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -66,6 +67,7 @@ public class SysRolePO extends BaseEntity implements Serializable {
     @Schema(description = "逻辑删除标识：0-未删除；1-已删除")
     private Boolean deleted;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public static final String COL_ID = "id";

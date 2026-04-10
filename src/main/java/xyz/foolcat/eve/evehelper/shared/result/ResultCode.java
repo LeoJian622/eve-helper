@@ -26,6 +26,7 @@ public enum ResultCode implements IResultCode, Serializable {
      * 系统代码
      */
     SYSTEM_EXECUTION_ERROR("SYS00101", "系统执行出错"),
+    SYSTEM_PARAM_IS_NULL("SYS00102", "输入参数为空"),
 
     /**
      * 认证授权异常

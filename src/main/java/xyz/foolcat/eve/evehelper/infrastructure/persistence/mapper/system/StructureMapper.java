@@ -18,8 +18,6 @@ public interface StructureMapper extends BaseMapper<StructurePO> {
 
     int batchInsert(List<StructurePO> list);
 
-    int insertOrUpdate(StructurePO record);
-
     int insertOrUpdateSelective(StructurePO record);
 
     List<StructurePO> selectFuelExpiresList(@Param("hour") Integer hour, @Param("corporationId") Integer corporationId);

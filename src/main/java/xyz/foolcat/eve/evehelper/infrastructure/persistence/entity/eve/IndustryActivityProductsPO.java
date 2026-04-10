@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @Schema(title="industryActivityProducts",hidden = true)
@@ -26,5 +27,6 @@ public class IndustryActivityProductsPO implements Serializable {
     @Schema(name="")
     private Double probability;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 } 

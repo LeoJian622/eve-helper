@@ -3,6 +3,7 @@ package xyz.foolcat.eve.evehelper.application.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -16,6 +17,7 @@ import java.io.Serializable;
 @Data
 public class BlueprintCostDTO implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = -1321213174703409278L;
     /**
      * 物品类型ID

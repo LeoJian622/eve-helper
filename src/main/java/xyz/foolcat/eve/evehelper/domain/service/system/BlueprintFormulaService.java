@@ -21,7 +21,7 @@ public class BlueprintFormulaService {
         return blueprintFormulaRepository.batchInsert(list);
     }
 
-    public int insertOrUpdate(BlueprintFormula record) {
+    public boolean insertOrUpdate(BlueprintFormula record) {
         return blueprintFormulaRepository.insertOrUpdate(record);
     }
 

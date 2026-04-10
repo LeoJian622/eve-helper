@@ -45,8 +45,7 @@ public class RedisConfig {
     @Bean
     public RedisSerializer<Object> redisSerializer(ObjectMapper objectMapper) {
         //创建JSON序列化器
-        Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(Object.class);
-        serializer.setObjectMapper(objectMapper);
+        Jackson2JsonRedisSerializer<Object> serializer = new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
         return serializer;
     }
 

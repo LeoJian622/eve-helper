@@ -13,8 +13,6 @@ import java.util.List;
 public interface SysRolePermissionMapper extends BaseMapper<SysRolePermissionPO> {
     int batchInsert(List<SysRolePermissionPO> sysRolePermissionPOS);
 
-    int insertOrUpdate(SysRolePermissionPO sysRolePermissionPO);
-
     int insertOrUpdateSelective(SysRolePermissionPO sysRolePermissionPO);
     // 只保留基础 CRUD
 }

@@ -148,27 +148,6 @@
         )
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.BlueprintsPO">
-    <!--@mbg.generated-->
-    insert into blueprints
-    (item_id, type_id, material_efficiency, time_efficiency, runs, quantity, location_id, 
-      location_flag, owner_id)
-    values
-    (#{itemId,jdbcType=BIGINT}, #{typeId,jdbcType=INTEGER}, #{materialEfficiency,jdbcType=INTEGER}, 
-      #{timeEfficiency,jdbcType=INTEGER}, #{runs,jdbcType=INTEGER}, #{quantity,jdbcType=BIGINT}, 
-      #{locationId,jdbcType=BIGINT}, #{locationFlag,jdbcType=VARCHAR}, #{ownerId,jdbcType=BIGINT}
-      )
-    on duplicate key update 
-    item_id = #{itemId,jdbcType=BIGINT}, 
-    type_id = #{typeId,jdbcType=INTEGER}, 
-    material_efficiency = #{materialEfficiency,jdbcType=INTEGER}, 
-    time_efficiency = #{timeEfficiency,jdbcType=INTEGER}, 
-    runs = #{runs,jdbcType=INTEGER}, 
-    quantity = #{quantity,jdbcType=BIGINT}, 
-    location_id = #{locationId,jdbcType=BIGINT}, 
-    location_flag = #{locationFlag,jdbcType=VARCHAR}, 
-    owner_id = #{ownerId,jdbcType=BIGINT}
-  </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.BlueprintsPO">
     <!--@mbg.generated-->
     insert into blueprints

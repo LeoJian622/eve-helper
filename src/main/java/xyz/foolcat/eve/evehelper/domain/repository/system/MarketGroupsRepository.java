@@ -11,7 +11,7 @@ import java.util.List;
 public interface MarketGroupsRepository {
     int batchInsert(List<MarketGroups> list);
 
-    int insertOrUpdate(MarketGroups record);
+    public boolean insertOrUpdate(MarketGroups record);
 
     int insertOrUpdateSelective(MarketGroups record);
 

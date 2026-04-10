@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -32,6 +33,7 @@ public class UniverseNamePO  implements Serializable {
     @Schema(description = "alliance, character, constellation, corporation, inventory_type, region, solar_system, station, faction")
     private String category;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     public static final String COL_ID = "id";

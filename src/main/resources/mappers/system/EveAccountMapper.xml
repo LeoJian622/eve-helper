@@ -188,30 +188,6 @@
         )
     </foreach>
   </insert>
-  <insert id="insertOrUpdate" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EveAccountPO">
-    <!--@mbg.generated-->
-    insert into eve_account
-    (character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, refresh_token, 
-      gmt_create, gmt_modified, `type`, qq, user_id)
-    values
-    (#{characterId,jdbcType=INTEGER}, #{characterName,jdbcType=VARCHAR}, #{corpId,jdbcType=INTEGER}, 
-      #{corpName,jdbcType=VARCHAR}, #{allianceId,jdbcType=INTEGER}, #{allianceName,jdbcType=VARCHAR}, 
-      #{refreshToken,jdbcType=VARCHAR}, #{gmtCreate,jdbcType=TIMESTAMP}, #{gmtModified,jdbcType=TIMESTAMP}, 
-      #{type,jdbcType=INTEGER}, #{qq,jdbcType=INTEGER}, #{userId,jdbcType=INTEGER})
-    on duplicate key update 
-    character_id = #{characterId,jdbcType=INTEGER}, 
-    character_name = #{characterName,jdbcType=VARCHAR}, 
-    corp_id = #{corpId,jdbcType=INTEGER}, 
-    corp_name = #{corpName,jdbcType=VARCHAR}, 
-    alliance_id = #{allianceId,jdbcType=INTEGER}, 
-    alliance_name = #{allianceName,jdbcType=VARCHAR}, 
-    refresh_token = #{refreshToken,jdbcType=VARCHAR}, 
-    gmt_create = #{gmtCreate,jdbcType=TIMESTAMP}, 
-    gmt_modified = #{gmtModified,jdbcType=TIMESTAMP}, 
-    `type` = #{type,jdbcType=INTEGER}, 
-    qq = #{qq,jdbcType=INTEGER}, 
-    user_id = #{userId,jdbcType=INTEGER}
-  </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EveAccountPO">
     <!--@mbg.generated-->
     insert into eve_account

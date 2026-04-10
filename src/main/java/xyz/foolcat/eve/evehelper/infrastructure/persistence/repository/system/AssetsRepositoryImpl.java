@@ -43,7 +43,7 @@ public class AssetsRepositoryImpl implements AssetsRepository {
     }
 
     @Override
-    public int insertOrUpdate(Assets record) {
+    public boolean insertOrUpdate(Assets record) {
         return assetsMapper.insertOrUpdate(assetsAssembler.domain2Po(record));
     }
 

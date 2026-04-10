@@ -2,12 +2,10 @@ package xyz.foolcat.eve.evehelper.interfaces.web.controller;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithUserDetails;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -29,8 +27,8 @@ class AssertsControllerTest {
 
     @Test
     void addAssetsList() throws Exception {
-        String url = "/1/asserts/char/2112832425";
-        String result = mockMvc.perform(MockMvcRequestBuilders.get(url))
+        String url = "/assert/2112818290";
+        String result = mockMvc.perform(MockMvcRequestBuilders.put(url))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andDo(MockMvcResultHandlers.print())
                 .andReturn()
@@ -41,7 +39,7 @@ class AssertsControllerTest {
 
     @Test
     void getAssetsList() throws Exception {
-        String url = "/1/assert/2112832425";
+        String url = "/assert/2112818290";
         String result = mockMvc.perform(MockMvcRequestBuilders.get(url))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andDo(MockMvcResultHandlers.print())

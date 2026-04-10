@@ -21,7 +21,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.WebSocket;
 import xyz.foolcat.eve.evehelper.interfaces.web.vo.ExtractionVO;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.text.ParseException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;

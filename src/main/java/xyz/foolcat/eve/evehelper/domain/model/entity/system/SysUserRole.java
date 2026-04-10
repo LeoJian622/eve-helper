@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -28,5 +29,6 @@ public class SysUserRole extends BaseEntity implements Serializable {
      */
     private Long roleId;
 
+    @Serial
     private static final long serialVersionUID = 1L;
 } 

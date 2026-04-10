@@ -2,10 +2,13 @@ package xyz.foolcat.eve.evehelper.infrastructure.config.security;
 
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.convert.Convert;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.lang.Nullable;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.authorization.AuthorizationManager;
+import org.springframework.security.authorization.AuthorizationResult;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
@@ -16,7 +19,6 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.SysPer
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.SecurityConstant;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -42,7 +44,14 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
 
     final PathMatcher pathMatcher = new AntPathMatcher();
 
+    @Nullable
     @Override
+    public AuthorizationResult authorize(Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext requestAuthorizationContext) {
+        return check(authenticationSupplier, requestAuthorizationContext);
+    }
+
+    @Override
+    @Deprecated
     public AuthorizationDecision check(Supplier<Authentication> authenticationSupplier, RequestAuthorizationContext requestAuthorizationContext) {
 
         HttpServletRequest request = requestAuthorizationContext.getRequest();

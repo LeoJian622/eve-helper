@@ -35,7 +35,7 @@ public class SysRoleRepositoryImpl implements SysRoleRepository {
     }
 
     @Override
-    public int insertOrUpdate(SysRole record) {
+    public boolean insertOrUpdate(SysRole record) {
         return sysRoleMapper.insertOrUpdate(sysRoleAssembler.domian2Po(record));
     }
 

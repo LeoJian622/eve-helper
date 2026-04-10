@@ -40,11 +40,11 @@ public class SysUserRepositoryImpl implements SysUserRepository {
 
     @Override
     public SysUser queryByUsername(String username) {
-        return sysUserMapper.queryByUsername(username);
+        return sysUserAssembler.po2Domain(sysUserMapper.queryByUsername(username));
     }
 
     @Override
-    public int insertOrUpdate(SysUser record) {
+    public boolean insertOrUpdate(SysUser record) {
         return sysUserMapper.insertOrUpdate(sysUserAssembler.domain2Po(record));
     }
 

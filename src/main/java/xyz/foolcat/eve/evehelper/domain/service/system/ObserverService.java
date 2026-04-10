@@ -30,7 +30,7 @@ public class ObserverService {
         return observerRepository.batchInsert(list);
     }
 
-    public int insertOrUpdate(Observer record) {
+    public boolean insertOrUpdate(Observer record) {
         return observerRepository.insertOrUpdate(record);
     }
 

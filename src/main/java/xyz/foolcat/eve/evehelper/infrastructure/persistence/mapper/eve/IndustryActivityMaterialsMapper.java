@@ -10,5 +10,4 @@ public interface IndustryActivityMaterialsMapper extends BaseMapper<IndustryActi
 
     int insertSelective(IndustryActivityMaterialsPO industryActivityMaterialsPO);
 
-    int insertOrUpdate(IndustryActivityMaterialsPO industryActivityMaterialsPO);
 }

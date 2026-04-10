@@ -17,7 +17,7 @@ import java.text.ParseException;
 @ActiveProfiles("test")
 @SpringBootTest
 @DisplayName("ESI 请求服务测试")
-@WithUserDetails("user1")
+@WithUserDetails("admin")
 class EsiApiServiceTest {
 
     @Autowired

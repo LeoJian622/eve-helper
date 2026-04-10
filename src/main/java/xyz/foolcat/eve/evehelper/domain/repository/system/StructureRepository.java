@@ -15,7 +15,7 @@ public interface StructureRepository {
 
     int batchInsert(List<Structure> list);
 
-    int insertOrUpdate(Structure record);
+    public boolean insertOrUpdate(Structure record);
 
     int insertOrUpdateSelective(Structure record);
 

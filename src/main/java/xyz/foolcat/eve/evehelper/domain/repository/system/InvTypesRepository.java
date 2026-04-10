@@ -15,7 +15,7 @@ public interface InvTypesRepository {
 
     int batchInsert(List<InvTypes> list);
 
-    int insertOrUpdate(InvTypes record);
+    public boolean insertOrUpdate(InvTypes record);
 
     int insertOrUpdateSelective(InvTypes record);
 

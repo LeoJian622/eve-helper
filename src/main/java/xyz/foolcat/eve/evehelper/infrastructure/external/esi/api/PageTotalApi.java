@@ -3,14 +3,14 @@ package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ErrorResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ErrorResponse;
 
 import java.util.Objects;
 
@@ -42,12 +42,14 @@ public class PageTotalApi {
         ResponseEntity<String> responseEntity = apiClient.get().uri(uri)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .exchangeToMono(response -> {
-                    HttpStatus httpStatus = response.statusCode();
-                    if (httpStatus.is4xxClientError()) {
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription())));
+                    HttpStatusCode httpStatusCode = response.statusCode();
+                    if (httpStatusCode.is4xxClientError()) {
+                        response.bodyToMono(ErrorResponse.class).map(res -> new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))
+                                .flatMap(Mono::error);
                     }
-                    if (httpStatus.is5xxServerError()) {
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription())));
+                    if (httpStatusCode.is5xxServerError()) {
+                        response.bodyToMono(ErrorResponse.class).map(res -> new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))
+                                .flatMap(Mono::error);
                     }
                     return response.toEntity(String.class);
                 }).block();

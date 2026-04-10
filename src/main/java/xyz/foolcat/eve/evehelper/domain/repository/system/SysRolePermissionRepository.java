@@ -7,7 +7,7 @@ import java.util.List;
 public interface SysRolePermissionRepository {
     int batchInsert(List<SysRolePermission> list);
 
-    int insertOrUpdate(SysRolePermission record);
+    public boolean insertOrUpdate(SysRolePermission record);
 
     int insertOrUpdateSelective(SysRolePermission record);
 } 

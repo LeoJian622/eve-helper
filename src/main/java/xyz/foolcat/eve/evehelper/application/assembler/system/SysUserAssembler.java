@@ -60,7 +60,7 @@ public interface SysUserAssembler {
     @Mappings({
             @Mapping(source = "lastLoginTime", target = "gmtModified")
     })
-    List<SysUser> domain2Po(List<SysUser> sysUser);
+    List<SysUserPO> domain2Po(List<SysUser> sysUser);
 
     /**
      * SysUser 转换为 UserDTO
@@ -86,6 +86,4 @@ public interface SysUserAssembler {
             @Mapping(target = "lastLoginTime",ignore = true),
     })
     SysUser userDto2SysUser(UserDTO userDTO);
-
-    SysUserPO domain2po(SysUser user);
-} 
+}

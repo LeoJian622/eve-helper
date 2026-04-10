@@ -30,7 +30,7 @@ public class MarketGroupsService {
 
 
     public int insertSelective(MarketGroups record) {
-        return marketGroupsRepository.insertOrUpdate(record);
+        return marketGroupsRepository.insertOrUpdateSelective(record);
     }
 
 
@@ -39,15 +39,9 @@ public class MarketGroupsService {
     }
 
 
-    public int updateByPrimaryKeySelective(MarketGroups record) {
+    public boolean updateByPrimaryKeySelective(MarketGroups record) {
         return marketGroupsRepository.insertOrUpdate(record);
     }
-
-
-    public int updateByPrimaryKey(MarketGroups record) {
-        return marketGroupsRepository.insertOrUpdate(record);
-    }
-
 
     public int updateBatch(List<MarketGroups> list) {
         return marketGroupsRepository.batchInsert(list);
@@ -65,7 +59,7 @@ public class MarketGroupsService {
         return marketGroupsRepository.batchInsert(list);
     }
 
-    public int insertOrUpdate(MarketGroups record) {
+    public boolean insertOrUpdate(MarketGroups record) {
         return marketGroupsRepository.insertOrUpdate(record);
     }
 
