@@ -3,14 +3,11 @@ package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.ActiveProfiles;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.MailApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
@@ -56,20 +53,17 @@ class MailApiTest {
     @Test
     void addCharacterMail() {
         NewMail newMail = new NewMail();
-        newMail.setSubject("PVE调研，请务必填写，会影响改版后的可刷异常数量");
+        newMail.setSubject("大家无视《PVE调研，请务必填写，会影响改版后的可刷异常数量》这封邮件");
         newMail.setBody("""
-                【腾讯文档】当前版本静寂谷、对舞、特布特、血特、新八的PVE异常调研
-                https://docs.qq.com/form/page/DV3BpYUdRZXVmdXlZ
-                
-                请大家填写一下这个PVE调研表，该数据结果会影响改版后的联盟领地内的PVE插件。""");
+                在调BOT  忘记取消了 """);
 
         Recipient recipient = new Recipient();
         recipient.setRecipientId(656880659);
         recipient.setRecipientType("corporation");
         newMail.setRecipients(List.of(recipient));
 
-        Integer integer = mailApi.addCharacterMail(2112818290, "serenity", newMail, at).block();
-        System.out.println("integer = " + integer);
+//        Integer integer = mailApi.addCharacterMail(2112818290, "serenity", newMail, at).block();
+//        System.out.println("integer = " + integer);
     }
 
     @Test
