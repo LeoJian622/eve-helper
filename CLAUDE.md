@@ -368,3 +368,8 @@ public class BlueprintsQueryHandler implements QueryHandler<BlueprintsQuery, Pag
 - Redis 必须运行才能启动应用
 - 两个 MySQL 数据库 (eve 和 eve_helper) 必须可访问
 - 使用 `.env.example` 作为环境变量配置参考
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->
