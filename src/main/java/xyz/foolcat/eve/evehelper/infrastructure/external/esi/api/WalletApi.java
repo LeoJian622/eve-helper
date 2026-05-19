@@ -30,7 +30,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.WalletTransac
 @Tag(name = "ESI 主权相关接口")
 public class WalletApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     private final PageTotalApi pageTotalApi;
 
@@ -50,7 +50,7 @@ public class WalletApi {
     @Operation(summary = "ESI-人物钱包记录最大页数")
     public Integer queryCharacterWalletJournalMaxPage(Integer characterId, String datasource, String accessesToken) {
         String uri = "/characters/" + characterId + "/wallet/journal/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  esiClient);
     }
 
     /**
@@ -68,7 +68,7 @@ public class WalletApi {
     })
     @Operation(summary = "ESI-人物钱包余额")
     public Mono<Double> queryCharacterWallet(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/wallet/?datasource={datasource}", characterId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/wallet/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -96,7 +96,7 @@ public class WalletApi {
     })
     @Operation(summary = "ESI-人物钱包记录")
     public Flux<WalletJournalResponse> queryCharacterWalletJournal(Integer characterId, String datasource, Integer page, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/wallet/journal/?datasource={datasource}&page={page}", characterId, datasource, page)
+        return esiClient.get().uri("/characters/{character_id}/wallet/journal/?datasource={datasource}&page={page}", characterId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -122,7 +122,7 @@ public class WalletApi {
     @Operation(summary = "ESI-人物钱包市场交易记录最大页数")
     public Integer queryCharacterWalletTransactionsMaxPage(Integer characterId, String datasource, String accessesToken) {
         String uri = "/characters/" + characterId + "/wallet/transactions/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  esiClient);
     }
 
     /**
@@ -142,7 +142,7 @@ public class WalletApi {
     })
     @Operation(summary = "ESI-人物钱包市场交易记录")
     public Flux<WalletTransactionsResponse> queryCharacterWalletTransactions(Integer characterId, String datasource, Long fromId, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/wallet/transactions/?datasource={datasource}&from_id={fromId}", characterId, datasource, fromId)
+        return esiClient.get().uri("/characters/{character_id}/wallet/transactions/?datasource={datasource}&from_id={fromId}", characterId, datasource, fromId)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -168,7 +168,7 @@ public class WalletApi {
     })
     @Operation(summary = "ESI-军团钱包余额")
     public Flux<CorporationWalletsResponse> queryCorporationWallet(Integer corporationId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/wallets/?datasource={datasource}", corporationId, datasource)
+        return esiClient.get().uri("/corporations/{corporation_id}/wallets/?datasource={datasource}", corporationId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -195,7 +195,7 @@ public class WalletApi {
     @Operation(summary = "ESI-军团钱包记录最大页数")
     public Integer queryCorporationWalletJournalMaxPage(Integer corporationId, Integer division, String datasource, String accessesToken) {
         String uri = "/corporations/" + corporationId + "/wallets/" + division + "/journal/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  esiClient);
     }
     /**
      * 军团钱包记录
@@ -214,7 +214,7 @@ public class WalletApi {
     })
     @Operation(summary = "ESI-军团钱包记录")
     public Flux<WalletJournalResponse> queryCorporationWalletJournal(Integer corporationId, Integer division, String datasource, Integer page, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/wallets/{division}/journal/?datasource={datasource}&page={page}", corporationId, division, datasource, page)
+        return esiClient.get().uri("/corporations/{corporation_id}/wallets/{division}/journal/?datasource={datasource}&page={page}", corporationId, division, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -241,7 +241,7 @@ public class WalletApi {
     })
     @Operation(summary = "ESI-军团钱包交易记录")
     public Flux<WalletTransactionsResponse> queryCorporationWalletTransactions(Integer corporationId, Integer division, String datasource, Long fromId, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/wallets/{division}/transactions/?datasource={datasource}&from_id={fromId}", corporationId, division, datasource, fromId)
+        return esiClient.get().uri("/corporations/{corporation_id}/wallets/{division}/transactions/?datasource={datasource}&from_id={fromId}", corporationId, division, datasource, fromId)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->

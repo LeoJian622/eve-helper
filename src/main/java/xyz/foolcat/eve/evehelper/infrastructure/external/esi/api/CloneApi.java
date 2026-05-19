@@ -28,7 +28,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 @Tag(name = "ESI 人物克隆信息接口")
 public class CloneApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 人物克隆体信息
@@ -45,7 +45,7 @@ public class CloneApi {
     })
     @Operation(summary = "ESI-人物克隆体信息")
     public Mono<CloneResponse> queryCharacterClone(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/clones/?datasource={datasource}", characterId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/clones/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -70,7 +70,7 @@ public class CloneApi {
     })
     @Operation(summary = "ESI-植入体信息")
     public Flux<Integer> queryCharacterImplant(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/implants/?datasource={datasource}", characterId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/implants/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->

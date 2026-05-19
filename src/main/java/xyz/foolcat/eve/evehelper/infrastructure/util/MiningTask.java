@@ -14,7 +14,7 @@ import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.domain.service.eve.InvuniquenamesService;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.service.system.StructureService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.WebSocket;
@@ -108,7 +108,7 @@ public class MiningTask {
 
 
     private @NotNull String requestMiningExtractable(Integer corporationId, Integer day, String accessToken) {
-        Integer maxPage = industryApi.queryCorporationMiningExtractionsMaxPage(corporationId, EsiClient.SERENITY, accessToken);
+        Integer maxPage = industryApi.queryCorporationMiningExtractionsMaxPage(corporationId, EsiClientConfig.SERENITY, accessToken);
 
         /*
          * day天后的时间
@@ -117,7 +117,7 @@ public class MiningTask {
         OffsetDateTime after1Day = startTime.plusDays(day);
 
         List<ExtractionVO> extractionVOS = Stream.iterate(1, i -> i + 1).limit(maxPage)
-                .map(i -> industryApi.queryCorporationMiningExtractions(corporationId, EsiClient.SERENITY, i, accessToken).collectList().block())
+                .map(i -> industryApi.queryCorporationMiningExtractions(corporationId, EsiClientConfig.SERENITY, i, accessToken).collectList().block())
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
                 .filter(chunkTimersResponse -> chunkTimersResponse.getChunkArrivalTime().isBefore(after1Day))

@@ -30,7 +30,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 @Tag(name = "ESI 人物技能接口")
 public class SkillApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      *
@@ -48,7 +48,7 @@ public class SkillApi {
     })
     @Operation(summary = "ESI-人物属性相关信息")
     public Mono<CharacterAttributesResponse> queryCharactersAttributes(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/attributes/?datasource={datasource}",characterId,datasource)
+        return esiClient.get().uri("/characters/{character_id}/attributes/?datasource={datasource}",characterId,datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -74,7 +74,7 @@ public class SkillApi {
     })
     @Operation(summary = "ESI-人物属性相关信息")
     public Flux<SkillQueueResponse> queryCharactersSkillqueue(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/skillqueue/?datasource={datasource}",characterId,datasource)
+        return esiClient.get().uri("/characters/{character_id}/skillqueue/?datasource={datasource}",characterId,datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -100,7 +100,7 @@ public class SkillApi {
     })
     @Operation(summary = "ESI-人物属性相关信息")
     public Mono<CharacterSkillResponse> queryCharactersSkills(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/skills/?datasource={datasource}",characterId,datasource)
+        return esiClient.get().uri("/characters/{character_id}/skills/?datasource={datasource}",characterId,datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->

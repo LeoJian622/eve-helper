@@ -10,7 +10,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
 import xyz.foolcat.eve.evehelper.domain.repository.system.StructureRepository;
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CorporationApi;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
@@ -117,13 +117,13 @@ public class StructureService {
         /*
           获取总页数
          */
-        Integer maxPage = corporationApi.queryCorporationStructuresMaxPage(eveAccount.getCorpId(), EsiClient.SERENITY, accessToken);
+        Integer maxPage = corporationApi.queryCorporationStructuresMaxPage(eveAccount.getCorpId(), EsiClientConfig.SERENITY, accessToken);
 
         /*
           从ESI获取建筑列表
          */
         List<Structure> structures = Stream.iterate(1, i -> i + 1).limit(maxPage)
-                .map(i -> corporationApi.queryCorporationStructures(eveAccount.getCorpId(), EsiClient.SERENITY, "zh", i, accessToken)
+                .map(i -> corporationApi.queryCorporationStructures(eveAccount.getCorpId(), EsiClientConfig.SERENITY, "zh", i, accessToken)
                         .collectList().block())
                 .sequential().filter(Objects::nonNull)
                 .flatMap(Collection::stream)

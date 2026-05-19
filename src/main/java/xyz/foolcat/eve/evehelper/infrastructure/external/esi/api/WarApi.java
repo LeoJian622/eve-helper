@@ -28,7 +28,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 @Tag(name = "ESI 战争接口")
 public class WarApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     private final PageTotalApi pageTotalApi;
 
@@ -43,7 +43,7 @@ public class WarApi {
     })
     @Operation(summary = "ESI-战争ID清单")
     public Flux<Integer> queryWars(String datasource) {
-        return apiClient.get().uri("/wars/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/wars/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -65,7 +65,7 @@ public class WarApi {
     })
     @Operation(summary = "ESI-战争详细信息")
     public Mono<WarDetailsResponse> queryWarDetails(Integer warId, String datasource) {
-        return apiClient.get().uri("/wars/{war_id}/?datasource={datasource}", warId, datasource)
+        return esiClient.get().uri("/wars/{war_id}/?datasource={datasource}", warId, datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -88,7 +88,7 @@ public class WarApi {
     @Operation(summary = "ESI-战争击毁报告最大页数")
     public Integer queryWarsKillMailsMaxPage(Integer warId, String datasource) {
         String uri = "/wars/" + warId + "/killmails/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage("", uri, apiClient);
+        return pageTotalApi.queryMaxPage("", uri, esiClient);
     }
 
     /**
@@ -106,7 +106,7 @@ public class WarApi {
     })
     @Operation(summary = "ESI-战争击毁报告")
     public Flux<KillMailsIdAndHashResponse> queryWarsKillMails(Integer warId, String datasource, Integer page) {
-        return apiClient.get().uri("/wars/{war_id}/killmails/?datasource={datasource}&page={page}", warId, datasource, page)
+        return esiClient.get().uri("/wars/{war_id}/killmails/?datasource={datasource}&page={page}", warId, datasource, page)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

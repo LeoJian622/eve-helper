@@ -27,7 +27,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.IncursionsRes
 @Tag(name = "ESI 入侵星系信息")
 public class IncursionsApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 入侵星系信息
@@ -40,7 +40,7 @@ public class IncursionsApi {
     })
     @Operation(summary = "ESI-入侵星系信息")
     public Flux<IncursionsResponse> queryIncursions(String datasource) {
-        return apiClient.get().uri("/incursions/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/incursions/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

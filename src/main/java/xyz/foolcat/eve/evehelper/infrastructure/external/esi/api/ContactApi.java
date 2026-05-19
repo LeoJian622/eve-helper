@@ -31,7 +31,7 @@ import java.util.List;
 @Tag(name = "ESI 联系人接口")
 public class ContactApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     private final PageTotalApi pageTotalApi;
 
@@ -51,7 +51,7 @@ public class ContactApi {
     @Operation(summary = "ESI-联盟联系人最大页数")
     public Integer queryAlliancesContactsMaxPage(Long allianceId, String datasource, String accessesToken) {
         String uri = "/alliances/" + allianceId + "/contacts/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri, apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri, esiClient);
     }
 
     /**
@@ -70,7 +70,7 @@ public class ContactApi {
     })
     @Operation(summary = "ESI-联盟联系人")
     public Flux<ContactResponse> queryAlliancesContacts(Long allianceId, String datasource, Integer page, String accessesToken) {
-        return apiClient.get().uri("/alliances/{alliance_id}/contacts/?datasource={datasource}&page={page}", allianceId, datasource, page)
+        return esiClient.get().uri("/alliances/{alliance_id}/contacts/?datasource={datasource}&page={page}", allianceId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -97,7 +97,7 @@ public class ContactApi {
     })
     @Operation(summary = "ESI-联盟联系人自定义标签")
     public Flux<ContactLabelResponse> queryAlliancesContactsLabel(Long allianceId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/alliances/{alliance_id}/contacts/labels/?datasource={datasource}", allianceId, datasource)
+        return esiClient.get().uri("/alliances/{alliance_id}/contacts/labels/?datasource={datasource}", allianceId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -124,7 +124,7 @@ public class ContactApi {
     })
     @Operation(summary = "ESI-人物删除人物联系人")
     public Mono<Object> deleteCharactersContacts(Integer characterId, String datasource, List<Long> contactIds, String accessesToken) {
-        return apiClient.delete().uri("/characters/{character_id}/contacts/?datasource={datasource}&contact_ids={contact_ids}", characterId, datasource, contactIds.toArray())
+        return esiClient.delete().uri("/characters/{character_id}/contacts/?datasource={datasource}&contact_ids={contact_ids}", characterId, datasource, contactIds.toArray())
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -150,7 +150,7 @@ public class ContactApi {
     @Operation(summary = "ESI-人物联系人最大页数")
     public Integer queryCharactersContactsMaxPage(Integer characterId, String datasource, String accessesToken) {
         String uri = "/characters/" + characterId + "/contacts/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  esiClient);
     }
 
     /**
@@ -168,7 +168,7 @@ public class ContactApi {
     })
     @Operation(summary = "ESI-人物获取联系人")
     public Flux<ContactResponse> queryCharactersContacts(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/contacts/?datasource={datasource}", characterId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/contacts/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -201,7 +201,7 @@ public class ContactApi {
     })
     @Operation(summary = "ESI-人物添加联系人")
     public Flux<Long> addCharactersContacts(Integer characterId, String datasource, List<Long> contactIds, List<Long> labelIds, Integer standing, boolean watched, String accessesToken) {
-        return apiClient.post().uri("/characters/{character_id}/contacts/?datasource={datasource}&label_ids={label_ids}&standing={standing}&watched={watched}", characterId, datasource, labelIds.toArray(), standing, watched)
+        return esiClient.post().uri("/characters/{character_id}/contacts/?datasource={datasource}&label_ids={label_ids}&standing={standing}&watched={watched}", characterId, datasource, labelIds.toArray(), standing, watched)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .body(Mono.just(contactIds), List.class)
                 .retrieve()
@@ -235,7 +235,7 @@ public class ContactApi {
     })
     @Operation(summary = "ESI-人物更新联系人")
     public Mono<Object> updateCharactersContacts(Integer characterId, String datasource, List<Long> contactIds, List<Long> labelIds, Integer standing, boolean watched, String accessesToken) {
-        return apiClient.put().uri("/characters/{character_id}/contacts/?datasource={datasource}&label_ids={label_ids}&standing={standing}&watched={watched}", characterId, datasource, labelIds.toArray(), standing, watched)
+        return esiClient.put().uri("/characters/{character_id}/contacts/?datasource={datasource}&label_ids={label_ids}&standing={standing}&watched={watched}", characterId, datasource, labelIds.toArray(), standing, watched)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .body(Mono.just(contactIds), List.class)
                 .retrieve()
@@ -261,7 +261,7 @@ public class ContactApi {
     })
     @Operation(summary = "ESI-人物联系人自定义标签")
     public Flux<ContactLabelResponse> queryCharactersContactsLabel(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/contacts/labels/?datasource={datasource}", characterId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/contacts/labels/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -287,7 +287,7 @@ public class ContactApi {
     @Operation(summary = "ESI-军团联系人最大页数")
     public Integer queryCorporationsContactsMaxPage(Integer corporationId, String datasource, String accessesToken) {
         String uri = "/corporations/" + corporationId + "/contacts/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  esiClient);
     }
 
 
@@ -306,7 +306,7 @@ public class ContactApi {
     })
     @Operation(summary = "ESI-军团联系人")
     public Flux<ContactResponse> queryCorporationsContacts(Integer corporationId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/contacts/?datasource={datasource}", corporationId, datasource)
+        return esiClient.get().uri("/corporations/{corporation_id}/contacts/?datasource={datasource}", corporationId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -331,7 +331,7 @@ public class ContactApi {
     })
     @Operation(summary = "ESI-军团联系人自定义标签")
     public Flux<ContactLabelResponse> queryCorporationsContactsLabel(Integer corporationId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/contacts/labels/?datasource={datasource}", corporationId, datasource)
+        return esiClient.get().uri("/corporations/{corporation_id}/contacts/labels/?datasource={datasource}", corporationId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->

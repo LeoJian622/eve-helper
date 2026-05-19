@@ -10,7 +10,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.domain.repository.system.WalletJournalRepository;
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.WalletApi;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
@@ -87,13 +87,13 @@ public class WalletJournalService {
         /*
           获取总页数
          */
-        Integer maxPage = walletApi.queryCorporationWalletJournalMaxPage(eveAccount.getCorpId(), 1, EsiClient.SERENITY, accessToken);
+        Integer maxPage = walletApi.queryCorporationWalletJournalMaxPage(eveAccount.getCorpId(), 1, EsiClientConfig.SERENITY, accessToken);
 
         /*
          * 获取钱包记录
          */
         List<WalletJournal> walletJournals = Stream.iterate(1, i -> i + 1).limit(maxPage)
-                .map(i -> walletApi.queryCorporationWalletJournal(eveAccount.getCorpId(), 1, EsiClient.SERENITY, i, accessToken)
+                .map(i -> walletApi.queryCorporationWalletJournal(eveAccount.getCorpId(), 1, EsiClientConfig.SERENITY, i, accessToken)
                         .collectList().block())
                 .sequential().filter(Objects::nonNull)
                 .flatMap(Collection::stream)

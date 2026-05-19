@@ -38,8 +38,8 @@ public class PageTotalApi {
      * @param uri           请求的uri
      * @return 最大页数
      */
-    public int queryMaxPage(String accessesToken, String uri, WebClient apiClient) {
-        ResponseEntity<String> responseEntity = apiClient.get().uri(uri)
+    public int queryMaxPage(String accessesToken, String uri, WebClient esiClient) {
+        ResponseEntity<String> responseEntity = esiClient.get().uri(uri)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .exchangeToMono(response -> {
                     HttpStatusCode httpStatusCode = response.statusCode();

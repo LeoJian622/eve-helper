@@ -11,11 +11,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ErrorResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.LoyaltyPointsResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.OfferResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 
 /**
  * ESI 忠诚点接口
@@ -29,7 +29,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 @Tag(name = "ESI 忠诚点接口")
 public class LoyaltyApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 人物的忠诚度点列表
@@ -46,7 +46,7 @@ public class LoyaltyApi {
     })
     @Operation(summary = "ESI-人物的忠诚度点列表")
     public Flux<LoyaltyPointsResponse> queryCharacterLoyaltyPoints(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/loyalty/points/?datasource={datasource}", characterId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/loyalty/points/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -69,7 +69,7 @@ public class LoyaltyApi {
     })
     @Operation(summary = "ESI-忠诚点商店兑换列表")
     public Flux<OfferResponse> queryCorporationLoyaltyPoints(Integer corporationId, String datasource) {
-        return apiClient.get().uri("/loyalty/stores/{corporation_id}/offers/?datasource={datasource}", corporationId, datasource)
+        return esiClient.get().uri("/loyalty/stores/{corporation_id}/offers/?datasource={datasource}", corporationId, datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

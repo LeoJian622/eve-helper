@@ -27,7 +27,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.NewMailU
 @Tag(name = "ESI 用户界面操作接口")
 public class UserInterfaceApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 添加自动导航航标
@@ -48,7 +48,7 @@ public class UserInterfaceApi {
     })
     @Operation(summary = "ESI-添加自动导航航标")
     public Mono<Object> addWaypoint(String datasource, Boolean addToBeginning, Boolean clearOtherWaypoints, Long destinationId, String accessesToken) {
-        return apiClient.post().uri("/ui/autopilot/waypoint/?datasource={datasource}&add_to_beginning={addToBeginning}&clear_other_waypoints={clearOtherWaypoints}&destination_id={destinationId}",
+        return esiClient.post().uri("/ui/autopilot/waypoint/?datasource={datasource}&add_to_beginning={addToBeginning}&clear_other_waypoints={clearOtherWaypoints}&destination_id={destinationId}",
                         datasource, addToBeginning, clearOtherWaypoints, destinationId)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -74,7 +74,7 @@ public class UserInterfaceApi {
     })
     @Operation(summary = "ESI-在游戏中打开对应的合同")
     public Mono<Object> openContract(String datasource, Integer contractId, String accessesToken) {
-        return apiClient.post().uri("/ui/openwindow/contract/?datasource={datasource}&contract_id={contractId}",
+        return esiClient.post().uri("/ui/openwindow/contract/?datasource={datasource}&contract_id={contractId}",
                         datasource, contractId)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -100,7 +100,7 @@ public class UserInterfaceApi {
     })
     @Operation(summary = "ESI-打开客户端内角色、公司或联盟的信息窗口")
     public Mono<Object> openInformation(String datasource, Integer targetId, String accessesToken) {
-        return apiClient.post().uri("/ui/openwindow/information/?datasource={datasource}&target_id={targetId}",
+        return esiClient.post().uri("/ui/openwindow/information/?datasource={datasource}&target_id={targetId}",
                         datasource, targetId)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -126,7 +126,7 @@ public class UserInterfaceApi {
     })
     @Operation(summary = "ESI-在客户端中打开特定 typeID 的市场详细信息窗口")
     public Mono<Object> openMarketDetails(String datasource, Integer typeId, String accessesToken) {
-        return apiClient.post().uri("/ui/openwindow/marketdetails/?datasource={datasource}&type_id={typeId}",
+        return esiClient.post().uri("/ui/openwindow/marketdetails/?datasource={datasource}&type_id={typeId}",
                         datasource, typeId)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
@@ -152,7 +152,7 @@ public class UserInterfaceApi {
     })
     @Operation(summary = "ESI-根据请求中的设置（如果适用）打开“新建邮件”窗口")
     public Mono<Object> openNewMail(String datasource, NewMailUI newMail, String accessesToken) {
-        return apiClient.post().uri("/ui/openwindow/newmail/?datasource={datasource}",
+        return esiClient.post().uri("/ui/openwindow/newmail/?datasource={datasource}",
                         datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .body(Mono.just(newMail), NewMailUI.class)

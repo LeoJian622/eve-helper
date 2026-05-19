@@ -8,7 +8,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.IndustryJob;
 import xyz.foolcat.eve.evehelper.domain.repository.system.IndustryJobRepository;
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.IndustryActivityEnum;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
@@ -82,9 +82,9 @@ public class IndustryJobService  {
             /*
              * 获取公司生产线
              */
-            Integer maxPage = industryApi.queryCorporationIndustryJobsMaxPage(eveAccount.getCorpId(), EsiClient.SERENITY, includeCompleted, accessToken);
+            Integer maxPage = industryApi.queryCorporationIndustryJobsMaxPage(eveAccount.getCorpId(), EsiClientConfig.SERENITY, includeCompleted, accessToken);
 
-            List<IndustryJob> industryJobs = Stream.iterate(1, i -> i + 1).limit(maxPage).map(i -> industryApi.queryCorporationIndustryJobs(eveAccount.getCorpId(), EsiClient.SERENITY, true, accessToken).collectList().block())
+            List<IndustryJob> industryJobs = Stream.iterate(1, i -> i + 1).limit(maxPage).map(i -> industryApi.queryCorporationIndustryJobs(eveAccount.getCorpId(), EsiClientConfig.SERENITY, true, accessToken).collectList().block())
                     .sequential().filter(Objects::nonNull)
                     .flatMap(Collection::stream)
                     .map(inJob -> industryJobAssembler.toIndustryJob(inJob, eveAccount.getCorpId()))
@@ -94,7 +94,7 @@ public class IndustryJobService  {
             /*
              * 获取人物生产线
              */
-            List<IndustryJob> industryJobs = Objects.requireNonNull(industryApi.queryCharacterIndustryJobs(eveAccount.getCharacterId(), EsiClient.SERENITY, includeCompleted, accessToken).collectList().block())
+            List<IndustryJob> industryJobs = Objects.requireNonNull(industryApi.queryCharacterIndustryJobs(eveAccount.getCharacterId(), EsiClientConfig.SERENITY, includeCompleted, accessToken).collectList().block())
                     .stream()
                     .map(industryJobPlacedResponse -> industryJobAssembler.toIndustryJob(industryJobPlacedResponse, null))
                     .collect(Collectors.toList());

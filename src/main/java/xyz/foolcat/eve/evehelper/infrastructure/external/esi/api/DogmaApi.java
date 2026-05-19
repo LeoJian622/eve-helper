@@ -29,7 +29,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 @Tag(name = "ESI 属性接口")
 public class DogmaApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 属性ID列表
@@ -42,7 +42,7 @@ public class DogmaApi {
     })
     @Operation(summary = "ESI-属性ID列表")
     public Flux<Integer> queryAttributes(String datasource) {
-        return apiClient.get().uri("/dogma/attributes/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/dogma/attributes/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -64,7 +64,7 @@ public class DogmaApi {
     })
     @Operation(summary = "ESI-属性详情")
     public Mono<DogmaAttributeResponse> queryAttribute(Integer attributeId, String datasource) {
-        return apiClient.get().uri("/dogma/attributes/{attribute_id}/?datasource={datasource}", attributeId, datasource)
+        return esiClient.get().uri("/dogma/attributes/{attribute_id}/?datasource={datasource}", attributeId, datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -88,7 +88,7 @@ public class DogmaApi {
     })
     @Operation(summary = "ESI-深渊装备属性详情")
     public Mono<DynamicItemResponse> queryAttribute(Integer typeId, Integer itemId, String datasource) {
-        return apiClient.get().uri("/dogma/dynamic/items/{type_id}/{item_id}/?datasource={datasource}", typeId, itemId, datasource)
+        return esiClient.get().uri("/dogma/dynamic/items/{type_id}/{item_id}/?datasource={datasource}", typeId, itemId, datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -108,7 +108,7 @@ public class DogmaApi {
     })
     @Operation(summary = "ESI-属性影响ID列表")
     public Flux<Integer> queryEffects(String datasource) {
-        return apiClient.get().uri("/dogma/effects/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/dogma/effects/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -130,7 +130,7 @@ public class DogmaApi {
     })
     @Operation(summary = "ESI-深渊属性影响详情")
     public Mono<DogmaEffectResponse> queryEffect(Integer effectId, String datasource) {
-        return apiClient.get().uri("/dogma/effects/{effect_id}/?datasource={datasource}", effectId, datasource)
+        return esiClient.get().uri("/dogma/effects/{effect_id}/?datasource={datasource}", effectId, datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

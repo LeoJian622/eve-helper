@@ -32,7 +32,7 @@ import java.util.List;
 @Tag(name = "ESI 资产相关接口")
 public class AssetsApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     private final PageTotalApi pageTotalApi;
 
@@ -52,7 +52,7 @@ public class AssetsApi {
     @Operation(summary = "ESI-人物资产清单最大页数")
     public Integer queryCharactersAssetsMaxPage(Integer characterId, String datasource, String accessesToken) {
         String uri = "/characters/" + characterId + "/assets/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  esiClient);
     }
 
     /**
@@ -73,7 +73,7 @@ public class AssetsApi {
     })
     @Operation(summary = "ESI-人物资产清单")
     public Flux<AssetResponse> queryCharactersAssets(Integer characterId, String datasource, Integer page, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/assets/?datasource={datasource}&page={page}",characterId,datasource,page)
+        return esiClient.get().uri("/characters/{character_id}/assets/?datasource={datasource}&page={page}",characterId,datasource,page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -101,7 +101,7 @@ public class AssetsApi {
     })
     @Operation(summary = "ESI-人物物品位置信息")
     public Flux<AssetsLocationResponse> queryCharactersAssetsLocations(Integer characterId, String datasource, List<Long> itemIds, String accessesToken) {
-        return apiClient.post().uri("/characters/{character_id}/assets/locations/?datasource={datasource}",characterId,datasource)
+        return esiClient.post().uri("/characters/{character_id}/assets/locations/?datasource={datasource}",characterId,datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(itemIds),List.class)
@@ -131,7 +131,7 @@ public class AssetsApi {
     })
     @Operation(summary = "ESI-角色物品命名信息")
     public Flux<AssetsNameResponse> queryCharactersAssetsNames(Integer characterId, String datasource, List<Long> itemIds, String accessesToken) {
-        return apiClient.post().uri("/characters/{character_id}/assets/names/?datasource={datasource}",characterId,datasource)
+        return esiClient.post().uri("/characters/{character_id}/assets/names/?datasource={datasource}",characterId,datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(itemIds),List.class)
@@ -159,7 +159,7 @@ public class AssetsApi {
     @Operation(summary = "ESI-军团资产清单最大页数")
     public Integer queryCorporationsAssetsMaxPage(Integer corporationId, String datasource, String accessesToken) {
         String uri = "/corporations/" + corporationId + "/assets/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  esiClient);
     }
 
     /**
@@ -180,7 +180,7 @@ public class AssetsApi {
     })
     @Operation(summary = "ESI-军团资产清单")
     public Flux<AssetResponse> queryCorporationsAssets(Integer corporationId, String datasource, Integer page, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/assets/?datasource={datasource}&page={page}",corporationId,datasource,page)
+        return esiClient.get().uri("/corporations/{corporation_id}/assets/?datasource={datasource}&page={page}",corporationId,datasource,page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -208,7 +208,7 @@ public class AssetsApi {
     })
     @Operation(summary = "ESI-军团物品位置信息")
     public Flux<AssetsLocationResponse> queryCorporationsAssetsLocations(Integer corporationId, String datasource, List<Long> itemIds, String accessesToken) {
-        return apiClient.post().uri("/corporations/{corporation_id}/assets/locations/?datasource={datasource}",corporationId,datasource)
+        return esiClient.post().uri("/corporations/{corporation_id}/assets/locations/?datasource={datasource}",corporationId,datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(itemIds),List.class)
@@ -238,7 +238,7 @@ public class AssetsApi {
     })
     @Operation(summary = "ESI-军团物品命名信息")
     public Flux<AssetsNameResponse> queryCorporationsAssetsNames(Integer corporationId, String datasource, List<Long> itemIds, String accessesToken) {
-        return apiClient.post().uri("/corporations/{corporation_id}/assets/names/?datasource={datasource}",corporationId,datasource)
+        return esiClient.post().uri("/corporations/{corporation_id}/assets/names/?datasource={datasource}",corporationId,datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(itemIds),List.class)

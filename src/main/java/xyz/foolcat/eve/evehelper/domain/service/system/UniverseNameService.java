@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.application.assembler.system.UniverseNameAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
 import xyz.foolcat.eve.evehelper.domain.repository.system.UniverseNameRepository;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UniverseApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.Id2NameResponse;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
@@ -58,7 +58,7 @@ public class UniverseNameService  {
 
         List<UniverseName> newUnivereName = new ArrayList<>();
         if (!noInItems.isEmpty()) {
-            List<Id2NameResponse> nameResponses = universeApi.queryUniverseNames(noInItems, EsiClient.SERENITY).collectList().block();
+            List<Id2NameResponse> nameResponses = universeApi.queryUniverseNames(noInItems, EsiClientConfig.SERENITY).collectList().block();
             assert nameResponses != null;
             newUnivereName = nameResponses.stream().map(universeNameAssembler::id2NameResponse2UniverseName).collect(Collectors.toList());
             try {

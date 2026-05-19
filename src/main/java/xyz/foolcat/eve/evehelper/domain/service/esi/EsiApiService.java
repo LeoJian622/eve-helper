@@ -12,7 +12,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CharacterApi;
@@ -128,10 +128,10 @@ public class EsiApiService {
         Integer characterId = Integer.parseInt(jwtClaimsSet.getStringClaim("sub").split(":")[2]);
         String characterName = jwtClaimsSet.getStringClaim("name");
         //获取角色信息
-        CharacterPublicInfoResponse characterPublicInfoResponse = characterApi.queryCharacter(characterId, EsiClient.SERENITY).block();
+        CharacterPublicInfoResponse characterPublicInfoResponse = characterApi.queryCharacter(characterId, EsiClientConfig.SERENITY).block();
         //联盟军团名称
         assert characterPublicInfoResponse != null;
-        List<Id2NameResponse> nameResponses = universeApi.queryUniverseNames(List.of(characterPublicInfoResponse.getAllianceId(), characterPublicInfoResponse.getCorporationId()), EsiClient.SERENITY).collectList().block();
+        List<Id2NameResponse> nameResponses = universeApi.queryUniverseNames(List.of(characterPublicInfoResponse.getAllianceId(), characterPublicInfoResponse.getCorporationId()), EsiClientConfig.SERENITY).collectList().block();
         assert nameResponses != null;
         Map<Integer, String> universeNameMap = nameResponses.stream().collect(Collectors.toMap(Id2NameResponse::getId, Id2NameResponse::getName, (k1, k2) -> k1));
 

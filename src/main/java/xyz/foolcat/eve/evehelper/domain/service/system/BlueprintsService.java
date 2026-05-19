@@ -8,7 +8,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.Blueprints;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsRepository;
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CorporationApi;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
@@ -50,7 +50,7 @@ public class BlueprintsService {
         String accessToken = esiApiService.getAccessToken(cid, eveAccount.getUserId());
 
         if (isCor != null && isCor) {
-            Integer maxPage = corporationApi.queryCorporationBlueprintsMaxPage(eveAccount.getCorpId(), EsiClient.SERENITY, accessToken);
+            Integer maxPage = corporationApi.queryCorporationBlueprintsMaxPage(eveAccount.getCorpId(), EsiClientConfig.SERENITY, accessToken);
 
         }
 

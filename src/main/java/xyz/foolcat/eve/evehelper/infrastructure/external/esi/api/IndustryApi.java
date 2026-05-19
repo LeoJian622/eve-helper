@@ -27,7 +27,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 @Tag(name = "ESI 工业生产")
 public class IndustryApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     private final PageTotalApi pageTotalApi;
 
@@ -48,7 +48,7 @@ public class IndustryApi {
     })
     @Operation(summary = "ESI-工业生产项目")
     public Flux<IndustryJobPlacedResponse> queryCharacterIndustryJobs(Integer characterId, String datasource, Boolean includeCompleted, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/industry/jobs/?datasource={datasource}&include_completed={include_completed}", characterId, datasource, includeCompleted)
+        return esiClient.get().uri("/characters/{character_id}/industry/jobs/?datasource={datasource}&include_completed={include_completed}", characterId, datasource, includeCompleted)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -74,7 +74,7 @@ public class IndustryApi {
     @Operation(summary = "ESI-人物采矿明细记录最大页数")
     public Integer queryCharacterMiningMaxPage(Integer characterId, String datasource, String accessesToken) {
         String uri = "/characters/" + characterId + "/mining/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri, apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri, esiClient);
     }
 
 
@@ -95,7 +95,7 @@ public class IndustryApi {
     })
     @Operation(summary = "ESI-人物采矿明细记录")
     public Flux<MiningLedgerResponse> queryCharacterMining(Integer characterId, String datasource, Integer page, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/mining/?datasource={datasource}&page={page}", characterId, datasource, page)
+        return esiClient.get().uri("/characters/{character_id}/mining/?datasource={datasource}&page={page}", characterId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -121,7 +121,7 @@ public class IndustryApi {
     @Operation(summary = "ESI-开采碎裂计时最大页数")
     public Integer queryCorporationMiningExtractionsMaxPage(Integer corporationId, String datasource, String accessesToken) {
         String uri = "/corporation/" + corporationId + "/mining/extractions/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri, apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri, esiClient);
     }
 
     /**
@@ -141,7 +141,7 @@ public class IndustryApi {
     })
     @Operation(summary = "ESI-开采碎裂计时")
     public Flux<ChunkTimersResponse> queryCorporationMiningExtractions(Integer corporationId, String datasource, Integer page, String accessesToken) {
-        return apiClient.get().uri("/corporation/{corporation_id}/mining/extractions/?datasource={datasource}&page={page}", corporationId, datasource, page)
+        return esiClient.get().uri("/corporation/{corporation_id}/mining/extractions/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -167,7 +167,7 @@ public class IndustryApi {
     @Operation(summary = "ESI-军团开采记录最大页数")
     public Integer queryCorporationMiningObserversMaxPage(Integer corporationId, String datasource, String accessesToken) {
         String uri = "/corporation/" + corporationId + "/mining/observers/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri, apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri, esiClient);
     }
 
     /**
@@ -187,7 +187,7 @@ public class IndustryApi {
     })
     @Operation(summary = "ESI-军团开采记录")
     public Flux<CorporationObserverResponse> queryCorporationMiningObservers(Integer corporationId, String datasource, Integer page, String accessesToken) {
-        return apiClient.get().uri("/corporation/{corporation_id}/mining/observers/?datasource={datasource}&page={page}", corporationId, datasource, page)
+        return esiClient.get().uri("/corporation/{corporation_id}/mining/observers/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -215,7 +215,7 @@ public class IndustryApi {
     @Operation(summary = "ESI-军团单个建筑采矿明细最大页数")
     public Integer queryCorporationMiningObserverMaxPage(Integer corporationId, Long observerId, String datasource, String accessesToken) {
         String uri = "/corporation/" + corporationId + "/mining/observers/" + observerId + "/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri, apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri, esiClient);
     }
 
     /**
@@ -237,7 +237,7 @@ public class IndustryApi {
     })
     @Operation(summary = "ESI-军团单个建筑采矿明细")
     public Flux<ObserverMiningLedgerResponse> queryCorporationMiningObserver(Integer corporationId, String datasource, Long observerId, Integer page, String accessesToken) {
-        return apiClient.get().uri("/corporation/{corporation_id}/mining/observers/{observer_id}/?datasource={datasource}&page={page}", corporationId, observerId, datasource, page)
+        return esiClient.get().uri("/corporation/{corporation_id}/mining/observers/{observer_id}/?datasource={datasource}&page={page}", corporationId, observerId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -263,7 +263,7 @@ public class IndustryApi {
     @Operation(summary = "ESI-军团工业生产项目最大页数")
     public Integer queryCorporationIndustryJobsMaxPage(Integer corporationId, String datasource, Boolean includeCompleted, String accessesToken) {
         String uri = "/corporations/" + corporationId + "/industry/jobs/?datasource=" + datasource + "&include_completed=" + includeCompleted + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri, apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri, esiClient);
     }
 
     /**
@@ -283,7 +283,7 @@ public class IndustryApi {
     })
     @Operation(summary = "ESI-军团工业生产项目")
     public Flux<IndustryJobPlacedResponse> queryCorporationIndustryJobs(Integer corporationId, String datasource, Boolean includeCompleted, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/industry/jobs/?datasource={datasource}&include_completed={include_completed}", corporationId, datasource, includeCompleted)
+        return esiClient.get().uri("/corporations/{corporation_id}/industry/jobs/?datasource={datasource}&include_completed={include_completed}", corporationId, datasource, includeCompleted)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -305,7 +305,7 @@ public class IndustryApi {
     })
     @Operation(summary = "ESI-军团工业生产项目")
     public Flux<FacilitiesResponse> queryIndustryFacilities(String datasource) {
-        return apiClient.get().uri("/industry/facilities/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/industry/facilities/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -325,7 +325,7 @@ public class IndustryApi {
     })
     @Operation(summary = "ESI-星系工业成本系数")
     public Flux<CostIndiciesResponse> queryIndustrySystems(String datasource) {
-        return apiClient.get().uri("/industry/systems/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/industry/systems/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

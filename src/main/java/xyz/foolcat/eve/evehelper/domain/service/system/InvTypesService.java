@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.application.assembler.system.InvTypesAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.InvTypes;
 import xyz.foolcat.eve.evehelper.domain.repository.system.InvTypesRepository;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UniverseApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.TypeInfoResponse;
 
@@ -65,7 +65,7 @@ public class InvTypesService {
      * @return
      */
     public InvTypes updateTypeByTypeId(Integer typeId){
-        TypeInfoResponse typeInfoResponse = universeApi.queryUniverseType(typeId, EsiClient.SERENITY, EsiClient.ZH_CN).block();
+        TypeInfoResponse typeInfoResponse = universeApi.queryUniverseType(typeId, EsiClientConfig.SERENITY, EsiClientConfig.ZH_CN).block();
         InvTypes invTypes = invTypesAssembler.toInvTypes(typeInfoResponse);
         boolean update = this.insertOrUpdate(invTypes);
         if (update) {

@@ -29,7 +29,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.OnlineStatusR
 @Tag(name = "ESI 地点位置")
 public class LocationApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 人物当前位置的相关信息
@@ -46,7 +46,7 @@ public class LocationApi {
     })
     @Operation(summary = "ESI-人物当前位置的相关信息")
     public Mono<LocationResponse> queryCharacterLocation(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/location/?datasource={datasource}", characterId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/location/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -71,7 +71,7 @@ public class LocationApi {
     })
     @Operation(summary = "ESI-人物在线状态")
     public Mono<OnlineStatusResponse> queryCharacterOnline(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/online/?datasource={datasource}", characterId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/online/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -96,7 +96,7 @@ public class LocationApi {
     })
     @Operation(summary = "ESI-人物当前所在舰船信息")
     public Mono<CurrentShipResponse> queryCharacterShip(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/ship/?datasource={datasource}", characterId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/ship/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->

@@ -30,7 +30,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.Opportunities
 @Tag(name = "ESI 机遇系统接口")
 public class OpportunitiesApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 查询人物已完成的机遇任务
@@ -47,7 +47,7 @@ public class OpportunitiesApi {
     })
     @Operation(summary = "ESI-查询人物订单")
     public Flux<OpportunitiesResponse> queryCharacterOpportunities(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/opportunities/?datasource={datasource}", characterId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/opportunities/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -68,7 +68,7 @@ public class OpportunitiesApi {
     })
     @Operation(summary = "ESI-查询机遇任务分组ID")
     public Flux<Integer> queryOpportunitiesGroups(String datasource) {
-        return apiClient.get().uri("/opportunities/groups/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/opportunities/groups/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -92,7 +92,7 @@ public class OpportunitiesApi {
     })
     @Operation(summary = "ESI-查询机遇任务组信息")
     public Mono<OpportunitiesGroupResponse> queryOpportunitiesGroupsDetails(Integer groupId, String datasource, String language) {
-        return apiClient.get().uri("/opportunities/groups/{group_id}/?datasource={datasource}&language={language}", groupId, datasource, language)
+        return esiClient.get().uri("/opportunities/groups/{group_id}/?datasource={datasource}&language={language}", groupId, datasource, language)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -112,7 +112,7 @@ public class OpportunitiesApi {
     })
     @Operation(summary = "ESI-查询人机遇任务ID")
     public Flux<Integer> queryOpportunitiesTasks(String datasource) {
-        return apiClient.get().uri("/opportunities/tasks/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/opportunities/tasks/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -136,7 +136,7 @@ public class OpportunitiesApi {
     })
     @Operation(summary = "ESI-查询机遇任务信息")
     public Mono<OpportunitiesTaskResponse> queryOpportunitiesTaskDetails(Integer taskId, String datasource, String language) {
-        return apiClient.get().uri("/opportunities/tasks/{task_id}/?datasource={datasource}&language={language}", taskId, datasource, language)
+        return esiClient.get().uri("/opportunities/tasks/{task_id}/?datasource={datasource}&language={language}", taskId, datasource, language)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

@@ -30,7 +30,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 @Tag(name = "ESI 合同接口")
 public class ContractsApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     private final PageTotalApi pageTotalApi;
 
@@ -50,7 +50,7 @@ public class ContractsApi {
     @Operation(summary = "ESI-人物合同记录最大页数")
     public Integer queryCharactersContractsMaxPage(Integer characterId, String datasource, String accessesToken) {
         String uri = "/characters/" + characterId + "/contracts/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  esiClient);
     }
 
     /**
@@ -70,7 +70,7 @@ public class ContractsApi {
     })
     @Operation(summary = "ESI-人物合同记录")
     public Flux<ContractResponse> queryCharactersContracts(Integer characterId, String datasource, Integer page, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/contracts/?datasource={datasource}&page={page}", characterId, datasource, page)
+        return esiClient.get().uri("/characters/{character_id}/contracts/?datasource={datasource}&page={page}", characterId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -97,7 +97,7 @@ public class ContractsApi {
     })
     @Operation(summary = "ESI-人物合同（拍卖）出价信息")
     public Flux<ContractBidsResponse> queryCharactersContractsBids(Integer characterId, String datasource, Integer contractId, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/contracts/{contract_id}/bids/?datasource={datasource}", characterId, contractId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/contracts/{contract_id}/bids/?datasource={datasource}", characterId, contractId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -124,7 +124,7 @@ public class ContractsApi {
     })
     @Operation(summary = "ESI-人物合同物品清单")
     public Flux<ContractItemResponse> queryCharactersContractsItems(Integer characterId, String datasource, Integer contractId, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/contracts/{contract_id}/items/?datasource={datasource}", characterId, contractId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/contracts/{contract_id}/items/?datasource={datasource}", characterId, contractId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -148,7 +148,7 @@ public class ContractsApi {
     @Operation(summary = "ESI-星域公开合同物品清单最大页数")
     public Integer queryPublicContractsRegionMaxPage(Integer regionId, String datasource) {
         String uri = "/contracts/public/" + regionId + "/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage("", uri,  apiClient);
+        return pageTotalApi.queryMaxPage("", uri,  esiClient);
     }
 
     /**
@@ -166,7 +166,7 @@ public class ContractsApi {
     })
     @Operation(summary = "ESI-星域公开合同记录")
     public Flux<ContractResponse> queryPublicContractsRegion(Integer regionId, String datasource, Integer page) {
-        return apiClient.get().uri("/contracts/public/{region_id}/?datasource={datasource}&page={page}", regionId, datasource, page)
+        return esiClient.get().uri("/contracts/public/{region_id}/?datasource={datasource}&page={page}", regionId, datasource, page)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -190,7 +190,7 @@ public class ContractsApi {
     @Operation(summary = "ESI-星域公开合同（拍卖）出价信息最大页数")
     public Integer queryPublicContractsBidsMaxPage(Integer contractId, String datasource) {
         String uri = "/contracts/public/bids/" + contractId + "/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage("", uri,  apiClient);
+        return pageTotalApi.queryMaxPage("", uri,  esiClient);
     }
 
     /**
@@ -206,7 +206,7 @@ public class ContractsApi {
     })
     @Operation(summary = "ESI-星域公开合同（拍卖）出价信息")
     public Flux<ContractBidsResponse> queryPublicContractsBids(String datasource, Integer contractId) {
-        return apiClient.get().uri("/contracts/public/bids/{contract_id}/?datasource={datasource}",contractId, datasource)
+        return esiClient.get().uri("/contracts/public/bids/{contract_id}/?datasource={datasource}",contractId, datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -229,7 +229,7 @@ public class ContractsApi {
     @Operation(summary = "ESI-星域公开合同物品清单最大页数")
     public Integer queryPublicContractsItemsMaxPage(Integer contractId, String datasource) {
         String uri = "/contracts/public/items/" + contractId + "/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage("", uri,  apiClient);
+        return pageTotalApi.queryMaxPage("", uri,  esiClient);
     }
 
     /**
@@ -245,7 +245,7 @@ public class ContractsApi {
     })
     @Operation(summary = "ESI-星域公开合同物品清单")
     public Flux<ContractItemResponse> queryPublicContractsItems(String datasource, Integer contractId) {
-        return apiClient.get().uri("/contracts/public/items/{contract_id}/?datasource={datasource}",  contractId, datasource)
+        return esiClient.get().uri("/contracts/public/items/{contract_id}/?datasource={datasource}",  contractId, datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -270,7 +270,7 @@ public class ContractsApi {
     @Operation(summary = "ESI-军团合同记录最大页数")
     public Integer queryCorporationsContractsMaxPage(Integer corporationId, String datasource, String accessesToken) {
         String uri = "/corporations/" + corporationId + "/contracts/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  esiClient);
     }
 
     /**
@@ -290,7 +290,7 @@ public class ContractsApi {
     })
     @Operation(summary = "ESI-军团合同记录")
     public Flux<ContractResponse> queryCorporationsContracts(Integer corporationId, String datasource, Integer page, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/contracts/?datasource={datasource}&page={page}", corporationId, datasource, page)
+        return esiClient.get().uri("/corporations/{corporation_id}/contracts/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -318,7 +318,7 @@ public class ContractsApi {
     @Operation(summary = "ESI-军团合同（拍卖）出价信息最大页数")
     public Integer queryCorporationsContractsBidsMaxPage(Integer corporationId, Integer contractId, String datasource, String accessesToken) {
         String uri = "/corporations/" + corporationId + "/contracts/" + contractId + "/bids/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  esiClient);
     }
 
     /**
@@ -338,7 +338,7 @@ public class ContractsApi {
     })
     @Operation(summary = "ESI-军团合同（拍卖）出价信息")
     public Flux<ContractBidsResponse> queryCorporationsContractsBids(Integer corporationId, String datasource, Integer contractId, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/contracts/{contract_id}/bids/?datasource={datasource}", corporationId, contractId, datasource)
+        return esiClient.get().uri("/corporations/{corporation_id}/contracts/{contract_id}/bids/?datasource={datasource}", corporationId, contractId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -365,7 +365,7 @@ public class ContractsApi {
     })
     @Operation(summary = "ESI-军团合同物品清单")
     public Flux<ContractItemResponse> queryCorporationsContractsItems(Integer corporationId, String datasource, Integer contractId, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/contracts/{contract_id}/items/?datasource={datasource}", corporationId, contractId, datasource)
+        return esiClient.get().uri("/corporations/{corporation_id}/contracts/{contract_id}/items/?datasource={datasource}", corporationId, contractId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->

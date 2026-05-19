@@ -29,7 +29,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.Fitting;
 @Tag(name = "ESI 舰船装配接口")
 public class FittingApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 人物舰船装配信息
@@ -47,7 +47,7 @@ public class FittingApi {
     })
     @Operation(summary = "ESI-人物舰船装配信息")
     public Flux<FittingResponse> queryCharacterFittings(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/fittings/?datasource={datasource}", characterId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/fittings/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -73,7 +73,7 @@ public class FittingApi {
     })
     @Operation(summary = "ESI-添加人物舰船装配信息")
     public Mono<FittingResponse> addCharacterFittings(Integer characterId, String datasource, Fitting fitting, String accessesToken) {
-        return apiClient.post().uri("/characters/{character_id}/fittings/?datasource={datasource}", characterId, datasource)
+        return esiClient.post().uri("/characters/{character_id}/fittings/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .body(Mono.just(fitting), Fitting.class)
                 .retrieve()
@@ -102,7 +102,7 @@ public class FittingApi {
     })
     @Operation(summary = "ESI-删除人物舰船装配信息")
     public Mono<Object> deleteCharacterFittings(Integer characterId, String datasource, Integer fittingId, String accessesToken) {
-        return apiClient.delete().uri("/characters/{character_id}/fittings/{fitting_id}/?datasource={datasource}", characterId, fittingId, datasource)
+        return esiClient.delete().uri("/characters/{character_id}/fittings/{fitting_id}/?datasource={datasource}", characterId, fittingId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->

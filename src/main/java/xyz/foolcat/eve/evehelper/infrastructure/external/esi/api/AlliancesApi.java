@@ -29,7 +29,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.IconResponse;
 @Tag(name = "ESI 联盟相关接口")
 public class AlliancesApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 获取全部活动联盟ID列表
@@ -41,7 +41,7 @@ public class AlliancesApi {
     })
     @Operation(summary = "ESI-活跃联盟ID列表")
     public Flux<Long> queryAllActivePlayerAlliances(String datasource) {
-        return apiClient.get().uri("/alliances/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/alliances/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -62,7 +62,7 @@ public class AlliancesApi {
     })
     @Operation(summary = "ESI-联盟公开信息")
     public Mono<AlliancesResponse> queryAlliancesPublicInformation(Long allianceId, String datasource) {
-        return apiClient.get().uri("/alliances/{alliance_id}/?datasource={datasource}", allianceId, datasource)
+        return esiClient.get().uri("/alliances/{alliance_id}/?datasource={datasource}", allianceId, datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -83,7 +83,7 @@ public class AlliancesApi {
     })
     @Operation(summary = "ESI-联盟名下全部军团ID")
     public Flux<Long> queryAlliancesCorporations(Long allianceId, String datasource) {
-        return apiClient.get().uri("/alliances/{alliance_id}/corporations/?datasource={datasource}", allianceId, datasource)
+        return esiClient.get().uri("/alliances/{alliance_id}/corporations/?datasource={datasource}", allianceId, datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -104,7 +104,7 @@ public class AlliancesApi {
     })
     @Operation(summary = "ESI-联盟图标地址")
     public Mono<IconResponse> queryAlliancesIcon(Long allianceId, String datasource) {
-        return apiClient.get().uri("/alliances/{alliance_id}/icons/?datasource={datasource}", allianceId, datasource)
+        return esiClient.get().uri("/alliances/{alliance_id}/icons/?datasource={datasource}", allianceId, datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

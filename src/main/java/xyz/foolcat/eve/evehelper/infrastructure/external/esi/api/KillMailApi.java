@@ -29,7 +29,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 @Tag(name = "ESI 击毁报告")
 public class KillMailApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     private final PageTotalApi pageTotalApi;
 
@@ -49,7 +49,7 @@ public class KillMailApi {
     @Operation(summary = "ESI-人物击毁报告最大页数")
     public Integer queryCharacterKillMailMaxPage(Integer characterId, String datasource, String accessesToken) {
         String uri = "/characters/" + characterId + "/killmails/recent/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  esiClient);
     }
 
     /**
@@ -69,7 +69,7 @@ public class KillMailApi {
     })
     @Operation(summary = "ESI-人物击毁报告")
     public Flux<KillMailsIdAndHashResponse> queryCharacterKillMail(Integer characterId, String datasource, Integer page, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/killmails/recent/?datasource={datasource}&page={page}", characterId, datasource, page)
+        return esiClient.get().uri("/characters/{character_id}/killmails/recent/?datasource={datasource}&page={page}", characterId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -96,7 +96,7 @@ public class KillMailApi {
     })
     @Operation(summary = "ESI-军团击毁报告")
     public Flux<KillMailsIdAndHashResponse> queryCorporationKillMail(Integer corporationId, String datasource, Integer page, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/killmails/recent/?datasource={datasource}&page={page}", corporationId, datasource, page)
+        return esiClient.get().uri("/corporations/{corporation_id}/killmails/recent/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -121,7 +121,7 @@ public class KillMailApi {
     })
     @Operation(summary = "ESI-击毁报告详情")
     public Mono<KillMailResponse> queryKillMailDetail(Integer killMailId, String datasource, String killMailHash) {
-        return apiClient.get().uri("/killmails/{killmail_id}/{killmail_hash}/?datasource={datasource}", killMailId, killMailHash, datasource)
+        return esiClient.get().uri("/killmails/{killmail_id}/{killmail_hash}/?datasource={datasource}", killMailId, killMailHash, datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

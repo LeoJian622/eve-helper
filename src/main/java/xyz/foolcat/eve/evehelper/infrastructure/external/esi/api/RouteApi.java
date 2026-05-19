@@ -28,7 +28,7 @@ import java.util.List;
 @Tag(name = "ESI 机遇系统接口")
 public class RouteApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 路径导航规划
@@ -49,7 +49,7 @@ public class RouteApi {
     })
     @Operation(summary = "ESI-路径导航规划")
     public Flux<Integer> queryUniverseSchematic(Integer origin, Integer destination, List<Integer> avoid, List<List<Integer>> connects, String datasource) {
-        return apiClient.get().uri("/route/{origin}/{destination}/?datasource={datasource}&avoid={avoid}&connects={connects}", origin, destination, datasource, avoid, connects)
+        return esiClient.get().uri("/route/{origin}/{destination}/?datasource={datasource}&avoid={avoid}&connects={connects}", origin, destination, datasource, avoid, connects)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

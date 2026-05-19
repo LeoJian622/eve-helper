@@ -27,7 +27,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 @Tag(name = "ESI 机遇系统接口")
 public class PlanetaryInteractionApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     private final PageTotalApi pageTotalApi;
 
@@ -46,7 +46,7 @@ public class PlanetaryInteractionApi {
     })
     @Operation(summary = "ESI-查询人物拥有的所有行星殖民地列表")
     public Flux<ColonyResponse> queryCharacterPlanets(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/planets/?datasource={datasource}", characterId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/planets/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -73,7 +73,7 @@ public class PlanetaryInteractionApi {
     })
     @Operation(summary = "ESI-查询人物行星殖民地布局的全部详细信息")
     public Mono<ColonyLayoutResponse> queryCharacterPlanet(Integer characterId, String datasource, Integer planetId, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/planets/{planet_id}/?datasource={datasource}", characterId, planetId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/planets/{planet_id}/?datasource={datasource}", characterId, planetId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -99,7 +99,7 @@ public class PlanetaryInteractionApi {
     @Operation(summary = "ESI-军团的海关信息及配置最大页数")
     public Integer queryCorporationCustomsOfficesMaxPage(Integer corporationId, String datasource, String accessesToken) {
         String uri = "/corporations/" + corporationId + "/customs_offices/?datasource=" + datasource + "&page=1";
-        return pageTotalApi.queryMaxPage(accessesToken, uri,  apiClient);
+        return pageTotalApi.queryMaxPage(accessesToken, uri,  esiClient);
     }
 
     /**
@@ -117,7 +117,7 @@ public class PlanetaryInteractionApi {
     })
     @Operation(summary = "ESI-查询军团的海关信息及配置")
     public Flux<CustomsOfficesSettingResponse> queryCorporationCustomsOffices(Integer corporationId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/customs_offices/?datasource={datasource}", corporationId, datasource)
+        return esiClient.get().uri("/corporations/{corporation_id}/customs_offices/?datasource={datasource}", corporationId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -140,7 +140,7 @@ public class PlanetaryInteractionApi {
     })
     @Operation(summary = "ESI-行星工厂生产详细信息")
     public Mono<FactorySchematicResponse> queryUniverseSchematic(Integer schematicId, String datasource) {
-        return apiClient.get().uri("/universe/schematics/{schematic_id}/?datasource={datasource}", schematicId,datasource)
+        return esiClient.get().uri("/universe/schematics/{schematic_id}/?datasource={datasource}", schematicId,datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

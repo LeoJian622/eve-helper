@@ -32,7 +32,7 @@ import java.util.Map;
 @Tag(name = "ESI 舰队接口")
 public class FleetApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 人物舰队信息
@@ -50,7 +50,7 @@ public class FleetApi {
     })
     @Operation(summary = "ESI-人物舰队信息")
     public Mono<CharacterFleetResponse> queryCharacterFittings(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/fleet/?datasource={datasource}", characterId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/fleet/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -76,7 +76,7 @@ public class FleetApi {
     })
     @Operation(summary = "ESI-舰队登记详细信息")
     public Mono<FleetDetailResponse> queryFleet(Long fleetId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/fleets/{fleet_id}/?datasource={datasource}", fleetId, datasource)
+        return esiClient.get().uri("/fleets/{fleet_id}/?datasource={datasource}", fleetId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -104,7 +104,7 @@ public class FleetApi {
     })
     @Operation(summary = "ESI-更新舰队登记信息")
     public Mono<FleetDetailResponse> updateFleet(Long fleetId, String datasource, FleetNewSetting fleetNewSetting, String accessesToken) {
-        return apiClient.put().uri("/fleets/{fleet_id}/?datasource={datasource}", fleetId, datasource)
+        return esiClient.put().uri("/fleets/{fleet_id}/?datasource={datasource}", fleetId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .body(Mono.just(fleetNewSetting), FleetNewSetting.class)
                 .retrieve()
@@ -133,7 +133,7 @@ public class FleetApi {
     })
     @Operation(summary = "ESI-舰队成员")
     public Flux<FleetMemberResponse> queryFleetMember(Long fleetId, String datasource, String language, String accessesToken) {
-        return apiClient.get().uri("/fleets/{fleet_id}/members/?datasource={datasource}&language={language}", fleetId, datasource, language)
+        return esiClient.get().uri("/fleets/{fleet_id}/members/?datasource={datasource}&language={language}", fleetId, datasource, language)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .header(HttpHeaders.ACCEPT_LANGUAGE, language)
                 .retrieve()
@@ -162,7 +162,7 @@ public class FleetApi {
     })
     @Operation(summary = "ESI-邀请加入舰队")
     public Mono<Object> addFleetMember(Long fleetId, String datasource, FleetInvitationDetails invitation, String accessesToken) {
-        return apiClient.post().uri("/fleets/{fleet_id}/members/?datasource={datasource}", fleetId, datasource)
+        return esiClient.post().uri("/fleets/{fleet_id}/members/?datasource={datasource}", fleetId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .body(Mono.just(invitation), FleetInvitationDetails.class)
                 .retrieve()
@@ -191,7 +191,7 @@ public class FleetApi {
     })
     @Operation(summary = "ESI-踢出舰队成员")
     public Mono<Object> deleteFleetMember(Long fleetId, String datasource, Integer characterId, String accessesToken) {
-        return apiClient.delete().uri("/fleets/{fleet_id}/members/{member_id}/?datasource={datasource}", fleetId, characterId, datasource)
+        return esiClient.delete().uri("/fleets/{fleet_id}/members/{member_id}/?datasource={datasource}", fleetId, characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -221,7 +221,7 @@ public class FleetApi {
     })
     @Operation(summary = "ESI-移动或授予舰队成员职位")
     public Mono<Object> updateFleetMember(Long fleetId, String datasource, Integer characterId, FleetInvitationDetails movement, String accessesToken) {
-        return apiClient.put().uri("/fleets/{fleet_id}/members/{member_id}/?datasource={datasource}", fleetId, characterId, datasource)
+        return esiClient.put().uri("/fleets/{fleet_id}/members/{member_id}/?datasource={datasource}", fleetId, characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .body(Mono.just(movement), FleetInvitationDetails.class)
                 .retrieve()
@@ -250,7 +250,7 @@ public class FleetApi {
     })
     @Operation(summary = "ESI-删除中队")
     public Mono<Object> deleteFleetSquad(Long fleetId, String datasource, Long squadId, String accessesToken) {
-        return apiClient.delete().uri("/fleets/{fleet_id}/squads/{squad_id}/?datasource={datasource}", fleetId, squadId, datasource)
+        return esiClient.delete().uri("/fleets/{fleet_id}/squads/{squad_id}/?datasource={datasource}", fleetId, squadId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -282,7 +282,7 @@ public class FleetApi {
     public Mono<Object> updateFleetSquadRename(Long fleetId, String datasource, Long squadId, String name, String accessesToken) {
         Map<String, String> newName = new HashMap<>();
         newName.put("name", name);
-        return apiClient.put().uri("/fleets/{fleet_id}/squads/{squad_id}/?datasource={datasource}", fleetId, squadId, datasource)
+        return esiClient.put().uri("/fleets/{fleet_id}/squads/{squad_id}/?datasource={datasource}", fleetId, squadId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .body(Mono.just(newName), Map.class)
                 .retrieve()
@@ -309,7 +309,7 @@ public class FleetApi {
     })
     @Operation(summary = "ESI-获取联队信息")
     public Flux<WingResponse> queryFleetWings(Long fleetId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/fleets/{fleet_id}/wings/?datasource={datasource}", fleetId, datasource)
+        return esiClient.get().uri("/fleets/{fleet_id}/wings/?datasource={datasource}", fleetId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -335,7 +335,7 @@ public class FleetApi {
     })
     @Operation(summary = "ESI-添加联队")
     public Mono<NewWingResponse> addFleetWing(Long fleetId, String datasource, String accessesToken) {
-        return apiClient.post().uri("/fleets/{fleet_id}/wings/?datasource={datasource}", fleetId, datasource)
+        return esiClient.post().uri("/fleets/{fleet_id}/wings/?datasource={datasource}", fleetId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -363,7 +363,7 @@ public class FleetApi {
     })
     @Operation(summary = "ESI-删除联队")
     public Mono<Object> deleteFleetWing(Long fleetId, String datasource, Long wingId, String accessesToken) {
-        return apiClient.delete().uri("/fleets/{fleet_id}/wings/{wing_id}/?datasource={datasource}", fleetId, wingId, datasource)
+        return esiClient.delete().uri("/fleets/{fleet_id}/wings/{wing_id}/?datasource={datasource}", fleetId, wingId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -395,7 +395,7 @@ public class FleetApi {
     public Mono<Object> updateFleetWingRename(Long fleetId, String datasource, Long wingId, String name, String accessesToken) {
         Map<String, String> newName = new HashMap<>();
         newName.put("name", name);
-        return apiClient.put().uri("/fleets/{fleet_id}/wings/{wing_id}/?datasource={datasource}", fleetId, wingId, datasource)
+        return esiClient.put().uri("/fleets/{fleet_id}/wings/{wing_id}/?datasource={datasource}", fleetId, wingId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .body(Mono.just(newName), Map.class)
                 .retrieve()
@@ -424,7 +424,7 @@ public class FleetApi {
     })
     @Operation(summary = "ESI-添加中队")
     public Mono<NewSquadResponse> addFleetWingSquad(Long fleetId, String datasource, Long wingId, String accessesToken) {
-        return apiClient.post().uri("/fleets/{fleet_id}/wings/{wing_id}/squads/?datasource={datasource}", fleetId, wingId, datasource)
+        return esiClient.post().uri("/fleets/{fleet_id}/wings/{wing_id}/squads/?datasource={datasource}", fleetId, wingId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->

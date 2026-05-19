@@ -33,7 +33,7 @@ import java.util.Map;
 @Tag(name = "ESI 邮件接口")
 public class MailApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 返回属于符合查询条件的人物的50个最新邮件标题。查询可按标签过滤，last_mail_id 可用于向后分页
@@ -54,7 +54,7 @@ public class MailApi {
     })
     @Operation(summary = "ESI-符合查询条件的50个最新邮件标题")
     public Flux<RequestedMailResponse> queryCharacterMails(Integer characterId, String datasource, List<Integer> labels, Integer lastMailId, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/mail/?datasource={datasource}&labels={labels}&last_mail_id={last_mail_id}", characterId, datasource, labels, lastMailId)
+        return esiClient.get().uri("/characters/{character_id}/mail/?datasource={datasource}&labels={labels}&last_mail_id={last_mail_id}", characterId, datasource, labels, lastMailId)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -81,7 +81,7 @@ public class MailApi {
     })
     @Operation(summary = "ESI-发送新邮件")
     public Mono<Integer> addCharacterMail(Integer characterId, String datasource, NewMail newMail, String accessesToken) {
-        return apiClient.post().uri("/characters/{character_id}/mail/?datasource={datasource}", characterId, datasource)
+        return esiClient.post().uri("/characters/{character_id}/mail/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .body(Mono.just(newMail), NewMail.class)
                 .retrieve()
@@ -110,7 +110,7 @@ public class MailApi {
     })
     @Operation(summary = "ESI-删除邮件")
     public Mono<Object> deleteCharacterMail(Integer characterId, String datasource, Integer mailId, String accessesToken) {
-        return apiClient.delete().uri("/characters/{character_id}/mail/{mail_id}/?datasource={datasource}", characterId, mailId, datasource)
+        return esiClient.delete().uri("/characters/{character_id}/mail/{mail_id}/?datasource={datasource}", characterId, mailId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -138,7 +138,7 @@ public class MailApi {
     })
     @Operation(summary = "ESI-邮件详情")
     public Mono<MailResponse> queryCharacterMail(Integer characterId, String datasource, Integer mailId, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/mail/{mail_id}/?datasource={datasource}", characterId, mailId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/mail/{mail_id}/?datasource={datasource}", characterId, mailId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -172,7 +172,7 @@ public class MailApi {
         Map<String, Object> contents = new HashMap<>(2);
         contents.put("labels", labelIds);
         contents.put("read", read);
-        return apiClient.put().uri("/characters/{character_id}/mail/{mail_id}/?datasource={datasource}", characterId, mailId, datasource)
+        return esiClient.put().uri("/characters/{character_id}/mail/{mail_id}/?datasource={datasource}", characterId, mailId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .body(Mono.just(contents), Map.class)
                 .retrieve()
@@ -198,7 +198,7 @@ public class MailApi {
     })
     @Operation(summary = "ESI-邮件标签")
     public Mono<MailLabelsAndUnreadCountsResponse> queryCharacterMailLabels(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/mail/labels/?datasource={datasource}", characterId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/mail/labels/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -225,7 +225,7 @@ public class MailApi {
     })
     @Operation(summary = "ESI-新增邮件标签")
     public Mono<Integer> addCharacterMailLabels(Integer characterId, String datasource, NewLabel newLabel, String accessesToken) {
-        return apiClient.post().uri("/characters/{character_id}/mail/labels/?datasource={datasource}", characterId, datasource)
+        return esiClient.post().uri("/characters/{character_id}/mail/labels/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .body(Mono.just(newLabel), NewMail.class)
                 .retrieve()
@@ -253,7 +253,7 @@ public class MailApi {
     })
     @Operation(summary = "ESI-删除邮件标签")
     public Mono<Integer> deleteCharacterMailLabel(Integer characterId, String datasource, Integer labelId, String accessesToken) {
-        return apiClient.delete().uri("/characters/{character_id}/mail/labels/{label_id}/?datasource={datasource}", characterId, labelId, datasource)
+        return esiClient.delete().uri("/characters/{character_id}/mail/labels/{label_id}/?datasource={datasource}", characterId, labelId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -278,7 +278,7 @@ public class MailApi {
     })
     @Operation(summary = "ESI-查询人物邮件列表")
     public Flux<MailListResponse> queryCharacterMailList(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/mail/lists/?datasource={datasource}", characterId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/mail/lists/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->

@@ -34,7 +34,7 @@ import java.util.Map;
 @Tag(name = "ESI 日历事件相关接口")
 public class CalendarApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 人物日历事件
@@ -53,7 +53,7 @@ public class CalendarApi {
     })
     @Operation(summary = "ESI-日历事件列表")
     public Flux<CalendarResponse> queryCharactersCalendar(Integer characterId, String datasource, Integer fromEventId, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/calendar/?datasource={datasource}&from_event={fromEventId}", characterId, datasource, fromEventId)
+        return esiClient.get().uri("/characters/{character_id}/calendar/?datasource={datasource}&from_event={fromEventId}", characterId, datasource, fromEventId)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -80,7 +80,7 @@ public class CalendarApi {
     })
     @Operation(summary = "ESI-事件详情")
     public Mono<CalendarEventResponse> queryCharactersCalendarEventId(Integer characterId, String datasource, Integer eventId, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/calendar/{event_id}/?datasource={datasource}", characterId, eventId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/calendar/{event_id}/?datasource={datasource}", characterId, eventId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -112,7 +112,7 @@ public class CalendarApi {
     public Mono<Object> updateCharactersCalendarEventId(Integer characterId, String datasource, Integer eventId, xyz.foolcat.eve.evehelper.esi.enums.CalendarEventEnum calendarEventEnum, String accessesToken) {
         Map<String, String> responseReply = new HashMap<>();
         responseReply.put("response", calendarEventEnum.getValue());
-        return apiClient.put().uri("/characters/{character_id}/calendar/{event_id}/?datasource={datasource}", characterId, eventId, datasource)
+        return esiClient.put().uri("/characters/{character_id}/calendar/{event_id}/?datasource={datasource}", characterId, eventId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(responseReply), Map.class)
@@ -142,7 +142,7 @@ public class CalendarApi {
     })
     @Operation(summary = "ESI-事件参与列表")
     public Flux<CalendarEventAttendeesResponse> queryCharactersCalendarEventIdAttendees(Integer characterId, String datasource, Integer eventId, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/calendar/{event_id}/attendees/?datasource={datasource}", characterId, eventId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/calendar/{event_id}/attendees/?datasource={datasource}", characterId, eventId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->

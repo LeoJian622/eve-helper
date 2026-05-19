@@ -26,7 +26,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 @Tag(name = "ESI 服务器状态相关接口")
 public class StatusApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 服务器运行状态
@@ -39,7 +39,7 @@ public class StatusApi {
     })
     @Operation(summary = "ESI-服务器运行状态")
     public Mono<StatusResponse> queryServerStatus(String datasource) {
-        return apiClient.get().uri("/status/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/status/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

@@ -26,7 +26,7 @@ public class MarketOrderAsyncService {
      *
      * @param marketOrders
      */
-    @Async("EisMarketOrderRequestExecutor")
+    @Async("EsiMarketOrderRequestExecutor")
     public void saveAndUpdateMarketOrder(List<MarketOrder> marketOrders) {
         log.debug("开始保存市场订单信息");
         marketOrderService.saveOrUpdateBatch(marketOrders);

@@ -27,7 +27,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 @Tag(name = "ESI 属性接口")
 public class FactionWarfareApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 人物势力战争统计
@@ -45,7 +45,7 @@ public class FactionWarfareApi {
     })
     @Operation(summary = "ESI-人物势力战争统计")
     public Mono<FactionWarfareStatisticsResponse> queryCharacterFactionWarfareStats(Integer characterId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/fw/stats/?datasource={datasource}", characterId, datasource)
+        return esiClient.get().uri("/characters/{character_id}/fw/stats/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -71,7 +71,7 @@ public class FactionWarfareApi {
     })
     @Operation(summary = "ESI-军团势力战争统计")
     public Mono<FactionWarfareStatisticsResponse> queryCorporationFactionWarfareStats(Integer corporationId, String datasource, String accessesToken) {
-        return apiClient.get().uri("/corporations/{corporation_id}/fw/stats/?datasource={datasource}", corporationId, datasource)
+        return esiClient.get().uri("/corporations/{corporation_id}/fw/stats/?datasource={datasource}", corporationId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -93,7 +93,7 @@ public class FactionWarfareApi {
     })
     @Operation(summary = "ESI-势力战争排行榜")
     public Mono<LeaderboardResponse> queryFactionWarfareLeaderboards(String datasource) {
-        return apiClient.get().uri("/fw/leaderboards/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/fw/leaderboards/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -114,7 +114,7 @@ public class FactionWarfareApi {
     })
     @Operation(summary = "ESI-人物势力战争排行榜")
     public Mono<LeaderboardCharacterResponse> queryFactionWarfareCharacterLeaderboards(String datasource) {
-        return apiClient.get().uri("/fw/leaderboards/characters/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/fw/leaderboards/characters/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -135,7 +135,7 @@ public class FactionWarfareApi {
     })
     @Operation(summary = "ESI-军团势力战争排行榜")
     public Mono<LeaderboardCorporationResponse> queryFactionWarfareCorporationLeaderboards(String datasource) {
-        return apiClient.get().uri("/fw/leaderboards/corporations/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/fw/leaderboards/corporations/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -156,7 +156,7 @@ public class FactionWarfareApi {
     })
     @Operation(summary = "ESI-势力战争统计")
     public Flux<FactionWarfareStatisticsResponse> queryFactionWarfareStats(String datasource) {
-        return apiClient.get().uri("/fw/stats/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/fw/stats/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -177,7 +177,7 @@ public class FactionWarfareApi {
     })
     @Operation(summary = "ESI-势力战争星系所有权信息")
     public Flux<FactionWarfareSolarSystemsResponse> queryFactionWarfareSystems(String datasource) {
-        return apiClient.get().uri("/fw/systems/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/fw/systems/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -199,7 +199,7 @@ public class FactionWarfareApi {
     })
     @Operation(summary = "ESI-战争中的NPC势力")
     public Flux<NpcFactionsAtWarResponse> queryFactionWarfareWars(String datasource) {
-        return apiClient.get().uri("/fw/wars/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/fw/wars/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))

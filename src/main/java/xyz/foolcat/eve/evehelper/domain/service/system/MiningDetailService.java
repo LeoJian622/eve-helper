@@ -10,7 +10,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.MiningDetail;
 import xyz.foolcat.eve.evehelper.domain.repository.system.MiningDetailRepository;
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
@@ -50,10 +50,10 @@ public class MiningDetailService  {
         EveAccount eveAccount = authorizeUtil.authorize(characterId);
         String accessToken = esiApiService.getAccessToken(characterId, eveAccount.getUserId());
 
-        Integer maxPage = industryApi.queryCorporationMiningObserverMaxPage(eveAccount.getCorpId(), observerId, EsiClient.SERENITY, accessToken);
+        Integer maxPage = industryApi.queryCorporationMiningObserverMaxPage(eveAccount.getCorpId(), observerId, EsiClientConfig.SERENITY, accessToken);
 
         List<MiningDetail> miningDetails = Stream.iterate(1, i -> i++).limit(maxPage)
-                .map(i -> industryApi.queryCorporationMiningObserver(eveAccount.getCorpId(), EsiClient.SERENITY, observerId, i, accessToken)
+                .map(i -> industryApi.queryCorporationMiningObserver(eveAccount.getCorpId(), EsiClientConfig.SERENITY, observerId, i, accessToken)
                         .collectList().block())
                 .sequential().filter(Objects::nonNull)
                 .flatMap(Collection::stream)

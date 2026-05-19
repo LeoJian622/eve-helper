@@ -27,7 +27,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 @Tag(name = "ESI 搜索接口")
 public class SearchApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * @param characterId   人物ID
@@ -50,7 +50,7 @@ public class SearchApi {
     })
     @Operation(summary = "ESI-搜索")
     public Mono<SearchResponse> queryCharacterSearch(Integer characterId, String datasource, String categories, String searchString, Boolean strict, String language, String accessesToken) {
-        return apiClient.get().uri("/characters/{character_id}/search/?datasource={datasource}&categories={categories}&search={search}&strict={strict}&language={language}", characterId, datasource, categories, searchString, strict, language)
+        return esiClient.get().uri("/characters/{character_id}/search/?datasource={datasource}&categories={categories}&search={search}&strict={strict}&language={language}", characterId, datasource, categories, searchString, strict, language)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .header(HttpHeaders.ACCEPT_LANGUAGE, language)
                 .retrieve()

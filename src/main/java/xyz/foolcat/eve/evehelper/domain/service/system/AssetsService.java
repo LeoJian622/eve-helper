@@ -10,7 +10,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.repository.system.AssetsRepository;
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClient;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.AssetsApi;
 import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 
@@ -90,13 +90,13 @@ public class AssetsService {
         /*
          * 获取总页数
          */
-        Integer maxPage = assetsApi.queryCharactersAssetsMaxPage(eveAccount.getCharacterId(), EsiClient.SERENITY, accessToken);
+        Integer maxPage = assetsApi.queryCharactersAssetsMaxPage(eveAccount.getCharacterId(), EsiClientConfig.SERENITY, accessToken);
 
         /*
          * 从ESI获取资产列表
          */
         List<Assets> assets = Stream.iterate(1, i -> i + 1).limit(maxPage)
-                .map(page -> assetsApi.queryCharactersAssets(eveAccount.getCharacterId(), EsiClient.SERENITY, page, accessToken).collectList())
+                .map(page -> assetsApi.queryCharactersAssets(eveAccount.getCharacterId(), EsiClientConfig.SERENITY, page, accessToken).collectList())
                 .sequential()
                 .collect(Collectors.toList())
                 .stream().flatMap(asset -> Objects.requireNonNull(asset.block()).stream())

@@ -28,7 +28,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 @Tag(name = "ESI 舰船保险")
 public class InsuranceApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 舰船保险
@@ -41,7 +41,7 @@ public class InsuranceApi {
     })
     @Operation(summary = "ESI-舰船保险")
     public Flux<InsuranceOfShipResponse> queryIndustrySystems(String datasource, String language) {
-        return apiClient.get().uri("/insurance/prices/?datasource={datasource}&language={language}", datasource, language)
+        return esiClient.get().uri("/insurance/prices/?datasource={datasource}&language={language}", datasource, language)
                 .header(HttpHeaders.ACCEPT_LANGUAGE, language)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->

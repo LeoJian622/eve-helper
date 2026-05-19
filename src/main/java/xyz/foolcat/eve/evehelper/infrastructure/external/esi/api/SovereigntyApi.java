@@ -29,7 +29,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 @Tag(name = "ESI 主权相关接口")
 public class SovereigntyApi {
 
-    private final WebClient apiClient;
+    private final WebClient esiClient;
 
     /**
      * 主权战争信息
@@ -42,7 +42,7 @@ public class SovereigntyApi {
     })
     @Operation(summary = "ESI-主权战争信息")
     public Flux<SovereigntyCampaignsResponse> querySovereigntyCampaigns(String datasource) {
-        return apiClient.get().uri("/sovereignty/campaigns/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/sovereignty/campaigns/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -62,7 +62,7 @@ public class SovereigntyApi {
     })
     @Operation(summary = "ESI-主权地图信息")
     public Flux<SovereigntyMapResponse> querySovereigntyMaps(String datasource) {
-        return apiClient.get().uri("/sovereignty/map/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/sovereignty/map/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
@@ -82,7 +82,7 @@ public class SovereigntyApi {
     })
     @Operation(summary = "ESI-主权建筑信息")
     public Flux<SovereigntyStructuresResponse> querySovereigntyStructures(String datasource) {
-        return apiClient.get().uri("/sovereignty/structures/?datasource={datasource}", datasource)
+        return esiClient.get().uri("/sovereignty/structures/?datasource={datasource}", datasource)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
                         response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
