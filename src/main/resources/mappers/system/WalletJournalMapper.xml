@@ -17,13 +17,13 @@
     <result column="second_party_id" jdbcType="INTEGER" property="secondPartyId" />
     <result column="tax" jdbcType="DOUBLE" property="tax" />
     <result column="tax_receiver_id" jdbcType="INTEGER" property="taxReceiverId" />
-    <result column="character" jdbcType="VARCHAR" property="character" />
+    <result column="character_name" jdbcType="VARCHAR" property="characterName" />
     <result column="owner_id" jdbcType="BIGINT" property="ownerId" />
   </resultMap>
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
     id, amount, balance, context_id, context_id_type, `date`, description, first_party_id, 
-    reason, ref_type, second_party_id, tax, tax_receiver_id, `character`, owner_id
+    reason, ref_type, second_party_id, tax, tax_receiver_id,  character_name, owner_id
   </sql>
   <update id="updateBatch" parameterType="java.util.List">
     <!--@mbg.generated-->
@@ -89,9 +89,9 @@
           when id = #{item.id,jdbcType=BIGINT} then #{item.taxReceiverId,jdbcType=INTEGER}
         </foreach>
       </trim>
-      <trim prefix="`character` = case" suffix="end,">
+      <trim prefix=" character_name = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          when id = #{item.id,jdbcType=BIGINT} then #{item.character,jdbcType=VARCHAR}
+            when id = #{item.id,jdbcType=BIGINT} then #{item.characterName,jdbcType=VARCHAR}
         </foreach>
       </trim>
       <trim prefix="owner_id = case" suffix="end,">
@@ -193,10 +193,10 @@
           </if>
         </foreach>
       </trim>
-      <trim prefix="`character` = case" suffix="end,">
+      <trim prefix=" character_name = case" suffix="end,">
         <foreach collection="list" index="index" item="item">
-          <if test="item.character != null">
-            when id = #{item.id,jdbcType=BIGINT} then #{item.character,jdbcType=VARCHAR}
+          <if test="item.characterName != null">
+              when id = #{item.id,jdbcType=BIGINT} then #{item.characterName,jdbcType=VARCHAR}
           </if>
         </foreach>
       </trim>
@@ -217,14 +217,15 @@
     <!--@mbg.generated-->
     insert into wallet_journal
     (id, amount, balance, context_id, context_id_type, `date`, description, first_party_id, 
-      reason, ref_type, second_party_id, tax, tax_receiver_id, `character`, owner_id)
+      reason, ref_type, second_party_id, tax, tax_receiver_id,  character_name, owner_id)
     values
     <foreach collection="list" item="item" separator=",">
-      (#{item.id,jdbcType=BIGINT}, #{item.amount,jdbcType=DOUBLE}, #{item.balance,jdbcType=DOUBLE}, 
-        #{item.contextId,jdbcType=BIGINT}, #{item.contextIdType,jdbcType=VARCHAR}, #{item.date,jdbcType=TIMESTAMP}, 
-        #{item.description,jdbcType=LONGVARCHAR}, #{item.firstPartyId,jdbcType=INTEGER}, 
-        #{item.reason,jdbcType=LONGVARCHAR}, #{item.refType,jdbcType=LONGVARCHAR}, #{item.secondPartyId,jdbcType=INTEGER}, 
-        #{item.tax,jdbcType=DOUBLE}, #{item.taxReceiverId,jdbcType=INTEGER}, #{item.character,jdbcType=VARCHAR}, 
+        (#{item.id,jdbcType=BIGINT}, #{item.amount,jdbcType=DOUBLE}, #{item.balance,jdbcType=DOUBLE},
+        #{item.contextId,jdbcType=BIGINT}, #{item.contextIdType,jdbcType=VARCHAR}, #{item.date,jdbcType=TIMESTAMP},
+        #{item.description,jdbcType=LONGVARCHAR}, #{item.firstPartyId,jdbcType=INTEGER},
+        #{item.reason,jdbcType=LONGVARCHAR}, #{item.refType,jdbcType=LONGVARCHAR},
+        #{item.secondPartyId,jdbcType=INTEGER},
+        #{item.tax,jdbcType=DOUBLE}, #{item.taxReceiverId,jdbcType=INTEGER}, #{item.characterName,jdbcType=VARCHAR},
         #{item.ownerId,jdbcType=BIGINT})
     </foreach>
   </insert>
@@ -271,8 +272,8 @@
       <if test="taxReceiverId != null">
         tax_receiver_id,
       </if>
-      <if test="character != null">
-        `character`,
+      <if test="characterName != null">
+         character_name,
       </if>
       <if test="ownerId != null">
         owner_id,
@@ -319,8 +320,8 @@
       <if test="taxReceiverId != null">
         #{taxReceiverId,jdbcType=INTEGER},
       </if>
-      <if test="character != null">
-        #{character,jdbcType=VARCHAR},
+      <if test="characterName != null">
+          #{characterName,jdbcType=VARCHAR},
       </if>
       <if test="ownerId != null">
         #{ownerId,jdbcType=BIGINT},
@@ -367,8 +368,8 @@
       <if test="taxReceiverId != null">
         tax_receiver_id = #{taxReceiverId,jdbcType=INTEGER},
       </if>
-      <if test="character != null">
-        `character` = #{character,jdbcType=VARCHAR},
+      <if test="characterName != null">
+           character_name = #{characterName,jdbcType=VARCHAR},
       </if>
       <if test="ownerId != null">
         owner_id = #{ownerId,jdbcType=BIGINT},

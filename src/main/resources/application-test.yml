@@ -1,18 +1,21 @@
 server:
   port: 9999
 
+ai:
+  provider: dashscope
+
 spring:
   datasource:
     druid:
       system:
-        username: ${DB_SYSTEM_USERNAME}
-        password: ${DB_SYSTEM_PASSWORD}
-        url: jdbc:mysql://${DB_HOST}:${DB_PORT}/eve_helper?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
+        username: ${DB_SYSTEM_USERNAME:lyj}
+        password: ${DB_SYSTEM_PASSWORD:a.123456}
+        url: jdbc:mysql://${DB_HOST:192.168.12.249}:${DB_PORT:3307}/eve_helper?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
         driverClassName: com.mysql.cj.jdbc.Driver
-        #初始化连接池的连接数量 大小，最小，最大
-        initial-size: 5
-        min-idle: 5
-        max-active: 20
+        #初始化连接池的连接数量 大小,最小,最大 (测试环境使用较小的连接池)
+        initial-size: 1
+        min-idle: 1
+        max-active: 5
         #配置获取连接等待超时的时间
         max-wait: 60000
         #配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒
@@ -35,14 +38,14 @@ spring:
             merge-sql: true
             slow-sql-millis: 5000
       eve:
-        username: ${DB_SYSTEM_USERNAME}
-        password: ${DB_EVE_PASSWORD}
-        url: jdbc:mysql://${DB_HOST}:${DB_PORT}/eve?useUnicode=true&characterEncoding=utf8
+        username: ${DB_SYSTEM_USERNAME:lyj}
+        password: ${DB_SYSTEM_PASSWORD:a.123456}
+        url: jdbc:mysql://${DB_HOST:192.168.12.249}:${DB_PORT:3307}/eve?useUnicode=true&characterEncoding=utf8
         driverClassName: com.mysql.cj.jdbc.Driver
-        #初始化连接池的连接数量 大小，最小，最大
-        initial-size: 5
-        min-idle: 5
-        max-active: 20
+        #初始化连接池的连接数量 大小,最小,最大 (测试环境使用较小的连接池)
+        initial-size: 1
+        min-idle: 1
+        max-active: 5
         #配置获取连接等待超时的时间
         max-wait: 60000
         #配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒
@@ -76,29 +79,34 @@ spring:
     redis:
       time-to-live: 3000s
   ai:
-    provider: ${AI_PROVIDER:mock}
     dashscope:
-      api-key: ${AI_DASHSCOPE_API_KEY}
-      chat:
-        options:
-          model: qwen-max
-    # AI 会话记忆配置: inmemory / redis
+      api-key: sk-fe9fa30d508349598984dd113f262b9e
+    # 测试环境默认使用内存版
     memory:
       type: ${AI_MEMORY_TYPE:inmemory}
-      redis-ttl-minutes: 1440   # 24小时过期
-      refresh-ttl: true        # 每次访问刷新过期时间
-  data.redis.host: ${REDIS_HOST}
-  data.redis.password: ${REDIS_PASSWORD}
+      redis-ttl-minutes: 60
+      refresh-ttl: true
+#      read-timeout: 60
+#      chat:
+#        options:
+#          model: qwen3.6-plus
+#          model: qwen3-max
+#          temperature: 0.7
+#          multi-model: true
+#          stream: true
+  #          top-p: 0.9
+  data.redis.host: ${REDIS_HOST:192.168.12.249}
+  data.redis.password: ${REDIS_PASSWORD:axent666}
   data.redis.port: 6379
 # 日志配置
 logging:
   level:
     root: info
-    web:  debug
+    web:  info
     com:
       bolingcavalry:
         druidtwosource:
-          mapper: debug
+          mapper: info
 #  file:
 #    path: src\main\resource\log\
 mybatis-plus:
@@ -117,14 +125,17 @@ jwt-token:
 security:
   keystore:
     location: eve-jwt.jks
-    password: ${KEYSTORE_PASSWORD}
+    password: ${KEYSTORE_PASSWORD:eve000}
     alias: eve-jwt
-    key-password: ${KEY_PASSWORD}
+    key-password: ${KEY_PASSWORD:eve000}
 
 eve:
   helper:
     whiteUrlList:
 #      - GET:/
+      - GET:/api/ai/chat
+      - POST:/api/ai/query
+      - GET:/api/ai/stream/chat
       - POST:/user
 # springdoc-openapi项目配置
 springdoc:

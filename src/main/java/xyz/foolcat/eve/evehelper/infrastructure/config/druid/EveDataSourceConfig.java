@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.config.druid;
+package xyz.foolcat.eve.evehelper.infrastructure.config.druid;
 
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import org.apache.ibatis.session.SqlSessionFactory;

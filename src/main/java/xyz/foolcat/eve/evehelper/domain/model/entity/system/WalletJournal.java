@@ -80,7 +80,7 @@ public class WalletJournal  implements Serializable {
     /**
      * 人物
      */
-    private String character;
+    private String characterName;
 
     /**
      * 所有者ID

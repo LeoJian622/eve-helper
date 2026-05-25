@@ -370,6 +370,16 @@ public class BlueprintsQueryHandler implements QueryHandler<BlueprintsQuery, Pag
 - 使用 `.env.example` 作为环境变量配置参考
 
 <!-- SPECKIT START -->
+## Active Feature: Spring AI 数据库查询 Agent
+
+**Plan Path**: specs/002-spring-ai-db-agent/plan.md
+
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+shell commands, and other important information, read the current plan.
+
+### Quick Reference:
+- Spring AI Alibaba 1.1.2.0 for LLM integration
+- Follow existing DDD architecture patterns
+- Read-only database operations enforced by security layer
+- Max 50 results per query
 <!-- SPECKIT END -->

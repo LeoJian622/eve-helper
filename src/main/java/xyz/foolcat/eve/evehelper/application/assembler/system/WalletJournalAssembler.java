@@ -43,7 +43,7 @@ public interface WalletJournalAssembler {
      */
     @Mappings({
             @Mapping(source = "ownerId", target = "ownerId"),
-            @Mapping(source = "character", target = "character")
+            @Mapping(source = "character", target = "characterName")
     })
     WalletJournal toWalletJournal(WalletJournalResponse walletJournalResponse, Integer ownerId, String character);
 } 

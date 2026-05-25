@@ -73,7 +73,7 @@ public class WalletJournalPO  implements Serializable {
 
     @TableField(value = "`character`")
     @Schema(description = "人物")
-    private String character;
+    private String characterName;
 
     @TableField(value = "owner_id")
     @Schema(description = "所有者ID")

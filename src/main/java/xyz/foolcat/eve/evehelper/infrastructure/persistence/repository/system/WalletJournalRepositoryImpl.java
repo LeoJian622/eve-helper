@@ -70,7 +70,7 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
                 .lambda()
                 .and(item -> item.in(WalletJournalPO::getRefType, refType))
                 .between(WalletJournalPO::getDate, start, end)
-                .groupBy(WalletJournalPO::getCharacter));
+                .groupBy(WalletJournalPO::getCharacterName));
 
     }
 } 

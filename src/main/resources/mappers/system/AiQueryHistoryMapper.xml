@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.AiQueryHistoryMapper">
+
+    <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.AiQueryHistoryPO">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="user_question" property="userQuestion"/>
+        <result column="generated_sql" property="generatedSql"/>
+        <result column="result_count" property="resultCount"/>
+        <result column="execution_time" property="executionTime"/>
+        <result column="success" property="success"/>
+        <result column="error_message" property="errorMessage"/>
+        <result column="session_id" property="sessionId"/>
+        <result column="gmt_create" jdbcType="TIMESTAMP" property="gmtCreate" />
+        <result column="gmt_modified" jdbcType="TIMESTAMP" property="gmtModified" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, user_question, generated_sql, result_count, execution_time, success, error_message, session_id, created_at, updated_at
+    </sql>
+
+    <select id="findByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM ai_query_history
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>
