@@ -112,10 +112,10 @@ public class SqlGenerationService {
                 
                 示例：
                 用户：查询所有用户ID
-                输出：SELECT user_id FROM ai_query_history LIMIT 50;
+                输出：[SQL]SELECT user_id FROM ai_query_history LIMIT 50;[/SQL] 
                 
                 用户：查询 EVE 账号表
-                输出：SELECT * FROM eve_account LIMIT 50;
+                输出：[SQL]SELECT * FROM eve_account LIMIT 50;[/SQL] 
 
                 如果无法理解用户的问题或无法生成正确的SQL，请返回：ERROR: 无法理解您的查询
                 """.formatted(schemaContext);
