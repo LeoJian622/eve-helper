@@ -18,8 +18,6 @@ EVE Helper 项目文档中心。
 
 | 文档 | 描述 | 最后更新 |
 |------|------|----------|
-| [DDD架构迁移](../DDD_ARCHITECTURE_MIGRATION.md) | DDD架构迁移说明 | 2025-01-29 |
-| [DDD迁移计划](../DDD_MIGRATION_PLAN.md) | DDD迁移详细计划 | 2025-01-29 |
 | [应用层README](../src/main/java/xyz/foolcat/eve/evehelper/application/README.md) | 应用层架构说明 | 2025-01-29 |
 | [领域层README](../src/main/java/xyz/foolcat/eve/evehelper/domain/README.md) | 领域层架构说明 | 2025-01-29 |
 | [基础设施层README](../src/main/java/xyz/foolcat/eve/evehelper/infrastructure/README.md) | 基础设施层架构说明 | 2025-01-29 |
@@ -30,8 +28,10 @@ EVE Helper 项目文档中心。
 
 | 文档 | 描述 | 最后更新 |
 |------|------|----------|
-| [CLAUDE.md](../CLAUDE.md) | Claude AI使用指南 | 2026-02-01 |
-| [SKILL.md](../SKILL.md) | 技能系统文档 | 2026-02-01 |
+| [CLAUDE.md](../CLAUDE.md) | Claude Code 项目指南(架构/约束/流程速查) | 2026-08-04 |
+| [AGENTS.md](../AGENTS.md) | 跨 AI 工具入口指针 | 2026-08-04 |
+| [AI开发工作流](./AI_WORKFLOW.md) | Spec-Kit + Superpowers + ECC 分级流程 | 2026-08-04 |
+| [项目编码模式技能](../.claude/skills/eve-helper-patterns/SKILL.md) | Git 历史提炼的编码模式 | 2026-08-04 |
 
 ## 🚀 快速导航
 
@@ -45,7 +45,7 @@ EVE Helper 项目文档中心。
 ### 开发者
 
 - **项目结构**: [开发指南 - 项目结构](./DEVELOPMENT.md#项目结构)
-- **DDD架构**: [DDD架构迁移](../DDD_ARCHITECTURE_MIGRATION.md)
+- **DDD架构**: [开发指南 - DDD架构说明](./DEVELOPMENT.md#ddd架构说明)
 - **代码规范**: [开发指南 - 代码规范](./DEVELOPMENT.md#代码规范)
 - **测试编写**: [测试指南](./TESTING.md)
 - **Maven命令**: [开发指南 - Maven命令参考](./DEVELOPMENT.md#maven命令参考)
@@ -89,7 +89,7 @@ EVE Helper 项目文档中心。
 - [性能优化](./DEPLOYMENT.md#性能优化)
 
 #### 架构设计
-- [DDD架构](../DDD_ARCHITECTURE_MIGRATION.md)
+- [DDD架构](./DEVELOPMENT.md#ddd架构说明)
 - [分层架构](./DEVELOPMENT.md#ddd架构说明)
 - [项目结构](./DEVELOPMENT.md#项目结构)
 
@@ -99,7 +99,7 @@ EVE Helper 项目文档中心。
 - ✅ [开发指南](./DEVELOPMENT.md)
 - ✅ [测试指南](./TESTING.md)
 - ✅ [环境变量配置](./ENVIRONMENT.md)
-- ✅ [DDD架构迁移](../DDD_ARCHITECTURE_MIGRATION.md)
+- ✅ [AI开发工作流](./AI_WORKFLOW.md)
 
 #### 运维工程师
 - ✅ [部署运维手册](./DEPLOYMENT.md)
@@ -112,7 +112,7 @@ EVE Helper 项目文档中心。
 
 #### 项目经理
 - ✅ [README.md](../README.md)
-- ✅ [DDD迁移计划](../DDD_MIGRATION_PLAN.md)
+- ✅ [CLAUDE.md](../CLAUDE.md)
 
 ## 🔍 搜索文档
 
@@ -127,7 +127,7 @@ EVE Helper 项目文档中心。
 | 应用启动失败怎么办? | [部署运维手册 - 常见问题处理](./DEPLOYMENT.md#常见问题处理) |
 | 如何查看日志? | [部署运维手册 - 验证部署](./DEPLOYMENT.md#7-验证部署) |
 | 如何回滚版本? | [部署运维手册 - 回滚流程](./DEPLOYMENT.md#回滚流程) |
-| 什么是DDD架构? | [DDD架构迁移](../DDD_ARCHITECTURE_MIGRATION.md) |
+| 什么是DDD架构? | [开发指南 - DDD架构说明](./DEVELOPMENT.md#ddd架构说明) |
 
 ## 📝 文档维护
 
@@ -168,21 +168,21 @@ EVE Helper 项目文档中心。
 
 ## 📊 文档统计
 
-- **总文档数**: 15个
+- **总文档数**: 14个
 - **核心文档**: 5个
-- **架构文档**: 7个
-- **工具文档**: 2个
-- **最近更新**: 2026-02-01
+- **架构文档**: 5个
+- **工具文档**: 4个
+- **最近更新**: 2026-08-04
 - **文档覆盖率**: 95%
 
 ## 🔗 外部资源
 
 ### 技术栈文档
 
-- [Spring Boot 2.7.x](https://docs.spring.io/spring-boot/docs/2.7.x/reference/html/)
+- [Spring Boot 3.5.x](https://docs.spring.io/spring-boot/reference/)
 - [MyBatis-Plus](https://baomidou.com/)
 - [Redis](https://redis.io/documentation)
-- [MySQL 8.0](https://dev.mysql.com/doc/refman/8.0/en/)
+- [MySQL](https://dev.mysql.com/doc/)
 - [JUnit 5](https://junit.org/junit5/docs/current/user-guide/)
 
 ### EVE Online相关
@@ -193,7 +193,7 @@ EVE Helper 项目文档中心。
 
 ---
 
-**最后更新**: 2026-02-01
+**最后更新**: 2026-08-04
 **维护者**: EVE Helper Documentation Team
 
 **文档版本**: v1.0.0

@@ -452,7 +452,7 @@ lsof -i :9999                 # Linux/Mac
 - [测试指南](./TESTING.md)
 - [部署手册](./DEPLOYMENT.md)
 - [API文档](./API.md)
-- [DDD架构迁移](../DDD_ARCHITECTURE_MIGRATION.md)
+- [项目指南与架构](../CLAUDE.md)
 
 ## 🆘 获取帮助
 
