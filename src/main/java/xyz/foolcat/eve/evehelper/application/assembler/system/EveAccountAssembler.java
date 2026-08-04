@@ -3,6 +3,7 @@ package xyz.foolcat.eve.evehelper.application.assembler.system;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
+import xyz.foolcat.eve.evehelper.application.dto.UserAccountDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EveAccountPO;
 
@@ -43,4 +44,18 @@ public interface EveAccountAssembler {
             @Mapping(target = "gmtModified", ignore = true)
     })
     List<EveAccountPO> domain2Po(List<EveAccount> eveAccount);
+
+    /**
+     * EveAccountPO 转换为 EveAccount
+     * @param eveAccountPO
+     * @return
+     */
+    List<EveAccount> po2Domain(List<EveAccountPO> eveAccountPO);
+
+    /**
+     * EveAccount 转换为 UserAccountTO
+     * @param eveAccount
+     * @return
+     */
+    List<UserAccountDTO> domain2UserAccountTO(List<EveAccount> eveAccount);
 } 

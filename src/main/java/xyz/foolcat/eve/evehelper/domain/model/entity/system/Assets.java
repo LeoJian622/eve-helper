@@ -56,6 +56,21 @@ public class Assets implements Serializable {
      */
     private Long ownerId;
 
+    /**
+     * 物品名称（联表inv_types）
+     */
+    private String typeName;
+
+    /**
+     * 位置名称（联表universe_name）
+     */
+    private String name;
+
+    /**
+     * 角色名称（联表eve_account）
+     */
+    private String characterName;
+
     @Serial
     private static final long serialVersionUID = 1L;
 } 

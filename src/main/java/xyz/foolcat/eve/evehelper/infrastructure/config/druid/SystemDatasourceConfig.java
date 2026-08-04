@@ -1,5 +1,7 @@
 package xyz.foolcat.eve.evehelper.config.druid;
 
+import com.baomidou.mybatisplus.core.config.GlobalConfig;
+import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.mybatis.spring.SqlSessionTemplate;
@@ -27,9 +29,13 @@ public class SystemDatasourceConfig {
 
     @Primary
     @Bean
-    public SqlSessionFactory systemSqlSessionFactory(@Qualifier("systemDataSource") DataSource dataSource) throws Exception {
+    public SqlSessionFactory systemSqlSessionFactory(@Qualifier("systemDataSource") DataSource dataSource,
+                                                     MybatisPlusInterceptor mybatisPlusInterceptor,
+                                                     GlobalConfig globalConfig) throws Exception {
         MybatisSqlSessionFactoryBean sqlSessionFactoryBean = new MybatisSqlSessionFactoryBean();
         sqlSessionFactoryBean.setDataSource(dataSource);
+        sqlSessionFactoryBean.setPlugins(mybatisPlusInterceptor);
+        sqlSessionFactoryBean.setGlobalConfig(globalConfig);
         sqlSessionFactoryBean.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:mappers/system/*Mapper.xml"));
         return sqlSessionFactoryBean.getObject();
     }

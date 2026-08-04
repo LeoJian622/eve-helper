@@ -124,7 +124,7 @@ create table if not exists inv_types
     type_id                 int              not null
         primary key,
     group_id                int              null,
-    type_name               varchar(500)     null,
+    `name`                  varchar(500)     null,
     description             longtext         null,
     mass                    float            null,
     volume                  float            null,

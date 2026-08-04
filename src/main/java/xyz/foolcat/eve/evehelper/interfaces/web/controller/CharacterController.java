@@ -1,5 +1,6 @@
 package xyz.foolcat.eve.evehelper.interfaces.web.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,6 +34,7 @@ public class CharacterController {
             @Parameter(name = "type", description = "枚举值，人物：char; 公司：crop; 技能：skill; 基础：normal" ,required = true),
             @Parameter(name = "code", description = "授权code" ,required = true)
     })
+    @Operation(summary = "角色服务- 角色授权绑定")
     @PostMapping("/{type}/{code}")
     public Result addCharacterAuth(@PathVariable String type, @PathVariable String code) throws ParseException {
         esiApiService.getAccessToken(code, UserUtil.getUserId());

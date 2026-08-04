@@ -70,6 +70,27 @@ public class AssetsPO implements Serializable {
     @Schema(description = "所有者ID")
     private Long ownerId;
 
+    /**
+     * 物品名称（联表inv_types）
+     */
+    @TableField(exist = false)
+    @Schema(description = "物品名称")
+    private String typeName;
+
+    /**
+     * 位置名称（联表universe_name）
+     */
+    @TableField(exist = false)
+    @Schema(description = "位置名称")
+    private String name;
+
+    /**
+     * 角色名称（联表eve_account）
+     */
+    @TableField(exist = false)
+    @Schema(description = "角色名称")
+    private String characterName;
+
     @Serial
     private static final long serialVersionUID = 1L;
 

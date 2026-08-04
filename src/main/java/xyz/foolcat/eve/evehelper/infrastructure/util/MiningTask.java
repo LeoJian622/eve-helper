@@ -5,7 +5,6 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.domain.model.entity.eve.InvUniqueNames;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
@@ -62,7 +61,7 @@ public class MiningTask {
     /**
      * 通知卫星矿可开采时间
      */
-    @Scheduled(cron = "0 0 19 * * ? ")
+//    @Scheduled(cron = "0 0 19 * * ? ")
     public void noticeExtraction() {
         log.info("noticeExtraction");
         EveAccount eveAccount = authorizeUtil.authorize(TaskConstant.CHARACTER_ID);
@@ -84,7 +83,7 @@ public class MiningTask {
     /**
      * 通知卫星矿可开采时间
      */
-    @Scheduled(cron = "0 0 19 * * 1 ")
+//    @Scheduled(cron = "0 0 19 * * 1 ")
     public void noticeExtraction7Day() {
         log.info("noticeExtraction");
         Integer characterId = 2112818290;

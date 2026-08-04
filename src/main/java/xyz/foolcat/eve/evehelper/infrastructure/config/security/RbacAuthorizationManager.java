@@ -40,7 +40,7 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
 
     final RedisTemplate<String, Object> redisTemplate;
 
-    final xyz.foolcat.eve.evehelper.config.security.EveHelperSecurityConfig eveHelperSecurityConfig;
+    final EveHelperSecurityConfig eveHelperSecurityConfig;
 
     final PathMatcher pathMatcher = new AntPathMatcher();
 
@@ -126,12 +126,13 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
             boolean finalPersonSourceVery = personSourceVery;
             hasPermission = authentications.stream()
                     .map(GrantedAuthority::getAuthority)
-                    .anyMatch(authority -> {
-                        if (GlobalConstants.ROOT_ROLE_CODE.equals(authority)) {
-                            return true;
-                        }
-                        return CollectionUtil.isNotEmpty(authorizedRoles) && authorizedRoles.contains(authority) && finalPersonSourceVery;
-                    });
+                    .anyMatch(authority ->
+                            // 如果是 ROOT 角色，直接放行
+                            GlobalConstants.ROOT_ROLE_CODE.equals(authority)
+                                    ||
+                                    // 否则，必须同时满足：有授权角色 且 人员来源校验通过
+                                    (CollectionUtil.isNotEmpty(authorizedRoles) && authorizedRoles.contains(authority) && finalPersonSourceVery)
+                    );
         }
         return new AuthorizationDecision(hasPermission);
 //        return new AuthorizationDecision(true);

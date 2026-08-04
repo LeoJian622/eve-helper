@@ -39,5 +39,6 @@ public class EsiConfigService {
     public int insertOrUpdateSelective(EsiConfig record) {
         return esiConfigRepository.insertOrUpdateSelective(record);
     }
+
 }
 

@@ -4,7 +4,6 @@ import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
 import xyz.foolcat.eve.evehelper.domain.service.system.StructureService;
@@ -49,7 +48,7 @@ public class StructTask {
     /**
      * 更新建築信息
      */
-    @Scheduled(cron = "0 0 0/1 * * ? ")
+//    @Scheduled(cron = "0 0 0/1 * * ? ")
     public void updateStruct() {
         log.info("updateStruct");
         try {
@@ -62,7 +61,7 @@ public class StructTask {
     /**
      * 通知24小時燃料耗盡的建築
      */
-    @Scheduled(cron = "0 0 18,22 * * ? ")
+//    @Scheduled(cron = "0 0 18,22 * * ? ")
     public void noticeFuelExpires() {
         log.info("noticeFuelExpires");
         List<Structure> structures = structureService.selectFuelExpiresList(24, 656880659);

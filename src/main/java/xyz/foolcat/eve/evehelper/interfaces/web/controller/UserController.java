@@ -6,15 +6,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import xyz.foolcat.eve.evehelper.application.assembler.system.EveAccountAssembler;
 import xyz.foolcat.eve.evehelper.application.assembler.system.SysUserAssembler;
+import xyz.foolcat.eve.evehelper.application.dto.UserAccountDTO;
 import xyz.foolcat.eve.evehelper.application.dto.response.UserDTO;
-import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
+import xyz.foolcat.eve.evehelper.application.service.UserApplicationService;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
+import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
+
+import java.util.List;
 
 /**
  * @author Leojan
@@ -32,12 +34,16 @@ public class UserController {
 
     private final SysUserAssembler userAssembler;
 
+    private final EveAccountAssembler eveAccountAssembler;
+
     private final PasswordEncoder passwordEncoder;
+
+    private final UserApplicationService userApplicationService;
 
     @Parameter(name = "user", description = "用户对象",required = true)
     @Operation(summary = "用户服务-用户注册")
     @PostMapping
-    public Result addUser(@RequestBody UserDTO user) {
+    public Result<String> addUser(@RequestBody UserDTO user) {
 
         SysUser sysUser = userAssembler.userDto2SysUser(user);
 
@@ -47,5 +53,12 @@ public class UserController {
         sysUser.setPassword(passwordEncoder.encode(sysUser.getPassword()));
         sysUserService.insert(sysUser);
         return Result.success("注册成功");
+    }
+
+    @Parameter(name = "userId", description = "用户ID",required = true)
+    @Operation(summary = "用户服务-用户绑定的角色列表")
+    @GetMapping("/{userId}")
+    public Result<List<UserAccountDTO>> addUser(@PathVariable Integer userId) {
+        return Result.success(eveAccountAssembler.domain2UserAccountTO(userApplicationService.queryAccountList(userId)));
     }
 }

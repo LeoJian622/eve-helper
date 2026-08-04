@@ -50,7 +50,7 @@ public class BlueprintsController {
     })
     @Operation(summary = "蓝图数据-蓝图清单")
     @GetMapping("/{id}")
-    public Result getBlueprintsList(
+    public Result<PageResult<BlueprintsVO>> getBlueprintsList(
             @PathVariable String id,
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "20") Integer size,
@@ -71,7 +71,6 @@ public class BlueprintsController {
                 .build();
         
         // 调用应用服务
-        PageResult<BlueprintsVO> result = blueprintsApplicationService.queryBlueprintsByPage(queryDTO);
-        return Result.success(result);
+        return Result.success(blueprintsApplicationService.queryBlueprintsByPage(queryDTO));
     }
 }

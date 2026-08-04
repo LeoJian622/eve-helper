@@ -17,4 +17,6 @@ public interface EveAccountRepository  {
     int insertOrUpdateSelective(EveAccount record);
 
     EveAccount getAccount(Integer userId, Integer cId);
+
+    List<EveAccount> getAccountList(Integer userId);
 }

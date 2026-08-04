@@ -45,7 +45,7 @@ public class AssetsController {
     })
     @Operation(summary = "游戏资产-资产清单")
     @GetMapping("/{cid}")
-    public Result getAssetsList(@PathVariable String cid, @RequestParam(defaultValue = "0") Integer current, @RequestParam(defaultValue = "30") Integer size){
+    public Result<IPage<Assets>> getAssetsList(@PathVariable String cid, @RequestParam(defaultValue = "0") Integer current, @RequestParam(defaultValue = "30") Integer size){
         IPage<Assets> page = new Page<>();
         page.setCurrent(current);
         page.setSize(size);

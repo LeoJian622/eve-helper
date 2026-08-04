@@ -2,7 +2,6 @@ package xyz.foolcat.eve.evehelper.infrastructure.util;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.domain.service.system.WalletJournalService;
 
@@ -23,7 +22,7 @@ public class WalletTask {
     /**
      * 更新钱包记录
      */
-    @Scheduled(cron = "0 0 0 1/15 * ? ")
+//    @Scheduled(cron = "0 0 0 1/15 * ? ")
     public void updateWallet() {
         log.info("updateWallet");
         try {

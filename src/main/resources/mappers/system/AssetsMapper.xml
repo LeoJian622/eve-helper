@@ -245,7 +245,7 @@
     <select id="selectAssertsInvtypeUniverse" resultType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.AssetsPO">
         select ass.item_id,
                ass.type_id,
-               it.type_name,
+               it.name as type_name,
                ass.location_id,
                uni.name,
                ass.location_type,

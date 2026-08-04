@@ -244,7 +244,7 @@
 
   <select id="selectBlueprintsInvtypeUniverse" resultType="xyz.foolcat.eve.evehelper.application.dto.BlueprintsDTO">
     select
-      bt.item_id,bt.type_id,it.type_name,bt.material_efficiency,bt.time_efficiency,bt.runs,ass.is_blueprint_copy,bt.location_id,bt.location_flag,bt.quantity,ec.character_name as 'owner',bt.owner_id
+      bt.item_id,bt.type_id,it.name as type_name,bt.material_efficiency,bt.time_efficiency,bt.runs,ass.is_blueprint_copy,bt.location_id,bt.location_flag,bt.quantity,ec.character_name as 'owner',bt.owner_id
     from blueprints as bt
            left join assets ass on bt.item_id = ass.item_id
            left join inv_types it on bt.type_id = it.type_id

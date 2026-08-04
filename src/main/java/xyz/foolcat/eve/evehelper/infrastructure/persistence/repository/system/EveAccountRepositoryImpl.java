@@ -52,5 +52,10 @@ public class EveAccountRepositoryImpl implements EveAccountRepository {
         eveAccountMapper.queryOneUserIdAndCharacterId(userId, cId));
     }
 
+    @Override
+    public List<EveAccount> getAccountList(Integer userId) {
+        return eveAccountAssembler.po2Domain(eveAccountMapper.queryAccountList(userId));
+    }
+
 
 }

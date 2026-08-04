@@ -20,5 +20,7 @@ public interface EveAccountMapper extends BaseMapper<EveAccountPO> {
 
     EveAccountPO queryOneUserIdAndCharacterId(@Param("userId") Integer userId,@Param("cId") Integer cId);
 
+    List<EveAccountPO> queryAccountList(Integer userId);
+
     // 只保留基础 CRUD
 }

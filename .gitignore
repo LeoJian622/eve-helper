@@ -40,5 +40,8 @@ rebel.xml
 
 ### Environment Variables ###
 .env
+.env.aliw
+.env.dev
+.env.prd
 *.env
 !.env.example

@@ -36,6 +36,16 @@ public class EveAccountService  {
     }
 
     /**
+     * 获取用户所有游戏账户
+     *
+     * @param userId 用户ID
+     * @return 用户所有游戏账户
+     */
+    public List<EveAccount> getAccountList(Integer userId) {
+        return eveAccountRepository.getAccountList(userId);
+    }
+
+    /**
      * 根据人物或者公司ID以及用户ID或者QQ
      * 获取游戏账户信息
      *

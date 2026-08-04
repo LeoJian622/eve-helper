@@ -10,7 +10,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import xyz.foolcat.eve.evehelper.domain.service.system.MarketGroupsService;
+import xyz.foolcat.eve.evehelper.interfaces.web.vo.MarketGroupsTreeVO;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
+
+import java.util.List;
 
 /**
  * @author Leojan
@@ -29,9 +32,8 @@ public class MarketGroupController {
     @Parameter(name="parent", description = "分组的父节点ID",required = true)
     @Operation(summary = "市场物品分组-子分类查询")
     @GetMapping("/{parent}")
-    public Result getMarketGrouptTree(@PathVariable Integer parent){
+    public Result<List<MarketGroupsTreeVO>> getMarketGrouptTree(@PathVariable Integer parent){
 
-        return Result.success(marketGroupsService.selectMarketGroupByParent(parent)
-        );
+        return Result.success(marketGroupsService.selectMarketGroupByParent(parent));
     }
 }
