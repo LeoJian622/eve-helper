@@ -5,14 +5,11 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.web.bind.annotation.*;
-import xyz.foolcat.eve.evehelper.application.assembler.system.SysUserAssembler;
 import xyz.foolcat.eve.evehelper.application.dto.UserAccountDTO;
 import xyz.foolcat.eve.evehelper.application.dto.response.UserDTO;
 import xyz.foolcat.eve.evehelper.application.service.UserApplicationService;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
-import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 
 import java.util.List;
@@ -29,30 +26,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final SysUserService sysUserService;
-
-    private final SysUserAssembler userAssembler;
-
-    private final PasswordEncoder passwordEncoder;
-
     private final UserApplicationService userApplicationService;
-
 
     @Operation(summary = "用户服务-用户注册")
     @Parameter(name = "user", description = "用户对象",required = true)
     @PostMapping
     public Result<String> addUser(@RequestBody UserDTO user) {
-
-        SysUser sysUser = userAssembler.userDto2SysUser(user);
-
-        if (sysUser == null) {
-            return Result.failed("参数错误");
-        }
-        sysUser.setPassword(passwordEncoder.encode(sysUser.getPassword()));
-        sysUserService.insert(sysUser);
+        userApplicationService.register(user);
         return Result.success("注册成功");
     }
-
 
     @Operation(summary = "用户服务-用户绑定的角色列表(含 ESI 授权状态)")
     @Parameter(name = "userId", description = "用户ID",required = true)

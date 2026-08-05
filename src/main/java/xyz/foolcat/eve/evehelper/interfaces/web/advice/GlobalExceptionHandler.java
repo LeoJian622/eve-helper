@@ -20,6 +20,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
+import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
@@ -210,6 +211,20 @@ public class GlobalExceptionHandler   {
     public <T> Result<T> handleEsiException(EsiException e) {
         log.error("ESI接口异常: ", e);
         return Result.result(e.getResultCode().getCode(), e.getMessage(), null);
+    }
+
+    /**
+     * 业务异常
+     */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(EveHelperException.class)
+    public <T> Result<T> handleEveHelperException(EveHelperException e) {
+        log.warn("业务异常: code={}, msg={}",
+                e.getResultCode() == null ? null : e.getResultCode().getCode(), e.getMessage());
+        if (e.getResultCode() != null) {
+            return Result.result(e.getResultCode().getCode(), e.getMessage(), null);
+        }
+        return Result.failed(e.getMessage());
     }
 
     /**

@@ -13,8 +13,6 @@ import xyz.foolcat.eve.evehelper.interfaces.web.vo.BlueprintsVO;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 
-import java.text.ParseException;
-
 /**
  * @author Leojan
  * date 2022-05-19 11:02
@@ -27,17 +25,6 @@ import java.text.ParseException;
 public class BlueprintsController {
 
     private final BlueprintsApplicationService blueprintsApplicationService;
-
-    @Parameters({
-            @Parameter(name = "type", description = "枚举值，人物：char; 公司：crop" ,required = true),
-            @Parameter(name = "cid", description = "人物或军团的ID" ,required = true)
-    })
-    @Operation(summary = "蓝图数据-蓝图读取")
-    @GetMapping("/{type}/{cid}")
-    public Result addBlueprintsList(@PathVariable String type, @PathVariable String cid) throws ParseException {
-//        blueprintsService.saveAndUpdateBlueprints(type, cid);
-        return Result.success();
-    }
 
     @Parameters({
             @Parameter(name = "id", description = "人物或军团的ID", required = true),

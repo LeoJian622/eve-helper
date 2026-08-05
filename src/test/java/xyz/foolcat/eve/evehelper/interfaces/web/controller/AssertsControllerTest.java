@@ -26,9 +26,9 @@ class AssertsControllerTest {
     MockMvc mockMvc;
 
     @Test
-    void addAssetsList() throws Exception {
-        String url = "/assert/2112818290";
-        String result = mockMvc.perform(MockMvcRequestBuilders.put(url))
+    void syncAssets() throws Exception {
+        String url = "/assets/2112818290/sync";
+        String result = mockMvc.perform(MockMvcRequestBuilders.post(url))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andDo(MockMvcResultHandlers.print())
                 .andReturn()
@@ -39,7 +39,7 @@ class AssertsControllerTest {
 
     @Test
     void getAssetsList() throws Exception {
-        String url = "/assert/2112818290";
+        String url = "/assets/2112818290";
         String result = mockMvc.perform(MockMvcRequestBuilders.get(url))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andDo(MockMvcResultHandlers.print())

@@ -10,11 +10,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
+import xyz.foolcat.eve.evehelper.application.service.CharacterApplicationService;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 import xyz.foolcat.eve.evehelper.shared.util.UserUtil;
-
-import java.text.ParseException;
 
 /**
  * @author Leojan
@@ -28,7 +26,7 @@ import java.text.ParseException;
 @RequiredArgsConstructor
 public class CharacterController {
 
-    private final EsiApiService esiApiService;
+    private final CharacterApplicationService characterApplicationService;
 
     @Parameters({
             @Parameter(name = "type", description = "枚举值，人物：char; 公司：crop; 技能：skill; 基础：normal" ,required = true),
@@ -36,8 +34,8 @@ public class CharacterController {
     })
     @Operation(summary = "角色服务- 角色授权绑定")
     @PostMapping("/{type}/{code}")
-    public Result addCharacterAuth(@PathVariable String type, @PathVariable String code) throws ParseException {
-        esiApiService.getAccessToken(code, UserUtil.getUserId());
+    public Result addCharacterAuth(@PathVariable String type, @PathVariable String code) {
+        characterApplicationService.authorizeCharacter(type, code, UserUtil.getUserId());
         return Result.success();
     }
 }

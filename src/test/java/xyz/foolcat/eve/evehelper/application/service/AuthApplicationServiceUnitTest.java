@@ -1,0 +1,125 @@
+package xyz.foolcat.eve.evehelper.application.service;
+
+import jakarta.servlet.http.HttpServletRequest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import xyz.foolcat.eve.evehelper.application.dto.request.RefreshTokenRequest;
+import xyz.foolcat.eve.evehelper.application.dto.response.TokenPair;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
+import xyz.foolcat.eve.evehelper.domain.service.security.TokenBlacklistService;
+import xyz.foolcat.eve.evehelper.domain.service.security.TokenService;
+import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
+import xyz.foolcat.eve.evehelper.shared.kernel.constants.SecurityConstant;
+import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+/**
+ * 认证应用服务单元测试。
+ *
+ * @author Leojan
+ */
+@ExtendWith(MockitoExtension.class)
+@DisplayName("认证应用服务单元测试")
+class AuthApplicationServiceUnitTest {
+
+    @Mock
+    TokenBlacklistService tokenBlacklistService;
+
+    @Mock
+    TokenService tokenService;
+
+    @Mock
+    SysUserService sysUserService;
+
+    private AuthApplicationService authApplicationService;
+
+    @BeforeEach
+    void setUp() {
+        authApplicationService = new AuthApplicationService(
+                tokenBlacklistService, tokenService, sysUserService);
+    }
+
+    @Test
+    @DisplayName("登出:缺少 Authorization 头 -> 抛异常")
+    void logout_missingHeader_throws() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader(SecurityConstant.AUTHORIZATION_KEY)).thenReturn(null);
+
+        assertThrows(EveHelperException.class, () -> authApplicationService.logout(request));
+        verify(tokenBlacklistService, never()).addToBlacklist(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    @DisplayName("登出:非 Bearer 前缀 -> 抛异常")
+    void logout_nonBearer_throws() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader(SecurityConstant.AUTHORIZATION_KEY)).thenReturn("Basic abc");
+
+        assertThrows(EveHelperException.class, () -> authApplicationService.logout(request));
+    }
+
+    @Test
+    @DisplayName("登出:非法 JWT -> 抛异常")
+    void logout_invalidJwt_throws() {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getHeader(SecurityConstant.AUTHORIZATION_KEY))
+                .thenReturn(SecurityConstant.JWT_PREFIX + "not-a-jwt");
+
+        assertThrows(EveHelperException.class, () -> authApplicationService.logout(request));
+    }
+
+    @Test
+    @DisplayName("刷新:Refresh Token 为空 -> 抛异常")
+    void refreshToken_empty_throws() {
+        RefreshTokenRequest request = new RefreshTokenRequest();
+        request.setRefreshToken("  ");
+
+        assertThrows(EveHelperException.class, () -> authApplicationService.refreshToken(request));
+    }
+
+    @Test
+    @DisplayName("刷新:Refresh Token 非 UUID 格式 -> 抛异常")
+    void refreshToken_badFormat_throws() {
+        RefreshTokenRequest request = new RefreshTokenRequest();
+        request.setRefreshToken("not-a-uuid");
+
+        assertThrows(EveHelperException.class, () -> authApplicationService.refreshToken(request));
+    }
+
+    @Test
+    @DisplayName("刷新:Refresh Token 无效 -> 抛异常")
+    void refreshToken_invalid_throws() {
+        RefreshTokenRequest request = new RefreshTokenRequest();
+        request.setRefreshToken("123e4567-e89b-12d3-a456-426614174000");
+        when(tokenService.isRefreshTokenValid("123e4567-e89b-12d3-a456-426614174000")).thenReturn(false);
+
+        assertThrows(EveHelperException.class, () -> authApplicationService.refreshToken(request));
+    }
+
+    @Test
+    @DisplayName("刷新:有效 -> 返回新 Token 对")
+    void refreshToken_valid_returnsTokenPair() {
+        RefreshTokenRequest request = new RefreshTokenRequest();
+        request.setRefreshToken("123e4567-e89b-12d3-a456-426614174000");
+        when(tokenService.isRefreshTokenValid("123e4567-e89b-12d3-a456-426614174000")).thenReturn(true);
+        when(tokenService.getUserIdFromRefreshToken("123e4567-e89b-12d3-a456-426614174000")).thenReturn(1);
+        SysUser user = new SysUser();
+        when(sysUserService.loadUserById(1)).thenReturn(user);
+        TokenPair pair = new TokenPair();
+        when(tokenService.refreshAccessTokenWithUser("123e4567-e89b-12d3-a456-426614174000", user)).thenReturn(pair);
+
+        TokenPair result = authApplicationService.refreshToken(request);
+
+        assertEquals(pair, result);
+    }
+}

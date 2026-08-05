@@ -8,11 +8,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import xyz.foolcat.eve.evehelper.application.assembler.system.EveAccountAssembler;
+import xyz.foolcat.eve.evehelper.application.assembler.system.SysUserAssembler;
 import xyz.foolcat.eve.evehelper.application.dto.UserAccountDTO;
+import xyz.foolcat.eve.evehelper.application.dto.response.UserDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 
@@ -25,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -46,6 +52,15 @@ class UserApplicationServiceUnitTest {
     @Mock
     EveAccountAssembler eveAccountAssembler;
 
+    @Mock
+    SysUserService sysUserService;
+
+    @Mock
+    SysUserAssembler userAssembler;
+
+    @Mock
+    PasswordEncoder passwordEncoder;
+
     /**
      * 同步执行器:任务在调用线程直接执行,保证测试确定性(并行逻辑仍走 CompletableFuture)。
      */
@@ -56,7 +71,8 @@ class UserApplicationServiceUnitTest {
     @BeforeEach
     void setUp() {
         userApplicationService = new UserApplicationService(
-                eveAccountService, esiApiService, eveAccountAssembler, esiAuthStatusExecutor);
+                eveAccountService, esiApiService, eveAccountAssembler,
+                sysUserService, userAssembler, passwordEncoder, esiAuthStatusExecutor);
     }
 
     private EveAccount account(int id, String refreshToken) {
@@ -157,5 +173,31 @@ class UserApplicationServiceUnitTest {
         } finally {
             SecurityContextHolder.clearContext();
         }
+    }
+
+    @Test
+    @DisplayName("注册:加密密码并入库")
+    void register_encodesAndInserts() {
+        UserDTO user = new UserDTO();
+        user.setUsername("alice");
+        user.setPassword("raw");
+        SysUser sysUser = new SysUser();
+        sysUser.setPassword("raw");
+        when(userAssembler.userDto2SysUser(user)).thenReturn(sysUser);
+        when(passwordEncoder.encode("raw")).thenReturn("encoded");
+
+        userApplicationService.register(user);
+
+        verify(sysUserService).insert(sysUser);
+        assertEquals("encoded", sysUser.getPassword());
+    }
+
+    @Test
+    @DisplayName("注册:DTO 转换失败 -> 抛 PARAM_ERROR")
+    void register_nullConversion_throws() {
+        UserDTO user = new UserDTO();
+        when(userAssembler.userDto2SysUser(user)).thenReturn(null);
+
+        assertThrows(EveHelperException.class, () -> userApplicationService.register(user));
     }
 }
