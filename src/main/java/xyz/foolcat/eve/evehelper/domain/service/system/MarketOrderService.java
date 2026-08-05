@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.application.dto.response.MarketOrderDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.MarketOrder;
 import xyz.foolcat.eve.evehelper.domain.repository.system.MarketOrderRepository;
-import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 
 import java.util.List;
 
@@ -23,7 +23,7 @@ import java.util.List;
 @CacheConfig(cacheNames = "MarkerOrderCache")
 public class MarketOrderService {
 
-    private final EsiApiService esiApiService;
+    private final EsiGateway esiApiService;
 
     private final MarketOrderRepository marketOrderRepository;
 

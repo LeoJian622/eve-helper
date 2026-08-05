@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiApiService;
 
 import java.text.ParseException;
 

@@ -14,7 +14,7 @@ import xyz.foolcat.eve.evehelper.application.dto.UserAccountDTO;
 import xyz.foolcat.eve.evehelper.application.dto.response.UserDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
-import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
@@ -51,7 +51,7 @@ public class UserApplicationService {
 
     private final EveAccountService eveAccountService;
 
-    private final EsiApiService esiApiService;
+    private final EsiGateway esiApiService;
 
     private final EveAccountAssembler eveAccountAssembler;
 
@@ -64,7 +64,7 @@ public class UserApplicationService {
     private final Executor esiAuthStatusExecutor;
 
     public UserApplicationService(EveAccountService eveAccountService,
-                                  EsiApiService esiApiService,
+                                  EsiGateway esiApiService,
                                   EveAccountAssembler eveAccountAssembler,
                                   SysUserService sysUserService,
                                   SysUserAssembler userAssembler,

@@ -3,13 +3,10 @@ package xyz.foolcat.eve.evehelper.domain.service.system;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.application.assembler.system.IndustryJobAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.IndustryJob;
 import xyz.foolcat.eve.evehelper.domain.repository.system.IndustryJobRepository;
-import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.IndustryActivityEnum;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
@@ -29,11 +26,7 @@ import java.util.Collection;
 @Transactional(rollbackFor = RuntimeException.class)
 public class IndustryJobService  {
 
-    private final EsiApiService esiApiService;
-
-    private final IndustryApi industryApi;
-
-    private final IndustryJobAssembler industryJobAssembler;
+    private final EsiGateway esiApiService;
 
     private final InvTypesService invTypesService;
 
@@ -82,21 +75,19 @@ public class IndustryJobService  {
             /*
              * 获取公司生产线
              */
-            Integer maxPage = industryApi.queryCorporationIndustryJobsMaxPage(eveAccount.getCorpId(), EsiClientConfig.SERENITY, includeCompleted, accessToken);
+            Integer maxPage = esiApiService.queryCorporationIndustryJobsMaxPage(eveAccount.getCorpId(), includeCompleted, accessToken);
 
-            List<IndustryJob> industryJobs = Stream.iterate(1, i -> i + 1).limit(maxPage).map(i -> industryApi.queryCorporationIndustryJobs(eveAccount.getCorpId(), EsiClientConfig.SERENITY, true, accessToken).collectList().block())
+            List<IndustryJob> industryJobs = Stream.iterate(1, i -> i + 1).limit(maxPage).map(i -> esiApiService.queryCorporationIndustryJobs(eveAccount.getCorpId(), true, accessToken).collectList().block())
                     .sequential().filter(Objects::nonNull)
                     .flatMap(Collection::stream)
-                    .map(inJob -> industryJobAssembler.toIndustryJob(inJob, eveAccount.getCorpId()))
                     .collect(Collectors.toList());
             batchSaveAndSetBlueTypeName(industryJobs);
         } else {
             /*
              * 获取人物生产线
              */
-            List<IndustryJob> industryJobs = Objects.requireNonNull(industryApi.queryCharacterIndustryJobs(eveAccount.getCharacterId(), EsiClientConfig.SERENITY, includeCompleted, accessToken).collectList().block())
+            List<IndustryJob> industryJobs = Objects.requireNonNull(esiApiService.queryCharacterIndustryJobs(eveAccount.getCharacterId(), includeCompleted, accessToken).collectList().block())
                     .stream()
-                    .map(industryJobPlacedResponse -> industryJobAssembler.toIndustryJob(industryJobPlacedResponse, null))
                     .collect(Collectors.toList());
             batchSaveAndSetBlueTypeName(industryJobs);
         }

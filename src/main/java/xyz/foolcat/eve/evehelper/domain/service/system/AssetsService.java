@@ -5,13 +5,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.application.assembler.system.AssetsAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.repository.system.AssetsRepository;
-import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.AssetsApi;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
 import java.text.ParseException;
@@ -30,11 +27,7 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class AssetsService {
 
-    private final EsiApiService esiApiService;
-
-    private final AssetsApi assetsApi;
-
-    private final AssetsAssembler assetsAssembler;
+    private final EsiGateway esiApiService;
 
     private final AssetsRepository assetsRepository;
 
@@ -90,18 +83,16 @@ public class AssetsService {
         /*
          * 获取总页数
          */
-        Integer maxPage = assetsApi.queryCharactersAssetsMaxPage(eveAccount.getCharacterId(), EsiClientConfig.SERENITY, accessToken);
+        Integer maxPage = esiApiService.queryCharactersAssetsMaxPage(eveAccount.getCharacterId(), accessToken);
 
         /*
          * 从ESI获取资产列表
          */
         List<Assets> assets = Stream.iterate(1, i -> i + 1).limit(maxPage)
-                .map(page -> assetsApi.queryCharactersAssets(eveAccount.getCharacterId(), EsiClientConfig.SERENITY, page, accessToken).collectList())
+                .map(page -> esiApiService.queryCharactersAssets(eveAccount.getCharacterId(), page, accessToken).collectList())
                 .sequential()
                 .collect(Collectors.toList())
                 .stream().flatMap(asset -> Objects.requireNonNull(asset.block()).stream())
-                .collect(Collectors.toList())
-                .stream().map(assetsAssembler::toAssets)
                 .collect(Collectors.toList());
         batchInsertOrUpdate(assets);
 

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.domain.model.entity.eve.InvUniqueNames;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
-import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.eve.InvuniquenamesService;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.service.system.StructureService;
@@ -46,7 +46,7 @@ public class MiningTask {
 
     private final IndustryApi industryApi;
 
-    private final EsiApiService esiApiService;
+    private final EsiGateway esiApiService;
 
     private final StructureService structureService;
 

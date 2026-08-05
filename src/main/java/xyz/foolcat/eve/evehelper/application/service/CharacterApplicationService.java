@@ -3,7 +3,7 @@ package xyz.foolcat.eve.evehelper.application.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 
 import java.text.ParseException;
@@ -19,7 +19,7 @@ import java.text.ParseException;
 @RequiredArgsConstructor
 public class CharacterApplicationService {
 
-    private final EsiApiService esiApiService;
+    private final EsiGateway esiApiService;
 
     /**
      * 使用授权 code 绑定角色到当前用户。

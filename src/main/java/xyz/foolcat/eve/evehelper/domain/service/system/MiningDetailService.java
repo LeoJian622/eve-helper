@@ -5,13 +5,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.application.assembler.system.MiningDetailAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.MiningDetail;
 import xyz.foolcat.eve.evehelper.domain.repository.system.MiningDetailRepository;
-import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
@@ -30,13 +27,9 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class MiningDetailService  {
 
-    private final EsiApiService esiApiService;
+    private final EsiGateway esiApiService;
 
     private final UniverseNameService universeNameService;
-
-    private final IndustryApi industryApi;
-
-    private final MiningDetailAssembler miningDetailAssembler;
 
     private final AuthorizeUtil authorizeUtil;
 
@@ -50,14 +43,13 @@ public class MiningDetailService  {
         EveAccount eveAccount = authorizeUtil.authorize(characterId);
         String accessToken = esiApiService.getAccessToken(characterId, eveAccount.getUserId());
 
-        Integer maxPage = industryApi.queryCorporationMiningObserverMaxPage(eveAccount.getCorpId(), observerId, EsiClientConfig.SERENITY, accessToken);
+        Integer maxPage = esiApiService.queryCorporationMiningObserverMaxPage(eveAccount.getCorpId(), observerId, accessToken);
 
         List<MiningDetail> miningDetails = Stream.iterate(1, i -> i++).limit(maxPage)
-                .map(i -> industryApi.queryCorporationMiningObserver(eveAccount.getCorpId(), EsiClientConfig.SERENITY, observerId, i, accessToken)
+                .map(i -> esiApiService.queryCorporationMiningObserver(eveAccount.getCorpId(), observerId, i, accessToken)
                         .collectList().block())
                 .sequential().filter(Objects::nonNull)
                 .flatMap(Collection::stream)
-                .map(miningDetailAssembler::toMiningDetail)
                 .collect(Collectors.toList());
 
         List<Integer> items = new ArrayList<>();

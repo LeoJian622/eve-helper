@@ -15,7 +15,7 @@ import xyz.foolcat.eve.evehelper.application.dto.UserAccountDTO;
 import xyz.foolcat.eve.evehelper.application.dto.response.UserDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
-import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
@@ -47,7 +47,7 @@ class UserApplicationServiceUnitTest {
     EveAccountService eveAccountService;
 
     @Mock
-    EsiApiService esiApiService;
+    EsiGateway esiApiService;
 
     @Mock
     EveAccountAssembler eveAccountAssembler;

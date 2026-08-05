@@ -3,12 +3,9 @@ package xyz.foolcat.eve.evehelper.domain.service.system;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.application.assembler.system.InvTypesAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.InvTypes;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.repository.system.InvTypesRepository;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UniverseApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.TypeInfoResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -22,9 +19,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class InvTypesService {
 
-    private final UniverseApi universeApi;
-
-    private final InvTypesAssembler invTypesAssembler;
+    private final EsiGateway esiApiService;
 
     private final InvTypesRepository invTypesRepository;
 
@@ -65,8 +60,7 @@ public class InvTypesService {
      * @return
      */
     public InvTypes updateTypeByTypeId(Integer typeId){
-        TypeInfoResponse typeInfoResponse = universeApi.queryUniverseType(typeId, EsiClientConfig.SERENITY, EsiClientConfig.ZH_CN).block();
-        InvTypes invTypes = invTypesAssembler.toInvTypes(typeInfoResponse);
+        InvTypes invTypes = esiApiService.queryUniverseType(typeId, "zh").block();
         boolean update = this.insertOrUpdate(invTypes);
         if (update) {
             return invTypes;

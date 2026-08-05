@@ -3,13 +3,10 @@ package xyz.foolcat.eve.evehelper.domain.service.system;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.application.assembler.system.BlueprintsAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Blueprints;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsRepository;
-import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CorporationApi;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
 import java.text.ParseException;
@@ -20,13 +17,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BlueprintsService {
 
-    private final EsiApiService esiApiService;
-
-    private final CorporationApi corporationApi;
+    private final EsiGateway esiApiService;
 
     private final BlueprintsRepository blueprintsDataRepository;
-
-    private final BlueprintsAssembler blueprintsAssembler;
 
     private final AuthorizeUtil authorizeUtil;
 
@@ -50,7 +43,7 @@ public class BlueprintsService {
         String accessToken = esiApiService.getAccessToken(cid, eveAccount.getUserId());
 
         if (isCor != null && isCor) {
-            Integer maxPage = corporationApi.queryCorporationBlueprintsMaxPage(eveAccount.getCorpId(), EsiClientConfig.SERENITY, accessToken);
+            Integer maxPage = esiApiService.queryCorporationBlueprintsMaxPage(eveAccount.getCorpId(), accessToken);
 
         }
 

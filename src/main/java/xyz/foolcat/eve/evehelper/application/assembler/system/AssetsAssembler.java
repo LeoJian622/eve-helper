@@ -4,7 +4,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AssetResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.AssetsPO;
 import xyz.foolcat.eve.evehelper.interfaces.web.vo.AssetsVO;
 
@@ -17,17 +16,6 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface AssetsAssembler {
-
-    /**
-     * StructuresInformationResponse 转换为 Structure
-     *
-     * @param assetResponse ESI返回的资产对象
-     * @return Structure
-     */
-    @Mappings({
-            @Mapping(target = "ownerId", ignore = true)
-    })
-    Assets toAssets(AssetResponse assetResponse);
 
     /**
      * Assets 转换为 AssetsPO

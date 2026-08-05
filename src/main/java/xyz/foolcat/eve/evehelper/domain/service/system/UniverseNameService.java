@@ -5,12 +5,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.application.assembler.system.UniverseNameAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.repository.system.UniverseNameRepository;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UniverseApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.Id2NameResponse;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 
 import java.util.ArrayList;
@@ -28,9 +25,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UniverseNameService  {
 
-    private final UniverseNameAssembler universeNameAssembler;
-
-    private final UniverseApi universeApi;
+    private final EsiGateway esiApiService;
 
     private final UniverseNameRepository universeNameRepository;
 
@@ -58,9 +53,9 @@ public class UniverseNameService  {
 
         List<UniverseName> newUnivereName = new ArrayList<>();
         if (!noInItems.isEmpty()) {
-            List<Id2NameResponse> nameResponses = universeApi.queryUniverseNames(noInItems, EsiClientConfig.SERENITY).collectList().block();
+            List<UniverseName> nameResponses = esiApiService.queryUniverseNames(noInItems).collectList().block();
             assert nameResponses != null;
-            newUnivereName = nameResponses.stream().map(universeNameAssembler::id2NameResponse2UniverseName).collect(Collectors.toList());
+            newUnivereName = new ArrayList<>(nameResponses);
             try {
                 universeNameRepository.saveOrUpdateBatch(newUnivereName);
             } catch (EveHelperException e) {

@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 
 import java.text.ParseException;
@@ -23,7 +23,7 @@ import static org.mockito.Mockito.verify;
 class CharacterApplicationServiceUnitTest {
 
     @Mock
-    EsiApiService esiApiService;
+    EsiGateway esiApiService;
 
     private CharacterApplicationService characterApplicationService;
 

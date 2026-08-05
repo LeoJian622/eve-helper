@@ -5,13 +5,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.application.assembler.system.StructureAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
 import xyz.foolcat.eve.evehelper.domain.repository.system.StructureRepository;
-import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CorporationApi;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
 import java.text.ParseException;
@@ -31,11 +28,7 @@ import java.util.stream.Stream;
 @Slf4j
 public class StructureService {
 
-    private final StructureAssembler structureAssembler;
-
-    private final EsiApiService esiApiService;
-
-    private final CorporationApi corporationApi;
+    private final EsiGateway esiApiService;
 
     private final AuthorizeUtil authorizeUtil;
 
@@ -117,17 +110,16 @@ public class StructureService {
         /*
           获取总页数
          */
-        Integer maxPage = corporationApi.queryCorporationStructuresMaxPage(eveAccount.getCorpId(), EsiClientConfig.SERENITY, accessToken);
+        Integer maxPage = esiApiService.queryCorporationStructuresMaxPage(eveAccount.getCorpId(), accessToken);
 
         /*
           从ESI获取建筑列表
          */
         List<Structure> structures = Stream.iterate(1, i -> i + 1).limit(maxPage)
-                .map(i -> corporationApi.queryCorporationStructures(eveAccount.getCorpId(), EsiClientConfig.SERENITY, "zh", i, accessToken)
+                .map(i -> esiApiService.queryCorporationStructures(eveAccount.getCorpId(), "zh", i, accessToken)
                         .collectList().block())
                 .sequential().filter(Objects::nonNull)
                 .flatMap(Collection::stream)
-                .map(structureAssembler::toStructure)
                 .collect(Collectors.toList());
         int updateCount = batchInsertOrUpdate(structures);
         log.info("更新{}条建筑数据", updateCount);
