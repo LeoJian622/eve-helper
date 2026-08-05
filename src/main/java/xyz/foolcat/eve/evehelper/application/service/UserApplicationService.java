@@ -21,7 +21,7 @@ import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
-import xyz.foolcat.eve.evehelper.shared.util.UserUtil;
+import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;

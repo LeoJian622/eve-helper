@@ -24,7 +24,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CharacterPubl
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.Id2NameResponse;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
-import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
 import java.text.ParseException;
 import java.time.Duration;

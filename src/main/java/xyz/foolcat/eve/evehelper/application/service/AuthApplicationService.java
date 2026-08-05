@@ -1,8 +1,6 @@
 package xyz.foolcat.eve.evehelper.application.service;
 
 import cn.hutool.core.util.StrUtil;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -68,17 +66,16 @@ public class AuthApplicationService {
             throw new EveHelperException("Token内容为空");
         }
 
-        SignedJWT signedJWT;
-        JWTClaimsSet claimsSet;
+        final TokenService.ParsedAccessToken parsed;
         try {
-            signedJWT = SignedJWT.parse(token);
-            claimsSet = signedJWT.getJWTClaimsSet();
+            parsed = tokenService.parseAccessToken(token);
         } catch (ParseException e) {
             log.error("Token解析失败", e);
             throw new EveHelperException("Token格式错误", e);
         }
-        String jti = claimsSet.getJWTID();
-        Date expirationTime = claimsSet.getExpirationTime();
+
+        String jti = parsed.jti();
+        Date expirationTime = parsed.expirationTime();
 
         if (jti == null || jti.isEmpty()) {
             throw new EveHelperException("Token缺少JTI");
@@ -88,7 +85,7 @@ public class AuthApplicationService {
         }
 
         tokenBlacklistService.addToBlacklist(jti, expirationTime);
-        log.info("用户登出成功: userId={}", claimsSet.getClaim(SecurityConstant.USER_ID_KEY));
+        log.info("用户登出成功: userId={}", parsed.userIdClaim());
     }
 
     /**

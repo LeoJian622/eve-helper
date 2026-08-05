@@ -2,6 +2,7 @@ package xyz.foolcat.eve.evehelper.infrastructure.external.esi;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import xyz.foolcat.eve.evehelper.shared.result.IResultCode;
 
 import java.io.Serializable;
 
@@ -11,7 +12,7 @@ import java.io.Serializable;
  */
 @AllArgsConstructor
 @NoArgsConstructor
-public enum ResultCode implements Serializable {
+public enum ResultCode implements IResultCode, Serializable {
 
     /**
      * 成功

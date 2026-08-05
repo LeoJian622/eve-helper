@@ -14,7 +14,7 @@ import xyz.foolcat.eve.evehelper.domain.service.system.InvTypesService;
 import xyz.foolcat.eve.evehelper.domain.service.system.StructureService;
 import xyz.foolcat.eve.evehelper.domain.service.system.WalletJournalService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.model.MessageEvent;
-import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;

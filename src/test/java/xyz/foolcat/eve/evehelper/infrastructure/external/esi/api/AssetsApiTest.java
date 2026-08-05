@@ -14,7 +14,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AssetResponse
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AssetsLocationResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AssetsNameResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
-import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
 import java.util.List;
 import java.util.Objects;

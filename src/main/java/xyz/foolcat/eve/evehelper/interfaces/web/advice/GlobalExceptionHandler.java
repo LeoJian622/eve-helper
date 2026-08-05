@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
@@ -37,48 +36,7 @@ import java.util.regex.Pattern;
 
 @RestControllerAdvice
 @Slf4j
-//public class GlobalExceptionHandler  implements ResponseBodyAdvice<Object> {
-public class GlobalExceptionHandler   {
-
-//    @Override
-//    public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
-//        // 1. 获取当前请求对象
-//        ServletRequestAttributes sra = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-//        if (sra == null) {
-//            return false;
-//        }
-//        HttpServletRequest request = sra.getRequest();
-//
-//        // 2. 获取请求的 URI
-//        String uri = request.getRequestURI();
-//
-//        // 3. 排除 Swagger UI 和 API 文档相关的路径
-//        if (uri.startsWith("/swagger-ui") || uri.startsWith("/v3/api-docs") || uri.startsWith("/webjars")) {
-//            return false;
-//        }
-//
-//    if (uri.startsWith("/actuator")) {
-//        return false;
-//    }
-//
-//        // 4. 原有的排除逻辑（例如，如果返回值已经是 Result 类型，则不包装）
-//        if (returnType.getParameterType() == Result.class) {
-//            return false;
-//        }
-//
-//        // 排除带有 @NoWrap 注解的方法
-//        return !returnType.hasMethodAnnotation(NoWrap.class);
-//    }
-//
-//    @Override
-//    public @Nullable Object beforeBodyWrite(@Nullable Object body, MethodParameter returnType, MediaType selectedContentType, Class<? extends HttpMessageConverter<?>> selectedConverterType, ServerHttpRequest request, ServerHttpResponse response) {
-//        // 如果已经是 Result，直接返回
-//        if (body instanceof Result) {
-//            return body;
-//        }
-//        // 统一包装
-//        return Result.success(body);
-//    }
+public class GlobalExceptionHandler {
 
     /**
      * 表单绑定到 java bean 出错时抛出 BindException 异常
@@ -201,16 +159,6 @@ public class GlobalExceptionHandler   {
     public <T> Result<T> processException(DataAccessException e) {
         log.error("数据库访问异常: ", e);
         return Result.failed("数据访问异常，请稍后重试");
-    }
-
-    /**
-     * ESI接口异常
-     */
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(EsiException.class)
-    public <T> Result<T> handleEsiException(EsiException e) {
-        log.error("ESI接口异常: ", e);
-        return Result.result(e.getResultCode().getCode(), e.getMessage(), null);
     }
 
     /**

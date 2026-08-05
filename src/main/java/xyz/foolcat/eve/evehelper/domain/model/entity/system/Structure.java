@@ -1,5 +1,6 @@
 package xyz.foolcat.eve.evehelper.domain.model.entity.system;
 
+import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 import lombok.Data;
 
 import java.io.Serial;
@@ -11,7 +12,7 @@ import java.time.OffsetDateTime;
  * @author Leojan
  */
 @Data
-public class Structure  implements Serializable {
+public class Structure extends BaseEntity implements Serializable {
 
     /**
      * 建筑ID

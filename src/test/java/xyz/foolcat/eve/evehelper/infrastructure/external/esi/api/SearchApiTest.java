@@ -12,7 +12,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.SearchResponse;
-import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
 import java.util.Objects;
 

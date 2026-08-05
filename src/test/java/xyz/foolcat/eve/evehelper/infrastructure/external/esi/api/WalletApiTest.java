@@ -17,7 +17,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResp
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CorporationWalletsResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.WalletJournalResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.WalletTransactionsResponse;
-import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
 import java.util.List;
 import java.util.Objects;

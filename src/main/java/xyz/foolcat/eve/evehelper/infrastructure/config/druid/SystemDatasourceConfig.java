@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.config.druid;
+package xyz.foolcat.eve.evehelper.infrastructure.config.druid;
 
 import com.baomidou.mybatisplus.core.config.GlobalConfig;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;

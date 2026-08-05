@@ -15,7 +15,6 @@ import org.springframework.security.web.access.intercept.RequestAuthorizationCon
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.PathMatcher;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.SysPermissionMapper;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.SecurityConstant;
 
@@ -35,8 +34,6 @@ import java.util.function.Supplier;
 @Component
 @RequiredArgsConstructor
 public class RbacAuthorizationManager implements AuthorizationManager<RequestAuthorizationContext> {
-
-    final SysPermissionMapper sysPermissionMapper;
 
     final RedisTemplate<String, Object> redisTemplate;
 

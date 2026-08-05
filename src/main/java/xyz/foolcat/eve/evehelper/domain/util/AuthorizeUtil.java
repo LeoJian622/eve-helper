@@ -1,9 +1,9 @@
-package xyz.foolcat.eve.evehelper.shared.util;
+package xyz.foolcat.eve.evehelper.domain.util;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 
 /**
  * 权限及用户工具

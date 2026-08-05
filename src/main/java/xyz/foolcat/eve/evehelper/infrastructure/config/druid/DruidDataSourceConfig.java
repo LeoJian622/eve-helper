@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.config.druid;
+package xyz.foolcat.eve.evehelper.infrastructure.config.druid;
 
 import com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceBuilder;
 import org.springframework.boot.context.properties.ConfigurationProperties;

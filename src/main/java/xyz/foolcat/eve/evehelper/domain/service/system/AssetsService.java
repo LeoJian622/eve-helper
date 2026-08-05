@@ -12,7 +12,7 @@ import xyz.foolcat.eve.evehelper.domain.repository.system.AssetsRepository;
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.AssetsApi;
-import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
 import java.text.ParseException;
 import java.util.List;

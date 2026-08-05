@@ -1,5 +1,6 @@
 package xyz.foolcat.eve.evehelper.domain.model.entity.system;
 
+import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 import lombok.Data;
 
 import java.io.Serial;
@@ -10,7 +11,7 @@ import java.io.Serializable;
  * @author Leojan
  */
 @Data
-public class Assets implements Serializable {
+public class Assets extends BaseEntity implements Serializable {
     /**
      * 物品ID
      */

@@ -14,7 +14,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResp
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.FittingResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.Fitting;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.FittingItem;
-import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
 import java.util.ArrayList;
 import java.util.List;

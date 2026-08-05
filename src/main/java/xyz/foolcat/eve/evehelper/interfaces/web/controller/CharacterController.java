@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import xyz.foolcat.eve.evehelper.application.service.CharacterApplicationService;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
-import xyz.foolcat.eve.evehelper.shared.util.UserUtil;
+import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
 
 /**
  * @author Leojan

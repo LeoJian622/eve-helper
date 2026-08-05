@@ -1,5 +1,6 @@
 package xyz.foolcat.eve.evehelper.domain.model.entity.eve;
 
+import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 import lombok.Data;
 
 import java.io.Serial;
@@ -10,7 +11,7 @@ import java.io.Serializable;
  * @author Leojan
  */
 @Data
-public class InvUniqueNames implements Serializable {
+public class InvUniqueNames extends BaseEntity implements Serializable {
 
     private Integer itemId;
 

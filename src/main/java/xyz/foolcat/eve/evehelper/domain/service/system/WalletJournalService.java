@@ -12,7 +12,7 @@ import xyz.foolcat.eve.evehelper.domain.repository.system.WalletJournalRepositor
 import xyz.foolcat.eve.evehelper.domain.service.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.WalletApi;
-import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;

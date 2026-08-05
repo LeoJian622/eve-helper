@@ -1,6 +1,5 @@
 package xyz.foolcat.eve.evehelper.application.dto.response;
 
-import com.baomidou.mybatisplus.annotation.TableField;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -137,45 +136,6 @@ public class IndustryJobDTO extends BaseEntity implements Serializable {
     /**
      * active-活动 cancelled-取消 delivered-交付 paused-暂停 ready-准备好 reverted-恢复
      */
-    @TableField(value = "`status`")
     @Schema(name="active-活动 cancelled-取消 delivered-交付 paused-暂停 ready-准备好 reverted-恢复")
     private String status;
-
-    public static final String COL_JOB_ID = "job_id";
-
-    public static final String COL_BLUEPRINT = "blueprint";
-
-    public static final String COL_BLUEPRINT_TYPE = "blueprint_type";
-
-    public static final String COL_COST = "cost";
-
-    public static final String COL_LICENSED_RUNS = "licensed_runs";
-
-    public static final String COL_PROBABILITY = "probability";
-
-    public static final String COL_STATION_ID = "station_id";
-
-    public static final String COL_OUTPUT_LOCATION_ID = "output_location_id";
-
-    public static final String COL_PRODUCT_TYPE = "product_type";
-
-    public static final String COL_BLUEPRINT_LOCATION_ID = "blueprint_location_id";
-
-    public static final String COL_DURATION = "duration";
-
-    public static final String COL_INSTALLER = "installer";
-
-    public static final String COL_COMPLETED_CHARACTER = "completed_character";
-
-    public static final String COL_ACTIVITY = "activity";
-
-    public static final String COL_FACILITY_ID = "facility_id";
-
-    public static final String COL_RUNS = "runs";
-
-    public static final String COL_START_DATE = "start_date";
-
-    public static final String COL_END_DATE = "end_date";
-
-    public static final String COL_STATUS = "status";
 }

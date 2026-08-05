@@ -14,7 +14,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResp
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CurrentShipResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.LocationResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.OnlineStatusResponse;
-import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
 import java.util.Objects;
 

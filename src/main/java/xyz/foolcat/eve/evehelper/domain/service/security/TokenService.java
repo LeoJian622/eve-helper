@@ -15,12 +15,13 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.application.dto.response.TokenPair;
-import xyz.foolcat.eve.evehelper.config.security.JwtTokenProperties;
+import xyz.foolcat.eve.evehelper.infrastructure.config.security.JwtTokenProperties;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.SecurityConstant;
 import xyz.foolcat.eve.evehelper.shared.util.SensitiveDataMasker;
 
 import java.security.KeyPair;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -233,5 +234,32 @@ public class TokenService {
     public boolean isRefreshTokenValid(String refreshToken) {
         String key = REFRESH_TOKEN_PREFIX + refreshToken;
         return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+    }
+
+    /**
+     * 解析 Access Token 并提取关键声明(jti / 过期时间 / 用户ID)。
+     * 将 JWT 解析细节收拢到领域层,供登出等流程使用。
+     *
+     * @param token 原始 Access Token(不含 "Bearer " 前缀)
+     * @return 解析出的关键声明
+     * @throws ParseException token 格式非法
+     */
+    public ParsedAccessToken parseAccessToken(String token) throws ParseException {
+        SignedJWT signedJWT = SignedJWT.parse(token);
+        JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+        return new ParsedAccessToken(
+                claimsSet.getJWTID(),
+                claimsSet.getExpirationTime(),
+                claimsSet.getClaim(SecurityConstant.USER_ID_KEY));
+    }
+
+    /**
+     * Access Token 解析结果
+     *
+     * @param jti            Token 唯一标识
+     * @param expirationTime 过期时间
+     * @param userIdClaim    用户ID声明
+     */
+    public record ParsedAccessToken(String jti, Date expirationTime, Object userIdClaim) {
     }
 }
