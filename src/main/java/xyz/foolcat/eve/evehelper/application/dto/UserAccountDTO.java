@@ -2,6 +2,7 @@ package xyz.foolcat.eve.evehelper.application.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 
 /**
  * 用户角色列表
@@ -48,4 +49,10 @@ public class UserAccountDTO {
      */
     @Schema(description = "联盟名称")
     private String allianceName;
+
+    /**
+     * ESI 授权状态:AUTHORIZED/EXPIRED/NOT_AUTHORIZED/UNKNOWN
+     */
+    @Schema(description = "ESI 授权状态:AUTHORIZED/EXPIRED/NOT_AUTHORIZED/UNKNOWN")
+    private EsiAuthStatus authStatus;
 }

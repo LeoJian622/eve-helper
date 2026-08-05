@@ -36,4 +36,27 @@ public class AsyncConfiguration {
         return executor;
     }
 
+    /**
+     * ESI 授权状态判定专用线程池
+     * <p>
+     * 用于并行判定多角色的 ESI 授权状态(冷路径,缓存未命中时触发)。
+     * 常态命中状态缓存,不触发并行;冷路径把多角色刷新限制在约 5s。
+     *
+     * @author Leojan
+     * date 2026-08-04
+     */
+    @Bean("esiAuthStatusExecutor")
+    public Executor esiAuthStatusExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(8);
+        executor.setQueueCapacity(50);
+        executor.setKeepAliveSeconds(30);
+        executor.setThreadNamePrefix("esi-auth-status-");
+        // 队列满时由调用线程执行,避免任务丢弃
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.initialize();
+        return executor;
+    }
+
 }

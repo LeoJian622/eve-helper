@@ -45,3 +45,7 @@ rebel.xml
 .env.prd
 *.env
 !.env.example
+
+application-ali.yml
+application-aliw.yml
+application-pro.yml
