@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Objects;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("ESI Fitting Api Test")
 class FittingApiTest {

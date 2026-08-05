@@ -16,7 +16,7 @@ import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 import java.util.List;
 import java.util.Objects;
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("ESI Character Api Test")
 class CharacterApiTest {

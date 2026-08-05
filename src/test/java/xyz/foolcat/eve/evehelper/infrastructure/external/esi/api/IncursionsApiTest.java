@@ -10,7 +10,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.IncursionsRes
 import java.util.List;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("ESI Incursions Api Test")
 class IncursionsApiTest {

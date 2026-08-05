@@ -9,7 +9,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("市场订单测试")
 class MarketOrderAsyncServiceTest {

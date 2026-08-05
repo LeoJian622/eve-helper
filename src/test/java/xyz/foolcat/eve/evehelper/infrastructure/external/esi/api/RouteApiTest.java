@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("ESI Route Api Test")
 class RouteApiTest {

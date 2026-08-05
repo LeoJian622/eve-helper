@@ -10,7 +10,7 @@ import xyz.foolcat.eve.evehelper.domain.service.system.InvTypesService;
 
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("typeId 物品信息读取")
 class InvTypesServiceTest {

@@ -12,7 +12,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.SovereigntySt
 import java.util.List;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("ESI Sovereignty Api Test")
 class SovereigntyApiTest {

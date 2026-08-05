@@ -10,7 +10,7 @@ import org.springframework.test.context.ActiveProfiles;
 import java.text.ParseException;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("工业服务")
 @WithUserDetails("admin")

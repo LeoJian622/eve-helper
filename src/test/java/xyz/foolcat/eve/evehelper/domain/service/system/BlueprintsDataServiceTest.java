@@ -14,7 +14,7 @@ import xyz.foolcat.eve.evehelper.domain.service.system.BlueprintsDataService;
 import java.util.List;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("蓝图基础花费")
 class BlueprintsDataServiceTest {

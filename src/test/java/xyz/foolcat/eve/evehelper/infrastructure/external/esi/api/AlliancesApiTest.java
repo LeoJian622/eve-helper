@@ -12,7 +12,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.IconResponse;
 import java.util.List;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("ESI Alliance Api Test")
 class AlliancesApiTest {

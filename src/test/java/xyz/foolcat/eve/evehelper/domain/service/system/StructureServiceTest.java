@@ -14,7 +14,7 @@ import java.text.ParseException;
 import java.util.List;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("建筑相关服务")
 class StructureServiceTest {

@@ -17,7 +17,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import java.nio.charset.StandardCharsets;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("蓝图接口测试")
 @AutoConfigureMockMvc

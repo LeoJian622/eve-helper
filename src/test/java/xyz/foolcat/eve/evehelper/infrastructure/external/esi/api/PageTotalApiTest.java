@@ -18,7 +18,7 @@ import xyz.foolcat.eve.evehelper.shared.util.AuthorizeUtil;
 import java.util.Objects;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("ESI Opportunities Api Test")
 class PageTotalApiTest {

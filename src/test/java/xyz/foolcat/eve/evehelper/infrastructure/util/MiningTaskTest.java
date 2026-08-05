@@ -9,7 +9,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.ActiveProfiles;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("卫星矿相关任务")
 class MiningTaskTest {

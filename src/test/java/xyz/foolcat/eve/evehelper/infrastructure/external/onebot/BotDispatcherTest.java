@@ -10,7 +10,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.model.MessageEvent;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("bot指令分发测试")
 class BotDispatcherTest {

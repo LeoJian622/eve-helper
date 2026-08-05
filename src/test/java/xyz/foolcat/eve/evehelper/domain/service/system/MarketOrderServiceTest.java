@@ -10,7 +10,7 @@ import xyz.foolcat.eve.evehelper.application.dto.response.MarketOrderDTO;
 import java.util.List;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("市场订单测试")
 class MarketOrderServiceTest {

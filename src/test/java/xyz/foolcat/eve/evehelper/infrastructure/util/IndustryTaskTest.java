@@ -9,7 +9,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.ActiveProfiles;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("工业定时任务测试")
 class IndustryTaskTest {

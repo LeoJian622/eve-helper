@@ -14,7 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
  * 通过注解配置了一个真实的Web环境，并自动注入被测对象（WalletTask）进行功能验证。
  */
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("钱包记录定时任务测试")
 class WalletTaskTest {

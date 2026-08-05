@@ -12,7 +12,7 @@ import xyz.foolcat.eve.evehelper.application.dto.response.UserDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("mapStruc测试")
 class UserConveterTest {

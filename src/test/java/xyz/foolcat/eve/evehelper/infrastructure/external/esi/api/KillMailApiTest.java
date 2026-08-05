@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Objects;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("ESI Industry Api Test")
 class KillMailApiTest {

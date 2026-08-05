@@ -17,7 +17,7 @@ import java.text.ParseException;
 import java.util.List;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @WithUserDetails("admin")
 @DisplayName("人物钱包交易记录")

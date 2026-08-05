@@ -12,7 +12,7 @@ import java.text.ParseException;
 
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @WithUserDetails("admin")
 @DisplayName("blurprints 蓝图信息读取")

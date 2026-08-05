@@ -10,7 +10,7 @@ import java.text.ParseException;
 
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("观察者采掘详细")
 class MiningDetailServiceTest {

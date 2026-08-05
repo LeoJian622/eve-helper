@@ -6,7 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("读取观察者对象")
 class ObserverServiceTest {

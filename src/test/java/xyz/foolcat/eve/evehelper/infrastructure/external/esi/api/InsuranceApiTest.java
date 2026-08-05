@@ -10,7 +10,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.InsuranceOfSh
 import java.util.List;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("ESI Industry Api Test")
 class InsuranceApiTest {

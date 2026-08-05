@@ -11,7 +11,7 @@ import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.domain.service.system.StructureService;
 
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("建筑信息定时任务测试")
 @Profile("aliw")

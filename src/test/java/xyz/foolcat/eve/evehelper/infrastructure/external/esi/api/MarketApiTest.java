@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
  *
  * @author Leojan
  */
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("ESI Market Api Mock Unit Test")
 class MarketApiTest {

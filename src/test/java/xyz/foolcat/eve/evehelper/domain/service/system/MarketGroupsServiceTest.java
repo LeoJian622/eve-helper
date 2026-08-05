@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.domain.service.system.MarketGroupsService;
 
-@ActiveProfiles("test")
+
 @SpringBootTest
 @DisplayName("市场组获取测试")
 class MarketGroupsServiceTest {
