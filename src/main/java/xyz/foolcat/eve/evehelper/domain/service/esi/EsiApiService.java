@@ -88,6 +88,11 @@ public class EsiApiService {
     private static final Duration ESI_REFRESH_TIMEOUT = Duration.ofSeconds(5);
 
     /**
+     * accessToken 在 Redis 中的缓存时长,秒(19 分钟,略短于 ESI 20 分钟有效期)
+     */
+    private static final long ACCESS_TOKEN_CACHE_TTL_SECONDS = 19 * 60;
+
+    /**
      * 获取ESI接口授权
      * <p>
      * 优先从redis缓存中获取accesstoken，如果不存在 则授权已过期。
@@ -169,7 +174,7 @@ public class EsiApiService {
 
         //redis缓存access_token
         String redisKey = GlobalConstants.ESI_ACCESS_TOKEN_KEY + characterId;
-        redisTemplate.opsForValue().set(redisKey, GlobalConstants.TOKEN_PERN + accessToken, 19 * 60, TimeUnit.SECONDS);
+        redisTemplate.opsForValue().set(redisKey, GlobalConstants.TOKEN_PERN + accessToken, ACCESS_TOKEN_CACHE_TTL_SECONDS, TimeUnit.SECONDS);
 
         EveAccount eveAccount = new EveAccount();
         eveAccount.setUserId(userId);
@@ -297,7 +302,7 @@ public class EsiApiService {
         }
         if (StrUtil.isNotBlank(accessToken)) {
             String redisKey = GlobalConstants.ESI_ACCESS_TOKEN_KEY + characterId;
-            redisTemplate.opsForValue().set(redisKey, GlobalConstants.TOKEN_PERN + accessToken, 19 * 60, TimeUnit.SECONDS);
+            redisTemplate.opsForValue().set(redisKey, GlobalConstants.TOKEN_PERN + accessToken, ACCESS_TOKEN_CACHE_TTL_SECONDS, TimeUnit.SECONDS);
         }
     }
 
