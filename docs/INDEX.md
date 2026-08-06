@@ -10,8 +10,7 @@ EVE Helper 项目文档中心。
 |------|------|----------|
 | [Readme.md](../Readme.md) | 项目概述、快速开始、ESI 授权 scope 清单 | 2026-08-06 |
 | [环境变量配置](./ENVIRONMENT.md) | 环境变量配置详细说明 | 2026-02-01 |
-| [开发指南](./DEVELOPMENT.md) | 开发工作流程和规范 | 2026-02-01 |
-| [测试指南](./TESTING.md) | 测试策略和最佳实践 | 2026-02-01 |
+| [开发指南](./DEVELOPMENT.md) | 开发工作流程和规范(含测试编写与命令) | 2026-08-06 |
 | [部署运维手册](./DEPLOYMENT.md) | 部署流程和运维指南 | 2026-02-01 |
 
 ### 架构文档
@@ -46,7 +45,7 @@ EVE Helper 项目文档中心。
 - **项目结构**: [开发指南 - 项目结构](./DEVELOPMENT.md#项目结构)
 - **DDD架构**: [开发指南 - DDD架构说明](./DEVELOPMENT.md#ddd架构说明)
 - **代码规范**: [开发指南 - 代码规范](./DEVELOPMENT.md#代码规范)
-- **测试编写**: [测试指南](./TESTING.md)
+- **测试编写**: [开发指南 - 编写测试](./DEVELOPMENT.md#3-编写测试)
 - **Maven命令**: [开发指南 - Maven命令参考](./DEVELOPMENT.md#maven命令参考)
 
 ### 运维人员
@@ -58,10 +57,9 @@ EVE Helper 项目文档中心。
 
 ### 测试人员
 
-- **测试策略**: [测试指南 - 测试策略](./TESTING.md#测试策略)
-- **测试环境**: [测试指南 - 测试环境配置](./TESTING.md#测试环境配置)
-- **编写测试**: [测试指南 - 单元测试](./TESTING.md#单元测试)
-- **测试覆盖率**: [测试指南 - 测试覆盖率](./TESTING.md#测试覆盖率)
+- **测试流程**: [AI开发工作流 - 分级流程](./AI_WORKFLOW.md#分级流程)
+- **编写测试**: [开发指南 - 编写测试](./DEVELOPMENT.md#3-编写测试)
+- **测试命令**: [开发指南 - 测试命令](./DEVELOPMENT.md#测试命令)
 
 ## 📖 文档分类
 
@@ -69,7 +67,6 @@ EVE Helper 项目文档中心。
 
 #### 配置管理
 - [环境变量配置](./ENVIRONMENT.md)
-- [测试环境配置](./TESTING.md#测试环境配置)
 - [生产环境配置](./DEPLOYMENT.md#环境配置)
 
 #### 开发流程
@@ -78,9 +75,9 @@ EVE Helper 项目文档中心。
 - [Git工作流](./DEVELOPMENT.md#1-创建新功能分支)
 
 #### 测试
-- [单元测试](./TESTING.md#单元测试)
-- [集成测试](./TESTING.md#集成测试)
-- [测试覆盖率](./TESTING.md#测试覆盖率)
+- [编写测试](./DEVELOPMENT.md#3-编写测试)
+- [测试命令](./DEVELOPMENT.md#测试命令)
+- [TDD 流程](./AI_WORKFLOW.md#分级流程)
 
 #### 部署运维
 - [部署流程](./DEPLOYMENT.md#部署流程)
@@ -96,7 +93,6 @@ EVE Helper 项目文档中心。
 
 #### 开发工程师
 - ✅ [开发指南](./DEVELOPMENT.md)
-- ✅ [测试指南](./TESTING.md)
 - ✅ [环境变量配置](./ENVIRONMENT.md)
 - ✅ [AI开发工作流](./AI_WORKFLOW.md)
 
@@ -106,11 +102,11 @@ EVE Helper 项目文档中心。
 - ✅ [监控告警](./DEPLOYMENT.md#监控告警)
 
 #### 测试工程师
-- ✅ [测试指南](./TESTING.md)
-- ✅ [测试环境配置](./TESTING.md#测试环境配置)
+- ✅ [开发指南 - 编写测试](./DEVELOPMENT.md#3-编写测试)
+- ✅ [AI开发工作流](./AI_WORKFLOW.md)
 
 #### 项目经理
-- ✅ [README.md](../README.md)
+- ✅ [Readme.md](../Readme.md)
 - ✅ [CLAUDE.md](../CLAUDE.md)
 
 ## 🔍 搜索文档
@@ -121,7 +117,7 @@ EVE Helper 项目文档中心。
 |------|----------|
 | 如何配置数据库? | [环境变量配置 - 数据库配置](./ENVIRONMENT.md#数据库配置) |
 | 如何启动应用? | [开发指南 - 启动应用](./DEVELOPMENT.md#5-启动应用) |
-| 如何编写测试? | [测试指南 - 单元测试](./TESTING.md#单元测试) |
+| 如何编写测试? | [开发指南 - 编写测试](./DEVELOPMENT.md#3-编写测试) |
 | 如何部署到生产? | [部署运维手册 - 部署流程](./DEPLOYMENT.md#部署流程) |
 | 应用启动失败怎么办? | [部署运维手册 - 常见问题处理](./DEPLOYMENT.md#常见问题处理) |
 | 如何查看日志? | [部署运维手册 - 验证部署](./DEPLOYMENT.md#7-验证部署) |
@@ -156,7 +152,7 @@ EVE Helper 项目文档中心。
 
 ## 📊 文档统计
 
-- **docs/ 目录**: 6 个(INDEX、AI_WORKFLOW、DEVELOPMENT、TESTING、DEPLOYMENT、ENVIRONMENT)
+- **docs/ 目录**: 5 个(INDEX、AI_WORKFLOW、DEVELOPMENT、DEPLOYMENT、ENVIRONMENT)
 - **分层架构 README**: 5 个(application/domain/infrastructure/interfaces/shared)
 - **根目录**: Readme.md、CLAUDE.md、AGENTS.md
 - **最近更新**: 2026-08-06
@@ -182,4 +178,4 @@ EVE Helper 项目文档中心。
 **最后更新**: 2026-08-06
 **维护者**: EVE Helper Documentation Team
 
-**文档版本**: v1.0.1
+**文档版本**: v1.0.2

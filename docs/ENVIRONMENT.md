@@ -308,8 +308,6 @@ keytool -genkeypair -alias eve-jwt -keyalg RSA -keysize 2048 \
 
 - [开发指南](./DEVELOPMENT.md)
 - [部署手册](./DEPLOYMENT.md)
-- [测试指南](./TESTING.md)
-- [安全配置](./SECURITY.md)
 
 ## 🆘 获取帮助
 

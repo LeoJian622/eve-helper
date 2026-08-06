@@ -807,8 +807,6 @@ appendfsync everysec
 
 - [环境变量配置](./ENVIRONMENT.md)
 - [开发指南](./DEVELOPMENT.md)
-- [测试指南](./TESTING.md)
-- [安全配置](./SECURITY.md)
 
 ## 🆘 紧急联系
 

@@ -44,7 +44,6 @@ cp .env.example .env.dev
 | [文档索引](docs/INDEX.md) | 全部文档入口 |
 | [开发指南](docs/DEVELOPMENT.md) | 项目结构、DDD 分层、代码规范、Maven 命令 |
 | [环境变量配置](docs/ENVIRONMENT.md) | 配置项说明 |
-| [测试指南](docs/TESTING.md) | 测试策略与编写规范 |
 | [部署运维手册](docs/DEPLOYMENT.md) | 部署与运维 |
 | [CLAUDE.md](CLAUDE.md) | AI 辅助开发的架构约束与流程速查 |
 
