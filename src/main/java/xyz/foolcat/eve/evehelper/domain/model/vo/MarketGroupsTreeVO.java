@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.interfaces.web.vo;
+package xyz.foolcat.eve.evehelper.domain.model.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;

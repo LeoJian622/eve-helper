@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.ActiveProfiles;
-import xyz.foolcat.eve.evehelper.application.dto.response.BlueprintCostDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintCostDTO;
 import xyz.foolcat.eve.evehelper.domain.service.system.BlueprintsDataService;
 
 import java.util.List;
@@ -16,6 +16,7 @@ import java.util.List;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("蓝图基础花费")
 class BlueprintsDataServiceTest {
 

@@ -3,7 +3,7 @@ package xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import org.apache.ibatis.annotations.Mapper;
-import xyz.foolcat.eve.evehelper.application.dto.BlueprintsDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsDTO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.BlueprintsPO;
 
 import java.util.List;

@@ -13,9 +13,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
-import xyz.foolcat.eve.evehelper.application.dto.response.TokenPair;
-import xyz.foolcat.eve.evehelper.infrastructure.config.security.JwtTokenProperties;
+import xyz.foolcat.eve.evehelper.shared.kernel.config.JwtTokenProperties;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
+import xyz.foolcat.eve.evehelper.domain.model.vo.TokenResult;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.SecurityConstant;
 import xyz.foolcat.eve.evehelper.shared.util.SensitiveDataMasker;
@@ -48,9 +48,9 @@ public class TokenService {
      * 生成Token对(Access Token + Refresh Token)
      *
      * @param user 用户信息
-     * @return Token对
+     * @return Token对(领域读模型)
      */
-    public TokenPair generateTokenPair(SysUser user) {
+    public TokenResult generateTokenPair(SysUser user) {
         try {
             // 生成Access Token
             String accessToken = generateAccessToken(user);
@@ -58,12 +58,11 @@ public class TokenService {
             // 生成Refresh Token
             String refreshToken = generateRefreshToken(user);
 
-            return TokenPair.builder()
-                    .accessToken(SecurityConstant.JWT_PREFIX + accessToken)
-                    .refreshToken(refreshToken)
-                    .expiresIn(jwtTokenProperties.getAccessTokenExpirationTime())
-                    .tokenType("Bearer")
-                    .build();
+            return new TokenResult(
+                    SecurityConstant.JWT_PREFIX + accessToken,
+                    refreshToken,
+                    jwtTokenProperties.getAccessTokenExpirationTime(),
+                    "Bearer");
 
         } catch (JOSEException e) {
             log.error("生成Token失败", e);
@@ -124,35 +123,6 @@ public class TokenService {
     }
 
     /**
-     * 验证并刷新Access Token
-     *
-     * @param refreshToken Refresh Token
-     * @return 新的Token对
-     */
-    public TokenPair refreshAccessToken(String refreshToken) {
-        String key = REFRESH_TOKEN_PREFIX + refreshToken;
-
-        // 验证Refresh Token是否存在并获取用户ID
-        Object userIdObj = cacheGateway.get(key);
-        if (userIdObj == null) {
-            log.warn("Refresh Token不存在或已过期: refreshToken={}", SensitiveDataMasker.maskToken(refreshToken));
-            throw new IllegalArgumentException("Refresh Token无效或已过期");
-        }
-
-        Integer userId;
-        if (userIdObj instanceof Integer number) {
-            userId = number;
-        } else {
-            userId = Integer.parseInt(userIdObj.toString());
-        }
-
-        log.info("刷新Access Token: userId={}, refreshToken={}", userId, SensitiveDataMasker.maskToken(refreshToken));
-
-        // 返回用户ID,由调用方加载用户信息
-        return null; // 需要在Controller中完成
-    }
-
-    /**
      * 从Refresh Token获取用户ID
      *
      * @param refreshToken Refresh Token
@@ -179,9 +149,9 @@ public class TokenService {
      *
      * @param refreshToken Refresh Token
      * @param user         用户信息(从数据库重新加载)
-     * @return 新的Token对
+     * @return 新的Token对(领域读模型)
      */
-    public TokenPair refreshAccessTokenWithUser(String refreshToken, SysUser user) {
+    public TokenResult refreshAccessTokenWithUser(String refreshToken, SysUser user) {
         String key = REFRESH_TOKEN_PREFIX + refreshToken;
 
         // 验证Refresh Token是否存在

@@ -5,13 +5,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import xyz.foolcat.eve.evehelper.application.dto.response.MarketOrderDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MarketOrderDTO;
 
 import java.util.List;
 
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("市场订单测试")
 class MarketOrderServiceTest {
 

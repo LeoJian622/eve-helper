@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.application.query.model;
+package xyz.foolcat.eve.evehelper.shared.kernel.base;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

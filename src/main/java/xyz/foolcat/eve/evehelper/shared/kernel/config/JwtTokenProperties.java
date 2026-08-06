@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.infrastructure.config.security;
+package xyz.foolcat.eve.evehelper.shared.kernel.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

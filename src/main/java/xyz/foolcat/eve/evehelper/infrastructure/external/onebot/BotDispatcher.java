@@ -6,10 +6,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import xyz.foolcat.eve.evehelper.application.dto.response.TaxReturnDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.InvTypes;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
+import xyz.foolcat.eve.evehelper.domain.model.vo.TaxReturnResult;
 import xyz.foolcat.eve.evehelper.domain.service.system.InvTypesService;
 import xyz.foolcat.eve.evehelper.domain.service.system.StructureService;
 import xyz.foolcat.eve.evehelper.domain.service.system.WalletJournalService;
@@ -152,11 +152,11 @@ public class BotDispatcher {
             return BotUtil.generateMessage(messageEvent, "参数为：军团税 现有税 年月(202411)", false);
         }
         try {
-            List<TaxReturnDTO> taxReturnDTOS = walletJournalService.countBoundsReturn(arg[0], arg[1], arg[2]);
+            List<TaxReturnResult> taxReturnResults = walletJournalService.countBoundsReturn(arg[0], arg[1], arg[2]);
             StringBuilder message = new StringBuilder("人物\t退税\n");
-            for (TaxReturnDTO tax :
-                    taxReturnDTOS) {
-                message.append(tax.getName()).append("\t").append(tax.getAmount()).append("\n");
+            for (TaxReturnResult tax :
+                    taxReturnResults) {
+                message.append(tax.name()).append("\t").append(tax.amount()).append("\n");
             }
             return BotUtil.generateMessage(messageEvent, message.toString(), false);
         } catch (ParseException e) {

@@ -8,7 +8,7 @@ import xyz.foolcat.eve.evehelper.domain.repository.system.InvTypesRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.InvTypesPoConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.InvTypesPO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.InvTypesMapper;
-import xyz.foolcat.eve.evehelper.interfaces.web.vo.InvTypesVO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.InvTypesVO;
 
 import java.util.Collections;
 import java.util.List;

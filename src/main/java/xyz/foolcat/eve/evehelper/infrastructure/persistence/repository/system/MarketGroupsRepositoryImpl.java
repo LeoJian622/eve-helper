@@ -6,7 +6,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.MarketGroups;
 import xyz.foolcat.eve.evehelper.domain.repository.system.MarketGroupsRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.MarketGroupsPoConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.MarketGroupsMapper;
-import xyz.foolcat.eve.evehelper.interfaces.web.vo.MarketGroupsTreeVO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MarketGroupsTreeVO;
 
 import java.util.List;
 

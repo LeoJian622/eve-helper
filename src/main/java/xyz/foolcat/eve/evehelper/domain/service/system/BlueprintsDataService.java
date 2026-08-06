@@ -6,8 +6,7 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.application.dto.response.BlueprintCostDTO;
-import xyz.foolcat.eve.evehelper.application.dto.response.BlueprintFormulaDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintCostDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.BlueprintsData;
 import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsDataRepository;
 
@@ -46,11 +45,6 @@ public class BlueprintsDataService {
     public BlueprintCostDTO queryAllBlueprintsCostByBlueTypeId(Integer typeId) {
         List<BlueprintCostDTO> result = blueprintsDataRepository.calcluateCost(typeId);
         return !result.isEmpty() ? result.get(0) : new BlueprintCostDTO();
-    }
-
-
-    public BlueprintFormulaDTO queryBlueprintFormulaByTypeId(Integer typeId) {
-        return null;
     }
 
 

@@ -10,8 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import xyz.foolcat.eve.evehelper.application.dto.request.RefreshTokenRequest;
-import xyz.foolcat.eve.evehelper.application.dto.response.TokenPair;
 import xyz.foolcat.eve.evehelper.application.service.AuthApplicationService;
+import xyz.foolcat.eve.evehelper.domain.model.vo.TokenResult;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 
 /**
@@ -49,7 +49,7 @@ public class AuthController {
      */
     @Operation(summary = "刷新Access Token")
     @PostMapping("/tokens")
-    public Result<TokenPair> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+    public Result<TokenResult> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
         return Result.success(authApplicationService.refreshToken(request));
     }
 }

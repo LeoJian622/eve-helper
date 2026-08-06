@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import xyz.foolcat.eve.evehelper.application.service.MarketGroupApplicationService;
-import xyz.foolcat.eve.evehelper.interfaces.web.vo.MarketGroupsTreeVO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MarketGroupsTreeVO;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 
 import java.util.List;

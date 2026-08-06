@@ -6,7 +6,7 @@ import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.application.dto.response.MarketOrderDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MarketOrderDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.MarketOrder;
 import xyz.foolcat.eve.evehelper.domain.repository.system.MarketOrderRepository;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;

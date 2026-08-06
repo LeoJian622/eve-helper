@@ -3,7 +3,7 @@ package xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import xyz.foolcat.eve.evehelper.application.dto.response.MarketOrderDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MarketOrderDTO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.MarketOrderPO;
 
 import java.util.List;

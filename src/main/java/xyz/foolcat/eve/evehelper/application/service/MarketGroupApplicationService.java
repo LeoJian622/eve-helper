@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.domain.service.system.MarketGroupsService;
-import xyz.foolcat.eve.evehelper.interfaces.web.vo.MarketGroupsTreeVO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MarketGroupsTreeVO;
 
 import java.util.List;
 

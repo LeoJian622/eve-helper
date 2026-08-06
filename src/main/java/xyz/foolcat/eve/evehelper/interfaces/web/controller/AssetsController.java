@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import xyz.foolcat.eve.evehelper.application.service.AssetsApplicationService;
-import xyz.foolcat.eve.evehelper.interfaces.web.vo.AssetsVO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.AssetsVO;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 

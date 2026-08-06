@@ -8,8 +8,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import xyz.foolcat.eve.evehelper.application.dto.request.RefreshTokenRequest;
-import xyz.foolcat.eve.evehelper.application.dto.response.TokenPair;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
+import xyz.foolcat.eve.evehelper.domain.model.vo.TokenResult;
 import xyz.foolcat.eve.evehelper.domain.service.security.TokenBlacklistService;
 import xyz.foolcat.eve.evehelper.domain.service.security.TokenService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
@@ -115,11 +115,14 @@ class AuthApplicationServiceUnitTest {
         when(tokenService.getUserIdFromRefreshToken("123e4567-e89b-12d3-a456-426614174000")).thenReturn(1);
         SysUser user = new SysUser();
         when(sysUserService.loadUserById(1)).thenReturn(user);
-        TokenPair pair = new TokenPair();
-        when(tokenService.refreshAccessTokenWithUser("123e4567-e89b-12d3-a456-426614174000", user)).thenReturn(pair);
+        TokenResult tokenResult = new TokenResult("Bearer accessToken", "refreshToken", 3600L, "Bearer");
+        when(tokenService.refreshAccessTokenWithUser("123e4567-e89b-12d3-a456-426614174000", user)).thenReturn(tokenResult);
 
-        TokenPair result = authApplicationService.refreshToken(request);
+        TokenResult result = authApplicationService.refreshToken(request);
 
-        assertEquals(pair, result);
+        assertEquals("Bearer accessToken", result.accessToken());
+        assertEquals("refreshToken", result.refreshToken());
+        assertEquals(3600L, result.expiresIn());
+        assertEquals("Bearer", result.tokenType());
     }
 }

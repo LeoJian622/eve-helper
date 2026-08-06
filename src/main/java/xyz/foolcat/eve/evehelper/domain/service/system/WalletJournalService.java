@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import xyz.foolcat.eve.evehelper.application.dto.response.TaxReturnDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
+import xyz.foolcat.eve.evehelper.domain.model.vo.TaxReturnResult;
 import xyz.foolcat.eve.evehelper.domain.repository.system.WalletJournalRepository;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
@@ -90,7 +90,7 @@ public class WalletJournalService {
      * @param nowTax    当前军团税
      * @param dateTime  月份 yyyy-MM
      */
-    public List<TaxReturnDTO> countBoundsReturn(String normalTax, String nowTax, String dateTime) throws ParseException {
+    public List<TaxReturnResult> countBoundsReturn(String normalTax, String nowTax, String dateTime) throws ParseException {
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
         Date start = simpleDateFormat.parse(dateTime + "01");
@@ -99,13 +99,10 @@ public class WalletJournalService {
         Date end = calendar.getTime();
         List<Map<String, Object>> sumList = walletJournalRepository.selectMapByDatetime(start,end,List.of("bounty_prizes","ess_escrow_transfer","corporate_reward_payout"));
         return sumList.stream().map(item -> {
-            TaxReturnDTO taxReturnDTO = new TaxReturnDTO();
-            taxReturnDTO.setName(item.get("name").toString());
             BigDecimal amount = new BigDecimal(item.get("amount").toString());
             BigDecimal multiply = amount.divide(new BigDecimal(nowTax).multiply(new BigDecimal("100000000")),0, RoundingMode.HALF_DOWN).multiply(BigDecimal.ONE.subtract(new BigDecimal(normalTax)));
-            taxReturnDTO.setAmount(multiply.doubleValue());
-            return taxReturnDTO;
-        }).sorted(Comparator.comparing(TaxReturnDTO::getAmount).reversed()).collect(Collectors.toList());
+            return new TaxReturnResult(item.get("name").toString(), multiply.doubleValue());
+        }).sorted(Comparator.comparing(TaxReturnResult::amount).reversed()).collect(Collectors.toList());
     }
 
 }

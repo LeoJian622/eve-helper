@@ -4,12 +4,12 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-import xyz.foolcat.eve.evehelper.application.dto.BlueprintsDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Blueprints;
 import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.BlueprintsPoConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.BlueprintsMapper;
-import xyz.foolcat.eve.evehelper.application.query.model.PageQuery;
+import xyz.foolcat.eve.evehelper.shared.kernel.base.PageQuery;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 
 import java.util.List;

@@ -1,8 +1,8 @@
 package xyz.foolcat.eve.evehelper.domain.repository.system;
 
-import xyz.foolcat.eve.evehelper.application.dto.BlueprintsDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Blueprints;
-import xyz.foolcat.eve.evehelper.application.query.model.PageQuery;
+import xyz.foolcat.eve.evehelper.shared.kernel.base.PageQuery;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 
 import java.util.List;

@@ -4,7 +4,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
-import xyz.foolcat.eve.evehelper.interfaces.web.vo.AssetsVO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.AssetsVO;
 
 import java.util.List;
 

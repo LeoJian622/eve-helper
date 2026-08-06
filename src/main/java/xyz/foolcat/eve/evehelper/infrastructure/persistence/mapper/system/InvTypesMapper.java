@@ -3,7 +3,7 @@ package xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.InvTypesPO;
-import xyz.foolcat.eve.evehelper.interfaces.web.vo.InvTypesVO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.InvTypesVO;
 
 import java.util.List;
 

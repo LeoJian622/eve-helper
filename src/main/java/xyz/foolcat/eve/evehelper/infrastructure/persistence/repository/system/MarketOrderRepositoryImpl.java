@@ -3,7 +3,7 @@ package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.system;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-import xyz.foolcat.eve.evehelper.application.dto.response.MarketOrderDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MarketOrderDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.MarketOrder;
 import xyz.foolcat.eve.evehelper.domain.repository.system.MarketOrderRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.MarketOrderPoConverter;

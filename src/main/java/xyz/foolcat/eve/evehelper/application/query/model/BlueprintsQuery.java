@@ -2,7 +2,8 @@ package xyz.foolcat.eve.evehelper.application.query.model;
 
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import xyz.foolcat.eve.evehelper.application.dto.BlueprintsDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsDTO;
+import xyz.foolcat.eve.evehelper.shared.kernel.base.PageQuery;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 
 import jakarta.validation.constraints.NotBlank;

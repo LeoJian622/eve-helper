@@ -17,7 +17,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.WebSocket;
-import xyz.foolcat.eve.evehelper.interfaces.web.vo.ExtractionVO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.ExtractionVO;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
 import jakarta.validation.constraints.NotNull;

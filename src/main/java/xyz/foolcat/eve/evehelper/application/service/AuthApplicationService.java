@@ -7,8 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.application.dto.request.RefreshTokenRequest;
-import xyz.foolcat.eve.evehelper.application.dto.response.TokenPair;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
+import xyz.foolcat.eve.evehelper.domain.model.vo.TokenResult;
 import xyz.foolcat.eve.evehelper.domain.service.security.TokenBlacklistService;
 import xyz.foolcat.eve.evehelper.domain.service.security.TokenService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
@@ -73,6 +73,10 @@ public class AuthApplicationService {
             log.error("Token解析失败", e);
             throw new EveHelperException("Token格式错误", e);
         }
+        if (parsed == null) {
+            log.error("Token解析结果为空");
+            throw new EveHelperException("Token格式错误");
+        }
 
         String jti = parsed.jti();
         Date expirationTime = parsed.expirationTime();
@@ -94,7 +98,7 @@ public class AuthApplicationService {
      * @param request 刷新请求
      * @return 新的 Token 对
      */
-    public TokenPair refreshToken(RefreshTokenRequest request) {
+    public TokenResult refreshToken(RefreshTokenRequest request) {
         String refreshToken = request.getRefreshToken();
 
         if (refreshToken == null || refreshToken.trim().isEmpty()) {
@@ -121,8 +125,8 @@ public class AuthApplicationService {
             throw new EveHelperException("用户不存在");
         }
 
-        TokenPair tokenPair = tokenService.refreshAccessTokenWithUser(refreshToken, user);
+        TokenResult tokenResult = tokenService.refreshAccessTokenWithUser(refreshToken, user);
         log.info("刷新Token成功: userId={}", userId);
-        return tokenPair;
+        return tokenResult;
     }
 }

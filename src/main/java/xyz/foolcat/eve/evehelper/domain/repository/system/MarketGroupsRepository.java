@@ -1,7 +1,7 @@
 package xyz.foolcat.eve.evehelper.domain.repository.system;
 
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.MarketGroups;
-import xyz.foolcat.eve.evehelper.interfaces.web.vo.MarketGroupsTreeVO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MarketGroupsTreeVO;
 
 import java.util.List;
 

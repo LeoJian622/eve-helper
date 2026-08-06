@@ -540,7 +540,7 @@
             </if>
         </trim>
     </insert>
-    <resultMap id="MarketTreeResultMap" type="xyz.foolcat.eve.evehelper.interfaces.web.vo.InvTypesVO">
+    <resultMap id="MarketTreeResultMap" type="xyz.foolcat.eve.evehelper.domain.model.vo.InvTypesVO">
         <result column="type_Id" jdbcType="INTEGER" property="typeId"/>
         <result column="name" jdbcType="VARCHAR" property="typeName"/>
     </resultMap>

@@ -1,7 +1,7 @@
 package xyz.foolcat.eve.evehelper.domain.repository.system;
 
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.InvTypes;
-import xyz.foolcat.eve.evehelper.interfaces.web.vo.InvTypesVO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.InvTypesVO;
 
 import java.util.List;
 

@@ -2,8 +2,7 @@ package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.system;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-import xyz.foolcat.eve.evehelper.application.dto.response.BlueprintCostDTO;
-import xyz.foolcat.eve.evehelper.application.dto.response.BlueprintFormulaDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintCostDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.BlueprintsData;
 import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsDataRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.BlueprintsDataPoConverter;
@@ -40,9 +39,4 @@ public class BlueprintsDataRepositoryImpl implements BlueprintsDataRepository {
     public List<BlueprintCostDTO> calcluateCost(Integer typeId) {
         return blueprintsDataMapper.calcluateCost(typeId);
     }
-
-    @Override
-    public List<BlueprintFormulaDTO> queryBlueprintFormulaByTypeId(Integer typeId) {
-        return blueprintsDataMapper.queryBlueprintFormulaByTypeId(typeId);
-    }
-} 
+}

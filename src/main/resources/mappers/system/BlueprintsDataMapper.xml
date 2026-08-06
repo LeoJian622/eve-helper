@@ -126,7 +126,7 @@
     </trim>
   </insert>
 
-    <select id="calcluateCost" resultType="xyz.foolcat.eve.evehelper.application.dto.response.BlueprintCostDTO">
+    <select id="calcluateCost" resultType="xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintCostDTO">
         select bf.type_id,
                bf.type_name,
                sale_price.sale                             sale,
@@ -166,9 +166,6 @@
             and bf.type_id = #{type_id}
         </if>
         group by type_id, type_name, activity_id
-    </select>
-
-    <select id="queryBlueprintFormulaByTypeId" resultType="xyz.foolcat.eve.evehelper.application.dto.response.BlueprintFormulaDTO">
     </select>
 
     <!--    &amp;lt;select id="queryDetailList" resultType=""-->

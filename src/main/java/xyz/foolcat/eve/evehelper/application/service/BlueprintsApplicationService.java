@@ -8,7 +8,7 @@ import xyz.foolcat.eve.evehelper.application.assembler.system.BlueprintsAssemble
 import xyz.foolcat.eve.evehelper.application.query.handler.BlueprintsQueryHandler;
 import xyz.foolcat.eve.evehelper.application.query.model.BlueprintsQuery;
 import xyz.foolcat.eve.evehelper.domain.service.system.BlueprintsService;
-import xyz.foolcat.eve.evehelper.interfaces.web.vo.BlueprintsVO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsVO;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 import xyz.foolcat.eve.evehelper.shared.util.PageResultUtil;
 

@@ -7,7 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import xyz.foolcat.eve.evehelper.domain.service.system.MarketGroupsService;
-import xyz.foolcat.eve.evehelper.interfaces.web.vo.MarketGroupsTreeVO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MarketGroupsTreeVO;
 
 import java.util.List;
 

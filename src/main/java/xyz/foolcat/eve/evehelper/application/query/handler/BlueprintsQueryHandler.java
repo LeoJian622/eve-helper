@@ -1,7 +1,7 @@
 package xyz.foolcat.eve.evehelper.application.query.handler;
 
 import lombok.RequiredArgsConstructor;
-import xyz.foolcat.eve.evehelper.application.dto.BlueprintsDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsDTO;
 import xyz.foolcat.eve.evehelper.application.query.model.BlueprintsQuery;
 import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsRepository;
 import xyz.foolcat.eve.evehelper.shared.kernel.annotation.QueryHandlers;

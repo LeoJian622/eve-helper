@@ -8,8 +8,8 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import xyz.foolcat.eve.evehelper.application.dto.response.TokenPair;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
+import xyz.foolcat.eve.evehelper.domain.model.vo.TokenResult;
 import xyz.foolcat.eve.evehelper.domain.service.security.LoginRateLimiterService;
 import xyz.foolcat.eve.evehelper.domain.service.security.TokenService;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
@@ -44,8 +44,8 @@ public class AuthenticationSuccessServletHandler implements AuthenticationSucces
         // 清除登录失败记录
         loginRateLimiterService.clearAttempts(sysUser.getUsername());
 
-        // 生成Token对
-        TokenPair tokenPair = tokenService.generateTokenPair(sysUser);
+        // 生成Token对(领域读模型)
+        TokenResult tokenResult = tokenService.generateTokenPair(sysUser);
 
         log.info("用户登录成功: userId={}, username={}", sysUser.getId(), sysUser.getUsername());
 
@@ -54,7 +54,7 @@ public class AuthenticationSuccessServletHandler implements AuthenticationSucces
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
-        Result<TokenPair> result = Result.success(tokenPair);
+        Result<TokenResult> result = Result.success(tokenResult);
         response.getWriter().write(objectMapper.writeValueAsString(result));
     }
 }

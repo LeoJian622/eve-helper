@@ -1,6 +1,6 @@
 package xyz.foolcat.eve.evehelper.domain.repository.system;
 
-import xyz.foolcat.eve.evehelper.application.dto.response.MarketOrderDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MarketOrderDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.MarketOrder;
 
 import java.util.List;

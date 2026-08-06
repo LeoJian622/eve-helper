@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.application.assembler.system.AssetsAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.service.system.AssetsService;
-import xyz.foolcat.eve.evehelper.interfaces.web.vo.AssetsVO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.AssetsVO;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.util.PageResultUtil;
