@@ -1,15 +1,13 @@
-package xyz.foolcat.eve.evehelper.application.query.model;
+package xyz.foolcat.eve.evehelper.application.dto.request;
 
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsDTO;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageQuery;
-import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * 蓝图查询DTO
+ * 蓝图查询条件
  * 包含蓝图查询的特定条件和分页参数
  */
 @Data
@@ -17,7 +15,7 @@ import jakarta.validation.constraints.NotBlank;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BlueprintsQuery extends PageQuery implements Query<PageResult<BlueprintsDTO>> {
+public class BlueprintsQuery extends PageQuery {
     
     /**
      * 人物或军团的ID

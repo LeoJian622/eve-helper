@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import xyz.foolcat.eve.evehelper.application.query.model.BlueprintsQuery;
+import xyz.foolcat.eve.evehelper.application.dto.request.BlueprintsQuery;
 import xyz.foolcat.eve.evehelper.application.service.BlueprintsApplicationService;
 import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsVO;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
