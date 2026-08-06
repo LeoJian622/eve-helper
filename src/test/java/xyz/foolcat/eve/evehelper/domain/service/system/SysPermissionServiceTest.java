@@ -20,6 +20,7 @@ import java.util.Map;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("权限查询服务")
 class SysPermissionServiceTest {
 

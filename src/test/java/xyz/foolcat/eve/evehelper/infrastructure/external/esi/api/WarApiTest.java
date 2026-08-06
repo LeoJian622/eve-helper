@@ -18,6 +18,7 @@ import java.util.List;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("ESI Skill Api Test")
 class WarApiTest {
 

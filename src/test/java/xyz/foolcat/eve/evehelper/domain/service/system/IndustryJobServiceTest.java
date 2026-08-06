@@ -12,6 +12,7 @@ import java.text.ParseException;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("工业服务")
 @WithUserDetails("admin")
 class IndustryJobServiceTest {

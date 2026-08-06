@@ -14,6 +14,7 @@ import java.util.List;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("ESI Sovereignty Api Test")
 class SovereigntyApiTest {
 

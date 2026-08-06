@@ -13,6 +13,7 @@ import xyz.foolcat.eve.evehelper.domain.service.system.StructureService;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("建筑信息定时任务测试")
 @Profile("aliw")
 //@WithUserDetails("user1")

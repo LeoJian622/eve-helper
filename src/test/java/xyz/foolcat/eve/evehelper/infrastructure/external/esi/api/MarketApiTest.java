@@ -37,6 +37,7 @@ import static org.mockito.Mockito.*;
  */
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("ESI Market Api Mock Unit Test")
 class MarketApiTest {
 

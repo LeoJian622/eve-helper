@@ -12,6 +12,7 @@ import java.util.List;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("ESI Industry Api Test")
 class InsuranceApiTest {
 

@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("蓝图接口测试")
 @AutoConfigureMockMvc
 @WithUserDetails("admin")

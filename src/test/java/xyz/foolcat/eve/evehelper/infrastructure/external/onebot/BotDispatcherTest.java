@@ -12,6 +12,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.model.MessageEve
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("bot指令分发测试")
 class BotDispatcherTest {
 

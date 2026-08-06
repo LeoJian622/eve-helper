@@ -15,6 +15,7 @@ import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("用户服务测试")
 class SysUserServiceTest {
 

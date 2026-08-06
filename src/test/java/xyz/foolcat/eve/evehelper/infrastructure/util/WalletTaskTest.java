@@ -16,6 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("钱包记录定时任务测试")
 class WalletTaskTest {
 

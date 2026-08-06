@@ -13,6 +13,7 @@ import java.text.ParseException;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("ESI 请求服务测试")
 @WithUserDetails("admin")
 class EsiApiServiceTest {

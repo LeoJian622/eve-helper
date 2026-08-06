@@ -21,6 +21,7 @@ import java.util.Objects;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("ESI Dogma Api Test")
 class DogmaApiTest {
 

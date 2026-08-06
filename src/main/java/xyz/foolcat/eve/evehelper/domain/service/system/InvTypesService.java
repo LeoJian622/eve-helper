@@ -56,8 +56,9 @@ public class InvTypesService {
 
     /**
      * 根据typeId获取物品属性并更新invType
+     *
      * @param typeId 物品ID
-     * @return
+     * @return 更新成功返回物品信息;写库未生效时返回 {@code null},由调用方据此提示失败
      */
     public InvTypes updateTypeByTypeId(Integer typeId){
         InvTypes invTypes = esiApiService.queryUniverseType(typeId, "zh").block();

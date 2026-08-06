@@ -14,6 +14,7 @@ import java.text.ParseException;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @WithUserDetails("admin")
 @DisplayName("blurprints 蓝图信息读取")
 class BlueprintsServiceTest {

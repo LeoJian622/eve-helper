@@ -18,6 +18,7 @@ import java.nio.charset.StandardCharsets;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("人物接口测试")
 @AutoConfigureMockMvc
 class CharacterControllerTest {

@@ -20,6 +20,7 @@ import java.util.Objects;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("ESI Clone Api Test")
 class CloneApiTest {
 

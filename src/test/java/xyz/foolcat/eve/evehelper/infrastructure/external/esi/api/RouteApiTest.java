@@ -15,6 +15,7 @@ import java.util.List;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("ESI Route Api Test")
 class RouteApiTest {
 

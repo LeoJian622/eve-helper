@@ -25,6 +25,7 @@ import java.util.Objects;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("ESI Opportunities Api Test")
 class OpportunitiesApiTest {
 

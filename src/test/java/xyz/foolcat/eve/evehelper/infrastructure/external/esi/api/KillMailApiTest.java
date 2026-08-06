@@ -21,6 +21,7 @@ import java.util.Objects;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("ESI Industry Api Test")
 class KillMailApiTest {
 

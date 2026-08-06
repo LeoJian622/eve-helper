@@ -9,6 +9,7 @@ import xyz.foolcat.eve.evehelper.domain.service.system.MarketGroupsService;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("市场组获取测试")
 class MarketGroupsServiceTest {
 

@@ -12,6 +12,7 @@ import java.text.ParseException;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("观察者采掘详细")
 class MiningDetailServiceTest {
 

@@ -13,6 +13,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.StatusApi;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("ESI Sovereignty Api Test")
 class StatusApiTest {
 

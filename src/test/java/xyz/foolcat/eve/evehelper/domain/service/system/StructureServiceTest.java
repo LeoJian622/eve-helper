@@ -16,6 +16,7 @@ import java.util.List;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("建筑相关服务")
 class StructureServiceTest {
 

@@ -49,3 +49,5 @@ rebel.xml
 application-ali.yml
 application-aliw.yml
 application-pro.yml
+application-dev.yml
+application-test.yml

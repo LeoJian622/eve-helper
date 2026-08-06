@@ -22,6 +22,7 @@ import java.util.Objects;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("ESI Calendar Api Test")
 class CalendarApiTest {
 

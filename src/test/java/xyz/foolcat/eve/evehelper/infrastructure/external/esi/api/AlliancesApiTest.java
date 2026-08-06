@@ -14,6 +14,7 @@ import java.util.List;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("ESI Alliance Api Test")
 class AlliancesApiTest {
 

@@ -11,6 +11,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 
 @SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("卫星矿相关任务")
 class MiningTaskTest {
 
