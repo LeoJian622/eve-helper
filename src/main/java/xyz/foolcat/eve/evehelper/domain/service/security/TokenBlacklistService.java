@@ -2,8 +2,8 @@ package xyz.foolcat.eve.evehelper.domain.service.security;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.SecurityConstant;
 import xyz.foolcat.eve.evehelper.shared.util.SensitiveDataMasker;
 
@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class TokenBlacklistService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final CacheGateway cacheGateway;
 
     /**
      * 将token加入黑名单
@@ -42,7 +42,7 @@ public class TokenBlacklistService {
         String key = SecurityConstant.TOKEN_BLACKLIST_PREFIX + jti;
 
         // 使用setIfAbsent确保幂等性(相当于SETNX)
-        Boolean success = redisTemplate.opsForValue().setIfAbsent(key, "revoked", ttl, TimeUnit.MILLISECONDS);
+        Boolean success = cacheGateway.setIfAbsent(key, "revoked", ttl, TimeUnit.MILLISECONDS);
 
         if (Boolean.TRUE.equals(success)) {
             log.info("Token已加入黑名单: jti={}, ttl={}ms", SensitiveDataMasker.maskToken(jti), ttl);
@@ -67,7 +67,7 @@ public class TokenBlacklistService {
         }
 
         String key = SecurityConstant.TOKEN_BLACKLIST_PREFIX + jti;
-        Boolean exists = redisTemplate.hasKey(key);
+        Boolean exists = cacheGateway.hasKey(key);
 
         if (Boolean.TRUE.equals(exists)) {
             log.debug("Token在黑名单中: jti={}", SensitiveDataMasker.maskToken(jti));
@@ -83,7 +83,7 @@ public class TokenBlacklistService {
      */
     public void removeFromBlacklist(String jti) {
         String key = SecurityConstant.TOKEN_BLACKLIST_PREFIX + jti;
-        redisTemplate.delete(key);
+        cacheGateway.delete(key);
         log.info("Token已从黑名单移除: jti={}", jti);
     }
 }

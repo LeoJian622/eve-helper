@@ -2,8 +2,8 @@ package xyz.foolcat.eve.evehelper.domain.service.security;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 
 import java.util.concurrent.TimeUnit;
 
@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class LoginRateLimiterService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final CacheGateway cacheGateway;
 
     private static final String LOGIN_ATTEMPT_PREFIX = "login:attempt:";
     private static final int MAX_ATTEMPTS = 5;
@@ -36,7 +36,7 @@ public class LoginRateLimiterService {
         String key = LOGIN_ATTEMPT_PREFIX + username;
 
         // 使用INCR命令原子性递增失败次数
-        Long attempts = redisTemplate.opsForValue().increment(key);
+        Long attempts = cacheGateway.increment(key);
 
         if (attempts == null) {
             log.error("Redis INCR操作失败: username={}", username);
@@ -45,7 +45,7 @@ public class LoginRateLimiterService {
 
         // 首次失败时设置过期时间
         if (attempts == 1) {
-            redisTemplate.expire(key, LOCK_DURATION_MINUTES, TimeUnit.MINUTES);
+            cacheGateway.expire(key, LOCK_DURATION_MINUTES, TimeUnit.MINUTES);
         }
 
         boolean isLocked = attempts >= MAX_ATTEMPTS;
@@ -66,7 +66,7 @@ public class LoginRateLimiterService {
      */
     private Integer getCurrentAttempts(String username) {
         String key = LOGIN_ATTEMPT_PREFIX + username;
-        Object attemptsObj = redisTemplate.opsForValue().get(key);
+        Object attemptsObj = cacheGateway.get(key);
 
         if (attemptsObj == null) {
             return 0;
@@ -115,7 +115,7 @@ public class LoginRateLimiterService {
      */
     public void clearAttempts(String username) {
         String key = LOGIN_ATTEMPT_PREFIX + username;
-        redisTemplate.delete(key);
+        cacheGateway.delete(key);
         log.info("清除登录失败记录: username={}", username);
     }
 
@@ -127,7 +127,7 @@ public class LoginRateLimiterService {
      */
     public long getLockRemainingTime(String username) {
         String key = LOGIN_ATTEMPT_PREFIX + username;
-        Long ttl = redisTemplate.getExpire(key, TimeUnit.SECONDS);
+        Long ttl = cacheGateway.getExpire(key, TimeUnit.SECONDS);
         return ttl != null ? ttl : -1;
     }
 }

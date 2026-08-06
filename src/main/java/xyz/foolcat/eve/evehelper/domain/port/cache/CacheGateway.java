@@ -72,7 +72,7 @@ public interface CacheGateway {
     /**
      * 批量写入 Hash 字段。
      */
-    void putAllHash(String key, Map<String, Object> map);
+    void putAllHash(String key, Map<String, ?> map);
 
     /**
      * 发布消息到指定通道。

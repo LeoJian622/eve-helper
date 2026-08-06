@@ -8,8 +8,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
+import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
+
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
@@ -48,10 +48,7 @@ import static org.mockito.Mockito.when;
 class EsiApiServiceUnitTest {
 
     @Mock
-    RedisTemplate<String, String> redisTemplate;
-
-    @Mock
-    ValueOperations<String, String> valueOperations;
+    CacheGateway cacheGateway;
 
     @Mock
     EveAccountService eveAccountService;
@@ -77,7 +74,6 @@ class EsiApiServiceUnitTest {
 
     @BeforeEach
     void setUp() {
-        lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     }
 
     private EveAccount account(String refreshToken) {
@@ -91,8 +87,8 @@ class EsiApiServiceUnitTest {
      * 模拟缓存未命中 + 成功获取 per-character 锁。
      */
     private void stubCacheMissAndLockAcquired() {
-        when(valueOperations.get(STATUS_KEY)).thenReturn(null);
-        when(valueOperations.setIfAbsent(eq(LOCK_KEY), anyString(), anyLong(), eq(TimeUnit.SECONDS))).thenReturn(true);
+        when(cacheGateway.get(STATUS_KEY)).thenReturn(null);
+        when(cacheGateway.setIfAbsent(eq(LOCK_KEY), anyString(), anyLong(), eq(TimeUnit.SECONDS))).thenReturn(true);
     }
 
     @Test
@@ -101,7 +97,7 @@ class EsiApiServiceUnitTest {
         assertEquals(EsiAuthStatus.NOT_AUTHORIZED, esiApiService.getAuthorizationStatus(account("")));
         assertEquals(EsiAuthStatus.NOT_AUTHORIZED, esiApiService.getAuthorizationStatus(account(null)));
         verify(authorizeOAuth, never()).updateAccessToken(any(), anyString());
-        verify(valueOperations, never()).setIfAbsent(anyString(), anyString(), anyLong(), eq(TimeUnit.SECONDS));
+        verify(cacheGateway, never()).setIfAbsent(anyString(), anyString(), anyLong(), eq(TimeUnit.SECONDS));
     }
 
     @Test
@@ -118,13 +114,13 @@ class EsiApiServiceUnitTest {
         EsiAuthStatus status = esiApiService.getAuthorizationStatus(acc);
 
         assertEquals(EsiAuthStatus.AUTHORIZED, status);
-        verify(valueOperations).set(eq("esi_access_token:95465499"), eq("Bearer at"), eq(1140L), eq(TimeUnit.SECONDS));
+        verify(cacheGateway).set(eq("esi_access_token:95465499"), eq("Bearer at"), eq(1140L), eq(TimeUnit.SECONDS));
         ArgumentCaptor<EveAccount> captor = ArgumentCaptor.forClass(EveAccount.class);
         verify(eveAccountService).insertOrUpdateSelective(captor.capture());
         assertEquals(CID, captor.getValue().getCharacterId());
         assertEquals("new-rt", captor.getValue().getRefreshToken());
-        verify(valueOperations).set(eq(STATUS_KEY), eq("AUTHORIZED"), anyLong(), eq(TimeUnit.SECONDS));
-        verify(redisTemplate).delete(LOCK_KEY);
+        verify(cacheGateway).set(eq(STATUS_KEY), eq("AUTHORIZED"), anyLong(), eq(TimeUnit.SECONDS));
+        verify(cacheGateway).delete(LOCK_KEY);
     }
 
     @Test
@@ -152,7 +148,7 @@ class EsiApiServiceUnitTest {
         when(authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, "old-rt")).thenReturn(Mono.just(token));
 
         assertEquals(EsiAuthStatus.UNKNOWN, esiApiService.getAuthorizationStatus(acc));
-        verify(valueOperations, never()).set(eq("esi_access_token:95465499"), anyString(), anyLong(), eq(TimeUnit.SECONDS));
+        verify(cacheGateway, never()).set(eq("esi_access_token:95465499"), anyString(), anyLong(), eq(TimeUnit.SECONDS));
         verify(eveAccountService, never()).insertOrUpdateSelective(any(EveAccount.class));
     }
 
@@ -194,11 +190,11 @@ class EsiApiServiceUnitTest {
     @DisplayName("状态缓存命中 -> 直接返回,不调用 ESI,不加锁")
     void cacheHit_returnsCached() {
         EveAccount acc = account("rt");
-        when(valueOperations.get(STATUS_KEY)).thenReturn("EXPIRED");
+        when(cacheGateway.get(STATUS_KEY)).thenReturn("EXPIRED");
 
         assertEquals(EsiAuthStatus.EXPIRED, esiApiService.getAuthorizationStatus(acc));
         verify(authorizeOAuth, never()).updateAccessToken(any(), anyString());
-        verify(valueOperations, never()).setIfAbsent(anyString(), anyString(), anyLong(), eq(TimeUnit.SECONDS));
+        verify(cacheGateway, never()).setIfAbsent(anyString(), anyString(), anyLong(), eq(TimeUnit.SECONDS));
     }
 
     @Test
@@ -208,9 +204,9 @@ class EsiApiServiceUnitTest {
         AuthTokenResponse token = new AuthTokenResponse();
         token.setAccessToken("at");
         token.setRefreshToken("new-rt");
-        when(valueOperations.get(STATUS_KEY)).thenReturn("BOGUS");
+        when(cacheGateway.get(STATUS_KEY)).thenReturn("BOGUS");
         when(eveAccountService.insertOrUpdateSelective(any(EveAccount.class))).thenReturn(1);
-        when(valueOperations.setIfAbsent(eq(LOCK_KEY), anyString(), anyLong(), eq(TimeUnit.SECONDS))).thenReturn(true);
+        when(cacheGateway.setIfAbsent(eq(LOCK_KEY), anyString(), anyLong(), eq(TimeUnit.SECONDS))).thenReturn(true);
         when(authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, "rt")).thenReturn(Mono.just(token));
 
         assertEquals(EsiAuthStatus.AUTHORIZED, esiApiService.getAuthorizationStatus(acc));
@@ -220,8 +216,8 @@ class EsiApiServiceUnitTest {
     @DisplayName("未获取到锁(并发) -> 返回 UNKNOWN,不调用 ESI")
     void lockNotAcquired_returnsUnknownWithoutRefresh() {
         EveAccount acc = account("rt");
-        when(valueOperations.get(STATUS_KEY)).thenReturn(null);
-        when(valueOperations.setIfAbsent(eq(LOCK_KEY), anyString(), anyLong(), eq(TimeUnit.SECONDS))).thenReturn(false);
+        when(cacheGateway.get(STATUS_KEY)).thenReturn(null);
+        when(cacheGateway.setIfAbsent(eq(LOCK_KEY), anyString(), anyLong(), eq(TimeUnit.SECONDS))).thenReturn(false);
 
         assertEquals(EsiAuthStatus.UNKNOWN, esiApiService.getAuthorizationStatus(acc));
         verify(authorizeOAuth, never()).updateAccessToken(any(), anyString());

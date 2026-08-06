@@ -3,10 +3,10 @@ package xyz.foolcat.eve.evehelper.domain.service.system;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysPermission;
+import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.repository.system.SysPermissionRepository;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @Transactional(rollbackFor = RuntimeException.class)
 public class SysPermissionService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final CacheGateway cacheGateway;
 
     private final SysPermissionRepository rolePermissionRepository;
 
@@ -40,7 +40,7 @@ public class SysPermissionService {
     }
 
     public void refreshPermRolesRules() {
-        redisTemplate.delete(List.of(GlobalConstants.URL_PERM_ROLES_KEY, GlobalConstants.BTN_PERM_ROLES_KEY));
+        cacheGateway.delete(List.of(GlobalConstants.URL_PERM_ROLES_KEY, GlobalConstants.BTN_PERM_ROLES_KEY));
         List<SysPermission> permissions = this.listPermRoles();
         if (CollectionUtil.isNotEmpty(permissions)) {
             //init URL【权限->角色（合集）】规则
@@ -54,9 +54,9 @@ public class SysPermissionService {
                     List<String> roles = item.getRoles();
                     urlPermRoles.put(perm, roles);
                 });
-                redisTemplate.opsForHash().putAll(GlobalConstants.URL_PERM_ROLES_KEY, urlPermRoles);
+                cacheGateway.putAllHash(GlobalConstants.URL_PERM_ROLES_KEY, urlPermRoles);
 
-                redisTemplate.convertAndSend("cleanRoleLocalCache", "true");
+                cacheGateway.convertAndSend("cleanRoleLocalCache", "true");
             }
 
             //init URL【按钮->角色（合集）】规则
@@ -71,9 +71,9 @@ public class SysPermissionService {
                     btnRoles.put(perm, roles);
                 });
 
-                redisTemplate.opsForHash().putAll(GlobalConstants.BTN_PERM_ROLES_KEY, btnRoles);
+                cacheGateway.putAllHash(GlobalConstants.BTN_PERM_ROLES_KEY, btnRoles);
 
-                redisTemplate.convertAndSend("cleanRoleLocalCache", "true");
+                cacheGateway.convertAndSend("cleanRoleLocalCache", "true");
             }
 
         }

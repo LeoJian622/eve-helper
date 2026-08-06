@@ -11,12 +11,12 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.application.dto.response.TokenPair;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.JwtTokenProperties;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
+import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.SecurityConstant;
 import xyz.foolcat.eve.evehelper.shared.util.SensitiveDataMasker;
 
@@ -40,7 +40,7 @@ public class TokenService {
 
     private final KeyPair keyPair;
     private final JwtTokenProperties jwtTokenProperties;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final CacheGateway cacheGateway;
 
     private static final String REFRESH_TOKEN_PREFIX = "refresh_token:";
 
@@ -115,7 +115,7 @@ public class TokenService {
 
         // 存储到Redis: refresh_token:{jti} -> userId
         long ttl = jwtTokenProperties.getRefreshTokenExpirationTime();
-        redisTemplate.opsForValue().set(key, user.getId(), ttl, TimeUnit.SECONDS);
+        cacheGateway.set(key, user.getId(), ttl, TimeUnit.SECONDS);
 
         log.info("生成Refresh Token: userId={}, refreshTokenId={}, ttl={}s",
                 user.getId(), SensitiveDataMasker.maskToken(refreshTokenId), ttl);
@@ -133,7 +133,7 @@ public class TokenService {
         String key = REFRESH_TOKEN_PREFIX + refreshToken;
 
         // 验证Refresh Token是否存在并获取用户ID
-        Object userIdObj = redisTemplate.opsForValue().get(key);
+        Object userIdObj = cacheGateway.get(key);
         if (userIdObj == null) {
             log.warn("Refresh Token不存在或已过期: refreshToken={}", SensitiveDataMasker.maskToken(refreshToken));
             throw new IllegalArgumentException("Refresh Token无效或已过期");
@@ -161,7 +161,7 @@ public class TokenService {
     public Integer getUserIdFromRefreshToken(String refreshToken) {
         String key = REFRESH_TOKEN_PREFIX + refreshToken;
 
-        Object userIdObj = redisTemplate.opsForValue().get(key);
+        Object userIdObj = cacheGateway.get(key);
         if (userIdObj == null) {
             throw new IllegalArgumentException("Refresh Token无效或已过期");
         }
@@ -185,7 +185,7 @@ public class TokenService {
         String key = REFRESH_TOKEN_PREFIX + refreshToken;
 
         // 验证Refresh Token是否存在
-        Object userIdObj = redisTemplate.opsForValue().get(key);
+        Object userIdObj = cacheGateway.get(key);
         if (userIdObj == null) {
             log.warn("Refresh Token不存在或已过期: refreshToken={}", SensitiveDataMasker.maskToken(refreshToken));
             throw new IllegalArgumentException("Refresh Token无效或已过期");
@@ -221,7 +221,7 @@ public class TokenService {
      */
     public void revokeRefreshToken(String refreshToken) {
         String key = REFRESH_TOKEN_PREFIX + refreshToken;
-        redisTemplate.delete(key);
+        cacheGateway.delete(key);
         log.info("撤销Refresh Token: refreshToken={}", SensitiveDataMasker.maskToken(refreshToken));
     }
 
@@ -233,7 +233,7 @@ public class TokenService {
      */
     public boolean isRefreshTokenValid(String refreshToken) {
         String key = REFRESH_TOKEN_PREFIX + refreshToken;
-        return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+        return Boolean.TRUE.equals(cacheGateway.hasKey(key));
     }
 
     /**

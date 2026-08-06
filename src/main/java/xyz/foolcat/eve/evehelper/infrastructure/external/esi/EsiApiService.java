@@ -7,7 +7,6 @@ import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -19,6 +18,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.MiningDetail;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
+import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
@@ -67,7 +67,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class EsiApiService implements EsiGateway {
 
-    private final RedisTemplate redisTemplate;
+    private final CacheGateway cacheGateway;
 
     private final EveAccountService eveAccountService;
 
@@ -169,7 +169,7 @@ public class EsiApiService implements EsiGateway {
 
         String redisKey = GlobalConstants.ESI_ACCESS_TOKEN_KEY + code;
 
-        String accessToken = (String) redisTemplate.opsForValue().get(redisKey);
+        String accessToken = (String) cacheGateway.get(redisKey);
 
         if (StrUtil.isNotEmpty(accessToken)) {
             return accessToken;
@@ -235,7 +235,7 @@ public class EsiApiService implements EsiGateway {
 
         //redis缓存access_token
         String redisKey = GlobalConstants.ESI_ACCESS_TOKEN_KEY + characterId;
-        redisTemplate.opsForValue().set(redisKey, GlobalConstants.TOKEN_PERN + accessToken, ACCESS_TOKEN_CACHE_TTL_SECONDS, TimeUnit.SECONDS);
+        cacheGateway.set(redisKey, GlobalConstants.TOKEN_PERN + accessToken, ACCESS_TOKEN_CACHE_TTL_SECONDS, TimeUnit.SECONDS);
 
         EveAccount eveAccount = new EveAccount();
         eveAccount.setUserId(userId);
@@ -279,8 +279,7 @@ public class EsiApiService implements EsiGateway {
         // 2. per-character 锁:避免并发刷新导致 refreshToken 轮换竞态与缓存投毒
         //    (ESI refreshToken 一次性使用,并发刷新会使第二个请求用已失效旧 token 误判 EXPIRED)
         String lockKey = ESI_AUTH_STATUS_LOCK_KEY + characterId;
-        Boolean acquired = redisTemplate.opsForValue()
-                .setIfAbsent(lockKey, "1", AUTH_STATUS_LOCK_TTL_SECONDS, TimeUnit.SECONDS);
+        Boolean acquired = cacheGateway.setIfAbsent(lockKey, "1", AUTH_STATUS_LOCK_TTL_SECONDS, TimeUnit.SECONDS);
         if (Boolean.FALSE.equals(acquired)) {
             // 已有其他请求在判定:返回现有缓存或 UNKNOWN,不写缓存(避免投毒)
             EsiAuthStatus existing = readStatusCache(statusKey);
@@ -294,10 +293,10 @@ public class EsiApiService implements EsiGateway {
             }
             EsiAuthStatus status = determineAuthStatus(account);
             long ttl = status == EsiAuthStatus.UNKNOWN ? AUTH_STATUS_UNKNOWN_TTL_SECONDS : AUTH_STATUS_TTL_SECONDS;
-            redisTemplate.opsForValue().set(statusKey, status.name(), ttl, TimeUnit.SECONDS);
+            cacheGateway.set(statusKey, status.name(), ttl, TimeUnit.SECONDS);
             return status;
         } finally {
-            redisTemplate.delete(lockKey);
+            cacheGateway.delete(lockKey);
         }
     }
 
@@ -425,7 +424,7 @@ public class EsiApiService implements EsiGateway {
      * 读取状态缓存,非法值返回 null(触发重新判定)。
      */
     private EsiAuthStatus readStatusCache(String statusKey) {
-        Object cached = redisTemplate.opsForValue().get(statusKey);
+        Object cached = cacheGateway.get(statusKey);
         if (cached instanceof String cachedName) {
             try {
                 return EsiAuthStatus.valueOf(cachedName);
@@ -484,7 +483,7 @@ public class EsiApiService implements EsiGateway {
         }
         if (StrUtil.isNotBlank(accessToken)) {
             String redisKey = GlobalConstants.ESI_ACCESS_TOKEN_KEY + characterId;
-            redisTemplate.opsForValue().set(redisKey, GlobalConstants.TOKEN_PERN + accessToken, ACCESS_TOKEN_CACHE_TTL_SECONDS, TimeUnit.SECONDS);
+            cacheGateway.set(redisKey, GlobalConstants.TOKEN_PERN + accessToken, ACCESS_TOKEN_CACHE_TTL_SECONDS, TimeUnit.SECONDS);
         }
     }
 

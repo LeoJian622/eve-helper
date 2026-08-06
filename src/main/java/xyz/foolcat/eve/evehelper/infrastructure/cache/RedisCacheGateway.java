@@ -68,7 +68,7 @@ public class RedisCacheGateway implements CacheGateway {
     }
 
     @Override
-    public void putAllHash(String key, Map<String, Object> map) {
+    public void putAllHash(String key, Map<String, ?> map) {
         redisTemplate.opsForHash().putAll(key, map);
     }
 

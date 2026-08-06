@@ -7,8 +7,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
+import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
+
 
 import java.util.concurrent.TimeUnit;
 
@@ -25,11 +25,10 @@ import static org.mockito.Mockito.*;
 @DisplayName("登录限流服务测试")
 class LoginRateLimiterServiceTest {
 
-    @Mock
-    private RedisTemplate<String, Object> redisTemplate;
+    
 
     @Mock
-    private ValueOperations<String, Object> valueOperations;
+    private CacheGateway cacheGateway;
 
     @InjectMocks
     private LoginRateLimiterService loginRateLimiterService;
@@ -42,17 +41,16 @@ class LoginRateLimiterServiceTest {
     void testRecordFailedAttempt_FirstAttempt() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.increment(key)).thenReturn(1L);
-        when(redisTemplate.expire(eq(key), eq(30L), eq(TimeUnit.MINUTES))).thenReturn(true);
+        when(cacheGateway.increment(key)).thenReturn(1L);
+        when(cacheGateway.expire(eq(key), eq(30L), eq(TimeUnit.MINUTES))).thenReturn(true);
 
         // When
         boolean isLocked = loginRateLimiterService.recordFailedAttempt(TEST_USERNAME);
 
         // Then
         assertFalse(isLocked, "首次失败不应被锁定");
-        verify(valueOperations).increment(key);
-        verify(redisTemplate).expire(key, 30L, TimeUnit.MINUTES);
+        verify(cacheGateway).increment(key);
+        verify(cacheGateway).expire(key, 30L, TimeUnit.MINUTES);
     }
 
     @Test
@@ -60,16 +58,15 @@ class LoginRateLimiterServiceTest {
     void testRecordFailedAttempt_FifthAttempt() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.increment(key)).thenReturn(5L);
+        when(cacheGateway.increment(key)).thenReturn(5L);
 
         // When
         boolean isLocked = loginRateLimiterService.recordFailedAttempt(TEST_USERNAME);
 
         // Then
         assertTrue(isLocked, "第5次失败应被锁定");
-        verify(valueOperations).increment(key);
-        verify(redisTemplate, never()).expire(any(), anyLong(), any());
+        verify(cacheGateway).increment(key);
+        verify(cacheGateway, never()).expire(any(), anyLong(), any());
     }
 
     @Test
@@ -77,15 +74,14 @@ class LoginRateLimiterServiceTest {
     void testRecordFailedAttempt_ExceedMaxAttempts() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.increment(key)).thenReturn(6L);
+        when(cacheGateway.increment(key)).thenReturn(6L);
 
         // When
         boolean isLocked = loginRateLimiterService.recordFailedAttempt(TEST_USERNAME);
 
         // Then
         assertTrue(isLocked, "超过最大次数应保持锁定");
-        verify(valueOperations).increment(key);
+        verify(cacheGateway).increment(key);
     }
 
     @Test
@@ -93,15 +89,14 @@ class LoginRateLimiterServiceTest {
     void testRecordFailedAttempt_RedisFailure() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.increment(key)).thenReturn(null);
+        when(cacheGateway.increment(key)).thenReturn(null);
 
         // When
         boolean isLocked = loginRateLimiterService.recordFailedAttempt(TEST_USERNAME);
 
         // Then
         assertFalse(isLocked, "Redis操作失败应返回未锁定");
-        verify(valueOperations).increment(key);
+        verify(cacheGateway).increment(key);
     }
 
     @Test
@@ -109,15 +104,14 @@ class LoginRateLimiterServiceTest {
     void testIsLocked_NotLocked() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get(key)).thenReturn(3);
+        when(cacheGateway.get(key)).thenReturn(3);
 
         // When
         boolean isLocked = loginRateLimiterService.isLocked(TEST_USERNAME);
 
         // Then
         assertFalse(isLocked, "失败次数小于5应返回未锁定");
-        verify(valueOperations).get(key);
+        verify(cacheGateway).get(key);
     }
 
     @Test
@@ -125,15 +119,14 @@ class LoginRateLimiterServiceTest {
     void testIsLocked_Locked() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get(key)).thenReturn(5);
+        when(cacheGateway.get(key)).thenReturn(5);
 
         // When
         boolean isLocked = loginRateLimiterService.isLocked(TEST_USERNAME);
 
         // Then
         assertTrue(isLocked, "失败次数达到5应返回锁定");
-        verify(valueOperations).get(key);
+        verify(cacheGateway).get(key);
     }
 
     @Test
@@ -141,15 +134,14 @@ class LoginRateLimiterServiceTest {
     void testIsLocked_NoRecord() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get(key)).thenReturn(null);
+        when(cacheGateway.get(key)).thenReturn(null);
 
         // When
         boolean isLocked = loginRateLimiterService.isLocked(TEST_USERNAME);
 
         // Then
         assertFalse(isLocked, "无记录应返回未锁定");
-        verify(valueOperations).get(key);
+        verify(cacheGateway).get(key);
     }
 
     @Test
@@ -157,15 +149,14 @@ class LoginRateLimiterServiceTest {
     void testGetRemainingAttempts_NoAttempts() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get(key)).thenReturn(null);
+        when(cacheGateway.get(key)).thenReturn(null);
 
         // When
         int remaining = loginRateLimiterService.getRemainingAttempts(TEST_USERNAME);
 
         // Then
         assertEquals(5, remaining, "无失败记录应返回5次");
-        verify(valueOperations).get(key);
+        verify(cacheGateway).get(key);
     }
 
     @Test
@@ -173,15 +164,14 @@ class LoginRateLimiterServiceTest {
     void testGetRemainingAttempts_TwoAttempts() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get(key)).thenReturn(2);
+        when(cacheGateway.get(key)).thenReturn(2);
 
         // When
         int remaining = loginRateLimiterService.getRemainingAttempts(TEST_USERNAME);
 
         // Then
         assertEquals(3, remaining, "失败2次应剩余3次");
-        verify(valueOperations).get(key);
+        verify(cacheGateway).get(key);
     }
 
     @Test
@@ -189,15 +179,14 @@ class LoginRateLimiterServiceTest {
     void testGetRemainingAttempts_Locked() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get(key)).thenReturn(5);
+        when(cacheGateway.get(key)).thenReturn(5);
 
         // When
         int remaining = loginRateLimiterService.getRemainingAttempts(TEST_USERNAME);
 
         // Then
         assertEquals(0, remaining, "已锁定应返回0次");
-        verify(valueOperations).get(key);
+        verify(cacheGateway).get(key);
     }
 
     @Test
@@ -205,15 +194,14 @@ class LoginRateLimiterServiceTest {
     void testGetRemainingAttempts_ExceedMax() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get(key)).thenReturn(10);
+        when(cacheGateway.get(key)).thenReturn(10);
 
         // When
         int remaining = loginRateLimiterService.getRemainingAttempts(TEST_USERNAME);
 
         // Then
         assertEquals(0, remaining, "超过最大次数应返回0次");
-        verify(valueOperations).get(key);
+        verify(cacheGateway).get(key);
     }
 
     @Test
@@ -221,13 +209,13 @@ class LoginRateLimiterServiceTest {
     void testClearAttempts() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.delete(key)).thenReturn(true);
+        when(cacheGateway.delete(key)).thenReturn(true);
 
         // When
         loginRateLimiterService.clearAttempts(TEST_USERNAME);
 
         // Then
-        verify(redisTemplate).delete(key);
+        verify(cacheGateway).delete(key);
     }
 
     @Test
@@ -235,14 +223,14 @@ class LoginRateLimiterServiceTest {
     void testGetLockRemainingTime_WithTTL() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.getExpire(key, TimeUnit.SECONDS)).thenReturn(1800L);
+        when(cacheGateway.getExpire(key, TimeUnit.SECONDS)).thenReturn(1800L);
 
         // When
         long remainingTime = loginRateLimiterService.getLockRemainingTime(TEST_USERNAME);
 
         // Then
         assertEquals(1800L, remainingTime, "应返回正确的TTL");
-        verify(redisTemplate).getExpire(key, TimeUnit.SECONDS);
+        verify(cacheGateway).getExpire(key, TimeUnit.SECONDS);
     }
 
     @Test
@@ -250,14 +238,14 @@ class LoginRateLimiterServiceTest {
     void testGetLockRemainingTime_NoTTL() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.getExpire(key, TimeUnit.SECONDS)).thenReturn(null);
+        when(cacheGateway.getExpire(key, TimeUnit.SECONDS)).thenReturn(null);
 
         // When
         long remainingTime = loginRateLimiterService.getLockRemainingTime(TEST_USERNAME);
 
         // Then
         assertEquals(-1L, remainingTime, "无TTL应返回-1");
-        verify(redisTemplate).getExpire(key, TimeUnit.SECONDS);
+        verify(cacheGateway).getExpire(key, TimeUnit.SECONDS);
     }
 
     @Test
@@ -265,15 +253,14 @@ class LoginRateLimiterServiceTest {
     void testGetCurrentAttempts_LongType() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get(key)).thenReturn(3L);
+        when(cacheGateway.get(key)).thenReturn(3L);
 
         // When
         boolean isLocked = loginRateLimiterService.isLocked(TEST_USERNAME);
 
         // Then
         assertFalse(isLocked, "应正确处理Long类型");
-        verify(valueOperations).get(key);
+        verify(cacheGateway).get(key);
     }
 
     @Test
@@ -281,15 +268,14 @@ class LoginRateLimiterServiceTest {
     void testGetCurrentAttempts_StringType() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get(key)).thenReturn("4");
+        when(cacheGateway.get(key)).thenReturn("4");
 
         // When
         boolean isLocked = loginRateLimiterService.isLocked(TEST_USERNAME);
 
         // Then
         assertFalse(isLocked, "应正确处理String类型");
-        verify(valueOperations).get(key);
+        verify(cacheGateway).get(key);
     }
 
     @Test
@@ -297,47 +283,45 @@ class LoginRateLimiterServiceTest {
     void testGetCurrentAttempts_InvalidFormat() {
         // Given
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get(key)).thenReturn("invalid");
+        when(cacheGateway.get(key)).thenReturn("invalid");
 
         // When
         boolean isLocked = loginRateLimiterService.isLocked(TEST_USERNAME);
 
         // Then
         assertFalse(isLocked, "无效格式应返回未锁定");
-        verify(valueOperations).get(key);
+        verify(cacheGateway).get(key);
     }
 
     @Test
     @DisplayName("完整流程测试 - 从失败到锁定再到清除")
     void testCompleteFlow() {
         String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
 
         // 第1次失败
-        when(valueOperations.increment(key)).thenReturn(1L);
-        when(redisTemplate.expire(eq(key), eq(30L), eq(TimeUnit.MINUTES))).thenReturn(true);
+        when(cacheGateway.increment(key)).thenReturn(1L);
+        when(cacheGateway.expire(eq(key), eq(30L), eq(TimeUnit.MINUTES))).thenReturn(true);
         assertFalse(loginRateLimiterService.recordFailedAttempt(TEST_USERNAME));
 
         // 检查剩余次数
-        when(valueOperations.get(key)).thenReturn(1);
+        when(cacheGateway.get(key)).thenReturn(1);
         assertEquals(4, loginRateLimiterService.getRemainingAttempts(TEST_USERNAME));
 
         // 第5次失败 - 锁定
-        when(valueOperations.increment(key)).thenReturn(5L);
+        when(cacheGateway.increment(key)).thenReturn(5L);
         assertTrue(loginRateLimiterService.recordFailedAttempt(TEST_USERNAME));
 
         // 检查锁定状态
-        when(valueOperations.get(key)).thenReturn(5);
+        when(cacheGateway.get(key)).thenReturn(5);
         assertTrue(loginRateLimiterService.isLocked(TEST_USERNAME));
         assertEquals(0, loginRateLimiterService.getRemainingAttempts(TEST_USERNAME));
 
         // 清除记录
-        when(redisTemplate.delete(key)).thenReturn(true);
+        when(cacheGateway.delete(key)).thenReturn(true);
         loginRateLimiterService.clearAttempts(TEST_USERNAME);
 
         // 验证清除后状态
-        when(valueOperations.get(key)).thenReturn(null);
+        when(cacheGateway.get(key)).thenReturn(null);
         assertFalse(loginRateLimiterService.isLocked(TEST_USERNAME));
         assertEquals(5, loginRateLimiterService.getRemainingAttempts(TEST_USERNAME));
     }
