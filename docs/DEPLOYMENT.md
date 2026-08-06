@@ -33,7 +33,7 @@
 
 ```bash
 # 克隆代码
-git clone https://github.com/your-org/eve-helper.git
+git clone https://github.com/LeoJian622/eve-helper.git
 cd eve-helper
 
 # 切换到发布分支

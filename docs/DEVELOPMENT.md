@@ -24,7 +24,7 @@
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/your-org/eve-helper.git
+git clone https://github.com/LeoJian622/eve-helper.git
 cd eve-helper
 ```
 
@@ -87,55 +87,63 @@ eve-helper/
 │   ├── main/
 │   │   ├── java/xyz/foolcat/eve/evehelper/
 │   │   │   ├── application/          # 应用层 - 应用服务和DTO
-│   │   │   │   ├── assembler/        # DTO转换器
+│   │   │   │   ├── assembler/        # 领域↔DTO 转换器 (MapStruct)
+│   │   │   │   ├── dto/              # 请求/响应 DTO
+│   │   │   │   ├── query/            # 查询模型与处理器
 │   │   │   │   └── service/          # 应用服务
 │   │   │   ├── domain/               # 领域层 - 核心业务逻辑
 │   │   │   │   ├── model/            # 领域模型
+│   │   │   │   │   ├── entity/       # 实体
+│   │   │   │   │   └── vo/           # 领域读模型 (跨层共享的查询结果)
 │   │   │   │   ├── repository/       # 仓储接口
-│   │   │   │   └── service/          # 领域服务
+│   │   │   │   ├── port/             # 出站端口 (EsiGateway / CacheGateway)
+│   │   │   │   ├── service/          # 领域服务
+│   │   │   │   └── util/             # 领域工具
 │   │   │   ├── infrastructure/       # 基础设施层 - 技术实现
+│   │   │   │   ├── assembler/        # PO↔领域、ESI响应↔领域 转换器
+│   │   │   │   ├── config/           # 多数据源、Security、MyBatis 配置
 │   │   │   │   ├── external/         # 外部服务集成
 │   │   │   │   │   ├── esi/          # EVE ESI API
 │   │   │   │   │   └── onebot/       # OneBot协议
-│   │   │   │   ├── persistence/      # 数据持久化
-│   │   │   │   └── util/             # 工具类
+│   │   │   │   ├── persistence/      # 数据持久化 (PO + mapper + 仓储实现)
+│   │   │   │   └── util/             # 定时任务
 │   │   │   ├── interfaces/           # 接口层 - 对外接口
-│   │   │   │   └── web/              # Web控制器
+│   │   │   │   └── web/              # controller + advice
 │   │   │   └── shared/               # 共享层 - 通用组件
 │   │   └── resources/
-│   │       ├── application.yml       # 主配置文件
-│   │       ├── application-dev.yml   # 开发环境配置
-│   │       └── application-test.yml  # 测试环境配置
+│   │       ├── application.yml       # 主配置文件 (仅此文件入库)
+│   │       ├── application-dev.yml   # 开发环境配置 (不入库)
+│   │       └── application-test.yml  # 测试环境配置 (不入库)
 │   └── test/                         # 测试代码
 │       ├── java/                     # 单元测试和集成测试
 │       └── resources/                # 测试资源
 ├── docs/                             # 项目文档
 ├── pom.xml                           # Maven配置
 ├── .env.example                      # 环境变量模板
-└── README.md                         # 项目说明
+└── Readme.md                         # 项目说明
 ```
 
 ### DDD架构说明
 
 #### 1. 接口层 (interfaces)
-- **职责**: 处理HTTP请求,参数验证,响应格式化
-- **组件**: Controller, DTO, Request/Response对象
+- **职责**: 处理HTTP请求,参数验证,响应格式化(统一 `Result<T>` 信封)
+- **组件**: Controller, GlobalExceptionHandler
 - **示例**: `CharacterController`, `BlueprintsController`
 
 #### 2. 应用层 (application)
-- **职责**: 编排业务流程,协调领域对象
-- **组件**: Application Service, Assembler (DTO转换)
-- **示例**: `UserService`, `UserConverter`
+- **职责**: 编排业务流程,协调领域对象,声明事务边界
+- **组件**: Application Service, Assembler (领域↔DTO), Query/QueryHandler
+- **示例**: `AuthApplicationService`, `BlueprintsApplicationService`, `AssetsAssembler`
 
 #### 3. 领域层 (domain)
-- **职责**: 核心业务逻辑,业务规则
-- **组件**: Entity, Value Object, Domain Service, Repository Interface
-- **示例**: `SysUserService`, `BlueprintsService`
+- **职责**: 核心业务逻辑,业务规则。**不依赖任何其他层**(仅可依赖 shared)
+- **组件**: Entity, 领域读模型(model/vo), Domain Service, Repository Interface, Port(出站端口)
+- **示例**: `SysUserService`, `BlueprintsService`, `EsiGateway`, `CacheGateway`
 
 #### 4. 基础设施层 (infrastructure)
-- **职责**: 技术实现,外部服务集成
-- **组件**: Repository Implementation, External API Client, Util
-- **示例**: `EsiApiService`, `BotDispatcher`
+- **职责**: 技术实现,外部服务集成,实现领域层定义的接口与端口
+- **组件**: Repository Implementation, PO↔领域转换器, External API Client, 定时任务
+- **示例**: `BlueprintsRepositoryImpl`, `AssetsPoConverter`, `BotDispatcher`
 
 #### 5. 共享层 (shared)
 - **职责**: 跨层共享的通用组件
@@ -457,8 +465,8 @@ lsof -i :9999                 # Linux/Mac
 ## 🆘 获取帮助
 
 - **文档**: 查看 `docs/` 目录下的文档
-- **Issues**: [GitHub Issues](https://github.com/your-org/eve-helper/issues)
-- **Wiki**: [项目Wiki](https://github.com/your-org/eve-helper/wiki)
+- **Issues**: [GitHub Issues](https://github.com/LeoJian622/eve-helper/issues)
+- **Wiki**: [项目Wiki](https://github.com/LeoJian622/eve-helper/wiki)
 - **团队沟通**: Slack #eve-helper频道
 
 ---

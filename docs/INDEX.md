@@ -8,7 +8,7 @@ EVE Helper 项目文档中心。
 
 | 文档 | 描述 | 最后更新 |
 |------|------|----------|
-| [README.md](../README.md) | 项目概述和快速开始 | 2023-11-13 |
+| [Readme.md](../Readme.md) | 项目概述和快速开始 | 2023-11-13 |
 | [环境变量配置](./ENVIRONMENT.md) | 环境变量配置详细说明 | 2026-02-01 |
 | [开发指南](./DEVELOPMENT.md) | 开发工作流程和规范 | 2026-02-01 |
 | [测试指南](./TESTING.md) | 测试策略和最佳实践 | 2026-02-01 |
@@ -19,19 +19,18 @@ EVE Helper 项目文档中心。
 | 文档 | 描述 | 最后更新 |
 |------|------|----------|
 | [应用层README](../src/main/java/xyz/foolcat/eve/evehelper/application/README.md) | 应用层架构说明 | 2025-01-29 |
-| [领域层README](../src/main/java/xyz/foolcat/eve/evehelper/domain/README.md) | 领域层架构说明 | 2025-01-29 |
+| [领域层README](../src/main/java/xyz/foolcat/eve/evehelper/domain/README.md) | 领域层架构说明(实体/读模型/仓储/端口) | 2026-08-06 |
 | [基础设施层README](../src/main/java/xyz/foolcat/eve/evehelper/infrastructure/README.md) | 基础设施层架构说明 | 2025-01-29 |
-| [接口层README](../src/main/java/xyz/foolcat/eve/evehelper/interfaces/README.md) | 接口层架构说明 | 2025-01-29 |
+| [接口层README](../src/main/java/xyz/foolcat/eve/evehelper/interfaces/README.md) | 接口层架构说明(控制器/异常处理) | 2026-08-06 |
 | [共享层README](../src/main/java/xyz/foolcat/eve/evehelper/shared/README.md) | 共享层架构说明 | 2025-01-29 |
 
 ### 工具文档
 
 | 文档 | 描述 | 最后更新 |
 |------|------|----------|
-| [CLAUDE.md](../CLAUDE.md) | Claude Code 项目指南(架构/约束/流程速查) | 2026-08-04 |
+| [CLAUDE.md](../CLAUDE.md) | Claude Code 项目指南(架构/约束/流程速查) | 2026-08-06 |
 | [AGENTS.md](../AGENTS.md) | 跨 AI 工具入口指针 | 2026-08-04 |
 | [AI开发工作流](./AI_WORKFLOW.md) | Spec-Kit + Superpowers + ECC 分级流程 | 2026-08-04 |
-| [项目编码模式技能](../.claude/skills/eve-helper-patterns/SKILL.md) | Git 历史提炼的编码模式 | 2026-08-04 |
 
 ## 🚀 快速导航
 
@@ -154,26 +153,15 @@ EVE Helper 项目文档中心。
 
 ## 🆘 获取帮助
 
-### 文档问题
-
-- **提交Issue**: [GitHub Issues](https://github.com/your-org/eve-helper/issues)
-- **文档讨论**: Slack #eve-helper-docs频道
-- **文档维护**: 联系文档团队
-
-### 技术支持
-
-- **开发问题**: Slack #eve-helper-dev频道
-- **运维问题**: Slack #eve-helper-ops频道
-- **测试问题**: Slack #eve-helper-testing频道
+- **提交 Issue**: [GitHub Issues](https://github.com/LeoJian622/eve-helper/issues)
+- **仓库地址**: https://github.com/LeoJian622/eve-helper
 
 ## 📊 文档统计
 
-- **总文档数**: 14个
-- **核心文档**: 5个
-- **架构文档**: 5个
-- **工具文档**: 4个
-- **最近更新**: 2026-08-04
-- **文档覆盖率**: 95%
+- **docs/ 目录**: 6 个(INDEX、AI_WORKFLOW、DEVELOPMENT、TESTING、DEPLOYMENT、ENVIRONMENT)
+- **分层架构 README**: 5 个(application/domain/infrastructure/interfaces/shared)
+- **根目录**: Readme.md、CLAUDE.md、AGENTS.md
+- **最近更新**: 2026-08-06
 
 ## 🔗 外部资源
 
@@ -193,7 +181,7 @@ EVE Helper 项目文档中心。
 
 ---
 
-**最后更新**: 2026-08-04
+**最后更新**: 2026-08-06
 **维护者**: EVE Helper Documentation Team
 
-**文档版本**: v1.0.0
+**文档版本**: v1.0.1

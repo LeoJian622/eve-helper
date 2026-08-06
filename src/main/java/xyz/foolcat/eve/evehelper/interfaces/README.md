@@ -6,18 +6,16 @@
 
 ```
 interfaces/
-├── web/             # Web接口
-│   ├── controller/  # REST控制器
-│   ├── filter/      # 过滤器
-│   ├── interceptor/ # 拦截器
-│   └── advice/      # 异常处理
-├── websocket/       # WebSocket接口
-│   ├── handler/     # WebSocket处理器
-│   └── config/      # WebSocket配置
-├── cli/             # 命令行接口
-├── facade/          # 外观模式（简化复杂子系统）
-└── vo/              # 视图对象（View Object）
+└── web/                 # Web 接口
+    ├── controller/      # REST 控制器（Assets/Auth/Blueprints/Character/
+    │                    #   Job/MarketGroup/Mining/User）
+    └── advice/          # GlobalExceptionHandler 全局异常处理
+                         #   + @NoWrap 响应包装豁免标记
 ```
+
+> **返回类型约定**: 控制器统一返回 `Result<T>` 信封。`T` 使用 `application/dto/response`
+> 下的响应 DTO，或 `domain/model/vo` 下的领域读模型（被多层共享的查询结果）。
+> 本层不含独立 VO 包。
 
 ## 职责
 

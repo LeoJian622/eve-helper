@@ -317,7 +317,7 @@ keytool -genkeypair -alias eve-jwt -keyalg RSA -keysize 2048 \
 
 1. 查看应用日志: `logs/spring.log`
 2. 检查环境变量: `printenv | grep -E "DB_|REDIS_|KEYSTORE_|KEY_"`
-3. 提交Issue: [GitHub Issues](https://github.com/your-org/eve-helper/issues)
+3. 提交Issue: [GitHub Issues](https://github.com/LeoJian622/eve-helper/issues)
 4. 联系运维团队
 
 ---

@@ -60,14 +60,16 @@ mvn package -DskipTests
 
 五层结构,依赖规则: `Interfaces → Application → Domain ← Infrastructure`。领域层是核心,不依赖任何其他层;基础设施层实现领域层定义的接口。
 
-- **domain/**: 实体(`model/entity/eve|system`,均继承 `BaseEntity`)、仓储接口(`repository/`)、领域服务(`service/esi|eve|system|security|thread`)、Specification 模式
-- **application/**: 应用服务、CommandBus/QueryBus(泛型反射分发)、DTO、MapStruct 组装器(26+)、命令/查询处理器(CQRS)
-- **infrastructure/**: 持久化(PO + MyBatis mapper + 仓储实现)、外部集成(`external/esi` 30+ API 类,OAuth2 PKCE;`external/onebot`)、配置(多数据源、Spring Security/JWT/RBAC)
-- **interfaces/**: REST 控制器、过滤器、全局异常处理、VO
-- **shared/**: BaseEntity/PageResult、枚举、EveHelperException、常量、注解、Result<T>/ResultCode、工具类
+- **domain/**: 实体(`model/entity/eve|system`)、领域读模型(`model/vo`,跨层共享的查询结果载体)、仓储接口(`repository/`)、出站端口(`port/esi` EsiGateway、`port/cache` CacheGateway)、领域服务(`service/esi|eve|system|security|thread`)、领域工具(`util/`)
+- **application/**: 应用服务、DTO(`dto/request|response`)、MapStruct 组装器(领域↔DTO,7 个)、查询模型与处理器(`query/`,Query/QueryHandler 泛型契约)
+- **infrastructure/**: 持久化(PO + MyBatis mapper + 仓储实现)、映射转换器(`assembler/persistence` PO↔领域、`assembler/esi` ESI 响应↔领域,共 32 个)、外部集成(`external/esi` 30+ API 类,OAuth2 PKCE;`external/onebot`)、配置(多数据源、Spring Security/JWT/RBAC)、定时任务(`util/`)
+- **interfaces/**: REST 控制器(`web/controller`)、全局异常处理与 `@NoWrap` 标记(`web/advice`)
+- **shared/**: BaseEntity/PageResult/PageQuery(`kernel/base`)、配置属性(`kernel/config`)、枚举、EveHelperException、常量、注解、Result<T>/ResultCode、工具类
 
 ### 添加新功能
-1. 从领域模型开始(实体/值对象/聚合) → 2. 领域层定义仓储接口 → 3. 应用服务协调用例 → 4. 基础设施层实现仓储 → 5. MapStruct 组装器 → 6. 接口层控制器 → 7. MyBatis mapper XML
+1. 从领域模型开始(实体/领域读模型) → 2. 领域层定义仓储接口(签名只用领域类型,禁止出现上层 DTO/VO) → 3. 应用服务协调用例 → 4. 基础设施层实现仓储 + `assembler/persistence` 做 PO↔领域转换 → 5. application 组装器做领域↔DTO → 6. 接口层控制器 → 7. MyBatis mapper XML
+
+> 跨层类型规则:被多层消费的查询结果放 `domain/model/vo`(领域读模型);仅接口层出参用 `application/dto/response`。domain 层不得 import application/infrastructure/interfaces 的任何类型。
 
 ### 关键技术细节
 - **多数据源**: `eve`(游戏静态数据,只读)与 `eve_helper`(运行时数据),独立 MyBatis Plus 配置
@@ -98,7 +100,7 @@ mvn package -DskipTests
 
 - `pom.xml`: Maven 依赖与构建配置(冻结技术栈的版本以此为准)
 - `src/main/resources/application.yml`: profile 选择 (active: dev)
-- `src/main/resources/application-{dev,ali,aliw,pro}.yml`: 环境配置
+- `src/main/resources/application-{dev,test,ali,aliw,pro}.yml`: 环境配置(**均不入库**,已在 `.gitignore` 忽略;测试用 `@ActiveProfiles("test")` 走 `application-test.yml`)
 - `.env.example`: 环境变量模板
 - `.specify/memory/constitution.md`: 项目宪法(含技术栈冻结条款)
 - `docs/INDEX.md`: 文档索引;`docs/AI_WORKFLOW.md`: AI 开发工作流
