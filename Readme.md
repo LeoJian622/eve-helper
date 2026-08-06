@@ -1,7 +1,53 @@
 # EVE-Helper
 
-### 介绍
-用户读取自己或者军团的订单资产情况，用于市场分析
+EVE Online 玩家的市场与资产分析工具。读取角色/军团的订单、资产、蓝图、工业项目与钱包数据，
+用于市场分析与生产成本核算。
+
+- **技术栈**: Java 17 · Spring Boot 3.5.14 · MyBatis Plus · MySQL · Redis
+- **架构**: 领域驱动设计（DDD 五层），依赖规则 `Interfaces → Application → Domain ← Infrastructure`
+- **数据来源**: EVE Online ESI (EVE Swagger Interface)，OAuth2 Authorization Code + PKCE
+- **服务器**: 支持宁静（Tranquility）与晨曦（Serenity）
+
+### 快速开始
+
+前置依赖：JDK 17、Maven、MySQL（需 `eve` 与 `eve_helper` 两个库）、Redis。
+
+```bash
+# 1. 配置环境变量（参考模板，切勿提交实际配置）
+cp .env.example .env.dev
+
+# 2. 构建
+./mvnw clean package
+
+# 3. 运行（默认 dev profile）
+./mvnw spring-boot:run
+
+# 4. 运行测试
+./mvnw test
+```
+
+启动后访问：
+
+| 端点 | 地址 |
+|------|------|
+| 应用 | http://localhost:9999 |
+| Swagger UI | http://localhost:9999/swagger-ui.html |
+| OpenAPI 文档 | http://localhost:9999/v3/api-docs |
+
+> ⚠️ `application-{dev,test,ali,aliw,pro}.yml` 与 `.env.*` 含数据库凭据，均已在
+> `.gitignore` 中忽略，**不要提交**。
+
+### 文档
+
+| 文档 | 用途 |
+|------|------|
+| [文档索引](docs/INDEX.md) | 全部文档入口 |
+| [开发指南](docs/DEVELOPMENT.md) | 项目结构、DDD 分层、代码规范、Maven 命令 |
+| [环境变量配置](docs/ENVIRONMENT.md) | 配置项说明 |
+| [测试指南](docs/TESTING.md) | 测试策略与编写规范 |
+| [部署运维手册](docs/DEPLOYMENT.md) | 部署与运维 |
+| [CLAUDE.md](CLAUDE.md) | AI 辅助开发的架构约束与流程速查 |
+
 ### 人物授权
 * esi-bookmarks.read_character_bookmarks.v1<br>
   允许读取人物的位标和位标文件夹

@@ -61,10 +61,10 @@ mvn package -DskipTests
 五层结构,依赖规则: `Interfaces → Application → Domain ← Infrastructure`。领域层是核心,不依赖任何其他层;基础设施层实现领域层定义的接口。
 
 - **domain/**: 实体(`model/entity/eve|system`)、领域读模型(`model/vo`,跨层共享的查询结果载体)、仓储接口(`repository/`)、出站端口(`port/esi` EsiGateway、`port/cache` CacheGateway)、领域服务(`service/esi|eve|system|security|thread`)、领域工具(`util/`)
-- **application/**: 应用服务、DTO(`dto/request|response`)、MapStruct 组装器(领域↔DTO,7 个)、查询模型与处理器(`query/`,Query/QueryHandler 泛型契约)
+- **application/**: 应用服务、DTO(`dto/request|response`)、MapStruct 组装器(领域↔DTO,7 个)
 - **infrastructure/**: 持久化(PO + MyBatis mapper + 仓储实现)、映射转换器(`assembler/persistence` PO↔领域、`assembler/esi` ESI 响应↔领域,共 32 个)、外部集成(`external/esi` 30+ API 类,OAuth2 PKCE;`external/onebot`)、配置(多数据源、Spring Security/JWT/RBAC)、定时任务(`util/`)
 - **interfaces/**: REST 控制器(`web/controller`)、全局异常处理与 `@NoWrap` 标记(`web/advice`)
-- **shared/**: BaseEntity/PageResult/PageQuery(`kernel/base`)、配置属性(`kernel/config`)、枚举、EveHelperException、常量、注解、Result<T>/ResultCode、工具类
+- **shared/**: BaseEntity/PageResult/PageQuery(`kernel/base`)、配置属性(`kernel/config`)、枚举、EveHelperException、常量、Result<T>/ResultCode、工具类
 
 ### 添加新功能
 1. 从领域模型开始(实体/领域读模型) → 2. 领域层定义仓储接口(签名只用领域类型,禁止出现上层 DTO/VO) → 3. 应用服务协调用例 → 4. 基础设施层实现仓储 + `assembler/persistence` 做 PO↔领域转换 → 5. application 组装器做领域↔DTO → 6. 接口层控制器 → 7. MyBatis mapper XML

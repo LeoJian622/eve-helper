@@ -89,7 +89,8 @@ eve-helper/
 │   │   │   ├── application/          # 应用层 - 应用服务和DTO
 │   │   │   │   ├── assembler/        # 领域↔DTO 转换器 (MapStruct)
 │   │   │   │   ├── dto/              # 请求/响应 DTO
-│   │   │   │   ├── query/            # 查询模型与处理器
+│   │   │   │   │   ├── request/      # 入参 (含查询条件对象)
+│   │   │   │   │   └── response/     # 出参
 │   │   │   │   └── service/          # 应用服务
 │   │   │   ├── domain/               # 领域层 - 核心业务逻辑
 │   │   │   │   ├── model/            # 领域模型
@@ -132,7 +133,7 @@ eve-helper/
 
 #### 2. 应用层 (application)
 - **职责**: 编排业务流程,协调领域对象,声明事务边界
-- **组件**: Application Service, Assembler (领域↔DTO), Query/QueryHandler
+- **组件**: Application Service, Assembler (领域↔DTO)
 - **示例**: `AuthApplicationService`, `BlueprintsApplicationService`, `AssetsAssembler`
 
 #### 3. 领域层 (domain)
