@@ -2,17 +2,25 @@ package xyz.foolcat.eve.evehelper.application.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.application.assembler.system.BlueprintsAssembler;
 import xyz.foolcat.eve.evehelper.application.dto.request.BlueprintsQuery;
 import xyz.foolcat.eve.evehelper.application.dto.response.BlueprintsVO;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.query.BlueprintsPageCriteria;
 import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsRepository;
+import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
+import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
+import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 import xyz.foolcat.eve.evehelper.shared.util.PageResultUtil;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -53,9 +61,16 @@ public class BlueprintsApplicationService {
      */
     private static final Pattern DIGITS = Pattern.compile("\\d+");
 
+    /**
+     * 所有者ID 最大位数，BIGINT 上限为 19 位
+     */
+    private static final int OWNER_ID_MAX_LENGTH = 19;
+
     private final BlueprintsRepository blueprintsRepository;
 
     private final BlueprintsAssembler blueprintsAssembler;
+
+    private final EveAccountService eveAccountService;
 
     /**
      * 分页查询蓝图列表
@@ -64,18 +79,61 @@ public class BlueprintsApplicationService {
      * @return 分页结果
      */
     public PageResult<BlueprintsVO> queryBlueprintsByPage(BlueprintsQuery query) {
-        BlueprintsPageCriteria criteria = toCriteria(query);
+        String ownerId = requireOwnerId(query.getOwnerId());
+        // 归属校验先于其余参数解析，避免越权请求探测参数校验细节
+        verifyOwnershipAccess(ownerId);
+        BlueprintsPageCriteria criteria = toCriteria(query, ownerId);
         return PageResultUtil.copy(
                 blueprintsRepository.selectBlueprintsInvtypeUniverse(criteria),
                 blueprintsAssembler::dto2Vo);
     }
 
     /**
+     * 校验当前用户是否有权查看该所有者的蓝图（防御 IDOR）。
+     * 允许本人名下任一角色的 characterId，或这些角色所属的 corpId；ROOT 角色豁免。
+     *
+     * @param ownerId 人物或军团ID
+     */
+    private void verifyOwnershipAccess(String ownerId) {
+        if (isCurrentUserRoot()) {
+            return;
+        }
+        Integer currentUserId = UserUtil.getUserId();
+        if (currentUserId == null || currentUserId <= 0) {
+            throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);
+        }
+        List<EveAccount> accounts = eveAccountService.getAccountList(currentUserId);
+        if (accounts == null || accounts.isEmpty()) {
+            log.warn("蓝图查询越权：用户名下无角色 userId={}, ownerId={}", currentUserId, ownerId);
+            throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);
+        }
+        boolean owned = accounts.stream().anyMatch(account ->
+                ownerId.equals(String.valueOf(account.getCharacterId()))
+                        || ownerId.equals(String.valueOf(account.getCorpId())));
+        if (!owned) {
+            log.warn("蓝图查询越权：所有者不属于该用户 userId={}, ownerId={}", currentUserId, ownerId);
+            throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);
+        }
+    }
+
+    /**
+     * 当前认证用户是否为 ROOT 角色（ADMIN）
+     */
+    private boolean isCurrentUserRoot() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) {
+            return false;
+        }
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> GlobalConstants.ROOT_ROLE_CODE.equals(a.getAuthority()));
+    }
+
+    /**
      * 将请求 DTO 转换为领域查询条件，同时完成参数校验
      */
-    private BlueprintsPageCriteria toCriteria(BlueprintsQuery query) {
+    private BlueprintsPageCriteria toCriteria(BlueprintsQuery query, String ownerId) {
         return BlueprintsPageCriteria.builder()
-                .ownerId(requireOwnerId(query.getOwnerId()))
+                .ownerId(ownerId)
                 .blueprintName(normalizeBlueprintName(query.getBlueprintName()))
                 .copyFilter(parseCopyFilter(query.getBlueprintType()))
                 .sortField(parseSortField(query.getSortField()))
@@ -91,8 +149,8 @@ public class BlueprintsApplicationService {
         }
         String trimmed = ownerId.trim();
         // owner_id 在库中为 BIGINT，非数字会下推数据库做隐式转换导致索引失效
-        if (!DIGITS.matcher(trimmed).matches()) {
-            throw new EveHelperException("所有者ID必须为数字：" + ownerId);
+        if (!DIGITS.matcher(trimmed).matches() || trimmed.length() > OWNER_ID_MAX_LENGTH) {
+            throw new EveHelperException("所有者ID必须为不超过 " + OWNER_ID_MAX_LENGTH + " 位的数字：" + ownerId);
         }
         return trimmed;
     }
