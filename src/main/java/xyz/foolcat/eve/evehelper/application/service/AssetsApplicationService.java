@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.application.assembler.system.AssetsAssembler;
+import xyz.foolcat.eve.evehelper.application.security.AccessGuard;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.service.system.AssetsService;
 import xyz.foolcat.eve.evehelper.domain.model.vo.AssetsVO;
@@ -29,6 +30,7 @@ public class AssetsApplicationService {
 
     private final AssetsService assetsService;
     private final AssetsAssembler assetsAssembler;
+    private final AccessGuard accessGuard;
 
     /**
      * 从 ESI 同步资产数据。
@@ -36,6 +38,7 @@ public class AssetsApplicationService {
      * @param cid 人物或军团 ID
      */
     public void syncAssets(Integer cid) {
+        accessGuard.requireOwnership(String.valueOf(cid), "资产同步");
         try {
             assetsService.saveAndUpdateAsserts(cid);
         } catch (ParseException e) {
@@ -53,6 +56,7 @@ public class AssetsApplicationService {
      * @return 资产视图分页结果
      */
     public PageResult<AssetsVO> queryAssetsList(String cid, int current, int size) {
+        accessGuard.requireOwnership(cid, "资产清单");
         IPage<Assets> page = new Page<>();
         page.setCurrent(current);
         page.setSize(size);

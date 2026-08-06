@@ -15,11 +15,13 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import xyz.foolcat.eve.evehelper.application.assembler.system.BlueprintsAssembler;
 import xyz.foolcat.eve.evehelper.application.dto.request.BlueprintsQuery;
+import xyz.foolcat.eve.evehelper.application.security.AccessGuard;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.domain.model.query.BlueprintsPageCriteria;
 import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsDTO;
 import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsRepository;
+import xyz.foolcat.eve.evehelper.domain.service.security.ResourceOwnershipPolicy;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
@@ -70,7 +72,8 @@ class BlueprintsApplicationServiceUnitTest {
     @BeforeEach
     void setUp() {
         service = new BlueprintsApplicationService(
-                blueprintsRepository, blueprintsAssembler, eveAccountService);
+                blueprintsRepository, blueprintsAssembler,
+                new AccessGuard(new ResourceOwnershipPolicy(eveAccountService)));
         loginAs(CURRENT_USER_ID, "USER");
         // 默认：当前用户名下持有 OWNED_CHARACTER_ID 这个角色
         EveAccount owned = new EveAccount();
