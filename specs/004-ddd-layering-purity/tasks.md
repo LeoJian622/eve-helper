@@ -96,7 +96,7 @@ description: "T3 DDD 深度架构重构任务清单"
 **Goal**: 领域仓储接口返回领域实体/读模型,不再 import application DTO / interfaces VO
 **Independent Test**: `grep "application.dto\|interfaces.web.vo" domain/repository domain/service` 无命中
 
-- [ ] T025 [US4] 修改 `domain/repository/system/BlueprintsRepository.java` 返回类型(移除 `application.dto.BlueprintsDTO`/`PageQuery` 依赖)
+- [X] T025 [US4] 修改 `domain/repository/system/BlueprintsRepository.java` 返回类型(移除 `application.dto.BlueprintsDTO`/`PageQuery` 依赖)—— 新增 `domain/model/query/BlueprintsPageCriteria` 承载查询条件;`BlueprintsVO` 迁至 `application/dto/response`
 - [ ] T026 [US4] 修改 `domain/repository/system/BlueprintsDataRepository.java` 返回类型(移除 `BlueprintCostDTO`/`BlueprintFormulaDTO`)
 - [ ] T027 [US4] 修改 `domain/repository/system/MarketOrderRepository.java` 返回类型(移除 `MarketOrderDTO`)
 - [ ] T028 [US4] 修改 `domain/repository/system/InvTypesRepository.java` 与 `MarketGroupsRepository.java`(移除 interfaces VO)

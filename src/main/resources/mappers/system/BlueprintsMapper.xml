@@ -249,6 +249,31 @@
            left join assets ass on bt.item_id = ass.item_id
            left join inv_types it on bt.type_id = it.type_id
            left join eve_account ec on bt.owner_id = ec.character_id
-    where bt.owner_id = #{id}
+    <where>
+      bt.owner_id = #{id}
+      <if test="blueprintName != null">
+        and it.name like concat('%', #{blueprintName}, '%')
+      </if>
+      <!-- assets 为 left join，缺失记录时 is_blueprint_copy 为 NULL，按原图处理 -->
+      <if test="isBlueprintCopy != null and isBlueprintCopy">
+        and ass.is_blueprint_copy = #{isBlueprintCopy}
+      </if>
+      <if test="isBlueprintCopy != null and !isBlueprintCopy">
+        and (ass.is_blueprint_copy = #{isBlueprintCopy} or ass.is_blueprint_copy is null)
+      </if>
+    </where>
+    <!-- sortColumn 取自领域枚举白名单，不接受用户原始输入 -->
+    <choose>
+      <when test="sortColumn != null">
+        order by ${sortColumn}
+        <choose>
+          <when test="ascending">asc</when>
+          <otherwise>desc</otherwise>
+        </choose>
+      </when>
+      <otherwise>
+        order by bt.item_id desc
+      </otherwise>
+    </choose>
   </select>
 </mapper>

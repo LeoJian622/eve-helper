@@ -4,12 +4,12 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Blueprints;
+import xyz.foolcat.eve.evehelper.domain.model.query.BlueprintsPageCriteria;
+import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsDTO;
 import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.BlueprintsPoConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.BlueprintsMapper;
-import xyz.foolcat.eve.evehelper.shared.kernel.base.PageQuery;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 
 import java.util.List;
@@ -51,18 +51,34 @@ public class BlueprintsRepositoryImpl implements BlueprintsRepository {
     }
 
     @Override
-    public PageResult<BlueprintsDTO> selectBlueprintsInvtypeUniverse(PageQuery page, String id) {
-        IPage<BlueprintsDTO> blueprintsDTOPage = new Page<>();
-        blueprintsDTOPage.setCurrent(page.getCurrent());
-        blueprintsDTOPage.setSize(page.getSize());
-        blueprintsDTOPage = blueprintsMapper.selectBlueprintsInvtypeUniverse(blueprintsDTOPage, id, page.getSortField(), page.getSortOrder());
+    public PageResult<BlueprintsDTO> selectBlueprintsInvtypeUniverse(BlueprintsPageCriteria criteria) {
+        IPage<BlueprintsDTO> page = new Page<>(criteria.getCurrent(), criteria.getSize());
+        BlueprintsPageCriteria.SortField sortField = criteria.getSortField();
+        page = blueprintsMapper.selectBlueprintsInvtypeUniverse(
+                page,
+                criteria.getOwnerId(),
+                criteria.getBlueprintName(),
+                toIsBlueprintCopy(criteria.getCopyFilter()),
+                sortField == null ? null : sortField.getColumn(),
+                criteria.isAscending());
         return PageResult.<BlueprintsDTO>builder()
-                .records(blueprintsDTOPage.getRecords())
-                .total(blueprintsDTOPage.getTotal())
-                .current(blueprintsDTOPage.getCurrent())
-                .size(blueprintsDTOPage.getSize())
-                .pages(blueprintsDTOPage.getPages())
-                .hasNext(blueprintsDTOPage.getPages() - blueprintsDTOPage.getCurrent() > 0)
-                .hasPrevious(blueprintsDTOPage.getCurrent() > 1).build();
+                .records(page.getRecords())
+                .total(page.getTotal())
+                .current(page.getCurrent())
+                .size(page.getSize())
+                .pages(page.getPages())
+                .hasNext(page.getPages() - page.getCurrent() > 0)
+                .hasPrevious(page.getCurrent() > 1).build();
+    }
+
+    /**
+     * 将原图/拷贝筛选映射为数据库标志位，ANY 返回 null 表示不筛选
+     */
+    private Boolean toIsBlueprintCopy(BlueprintsPageCriteria.CopyFilter copyFilter) {
+        return switch (copyFilter) {
+            case COPY -> Boolean.TRUE;
+            case ORIGINAL -> Boolean.FALSE;
+            case ANY -> null;
+        };
     }
 }

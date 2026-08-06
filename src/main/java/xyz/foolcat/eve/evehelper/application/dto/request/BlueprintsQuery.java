@@ -29,19 +29,7 @@ public class BlueprintsQuery extends PageQuery {
     private String blueprintName;
     
     /**
-     * 蓝图类型
+     * 蓝图类型：original(原图) 或 copy(拷贝)，缺省不筛选
      */
     private String blueprintType;
-    
-    /**
-     * 是否包含材料信息
-     */
-    @Builder.Default
-    private Boolean includeMaterials = false;
-    
-    /**
-     * 是否包含产品信息
-     */
-    @Builder.Default
-    private Boolean includeProducts = false;
 } 

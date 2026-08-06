@@ -1,8 +1,8 @@
 package xyz.foolcat.eve.evehelper.domain.repository.system;
 
-import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Blueprints;
-import xyz.foolcat.eve.evehelper.shared.kernel.base.PageQuery;
+import xyz.foolcat.eve.evehelper.domain.model.query.BlueprintsPageCriteria;
+import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsDTO;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 
 import java.util.List;
@@ -18,5 +18,11 @@ public interface BlueprintsRepository {
 
     int insertOrUpdateSelective(Blueprints record);
 
-    PageResult<BlueprintsDTO> selectBlueprintsInvtypeUniverse(PageQuery page, String id);
+    /**
+     * 按领域查询条件分页查询蓝图（联表物品名称与所有者）
+     *
+     * @param criteria 查询条件
+     * @return 分页结果
+     */
+    PageResult<BlueprintsDTO> selectBlueprintsInvtypeUniverse(BlueprintsPageCriteria criteria);
 } 

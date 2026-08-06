@@ -1,8 +1,8 @@
 package xyz.foolcat.eve.evehelper.application.assembler.system;
 
 import org.mapstruct.Mapper;
+import xyz.foolcat.eve.evehelper.application.dto.response.BlueprintsVO;
 import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsDTO;
-import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsVO;
 
 import java.util.List;
 
