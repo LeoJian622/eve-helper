@@ -15,6 +15,7 @@ import xyz.foolcat.eve.evehelper.domain.service.system.StructureService;
 import xyz.foolcat.eve.evehelper.domain.service.system.WalletJournalService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.model.MessageEvent;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
@@ -95,7 +96,8 @@ public class BotDispatcher {
         }
 //暂时使用某人默认账号查询
 //        EveAccount eveAccount = eveAccountService.getOne(new QueryWrapper<EveAccount>().lambda().eq(EveAccount::getCharacterName, commandMatcher.group(2)));
-        EveAccount eveAccount = authorizeUtil.authorize(2112818290);
+        // WebSocket 消息无安全上下文，显式声明系统身份（不可用 authorize，其为请求路径专用）
+        EveAccount eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, 2112818290);
 
         List<Structure> structures = structureService.selectFuelExpiresList(24, eveAccount.getCorpId());
 

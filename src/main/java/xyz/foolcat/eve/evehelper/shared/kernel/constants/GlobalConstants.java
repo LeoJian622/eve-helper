@@ -19,4 +19,10 @@ public interface GlobalConstants {
     String ESI_ACCESS_TOKEN_KEY = "esi_access_token:";
     String TOKEN_PERN = "Bearer ";
 
+    /**
+     * 系统内部调用所用的用户ID（定时任务、机器人等无安全上下文的场景）。
+     * 仅可通过 AuthorizeUtil.authorizeInternal 显式传入，不得作为未认证请求的兜底身份。
+     */
+    Integer SYSTEM_USER_ID = 1;
+
 }

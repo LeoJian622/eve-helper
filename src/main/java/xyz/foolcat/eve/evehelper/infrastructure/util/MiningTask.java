@@ -19,6 +19,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.WebSocket;
 import xyz.foolcat.eve.evehelper.domain.model.vo.ExtractionVO;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 
 import jakarta.validation.constraints.NotNull;
 import java.text.ParseException;
@@ -64,7 +65,8 @@ public class MiningTask {
 //    @Scheduled(cron = "0 0 19 * * ? ")
     public void noticeExtraction() {
         log.info("noticeExtraction");
-        EveAccount eveAccount = authorizeUtil.authorize(TaskConstant.CHARACTER_ID);
+        // 定时任务无安全上下文，显式声明系统身份（authorize 为请求路径专用，会拒绝）
+        EveAccount eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, TaskConstant.CHARACTER_ID);
         String accessToken = null;
         try {
             accessToken = esiApiService.getAccessToken(TaskConstant.CHARACTER_ID, eveAccount.getUserId());
@@ -87,7 +89,8 @@ public class MiningTask {
     public void noticeExtraction7Day() {
         log.info("noticeExtraction");
         Integer characterId = 2112818290;
-        EveAccount eveAccount = authorizeUtil.authorize(characterId);
+        // 定时任务无安全上下文，显式声明系统身份（authorize 为请求路径专用，会拒绝）
+        EveAccount eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, characterId);
         String accessToken = null;
         try {
             accessToken = esiApiService.getAccessToken(characterId, eveAccount.getUserId());

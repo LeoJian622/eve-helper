@@ -3,6 +3,7 @@ package xyz.foolcat.eve.evehelper.application.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import xyz.foolcat.eve.evehelper.application.security.AccessGuard;
 import xyz.foolcat.eve.evehelper.domain.service.system.IndustryJobService;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 
@@ -27,14 +28,19 @@ public class JobApplicationService {
 
     private final IndustryJobService industryJobService;
 
+    private final AccessGuard accessGuard;
+
     /**
      * 从 ESI 同步制造线数据。
+     * <p>
+     * 访问控制:id 为用户可控入参,须先确认该人物/军团属于当前用户(防御 IDOR)。
      *
      * @param type     枚举值,人物:char; 公司:corporation
      * @param id       人物或军团 ID
      * @param complete 是否包含已完成任务
      */
     public void syncJobs(String type, Integer id, String complete) {
+        accessGuard.requireOwnership(String.valueOf(id), "制造线同步");
         boolean includeCompleted = COMPLETE_FLAG.equals(complete);
         boolean isCorporation = CORP_TYPE.equals(type);
         try {

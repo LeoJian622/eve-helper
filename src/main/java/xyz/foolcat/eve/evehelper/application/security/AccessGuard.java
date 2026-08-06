@@ -27,13 +27,20 @@ public class AccessGuard {
 
     /**
      * 校验当前用户是否有权访问该人物或军团的资源，无权则抛出访问未授权。
-     * ROOT 角色（ADMIN）豁免；未认证或主体无法识别一律拒绝（fail-closed）。
+     * ROOT 角色（ADMIN）豁免归属校验，但参数校验对其同样生效；
+     * 未认证或主体无法识别一律拒绝（fail-closed）。
      *
      * @param ownerId  人物或军团ID
      * @param resource 资源名称，仅用于审计日志
-     * @throws EveHelperException 无权访问时抛出
+     * @throws EveHelperException 参数缺失或无权访问时抛出
      */
     public void requireOwnership(String ownerId, String resource) {
+        // 参数校验先于 ROOT 豁免，避免 ROOT 携带空值穿透到下游查询
+        // "null" 字面量来自调用点的 String.valueOf(null)，同样视为缺失
+        if (ownerId == null || ownerId.isBlank() || "null".equals(ownerId)) {
+            log.warn("{}访问参数缺失：ownerId 为空", resource);
+            throw new EveHelperException(ResultCode.PARAM_ERROR);
+        }
         if (isCurrentUserRoot()) {
             return;
         }
