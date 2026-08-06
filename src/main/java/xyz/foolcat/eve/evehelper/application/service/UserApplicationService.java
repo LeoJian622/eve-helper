@@ -2,8 +2,6 @@ package xyz.foolcat.eve.evehelper.application.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -12,16 +10,15 @@ import xyz.foolcat.eve.evehelper.application.assembler.system.EveAccountAssemble
 import xyz.foolcat.eve.evehelper.application.assembler.system.SysUserAssembler;
 import xyz.foolcat.eve.evehelper.application.dto.UserAccountDTO;
 import xyz.foolcat.eve.evehelper.application.dto.response.UserDTO;
+import xyz.foolcat.eve.evehelper.application.security.AccessGuard;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
-import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
-import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,13 +60,16 @@ public class UserApplicationService {
 
     private final Executor esiAuthStatusExecutor;
 
+    private final AccessGuard accessGuard;
+
     public UserApplicationService(EveAccountService eveAccountService,
                                   EsiGateway esiApiService,
                                   EveAccountAssembler eveAccountAssembler,
                                   SysUserService sysUserService,
                                   SysUserAssembler userAssembler,
                                   PasswordEncoder passwordEncoder,
-                                  @Qualifier("esiAuthStatusExecutor") Executor esiAuthStatusExecutor) {
+                                  @Qualifier("esiAuthStatusExecutor") Executor esiAuthStatusExecutor,
+                                  AccessGuard accessGuard) {
         this.eveAccountService = eveAccountService;
         this.esiApiService = esiApiService;
         this.eveAccountAssembler = eveAccountAssembler;
@@ -77,6 +77,7 @@ public class UserApplicationService {
         this.userAssembler = userAssembler;
         this.passwordEncoder = passwordEncoder;
         this.esiAuthStatusExecutor = esiAuthStatusExecutor;
+        this.accessGuard = accessGuard;
     }
 
     /**
@@ -96,17 +97,18 @@ public class UserApplicationService {
 
     /**
      * 获取用户绑定的所有角色(含 ESI 授权状态)。
-     *      * <p>
-     *      * 访问控制:仅允许查询本人账户;ROOT 角色(ADMIN)可查询任意用户(防御 IDOR,不依赖 DB url_perm 命名)。
-     *      * ESI 网络调用置于事务外(NOT_SUPPORTED),DB 读写各自短事务。
-     *      * 多角色状态判定并行执行,单角色异常被隔离为 UNKNOWN,不影响其他角色。
+     * <p>
+     * 访问控制:仅允许查询本人账户;ROOT 角色(ADMIN)可查询任意用户(防御 IDOR,不依赖 DB url_perm 命名)。
+     * 未认证或主体无法识别一律拒绝(fail-closed)。
+     * ESI 网络调用置于事务外(NOT_SUPPORTED),DB 读写各自短事务。
+     * 多角色状态判定并行执行,单角色异常被隔离为 UNKNOWN,不影响其他角色。
      *
      * @param userId 用户 ID
      * @return 带 ESI 授权状态的角色列表
      */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public List<UserAccountDTO> queryAccountListWithAuthStatus(Integer userId) {
-        verifyAccess(userId);
+        accessGuard.requireSelfOrRoot(userId, "用户角色列表");
         List<EveAccount> accounts = eveAccountService.getAccountList(userId);
         if (accounts == null || accounts.isEmpty()) {
             return Collections.emptyList();
@@ -120,29 +122,6 @@ public class UserApplicationService {
             dtos.get(i).setAuthStatus(resolveStatus(futures.get(i)));
         }
         return dtos;
-    }
-
-    /**
-     * 校验访问权限:非本人且非 ROOT 角色拒绝访问(防御 IDOR)。
-     * 系统内部调用(UserUtil.getUserId() <= 0)放行,由既有 RBAC 把控。
-     */
-    private void verifyAccess(Integer userId) {
-        Integer currentUserId = UserUtil.getUserId();
-        if (currentUserId > 0 && !currentUserId.equals(userId) && !isCurrentUserRoot()) {
-            throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);
-        }
-    }
-
-    /**
-     * 当前认证用户是否为 ROOT 角色(ADMIN)。
-     */
-    private boolean isCurrentUserRoot() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) {
-            return false;
-        }
-        return auth.getAuthorities().stream()
-                .anyMatch(a -> GlobalConstants.ROOT_ROLE_CODE.equals(a.getAuthority()));
     }
 
     /**
