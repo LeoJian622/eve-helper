@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.application.assembler.system;
+package xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -9,11 +9,12 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.Observ
 import java.util.List;
 
 /**
- * 观察者转换器
+ * Observer 领域实体与 ObserverPO 持久化对象转换器(基础设施层)。
+ *
  * @author Leojan
  */
 @Mapper(componentModel = "spring")
-public interface ObserverAssembler {
+public interface ObserverPoConverter {
 
     /**
      * ObserverPO 转换为 Observer
@@ -50,4 +51,4 @@ public interface ObserverAssembler {
             @Mapping(target = "gmtModified", ignore = true)
     })
     List<ObserverPO> domain2Po(List<Observer> observer);
-} 
+}

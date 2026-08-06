@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.application.assembler.system;
+package xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence;
 
 import org.mapstruct.Mapper;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.InvTypes;
@@ -7,11 +7,12 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.InvTyp
 import java.util.List;
 
 /**
- * 物品转换器
+ * InvTypes 领域实体与 InvTypesPO 持久化对象转换器(基础设施层)。
+ *
  * @author Leojan
  */
 @Mapper(componentModel = "spring")
-public interface InvTypesAssembler {
+public interface InvTypesPoConverter {
 
     /**
      * InvTypesPO 转换为 InvTypes
@@ -28,14 +29,14 @@ public interface InvTypesAssembler {
     InvTypesPO domain2Po(InvTypes invTypes);
 
     /**
-     * InvTypesPO 转换为 InvTypes
-     * @param invTypesPO
+     * InvTypesPO 列表转换为 InvTypes 列表
+     * @param invTypesPOs
      * @return
      */
-    List<InvTypes> po2Domain(List<InvTypesPO> invTypesPO);
+    List<InvTypes> po2Domain(List<InvTypesPO> invTypesPOs);
 
     /**
-     * InvTypes 转换为 InvTypesPO
+     * InvTypes 列表转换为 InvTypesPO 列表
      * @param invTypes
      * @return
      */
@@ -48,4 +49,4 @@ public interface InvTypesAssembler {
             return 0;
         }
     }
-} 
+}

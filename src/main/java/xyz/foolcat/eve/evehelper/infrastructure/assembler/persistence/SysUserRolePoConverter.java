@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.application.assembler.system;
+package xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -8,16 +8,17 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysUse
 
 import java.util.List;
 
-
 /**
- * SysUserRole 实体转换器
+ * SysUserRole 领域实体与 SysUserRolePO 持久化对象转换器(基础设施层)。
+ *
  * @author Leojan
  */
 @Mapper(componentModel = "spring")
-public interface SysUserRoleAssembler {
+public interface SysUserRolePoConverter {
 
     /**
      * SysUserRolePO 转换为 SysUserRole
+     *
      * @param sysUserRolePO
      * @return
      */
@@ -25,6 +26,7 @@ public interface SysUserRoleAssembler {
 
     /**
      * SysUserRole 转换为 SysUserRolePO
+     *
      * @param sysUserRole
      * @return
      */
@@ -36,6 +38,7 @@ public interface SysUserRoleAssembler {
 
     /**
      * SysUserRolePO 转换为 SysUserRole
+     *
      * @param sysUserRolePO
      * @return
      */
@@ -43,6 +46,7 @@ public interface SysUserRoleAssembler {
 
     /**
      * SysUserRole 转换为 SysUserRolePO
+     *
      * @param sysUserRole
      * @return
      */
@@ -51,4 +55,4 @@ public interface SysUserRoleAssembler {
             @Mapping(target = "gmtModified", ignore = true),
     })
     List<SysUserRolePO> domain2Po(List<SysUserRole> sysUserRole);
-} 
+}

@@ -2,9 +2,9 @@ package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.system;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-import xyz.foolcat.eve.evehelper.application.assembler.system.MarketGroupsAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.MarketGroups;
 import xyz.foolcat.eve.evehelper.domain.repository.system.MarketGroupsRepository;
+import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.MarketGroupsPoConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.MarketGroupsMapper;
 import xyz.foolcat.eve.evehelper.interfaces.web.vo.MarketGroupsTreeVO;
 
@@ -18,21 +18,21 @@ import java.util.List;
 public class MarketGroupsRepositoryImpl implements MarketGroupsRepository {
 
     private final MarketGroupsMapper marketGroupsMapper;
-    private final MarketGroupsAssembler marketGroupsAssembler;
+    private final MarketGroupsPoConverter marketGroupsPoConverter;
 
     @Override
     public int batchInsert(List<MarketGroups> list) {
-        return marketGroupsMapper.batchInsert(marketGroupsAssembler.domain2Po(list));
+        return marketGroupsMapper.batchInsert(marketGroupsPoConverter.domain2Po(list));
     }
 
     @Override
     public boolean insertOrUpdate(MarketGroups record) {
-        return marketGroupsMapper.insertOrUpdate(marketGroupsAssembler.domain2Po(record));
+        return marketGroupsMapper.insertOrUpdate(marketGroupsPoConverter.domain2Po(record));
     }
 
     @Override
     public int insertOrUpdateSelective(MarketGroups record) {
-        return marketGroupsMapper.insertOrUpdateSelective(marketGroupsAssembler.domain2Po(record));
+        return marketGroupsMapper.insertOrUpdateSelective(marketGroupsPoConverter.domain2Po(record));
     }
 
     @Override

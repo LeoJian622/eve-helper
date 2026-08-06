@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.application.assembler.system;
+package xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence;
 
 import org.mapstruct.Mapper;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.MarketOrder;
@@ -7,11 +7,12 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.Market
 import java.util.List;
 
 /**
- * MarketOrder 实体转换器
+ * MarketOrder 领域实体与 MarketOrderPO 持久化对象转换器(基础设施层)。
+ *
  * @author Leojan
  */
 @Mapper(componentModel = "spring")
-public interface MarketOrderAssembler {
+public interface MarketOrderPoConverter {
 
     /**
      * MarketOrderPO 转换为 MarketOrder

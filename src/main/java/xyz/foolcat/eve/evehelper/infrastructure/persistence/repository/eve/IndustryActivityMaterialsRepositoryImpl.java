@@ -2,9 +2,9 @@ package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.eve;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-import xyz.foolcat.eve.evehelper.application.assembler.eve.IndustryActivityMaterialsAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.eve.IndustryActivityMaterials;
 import xyz.foolcat.eve.evehelper.domain.repository.eve.IndustryActivityMaterialsRepository;
+import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.IndustryActivityMaterialsPoConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.eve.IndustryActivityMaterialsMapper;
 
 /**
@@ -16,15 +16,15 @@ public class IndustryActivityMaterialsRepositoryImpl implements IndustryActivity
 
     private final IndustryActivityMaterialsMapper industryActivityMaterialsMapper;
 
-    private final IndustryActivityMaterialsAssembler industryActivityMaterialsAssembler;
+    private final IndustryActivityMaterialsPoConverter industryActivityMaterialsPoConverter;
 
     @Override
     public int insert(IndustryActivityMaterials record) {
-        return industryActivityMaterialsMapper.insert(industryActivityMaterialsAssembler.entity2Po(record));
+        return industryActivityMaterialsMapper.insert(industryActivityMaterialsPoConverter.domain2Po(record));
     }
 
     @Override
     public int insertSelective(IndustryActivityMaterials record) {
-        return industryActivityMaterialsMapper.insertSelective(industryActivityMaterialsAssembler.entity2Po(record));
+        return industryActivityMaterialsMapper.insertSelective(industryActivityMaterialsPoConverter.domain2Po(record));
     }
 }

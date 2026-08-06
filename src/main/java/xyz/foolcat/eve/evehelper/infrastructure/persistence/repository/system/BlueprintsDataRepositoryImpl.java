@@ -2,11 +2,11 @@ package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.system;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-import xyz.foolcat.eve.evehelper.application.assembler.system.BlueprintsDataAssembler;
 import xyz.foolcat.eve.evehelper.application.dto.response.BlueprintCostDTO;
 import xyz.foolcat.eve.evehelper.application.dto.response.BlueprintFormulaDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.BlueprintsData;
 import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsDataRepository;
+import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.BlueprintsDataPoConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.BlueprintsDataMapper;
 
 import java.util.List;
@@ -19,21 +19,21 @@ import java.util.List;
 public class BlueprintsDataRepositoryImpl implements BlueprintsDataRepository {
 
     private final BlueprintsDataMapper blueprintsDataMapper;
-    private final BlueprintsDataAssembler blueprintsDataAssembler;
+    private final BlueprintsDataPoConverter blueprintsDataPoConverter;
 
     @Override
     public int batchInsert(List<BlueprintsData> list) {
-        return blueprintsDataMapper.batchInsert(blueprintsDataAssembler.domain2Po(list));
+        return blueprintsDataMapper.batchInsert(blueprintsDataPoConverter.domain2Po(list));
     }
 
     @Override
     public boolean insertOrUpdate(BlueprintsData record) {
-        return blueprintsDataMapper.insertOrUpdate(blueprintsDataAssembler.domain2Po(record));
+        return blueprintsDataMapper.insertOrUpdate(blueprintsDataPoConverter.domain2Po(record));
     }
 
     @Override
     public int insertOrUpdateSelective(BlueprintsData record) {
-        return blueprintsDataMapper.insertOrUpdateSelective(blueprintsDataAssembler.domain2Po(record));
+        return blueprintsDataMapper.insertOrUpdateSelective(blueprintsDataPoConverter.domain2Po(record));
     }
 
     @Override

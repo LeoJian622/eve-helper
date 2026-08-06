@@ -4,7 +4,6 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.AssetsPO;
 import xyz.foolcat.eve.evehelper.interfaces.web.vo.AssetsVO;
 
 import java.util.List;
@@ -16,24 +15,6 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface AssetsAssembler {
-
-    /**
-     * Assets 转换为 AssetsPO
-     * @param assets
-     * @return
-     */
-    AssetsPO domain2Po(Assets assets);
-
-    /**
-     * AssetsPO 转换为 Assets
-     * @param assetsPO
-     * @return
-     */
-    Assets po2Domain(AssetsPO assetsPO);
-
-    List<AssetsPO> domain2Po(List<Assets> assets);
-
-    List<Assets> po2Domain(List<AssetsPO> assetsPO);
 
     /**
      * Assets 转换为 AssetsVO

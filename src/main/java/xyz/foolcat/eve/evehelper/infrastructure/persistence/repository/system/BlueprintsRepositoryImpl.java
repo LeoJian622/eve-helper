@@ -4,10 +4,10 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-import xyz.foolcat.eve.evehelper.application.assembler.system.BlueprintsAssembler;
 import xyz.foolcat.eve.evehelper.application.dto.BlueprintsDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Blueprints;
 import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsRepository;
+import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.BlueprintsPoConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.BlueprintsMapper;
 import xyz.foolcat.eve.evehelper.application.query.model.PageQuery;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
@@ -23,31 +23,31 @@ public class BlueprintsRepositoryImpl implements BlueprintsRepository {
 
     private final BlueprintsMapper blueprintsMapper;
 
-    private final BlueprintsAssembler blueprintsAssembler;
+    private final BlueprintsPoConverter blueprintsPoConverter;
 
     @Override
     public int updateBatch(List<Blueprints> list) {
-        return blueprintsMapper.updateBatch(blueprintsAssembler.domain2Po(list));
+        return blueprintsMapper.updateBatch(blueprintsPoConverter.domain2Po(list));
     }
 
     @Override
     public int updateBatchSelective(List<Blueprints> list) {
-        return blueprintsMapper.updateBatchSelective(blueprintsAssembler.domain2Po(list));
+        return blueprintsMapper.updateBatchSelective(blueprintsPoConverter.domain2Po(list));
     }
 
     @Override
     public int batchInsert(List<Blueprints> list) {
-        return blueprintsMapper.batchInsert(blueprintsAssembler.domain2Po(list));
+        return blueprintsMapper.batchInsert(blueprintsPoConverter.domain2Po(list));
     }
 
     @Override
     public boolean insertOrUpdate(Blueprints record) {
-        return blueprintsMapper.insertOrUpdate(blueprintsAssembler.domain2Po(record));
+        return blueprintsMapper.insertOrUpdate(blueprintsPoConverter.domain2Po(record));
     }
 
     @Override
     public int insertOrUpdateSelective(Blueprints record) {
-        return blueprintsMapper.insertOrUpdateSelective(blueprintsAssembler.domain2Po(record));
+        return blueprintsMapper.insertOrUpdateSelective(blueprintsPoConverter.domain2Po(record));
     }
 
     @Override

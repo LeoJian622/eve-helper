@@ -5,9 +5,6 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
 import xyz.foolcat.eve.evehelper.application.dto.response.UserDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysUserPO;
-
-import java.util.List;
 
 
 /**
@@ -17,50 +14,6 @@ import java.util.List;
  */
 @Mapper(componentModel = "spring")
 public interface SysUserAssembler {
-
-    /**
-     * SysUserPO 转换为 SysUser
-     *
-     * @param sysUserPO
-     * @return
-     */
-    @Mappings({
-            @Mapping(source = "gmtModified", target = "lastLoginTime")
-    })
-    SysUser po2Domain(SysUserPO sysUserPO);
-
-    /**
-     * SysUser 转换为 SysUserPO
-     *
-     * @param sysUser
-     * @return
-     */
-    @Mappings({
-            @Mapping(source = "lastLoginTime", target = "gmtModified")
-    })
-    SysUserPO domain2Po(SysUser sysUser);
-
-    /**
-     * SysUserPO 转换为 SysUser
-     *
-     * @param sysUserPO
-     * @return
-     */
-    @Mappings({
-            @Mapping(source = "gmtModified", target = "lastLoginTime")
-    })
-    List<SysUser> po2Domain(List<SysUserPO> sysUserPO);
-
-    /**
-     * SysUser 转换为 SysUserPO
-     *
-     * @param sysUser
-     * @return
-     */
-    @Mappings({
-            @Mapping(source = "lastLoginTime", target = "gmtModified")
-    })
-    List<SysUserPO> domain2Po(List<SysUser> sysUser);
 
     /**
      * SysUser 转换为 UserDTO

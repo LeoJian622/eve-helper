@@ -2,9 +2,9 @@ package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.system;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
-import xyz.foolcat.eve.evehelper.application.assembler.system.EsiConfigAssembler;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EsiConfig;
 import xyz.foolcat.eve.evehelper.domain.repository.system.EsiConfigRepository;
+import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.EsiConfigPoConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.EsiConfigMapper;
 
 import java.util.List;
@@ -18,31 +18,31 @@ public class EsiConfigRepositoryImpl implements EsiConfigRepository {
 
     private final EsiConfigMapper esiConfigMapper;
 
-    private final EsiConfigAssembler esiConfigAssembler;
+    private final EsiConfigPoConverter esiConfigPoConverter;
 
     @Override
     public int updateBatch(List<EsiConfig> list) {
-        return esiConfigMapper.updateBatch(esiConfigAssembler.domain2Po(list));
+        return esiConfigMapper.updateBatch(esiConfigPoConverter.domain2Po(list));
     }
 
     @Override
     public int updateBatchSelective(List<EsiConfig> list) {
-        return esiConfigMapper.updateBatchSelective(esiConfigAssembler.domain2Po(list));
+        return esiConfigMapper.updateBatchSelective(esiConfigPoConverter.domain2Po(list));
     }
 
     @Override
     public int batchInsert(List<EsiConfig> list) {
-        return esiConfigMapper.batchInsert(esiConfigAssembler.domain2Po(list));
+        return esiConfigMapper.batchInsert(esiConfigPoConverter.domain2Po(list));
     }
 
     @Override
     public boolean insertOrUpdate(EsiConfig record) {
-        return esiConfigMapper.insertOrUpdate(esiConfigAssembler.domain2Po(record));
+        return esiConfigMapper.insertOrUpdate(esiConfigPoConverter.domain2Po(record));
     }
 
     @Override
     public int insertOrUpdateSelective(EsiConfig record) {
-        return esiConfigMapper.insertOrUpdateSelective(esiConfigAssembler.domain2Po(record));
+        return esiConfigMapper.insertOrUpdateSelective(esiConfigPoConverter.domain2Po(record));
     }
     // TODO: 实现 BaseRepository<EsiConfig, Long> 的方法
 } 

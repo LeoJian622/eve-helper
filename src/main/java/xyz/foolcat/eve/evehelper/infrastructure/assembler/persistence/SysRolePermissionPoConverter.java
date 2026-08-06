@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.application.assembler.system;
+package xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -8,16 +8,17 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysRol
 
 import java.util.List;
 
-
 /**
- * 角色权限转换器
+ * SysRolePermission 领域实体与 SysRolePermissionPO 持久化对象转换器(基础设施层)。
+ *
  * @author Leojan
  */
 @Mapper(componentModel = "spring")
-public interface SysRolePermissionAssembler {
+public interface SysRolePermissionPoConverter {
 
     /**
      * SysRolePermissionPO 转换为 SysRolePermission
+     *
      * @param sysRolePermissionPO
      * @return
      */
@@ -25,6 +26,7 @@ public interface SysRolePermissionAssembler {
 
     /**
      * SysRolePermission 转换为 SysRolePermissionPO
+     *
      * @param sysRolePermission
      * @return
      */
@@ -37,6 +39,7 @@ public interface SysRolePermissionAssembler {
 
     /**
      * SysRolePermissionPO 转换为 SysRolePermission
+     *
      * @param sysRolePermissionPO
      * @return
      */
@@ -44,6 +47,7 @@ public interface SysRolePermissionAssembler {
 
     /**
      * SysRolePermission 转换为 SysRolePermissionPO
+     *
      * @param sysRolePermission
      * @return
      */
@@ -52,4 +56,4 @@ public interface SysRolePermissionAssembler {
             @Mapping(target = "gmtModified", ignore = true)
     })
     List<SysRolePermissionPO> domain2Po(List<SysRolePermission> sysRolePermission);
-} 
+}

@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.application.assembler.system;
+package xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -8,16 +8,17 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysPer
 
 import java.util.List;
 
-
 /**
- * SysPermission 实体转换器
+ * SysPermission 领域实体与 SysPermissionPO 持久化对象转换器(基础设施层)。
+ *
  * @author Leojan
  */
 @Mapper(componentModel = "spring")
-public interface SysPermissionAssembler {
+public interface SysPermissionPoConverter {
 
     /**
      * SysPermissionPO 转换为 SysPermission
+     *
      * @param sysPermissionPO
      * @return
      */
@@ -25,6 +26,7 @@ public interface SysPermissionAssembler {
 
     /**
      * SysPermission 转换为 SysPermissionPO
+     *
      * @param sysPermission
      * @return
      */
@@ -36,6 +38,7 @@ public interface SysPermissionAssembler {
 
     /**
      * SysPermissionPO列表 转换为 SysPermission列表
+     *
      * @param sysPermissionPOList
      * @return
      */
@@ -43,8 +46,9 @@ public interface SysPermissionAssembler {
 
     /**
      * SysPermission列表 转换为 SysPermissionPO列表
+     *
      * @param sysPermissionList
      * @return
      */
     List<SysPermissionPO> domain2Po(List<SysPermission> sysPermissionList);
-} 
+}

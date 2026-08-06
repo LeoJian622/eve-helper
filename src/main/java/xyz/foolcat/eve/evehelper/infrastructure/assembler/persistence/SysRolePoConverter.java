@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.application.assembler.system;
+package xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -9,14 +9,16 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.SysRol
 import java.util.List;
 
 /**
- * SysRole 实体转换器
+ * SysRole 领域实体与 SysRolePO 持久化对象转换器(基础设施层)。
+ *
  * @author Leojan
  */
 @Mapper(componentModel = "spring")
-public interface SysRoleAssembler {
+public interface SysRolePoConverter {
 
     /**
      * SysRolePO 转换为 SysRole
+     *
      * @param sysRolePO
      * @return SysRole
      */
@@ -24,6 +26,7 @@ public interface SysRoleAssembler {
 
     /**
      * SysRole 转换为 SysRolePO
+     *
      * @param sysRole
      * @return SysRolePO
      */
@@ -37,6 +40,7 @@ public interface SysRoleAssembler {
 
     /**
      * SysRolePO 转换为 SysRole
+     *
      * @param sysRolePO
      * @return List<SysRole>
      */
@@ -44,6 +48,7 @@ public interface SysRoleAssembler {
 
     /**
      * SysRole 转换为 SysRolePO
+     *
      * @param sysRole
      * @return List<SysRolePO>
      */
@@ -54,4 +59,4 @@ public interface SysRoleAssembler {
             @Mapping(target = "deleted", ignore = true)
     })
     List<SysRolePO> domian2Po(List<SysRole> sysRole);
-} 
+}

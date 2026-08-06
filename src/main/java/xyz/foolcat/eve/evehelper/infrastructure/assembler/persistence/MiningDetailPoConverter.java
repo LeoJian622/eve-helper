@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.application.assembler.system;
+package xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence;
 
 import org.mapstruct.Mapper;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.MiningDetail;
@@ -6,13 +6,13 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.Mining
 
 import java.util.List;
 
-
 /**
- * 采矿详情转换器
+ * MiningDetail 领域实体与 MiningDetailPO 持久化对象转换器(基础设施层)。
+ *
  * @author Leojan
  */
 @Mapper(componentModel = "spring")
-public interface MiningDetailAssembler {
+public interface MiningDetailPoConverter {
 
     /**
      * MiningDetailPO 转换为 MiningDetail
@@ -28,7 +28,6 @@ public interface MiningDetailAssembler {
      */
     MiningDetailPO domain2Po(MiningDetail miningDetail);
 
-
     /**
      * List<MiningDetailPO> 转换为 List<MiningDetail>
      * @param miningDetailPOList
@@ -42,4 +41,4 @@ public interface MiningDetailAssembler {
      * @return
      */
     List<MiningDetailPO> domain2Po(List<MiningDetail> miningDetailList);
-} 
+}

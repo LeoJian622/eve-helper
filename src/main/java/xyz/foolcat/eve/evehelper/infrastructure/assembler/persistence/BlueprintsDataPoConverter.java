@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.application.assembler.system;
+package xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -9,11 +9,12 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.Bluepr
 import java.util.List;
 
 /**
- * 蓝图数据转换器
+ * BlueprintsData 领域实体与 BlueprintsDataPO 持久化对象转换器(基础设施层)。
+ *
  * @author Leojan
  */
 @Mapper(componentModel = "spring")
-public interface BlueprintsDataAssembler {
+public interface BlueprintsDataPoConverter {
 
     /**
      * BlueprintsDataPO 转换为 BlueprintsData
@@ -36,4 +37,4 @@ public interface BlueprintsDataAssembler {
     List<BlueprintsData> po2Domain(List<BlueprintsDataPO> blueprintsDataPO);
 
     List<BlueprintsDataPO> domain2Po(List<BlueprintsData> blueprintsData);
-} 
+}

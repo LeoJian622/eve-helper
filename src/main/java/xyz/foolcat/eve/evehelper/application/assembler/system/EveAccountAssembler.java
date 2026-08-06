@@ -1,11 +1,8 @@
 package xyz.foolcat.eve.evehelper.application.assembler.system;
 
 import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.Mappings;
 import xyz.foolcat.eve.evehelper.application.dto.UserAccountDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EveAccountPO;
 
 import java.util.List;
 
@@ -17,45 +14,9 @@ import java.util.List;
 public interface EveAccountAssembler {
 
     /**
-     * EveAccountPO 转换为 EveAccount
-     * @param eveAccountPO
-     * @return
-     */
-    EveAccount po2Domain(EveAccountPO eveAccountPO);
-
-    /**
-     * EveAccount 转换为 EveAccountPO
-     * @param eveAccount
-     * @return
-     */
-    @Mappings({
-            @Mapping(target = "gmtCreate", ignore = true),
-            @Mapping(target = "gmtModified", ignore = true)
-    })
-    EveAccountPO domain2Po(EveAccount eveAccount);
-
-    /**
-     * EveAccount 转换为 EveAccountPO
-     * @param eveAccount
-     * @return
-     */
-    @Mappings({
-            @Mapping(target = "gmtCreate", ignore = true),
-            @Mapping(target = "gmtModified", ignore = true)
-    })
-    List<EveAccountPO> domain2Po(List<EveAccount> eveAccount);
-
-    /**
-     * EveAccountPO 转换为 EveAccount
-     * @param eveAccountPO
-     * @return
-     */
-    List<EveAccount> po2Domain(List<EveAccountPO> eveAccountPO);
-
-    /**
      * EveAccount 转换为 UserAccountTO
      * @param eveAccount
      * @return
      */
     List<UserAccountDTO> domain2UserAccountTO(List<EveAccount> eveAccount);
-} 
+}

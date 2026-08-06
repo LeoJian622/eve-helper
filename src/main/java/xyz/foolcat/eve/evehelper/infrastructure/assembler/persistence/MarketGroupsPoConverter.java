@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.application.assembler.system;
+package xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -8,13 +8,13 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.Market
 
 import java.util.List;
 
-
 /**
- * 市场组转换器
+ * MarketGroups 领域实体与 MarketGroupsPO 持久化对象转换器(基础设施层)。
+ *
  * @author Leojan
  */
 @Mapper(componentModel = "spring")
-public interface MarketGroupsAssembler {
+public interface MarketGroupsPoConverter {
 
     /**
      * MarketGroupsPO 转换为 MarketGroups
@@ -51,4 +51,4 @@ public interface MarketGroupsAssembler {
             @Mapping(target = "gmtModified", ignore = true)
     })
     List<MarketGroupsPO> domain2Po(List<MarketGroups> marketGroups);
-} 
+}
