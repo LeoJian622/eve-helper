@@ -29,7 +29,7 @@
 
 **⚠️ CRITICAL**: US1/US2 均依赖此阶段完成
 
-- [ ] T002 [P] 创建 `EsiAuthStatus` 枚举于 `src/main/java/xyz/foolcat/eve/evehelper/shared/kernel/enums/EsiAuthStatus.java`:四值 `AUTHORIZED("AUTHORIZED","授权正常")` / `EXPIRED("EXPIRED","授权过期")` / `NOT_AUTHORIZED("NOT_AUTHORIZED","未授权")` / `UNKNOWN("UNKNOWN","无法判定")`;`code`+`description` 双字段构造,`getCode()`/`getDescription()`;风格对齐既有 `CorporationActivityEnum`
+- [X] T002 [P] 创建 `EsiAuthStatus` 枚举于 `src/main/java/xyz/foolcat/eve/evehelper/shared/kernel/enums/EsiAuthStatus.java`:四值 `AUTHORIZED("AUTHORIZED","授权正常")` / `EXPIRED("EXPIRED","授权过期")` / `NOT_AUTHORIZED("NOT_AUTHORIZED","未授权")` / `UNKNOWN("UNKNOWN","无法判定")`;`code`+`description` 双字段构造,`getCode()`/`getDescription()`;风格对齐既有 `CorporationActivityEnum`
 
 **Checkpoint**: 枚举就绪,可进入用户故事
 
@@ -49,10 +49,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T007 [P] [US1] 在 `src/main/java/xyz/foolcat/eve/evehelper/application/dto/UserAccountDTO.java` 新增字段 `private EsiAuthStatus authStatus;`(含 `@Schema` 注解)
-- [ ] T008 [US1] 在 `src/main/java/xyz/foolcat/eve/evehelper/domain/service/esi/EsiApiService.java` 实现 `EsiAuthStatus getAuthorizationStatus(EveAccount account)`:①refreshToken 空返回 `NOT_AUTHORIZED`;②查 Redis 状态缓存(`esi_auth_status:{characterId}`),命中即返回;③否则 `authorizeOAuth.updateAccessToken(REFRESH_TOKEN, token).timeout(Duration.ofSeconds(5)).block()`,成功->解析 JWT 取 characterId、缓存 accessToken 19min、回写新 refreshToken(`eveAccountService.insertOrUpdate`)、返回 `AUTHORIZED`;④`EsiException(ESI_AUTHORIZATION_FAILURE)`->`EXPIRED`;⑤其余异常(含 `ESI_SERVER_FAILURE`/网络/超时)->`UNKNOWN`;⑥缓存状态(AUTHORIZED/EXPIRED 5min,UNKNOWN 30s)。依赖 T002
-- [ ] T009 [US1] 在 `src/main/java/xyz/foolcat/eve/evehelper/application/service/UserApplicationService.java` 新增 `List<UserAccountDTO> queryAccountListWithAuthStatus(Integer userId)`:标注 `@Transactional(propagation = NOT_SUPPORTED)`;调用 `eveAccountService.getAccountList(userId)`->`eveAccountAssembler.domain2UserAccountTO`->为每条 `EveAccount` 调 `esiApiService.getAuthorizationStatus` 并 set 到 DTO;注入 `EsiApiService` 与 `EveAccountAssembler`。依赖 T007、T008
-- [ ] T010 [US1] 修改 `src/main/java/xyz/foolcat/eve/evehelper/interfaces/web/controller/UserController.java` 的 `addUser(@PathVariable Integer userId)`:改为 `return Result.success(userApplicationService.queryAccountListWithAuthStatus(userId));`(移除控制器内的 assembler 调用)。依赖 T009
+- [X] T007 [P] [US1] 在 `src/main/java/xyz/foolcat/eve/evehelper/application/dto/UserAccountDTO.java` 新增字段 `private EsiAuthStatus authStatus;`(含 `@Schema` 注解)
+- [X] T008 [US1] 在 `src/main/java/xyz/foolcat/eve/evehelper/domain/service/esi/EsiApiService.java` 实现 `EsiAuthStatus getAuthorizationStatus(EveAccount account)`:①refreshToken 空返回 `NOT_AUTHORIZED`;②查 Redis 状态缓存(`esi_auth_status:{characterId}`),命中即返回;③否则 `authorizeOAuth.updateAccessToken(REFRESH_TOKEN, token).timeout(Duration.ofSeconds(5)).block()`,成功->解析 JWT 取 characterId、缓存 accessToken 19min、回写新 refreshToken(`eveAccountService.insertOrUpdate`)、返回 `AUTHORIZED`;④`EsiException(ESI_AUTHORIZATION_FAILURE)`->`EXPIRED`;⑤其余异常(含 `ESI_SERVER_FAILURE`/网络/超时)->`UNKNOWN`;⑥缓存状态(AUTHORIZED/EXPIRED 5min,UNKNOWN 30s)。依赖 T002
+- [X] T009 [US1] 在 `src/main/java/xyz/foolcat/eve/evehelper/application/service/UserApplicationService.java` 新增 `List<UserAccountDTO> queryAccountListWithAuthStatus(Integer userId)`:标注 `@Transactional(propagation = NOT_SUPPORTED)`;调用 `eveAccountService.getAccountList(userId)`->`eveAccountAssembler.domain2UserAccountTO`->为每条 `EveAccount` 调 `esiApiService.getAuthorizationStatus` 并 set 到 DTO;注入 `EsiApiService` 与 `EveAccountAssembler`。依赖 T007、T008
+- [X] T010 [US1] 修改 `src/main/java/xyz/foolcat/eve/evehelper/interfaces/web/controller/UserController.java` 的 `addUser(@PathVariable Integer userId)`:改为 `return Result.success(userApplicationService.queryAccountListWithAuthStatus(userId));`(移除控制器内的 assembler 调用)。依赖 T009
 
 **Checkpoint**: US1 功能完整,可独立验证四态
 
@@ -72,8 +72,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T015 [US2] 在 `queryAccountListWithAuthStatus` 中实现并行冷路径:以 `CompletableFuture.supplyAsync` 提交到有界线程池(复用 `AsyncConfiguration` 执行器或新增专用有界池),`CompletableFuture.allOf` 等待;每角色 `getAuthorizationStatus` 内部 try-catch 兜底(任何未预期异常->`UNKNOWN`),确保单角色异常不传播。依赖 T009
-- [ ] T016 [US2] 验证 `getAuthorizationStatus` 的 catch 链覆盖所有异常路径(`EsiException` 按 ResultCode 分流 + 兜底 `Exception`->`UNKNOWN`),无异常外泄。依赖 T008
+- [X] T015 [US2] 在 `queryAccountListWithAuthStatus` 中实现并行冷路径:以 `CompletableFuture.supplyAsync` 提交到有界线程池(复用 `AsyncConfiguration` 执行器或新增专用有界池),`CompletableFuture.allOf` 等待;每角色 `getAuthorizationStatus` 内部 try-catch 兜底(任何未预期异常->`UNKNOWN`),确保单角色异常不传播。依赖 T009
+- [X] T016 [US2] 验证 `getAuthorizationStatus` 的 catch 链覆盖所有异常路径(`EsiException` 按 ResultCode 分流 + 兜底 `Exception`->`UNKNOWN`),无异常外泄。依赖 T008
 
 **Checkpoint**: US1 与 US2 均独立可用
 

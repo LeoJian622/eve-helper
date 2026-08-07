@@ -25,8 +25,8 @@ description: "T3 DDD 深度架构重构任务清单"
 
 **Purpose**: 建立领域端口承载结构
 
-- [ ] T001 [P] 创建 `domain/port/esi/EsiGateway.java` 与 `domain/port/cache/CacheGateway.java` 端口接口骨架(空接口,后续填充)
-- [ ] T002 [P] 创建 `infrastructure/cache/RedisCacheGateway.java` 适配器骨架
+- [X] T001 [P] 创建 `domain/port/esi/EsiGateway.java` 与 `domain/port/cache/CacheGateway.java` 端口接口骨架(空接口,后续填充)
+- [X] T002 [P] 创建 `infrastructure/cache/RedisCacheGateway.java` 适配器骨架
 
 ---
 
@@ -34,9 +34,9 @@ description: "T3 DDD 深度架构重构任务清单"
 
 **⚠️ CRITICAL**: 端口契约必须先定义,所有用户故事才能开始
 
-- [ ] T003 定义 `EsiGateway` 接口方法签名(从 `domain/service/esi/EsiApiService.java` 现有被调用的能力提取:ESI 鉴权/字符/资产/市场/工业等,避免过度抽象)
-- [ ] T004 定义 `CacheGateway` 接口方法签名(从 `TokenService`/`LoginRateLimiterService`/`TokenBlacklistService`/`SysPermissionService` 现有 RedisTemplate 用法提取:get/set/setIfAbsent/delete/hasKey/increment/expire/opsForHash/convertAndSend)
-- [ ] T005 在 `infrastructure/cache/RedisCacheGateway.java` 实现 `CacheGateway`(注入 RedisTemplate,封装 Redis 操作)
+- [X] T003 定义 `EsiGateway` 接口方法签名(从 `domain/service/esi/EsiApiService.java` 现有被调用的能力提取:ESI 鉴权/字符/资产/市场/工业等,避免过度抽象)
+- [X] T004 定义 `CacheGateway` 接口方法签名(从 `TokenService`/`LoginRateLimiterService`/`TokenBlacklistService`/`SysPermissionService` 现有 RedisTemplate 用法提取:get/set/setIfAbsent/delete/hasKey/increment/expire/opsForHash/convertAndSend)
+- [X] T005 在 `infrastructure/cache/RedisCacheGateway.java` 实现 `CacheGateway`(注入 RedisTemplate,封装 Redis 操作)
 
 **Checkpoint**: 端口契约就绪,可开始各用户故事
 
@@ -47,16 +47,16 @@ description: "T3 DDD 深度架构重构任务清单"
 **Goal**: `EsiApiService` 迁入 infrastructure,9 个领域服务改依赖 `EsiGateway`,domain 不再 import `infrastructure.external.esi`
 **Independent Test**: `grep "infrastructure.external.esi" domain/` 无命中;既有 ESI 功能行为等价
 
-- [ ] T006 [US1] 将 `domain/service/esi/EsiApiService.java` 迁移至 `infrastructure/external/esi/EsiApiService.java`,实现 `EsiGateway`
-- [ ] T007 [P] [US1] 修改 `domain/service/system/AssetsService.java` 依赖 `EsiGateway`)
-- [ ] T008 [P] [US1] 修改 `domain/service/system/BlueprintsService.java` 依赖 `EsiGateway`
-- [ ] T009 [P] [US1] 修改 `domain/service/system/IndustryJobService.java` 依赖 `EsiGateway`
-- [ ] T010 [P] [US1] 修改 `domain/service/system/MiningDetailService.java` 依赖 `EsiGateway`
-- [ ] T011 [P] [US1] 修改 `domain/service/system/StructureService.java` 依赖 `EsiGateway`
-- [ ] T012 [P] [US1] 修改 `domain/service/system/UniverseNameService.java` 依赖 `EsiGateway`
-- [ ] T013 [P] [US1] 修改 `domain/service/system/WalletJournalService.java` 依赖 `EsiGateway`
-- [ ] T014 [P] [US1] 修改 `domain/service/system/InvTypesService.java` 依赖 `EsiGateway`
-- [ ] T015 [US1] 全量 `./mvnw compile` + `test-compile` 通过;grep 验证 domain 无 `infrastructure.external.esi` import
+- [X] T006 [US1] 将 `domain/service/esi/EsiApiService.java` 迁移至 `infrastructure/external/esi/EsiApiService.java`,实现 `EsiGateway`
+- [X] T007 [P] [US1] 修改 `domain/service/system/AssetsService.java` 依赖 `EsiGateway`)
+- [X] T008 [P] [US1] 修改 `domain/service/system/BlueprintsService.java` 依赖 `EsiGateway`
+- [X] T009 [P] [US1] 修改 `domain/service/system/IndustryJobService.java` 依赖 `EsiGateway`
+- [X] T010 [P] [US1] 修改 `domain/service/system/MiningDetailService.java` 依赖 `EsiGateway`
+- [X] T011 [P] [US1] 修改 `domain/service/system/StructureService.java` 依赖 `EsiGateway`
+- [X] T012 [P] [US1] 修改 `domain/service/system/UniverseNameService.java` 依赖 `EsiGateway`
+- [X] T013 [P] [US1] 修改 `domain/service/system/WalletJournalService.java` 依赖 `EsiGateway`
+- [X] T014 [P] [US1] 修改 `domain/service/system/InvTypesService.java` 依赖 `EsiGateway`
+- [X] T015 [US1] 全量 `./mvnw compile` + `test-compile` 通过;grep 验证 domain 无 `infrastructure.external.esi` import
 
 **Checkpoint**: US1 完成,domain→infrastructure ESI 依赖消除
 
@@ -67,12 +67,12 @@ description: "T3 DDD 深度架构重构任务清单"
 **Goal**: 5 个领域服务改注 `CacheGateway`,domain 不再 import `RedisTemplate`
 **Independent Test**: `grep "RedisTemplate" domain/` 无命中;缓存 key/TTL 语义不变
 
-- [ ] T016 [P] [US2] 修改 `domain/service/security/TokenService.java` 注入 `CacheGateway` 替代 RedisTemplate
-- [ ] T017 [P] [US2] 修改 `domain/service/security/TokenBlacklistService.java` 注入 `CacheGateway`
-- [ ] T018 [P] [US2] 修改 `domain/service/security/LoginRateLimiterService.java` 注入 `CacheGateway`
-- [ ] T019 [P] [US2] 修改 `domain/service/system/SysPermissionService.java` 注入 `CacheGateway`
-- [ ] T020 [US2] 迁移后的 `infrastructure/external/esi/EsiApiService.java` 注入 `CacheGateway`
-- [ ] T021 [US2] 全量编译+测试通过;grep 验证 domain 无 `RedisTemplate` import
+- [X] T016 [P] [US2] 修改 `domain/service/security/TokenService.java` 注入 `CacheGateway` 替代 RedisTemplate
+- [X] T017 [P] [US2] 修改 `domain/service/security/TokenBlacklistService.java` 注入 `CacheGateway`
+- [X] T018 [P] [US2] 修改 `domain/service/security/LoginRateLimiterService.java` 注入 `CacheGateway`
+- [X] T019 [P] [US2] 修改 `domain/service/system/SysPermissionService.java` 注入 `CacheGateway`
+- [X] T020 [US2] 迁移后的 `infrastructure/external/esi/EsiApiService.java` 注入 `CacheGateway`
+- [X] T021 [US2] 全量编译+测试通过;grep 验证 domain 无 `RedisTemplate` import
 
 **Checkpoint**: US2 完成,domain→Redis 依赖消除
 
@@ -83,9 +83,9 @@ description: "T3 DDD 深度架构重构任务清单"
 **Goal**: 26 个 application assembler 不再 import `*PO`,PO 映射收归仓储实现
 **Independent Test**: `grep "infrastructure.persistence.entity.*PO" application/` 无命中;application↔infrastructure 循环消解
 
-- [ ] T022 [P] [US3] 将各 `application/assembler/system/*Assembler.java` 中 `domain2Po`/`po2Domain` 方法下沉至对应 `infrastructure/persistence/repository/system/*RepositoryImpl.java`(或独立 infra assembler)
-- [ ] T023 [P] [US3] 将 `application/assembler/eve/{IndustryActivityMaterials,IndustryActivityProducts,IndustryBlueprints}Assembler.java` 的 PO 映射下沉至对应 eve RepositoryImpl
-- [ ] T024 [US3] 精简 application assembler 仅保留 Domain↔DTO/VO 映射;编译+测试通过;grep 验证 application 无 `*PO` import
+- [X] T022 [P] [US3] 将各 `application/assembler/system/*Assembler.java` 中 `domain2Po`/`po2Domain` 方法下沉至对应 `infrastructure/persistence/repository/system/*RepositoryImpl.java`(或独立 infra assembler)
+- [X] T023 [P] [US3] 将 `application/assembler/eve/{IndustryActivityMaterials,IndustryActivityProducts,IndustryBlueprints}Assembler.java` 的 PO 映射下沉至对应 eve RepositoryImpl
+- [X] T024 [US3] 精简 application assembler 仅保留 Domain↔DTO/VO 映射;编译+测试通过;grep 验证 application 无 `*PO` import
 
 **Checkpoint**: US3 完成,application↔infrastructure 循环消除
 
@@ -97,11 +97,11 @@ description: "T3 DDD 深度架构重构任务清单"
 **Independent Test**: `grep "application.dto\|interfaces.web.vo" domain/repository domain/service` 无命中
 
 - [X] T025 [US4] 修改 `domain/repository/system/BlueprintsRepository.java` 返回类型(移除 `application.dto.BlueprintsDTO`/`PageQuery` 依赖)—— 新增 `domain/model/query/BlueprintsPageCriteria` 承载查询条件;`BlueprintsVO` 迁至 `application/dto/response`
-- [ ] T026 [US4] 修改 `domain/repository/system/BlueprintsDataRepository.java` 返回类型(移除 `BlueprintCostDTO`/`BlueprintFormulaDTO`)
-- [ ] T027 [US4] 修改 `domain/repository/system/MarketOrderRepository.java` 返回类型(移除 `MarketOrderDTO`)
-- [ ] T028 [US4] 修改 `domain/repository/system/InvTypesRepository.java` 与 `MarketGroupsRepository.java`(移除 interfaces VO)
-- [ ] T029 [US4] 将 `infrastructure/persistence/mapper/system/InvTypesMapper.xml` 中 `interfaces.web.vo.InvTypesVO` resultType 改为 PO/读模型
-- [ ] T030 [US4] application 层组装器承接 实体→DTO/VO 转换;编译+测试通过;grep 验证 domain 无上层类型 import
+- [X] T026 [US4] 修改 `domain/repository/system/BlueprintsDataRepository.java` 返回类型(移除 `BlueprintCostDTO`/`BlueprintFormulaDTO`)
+- [X] T027 [US4] 修改 `domain/repository/system/MarketOrderRepository.java` 返回类型(移除 `MarketOrderDTO`)
+- [X] T028 [US4] 修改 `domain/repository/system/InvTypesRepository.java` 与 `MarketGroupsRepository.java`(移除 interfaces VO)
+- [X] T029 [US4] 将 `infrastructure/persistence/mapper/system/InvTypesMapper.xml` 中 `interfaces.web.vo.InvTypesVO` resultType 改为 PO/读模型
+- [X] T030 [US4] application 层组装器承接 实体→DTO/VO 转换;编译+测试通过;grep 验证 domain 无上层类型 import
 
 **Checkpoint**: US4 完成,domain 契约净化
 

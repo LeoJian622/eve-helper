@@ -80,6 +80,7 @@ mvn package -DskipTests
 - **异步**: @EnableScheduling + AsyncConfiguration,市场订单线程池
 
 ## 分级开发流程(速查)
+所有开发必须遵循分级开发流程。
 
 | 级别 | 适用场景 | 流程 |
 |------|----------|------|
