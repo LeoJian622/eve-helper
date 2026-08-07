@@ -1,15 +1,14 @@
-<!-- Sync Impact Report: Constitution v1.3.0
-- Version change: 1.2.0 → 1.3.0 (MINOR: Aligned principles with project reality; added technology stack freeze)
-- Modified principles:
-  I. CLI Interface, Test-First (NON-NEGOTIABLE), Integration Testing, API Performance → I. REST API First, Test-First (NON-NEGOTIABLE), Integration Testing, API Performance
-- Added principles: IV. Technology Stack Freeze (NON-NEGOTIABLE)
+<!-- Sync Impact Report: Constitution v1.4.0
+- Version change: 1.3.0 -> 1.4.0 (MINOR: Added tiered development process as constitutional principle)
+- Modified principles: None
+- Added principles: V. Tiered Development Process (NON-NEGOTIABLE)
 - Removed sections: None
 - Templates requiring updates:
   ✅ .specify/templates/plan-template.md (checked, no principle-name references)
   ✅ .specify/templates/spec-template.md (checked, no principle-name references)
   ✅ .specify/templates/tasks-template.md (checked, no principle-name references)
   ✅ .specify/templates/constitution-template.md (generic Spec-Kit examples only, unchanged)
-- Follow-up TODOs: None
+- Follow-up TODOs: None (new principle formalizes existing AI_WORKFLOW.md tiered process; no code migration required)
 
 -->
 
@@ -38,6 +37,11 @@ The core technology stack is frozen: Java 17, Spring Boot 3.5.x, MyBatis Plus, D
 Upgrading, replacing, or introducing core dependencies requires the constitutional amendment process (version bump + Sync Impact Report + migration plan)
 Experimental libraries may only be used in prototypes and must not enter the main codebase without amendment
 
+### V. Tiered Development Process (NON-NEGOTIABLE)
+All development operations must follow the tiered process classified by change scope: L1 (medium/large features, cross-layer changes) via Spec-Kit specification-driven flow (specify -> clarify -> plan -> tasks -> implement); L2 (small changes, single-file/localized logic) via Superpowers TDD (RED -> GREEN -> IMPROVE); L3 (urgent fixes) via systematic debugging with minimal fix and regression tests
+Mandatory post-implementation review gate for all tiers: ecc:java-reviewer required on Java changes; ecc:security-reviewer added for auth/user-input/external-API/crypto changes; ecc:java-build-resolver on build failure
+L1 changes must not bypass spec/plan/tasks to write code directly; implementation claims require test/build evidence (superpowers:verification-before-completion)
+
 ## API Performance Requirements
 All REST API endpoints must:
 - Respond within 200ms (95th percentile) for standard requests
@@ -61,5 +65,5 @@ Constitution supersedes all other practices; Amendments require documentation, a
 All changes must include performance impact assessment and test coverage analysis
 
 ## Memory Files
-CONSTITUTION_VERSION: 1.3.0 | RATIFICATION_DATE: 2026-05-12 | LAST_AMENDED_DATE: 2026-08-04
-<!-- Version: 1.2.0 | Ratified: 2026-05-12 | Last Amended: 2026-05-12 -->
+CONSTITUTION_VERSION: 1.4.0 | RATIFICATION_DATE: 2026-05-12 | LAST_AMENDED_DATE: 2026-08-07
+<!-- Version: 1.3.0 | Ratified: 2026-05-12 | Last Amended: 2026-08-04 -->
