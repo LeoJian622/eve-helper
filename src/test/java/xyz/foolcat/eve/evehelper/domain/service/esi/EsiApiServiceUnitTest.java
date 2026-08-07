@@ -22,7 +22,6 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
-import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -62,15 +61,14 @@ class EsiApiServiceUnitTest {
     @Mock
     UniverseApi universeApi;
 
-    @Mock
-    AuthorizeUtil authorizeUtil;
-
     @InjectMocks
     EsiApiService esiApiService;
 
+    private static final Integer USER_ID = 100;
     private static final Integer CID = 95465499;
     private static final String STATUS_KEY = "esi_auth_status:95465499";
     private static final String LOCK_KEY = "esi_auth_status_lock:95465499";
+    private static final String ACCESS_TOKEN_KEY = "esi_access_token:" + USER_ID + ":" + CID;
 
     @BeforeEach
     void setUp() {
@@ -78,6 +76,7 @@ class EsiApiServiceUnitTest {
 
     private EveAccount account(String refreshToken) {
         EveAccount a = new EveAccount();
+        a.setUserId(USER_ID);
         a.setCharacterId(CID);
         a.setRefreshToken(refreshToken);
         return a;
@@ -114,7 +113,7 @@ class EsiApiServiceUnitTest {
         EsiAuthStatus status = esiApiService.getAuthorizationStatus(acc);
 
         assertEquals(EsiAuthStatus.AUTHORIZED, status);
-        verify(cacheGateway).set(eq("esi_access_token:95465499"), eq("Bearer at"), eq(1140L), eq(TimeUnit.SECONDS));
+        verify(cacheGateway).set(eq(ACCESS_TOKEN_KEY), eq("Bearer at"), eq(1140L), eq(TimeUnit.SECONDS));
         ArgumentCaptor<EveAccount> captor = ArgumentCaptor.forClass(EveAccount.class);
         verify(eveAccountService).insertOrUpdateSelective(captor.capture());
         assertEquals(CID, captor.getValue().getCharacterId());
@@ -148,7 +147,7 @@ class EsiApiServiceUnitTest {
         when(authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, "old-rt")).thenReturn(Mono.just(token));
 
         assertEquals(EsiAuthStatus.UNKNOWN, esiApiService.getAuthorizationStatus(acc));
-        verify(cacheGateway, never()).set(eq("esi_access_token:95465499"), anyString(), anyLong(), eq(TimeUnit.SECONDS));
+        verify(cacheGateway, never()).set(eq(ACCESS_TOKEN_KEY), anyString(), anyLong(), eq(TimeUnit.SECONDS));
         verify(eveAccountService, never()).insertOrUpdateSelective(any(EveAccount.class));
     }
 

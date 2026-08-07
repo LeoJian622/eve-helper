@@ -117,6 +117,10 @@ eve:
     whiteUrlList:
       #      - GET:/
       - POST:/user
+
+onebot:
+  websocket:
+    secret: ${ONEBOT_WEBSOCKET_SECRET:}
 # springdoc-openapi项目配置
 springdoc:
   swagger-ui:

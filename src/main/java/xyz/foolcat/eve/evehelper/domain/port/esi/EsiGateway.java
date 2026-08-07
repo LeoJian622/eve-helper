@@ -50,7 +50,7 @@ public interface EsiGateway {
     /**
      * 判定绑定角色的 ESI 授权状态。
      *
-     * @param account 绑定角色
+     * @param account 绑定角色(需含 userId、refreshToken 与 characterId;userId 用于 accessToken 缓存键隔离)
      * @return ESI 授权状态
      */
     EsiAuthStatus getAuthorizationStatus(EveAccount account);

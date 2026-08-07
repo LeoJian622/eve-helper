@@ -1,6 +1,5 @@
 package xyz.foolcat.eve.evehelper.infrastructure.external.esi;
 
-import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
@@ -21,7 +20,6 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
-import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiAssetsConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiIndustryJobConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiInvTypesConverter;
@@ -41,6 +39,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResp
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CharacterPublicInfoResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.Id2NameResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.WalletJournalResponse;
+import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 
@@ -76,8 +75,6 @@ public class EsiApiService implements EsiGateway {
     private final CharacterApi characterApi;
 
     private final UniverseApi universeApi;
-
-    private final AuthorizeUtil authorizeUtil;
 
     private final AssetsApi assetsApi;
 
@@ -167,18 +164,23 @@ public class EsiApiService implements EsiGateway {
     @Override
     public String getAccessToken(Integer code, Integer userId) throws ParseException {
 
-        String redisKey = GlobalConstants.ESI_ACCESS_TOKEN_KEY + code;
+        // 归属校验前置:用传入 userId(来自 eveAccount.getUserId()),不依赖 SecurityContext,
+        // HTTP 路径与内部路径(MiningTask 无安全上下文)统一适用;顺带修复 MiningTask 缓存未命中即崩溃的现存 bug。
+        // catch 归属失败统一转 ESI_AUTHORIZATION_FAILURE(不暴露 USER_ACCOUNT_NOT_EXIST 账户存在性 oracle)。
+        EveAccount character;
+        try {
+            character = eveAccountService.getAccountOne(userId, code);
+        } catch (EveHelperException e) {
+            throw new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE);
+        }
 
+        // 缓存键含 userId + characterId:用户隔离 + 角色隔离,读写统一 characterId(解决原 code 可能是 corpId 与写入 characterId 不一致导致缓存永不命中)。
+        String redisKey = GlobalConstants.ESI_ACCESS_TOKEN_KEY + userId + ":" + character.getCharacterId();
         String accessToken = (String) cacheGateway.get(redisKey);
-
         if (StrUtil.isNotEmpty(accessToken)) {
             return accessToken;
         }
 
-        EveAccount character = authorizeUtil.authorize(code);
-        if (ObjectUtil.isNull(character)) {
-            throw new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE);
-        }
         AuthTokenResponse authToken = authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, character.getRefreshToken()).block();
         assert authToken != null;
         accessToken = authToken.getAccessToken();
@@ -234,7 +236,7 @@ public class EsiApiService implements EsiGateway {
         Map<Integer, String> universeNameMap = nameResponses.stream().collect(Collectors.toMap(Id2NameResponse::getId, Id2NameResponse::getName, (k1, k2) -> k1));
 
         //redis缓存access_token
-        String redisKey = GlobalConstants.ESI_ACCESS_TOKEN_KEY + characterId;
+        String redisKey = GlobalConstants.ESI_ACCESS_TOKEN_KEY + userId + ":" + characterId;
         cacheGateway.set(redisKey, GlobalConstants.TOKEN_PERN + accessToken, ACCESS_TOKEN_CACHE_TTL_SECONDS, TimeUnit.SECONDS);
 
         EveAccount eveAccount = new EveAccount();
@@ -261,7 +263,7 @@ public class EsiApiService implements EsiGateway {
      * </ul>
      * 命中 Redis 状态缓存时直接返回,不触发 ESI 调用(满足 <200ms p95)。
      *
-     * @param account 绑定角色(需含 refreshToken 与 characterId)
+     * @param account 绑定角色(需含 userId、refreshToken 与 characterId;userId 用于 accessToken 缓存键隔离)
      * @return ESI 授权状态
      */
     @Override
@@ -482,7 +484,7 @@ public class EsiApiService implements EsiGateway {
             }
         }
         if (StrUtil.isNotBlank(accessToken)) {
-            String redisKey = GlobalConstants.ESI_ACCESS_TOKEN_KEY + characterId;
+            String redisKey = GlobalConstants.ESI_ACCESS_TOKEN_KEY + account.getUserId() + ":" + characterId;
             cacheGateway.set(redisKey, GlobalConstants.TOKEN_PERN + accessToken, ACCESS_TOKEN_CACHE_TTL_SECONDS, TimeUnit.SECONDS);
         }
     }

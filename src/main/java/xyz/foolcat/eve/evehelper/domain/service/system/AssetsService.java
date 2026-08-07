@@ -78,7 +78,8 @@ public class AssetsService {
          * 获取游戏人物信息及授权
          */
         EveAccount eveAccount = authorizeUtil.authorize(cid);
-        String accessToken = esiApiService.getAccessToken(String.valueOf(eveAccount.getCharacterId()), eveAccount.getUserId());
+        // 修正:此前误调 String 重载(AUTHORIZATION_CODE),把 characterId 当 OAuth code 兑换,资产同步不可用
+        String accessToken = esiApiService.getAccessToken(eveAccount.getCharacterId(), eveAccount.getUserId());
 
         /*
          * 获取总页数
@@ -110,5 +111,4 @@ public class AssetsService {
 
     }
 }
-
 
