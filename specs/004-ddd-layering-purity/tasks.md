@@ -112,9 +112,9 @@ description: "T3 DDD 深度架构重构任务清单"
 **Goal**: `SysUser` 移除 `UserDetails`;`domain/service/thread` 迁出 domain
 **Independent Test**: domain 实体无 `UserDetails` import;`domain/service/thread` 为空
 
-- [ ] T031 [US5] 修改 `domain/model/entity/system/SysUser.java` 移除 `implements UserDetails`,新增 `domain/port/UserDetailsPort` 或 infra 适配器提供 Spring Security 契约
-- [ ] T032 [US5] 将 `domain/service/thread/MarketOrderAsyncService.java` 迁至 application 或 infrastructure
-- [ ] T033 [US5] 编译+测试通过;grep 验证 domain 实体无 `UserDetails`、`domain/thread` 为空
+- [X] T031 [US5] 修改 `domain/model/entity/system/SysUser.java` 移除 `implements UserDetails`,新增 `domain/port/UserDetailsPort` 或 infra 适配器提供 Spring Security 契约
+- [X] T032 [US5] 将 `domain/service/thread/MarketOrderAsyncService.java` 迁至 application 或 infrastructure
+- [X] T033 [US5] 编译+测试通过;grep 验证 domain 实体无 `UserDetails`、`domain/thread` 为空
 
 **Checkpoint**: US5 完成
 
@@ -124,9 +124,9 @@ description: "T3 DDD 深度架构重构任务清单"
 
 **Purpose**: 全量依赖扫描验证与文档
 
-- [ ] T034 [P] 全项目 grep 无禁止跨层 import(domain→infrastructure 客户端/PO、domain→application 类型、application→infrastructure PO、仓储返回上层 DTO/VO)
-- [ ] T035 [P] 更新记忆/文档登记 T3 完成状态
-- [ ] T036 全量 `./mvnw compile` + `test-compile` 通过,确认零功能回归
+- [X] T034 [P] 全项目 grep 无禁止跨层 import(domain→infrastructure 客户端/PO、domain→application 类型、application→infrastructure PO、仓储返回上层 DTO/VO)
+- [X] T035 [P] 更新记忆/文档登记 T3 完成状态
+- [X] T036 全量 `./mvnw compile` + `test-compile` 通过,确认零功能回归
 
 ---
 

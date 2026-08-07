@@ -34,7 +34,8 @@ public interface SysUserPoConverter {
      * @return
      */
     @Mappings({
-            @Mapping(source = "lastLoginTime", target = "gmtModified")
+            @Mapping(source = "lastLoginTime", target = "gmtModified"),
+            @Mapping(target = "authorities", ignore = true)
     })
     SysUserPO domain2Po(SysUser sysUser);
 
@@ -56,7 +57,8 @@ public interface SysUserPoConverter {
      * @return
      */
     @Mappings({
-            @Mapping(source = "lastLoginTime", target = "gmtModified")
+            @Mapping(source = "lastLoginTime", target = "gmtModified"),
+            @Mapping(target = "authorities", ignore = true)
     })
     List<SysUserPO> domain2Po(List<SysUser> sysUser);
 }

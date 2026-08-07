@@ -1,30 +1,25 @@
 package xyz.foolcat.eve.evehelper.domain.service.system;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.domain.repository.system.SysUserRepository;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 用户服务
+ *
+ * <p>Spring Security {@code UserDetailsService} 契约已迁至 infrastructure 层的
+ * {@code SysUserDetailsService},本类仅保留领域查询与持久化编排,不再依赖 Spring Security。</p>
  *
  * @author Leojan
  */
 @Service
 @Transactional(rollbackFor = RuntimeException.class)
 @RequiredArgsConstructor
-public class SysUserService  implements UserDetailsService {
-
-    private final SysRoleService sysRoleService;
+public class SysUserService {
 
     private final SysUserRepository sysUserRepository;
 
@@ -40,36 +35,24 @@ public class SysUserService  implements UserDetailsService {
         return sysUserRepository.batchInsert(list);
     }
 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        SysUser userDetails = this.sysUserRepository.queryByUsername(username);
-        if (userDetails == null) {
-            throw new UsernameNotFoundException("用户不存在: " + username);
-        }
-        List<String> roles = sysRoleService.queryRolesByUserId(userDetails.getId());
-        List<GrantedAuthority> authorities = roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
-        userDetails.setAuthorities(authorities);
-
-        return userDetails;
+    /**
+     * 按用户名查询用户(领域查询,不含权限装配)。
+     *
+     * @param username 用户名
+     * @return 用户实体,不存在返回 null
+     */
+    public SysUser queryByUsername(String username) {
+        return sysUserRepository.queryByUsername(username);
     }
 
     /**
-     * 通过用户ID加载用户信息
+     * 通过用户ID加载用户信息(领域查询,不含权限装配)。
      *
      * @param userId 用户ID
-     * @return 用户详情
+     * @return 用户实体,不存在返回 null
      */
     public SysUser loadUserById(Integer userId) {
-        SysUser userDetails = this.sysUserRepository.queryById(userId);
-        if (userDetails == null) {
-            throw new UsernameNotFoundException("用户不存在: userId=" + userId);
-        }
-
-        List<String> roles = sysRoleService.queryRolesByUserId(userDetails.getId());
-        List<GrantedAuthority> authorities = roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
-        userDetails.setAuthorities(authorities);
-
-        return userDetails;
+        return sysUserRepository.queryById(userId);
     }
 
     public boolean insertOrUpdate(SysUser record) {
@@ -84,4 +67,3 @@ public class SysUserService  implements UserDetailsService {
         return sysUserRepository.insert(sysUser);
     }
 }
-

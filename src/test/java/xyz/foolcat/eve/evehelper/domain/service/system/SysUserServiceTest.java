@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.security.core.userdetails.UserDetails;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
@@ -23,8 +23,8 @@ class SysUserServiceTest {
     SysUserService service;
 
     @Test
-    void loadUserByUsername() {
-        UserDetails result = service.loadUserByUsername("user2");
+    void loadUserById() {
+        SysUser result = service.loadUserById(1);
         System.out.println(result);
     }
 

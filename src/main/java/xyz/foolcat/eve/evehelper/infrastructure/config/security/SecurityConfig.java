@@ -15,7 +15,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.filter.JwtAuthorizationTokenFilter;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.handler.AccessDeniedServletHandler;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.handler.AuthenticationFailureServletHandler;
@@ -41,7 +40,7 @@ public class SecurityConfig {
     final AccessDeniedServletHandler accessDeniedServletHandler;
     final AuthenticationServletEntryPoint authenticationServletEntryPoint;
     final JwtAuthorizationTokenFilter jwtAuthorizationTokenFilter;
-    final SysUserService sysUserService;
+    final SysUserDetailsService sysUserDetailsService;
 
     @PostConstruct
     void setStrategyName() {
@@ -71,7 +70,7 @@ public class SecurityConfig {
 
     @Bean
     AuthenticationManager authenticationManager() {
-        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider(sysUserService);
+        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider(sysUserDetailsService);
         // 是否隐藏用户不存在异常，默认:true-隐藏；false-抛出异常；
         daoAuthenticationProvider.setHideUserNotFoundExceptions(false);
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());

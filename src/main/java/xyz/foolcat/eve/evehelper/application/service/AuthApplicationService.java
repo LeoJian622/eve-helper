@@ -11,6 +11,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.domain.model.vo.TokenResult;
 import xyz.foolcat.eve.evehelper.domain.service.security.TokenBlacklistService;
 import xyz.foolcat.eve.evehelper.domain.service.security.TokenService;
+import xyz.foolcat.eve.evehelper.domain.service.system.SysRoleService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.SecurityConstant;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
@@ -18,6 +19,7 @@ import xyz.foolcat.eve.evehelper.shared.util.SensitiveDataMasker;
 
 import java.text.ParseException;
 import java.util.Date;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /**
@@ -41,6 +43,7 @@ public class AuthApplicationService {
     private final TokenBlacklistService tokenBlacklistService;
     private final TokenService tokenService;
     private final SysUserService sysUserService;
+    private final SysRoleService sysRoleService;
 
     /**
      * 用户登出:解析并校验 Authorization 头中的 Bearer Token,将其 jti 加入黑名单。
@@ -125,7 +128,10 @@ public class AuthApplicationService {
             throw new EveHelperException("用户不存在");
         }
 
-        TokenResult tokenResult = tokenService.refreshAccessTokenWithUser(refreshToken, user);
+        // 重新加载用户角色,写入新 JWT authorities claim
+        List<String> authorities = sysRoleService.queryRolesByUserId(userId);
+
+        TokenResult tokenResult = tokenService.refreshAccessTokenWithUser(refreshToken, user, authorities);
         log.info("刷新Token成功: userId={}", userId);
         return tokenResult;
     }

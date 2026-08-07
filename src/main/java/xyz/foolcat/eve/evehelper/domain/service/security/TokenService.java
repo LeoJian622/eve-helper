@@ -11,7 +11,6 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.shared.kernel.config.JwtTokenProperties;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
@@ -23,8 +22,8 @@ import xyz.foolcat.eve.evehelper.shared.util.SensitiveDataMasker;
 import java.security.KeyPair;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * Token管理服务
@@ -47,13 +46,14 @@ public class TokenService {
     /**
      * 生成Token对(Access Token + Refresh Token)
      *
-     * @param user 用户信息
+     * @param user        用户信息
+     * @param authorities 权限列表(角色标识),写入 JWT authorities claim
      * @return Token对(领域读模型)
      */
-    public TokenResult generateTokenPair(SysUser user) {
+    public TokenResult generateTokenPair(SysUser user, List<String> authorities) {
         try {
             // 生成Access Token
-            String accessToken = generateAccessToken(user);
+            String accessToken = generateAccessToken(user, authorities);
 
             // 生成Refresh Token
             String refreshToken = generateRefreshToken(user);
@@ -73,11 +73,13 @@ public class TokenService {
     /**
      * 生成Access Token
      *
-     * @param user 用户信息
+     * @param user        用户信息
+     * @param authorities 权限列表(角色标识)
      * @return JWT字符串
      */
-    private String generateAccessToken(SysUser user) throws JOSEException {
+    private String generateAccessToken(SysUser user, List<String> authorities) throws JOSEException {
         long expirationTime = jwtTokenProperties.getAccessTokenExpirationTime() * 1000;
+        List<String> safeAuthorities = (authorities == null) ? List.of() : authorities;
 
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject(jwtTokenProperties.getSubject())
@@ -85,10 +87,7 @@ public class TokenService {
                 .jwtID(UUID.randomUUID().toString())
                 .claim(SecurityConstant.USER_ID_KEY, user.getId())
                 .claim(SecurityConstant.USER_NAME_KEY, user.getUsername())
-                .claim(SecurityConstant.JWT_AUTHORITIES_KEY,
-                        user.getAuthorities().stream()
-                                .map(GrantedAuthority::getAuthority)
-                                .collect(Collectors.toList()))
+                .claim(SecurityConstant.JWT_AUTHORITIES_KEY, safeAuthorities)
                 .expirationTime(new Date(System.currentTimeMillis() + expirationTime))
                 .build();
 
@@ -149,9 +148,10 @@ public class TokenService {
      *
      * @param refreshToken Refresh Token
      * @param user         用户信息(从数据库重新加载)
+     * @param authorities  权限列表(角色标识),写入新 JWT
      * @return 新的Token对(领域读模型)
      */
-    public TokenResult refreshAccessTokenWithUser(String refreshToken, SysUser user) {
+    public TokenResult refreshAccessTokenWithUser(String refreshToken, SysUser user, List<String> authorities) {
         String key = REFRESH_TOKEN_PREFIX + refreshToken;
 
         // 验证Refresh Token是否存在
@@ -181,7 +181,7 @@ public class TokenService {
         revokeRefreshToken(refreshToken);
 
         // 生成新的Token对(包含新的Refresh Token)
-        return generateTokenPair(user);
+        return generateTokenPair(user, authorities);
     }
 
     /**

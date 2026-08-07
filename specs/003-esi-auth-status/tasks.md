@@ -19,7 +19,7 @@
 
 **Purpose**: 确认分支基线可构建
 
-- [ ] T001 验证基线构建通过:`mvn clean package -DskipTests`(分支 `003-esi-auth-status`)
+- [X] T001 验证基线构建通过:`mvn clean package -DskipTests`(分支 `003-esi-auth-status`)
 
 ---
 
@@ -42,10 +42,10 @@
 
 ### Tests for User Story 1(先写,确认失败)
 
-- [ ] T003 [P] [US1] 单元测试 `EsiApiServiceTest` 于 `src/test/java/xyz/foolcat/eve/evehelper/domain/service/esi/EsiApiServiceTest.java`:refreshToken 为空 -> `NOT_AUTHORIZED`
-- [ ] T004 [P] [US1] 单元测试(同上文件):Mock `authorizeOAuth.updateAccessToken` 返回 `AuthTokenResponse` -> `AUTHORIZED`,并验证回写新 refreshToken 与缓存 accessToken
-- [ ] T005 [P] [US1] 单元测试(同上文件):Mock 抛 `EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE)` -> `EXPIRED`
-- [ ] T006 [P] [US1] 单元测试(同上文件):状态缓存命中(Redis 有 `esi_auth_status:{characterId}`)-> 直接返回缓存态,不调用 `authorizeOAuth`
+- [X] T003 [P] [US1] 单元测试 `EsiApiServiceTest` 于 `src/test/java/xyz/foolcat/eve/evehelper/domain/service/esi/EsiApiServiceTest.java`:refreshToken 为空 -> `NOT_AUTHORIZED`
+- [X] T004 [P] [US1] 单元测试(同上文件):Mock `authorizeOAuth.updateAccessToken` 返回 `AuthTokenResponse` -> `AUTHORIZED`,并验证回写新 refreshToken 与缓存 accessToken
+- [X] T005 [P] [US1] 单元测试(同上文件):Mock 抛 `EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE)` -> `EXPIRED`
+- [X] T006 [P] [US1] 单元测试(同上文件):状态缓存命中(Redis 有 `esi_auth_status:{characterId}`)-> 直接返回缓存态,不调用 `authorizeOAuth`
 
 ### Implementation for User Story 1
 
@@ -65,8 +65,8 @@
 
 ### Tests for User Story 2(先写,确认失败)
 
-- [ ] T011 [P] [US2] 单元测试 `EsiApiServiceTest`:Mock 抛 `EsiException(ResultCode.ESI_SERVER_FAILURE)` 与 `TimeoutException` -> `UNKNOWN`
-- [ ] T012 [P] [US2] 单元测试 `UserApplicationServiceTest` 于 `src/test/java/xyz/foolcat/eve/evehelper/application/service/UserApplicationServiceTest.java`:3 个角色,其中 1 个 `getAuthorizationStatus` 抛异常被隔离为 `UNKNOWN`,另 2 个状态正确;验证并行执行(总耗时约等于最慢单调用,非累加)
+- [X] T011 [P] [US2] 单元测试 `EsiApiServiceTest`:Mock 抛 `EsiException(ResultCode.ESI_SERVER_FAILURE)` 与 `TimeoutException` -> `UNKNOWN`
+- [X] T012 [P] [US2] 单元测试 `UserApplicationServiceTest` 于 `src/test/java/xyz/foolcat/eve/evehelper/application/service/UserApplicationServiceTest.java`:3 个角色,其中 1 个 `getAuthorizationStatus` 抛异常被隔离为 `UNKNOWN`,另 2 个状态正确;验证并行执行(总耗时约等于最慢单调用,非累加)
 - [ ] T013 [P] [US2] 集成测试 `UserControllerAuthStatusIT` 于 `src/test/java/xyz/foolcat/eve/evehelper/interfaces/web/controller/UserControllerAuthStatusIT.java`:用户无绑定角色 -> `data=[]` 且成功
 - [ ] T014 [P] [US2] 集成测试(同上文件):多角色混合状态(AUTHORIZED/EXPIRED/NOT_AUTHORIZED/UNKNOWN)端到端验证
 
@@ -84,8 +84,8 @@
 **Purpose**: 质量门禁与验证
 
 - [ ] T017 运行 `mvn test`,确认全绿且新增代码覆盖率 ≥80%
-- [ ] T018 [P] `ecc:java-reviewer` 评审,修复 CRITICAL/HIGH
-- [ ] T019 [P] `ecc:security-reviewer` 评审(涉及认证/外部 API),修复 CRITICAL/HIGH
+- [X] T018 [P] `ecc:java-reviewer` 评审,修复 CRITICAL/HIGH
+- [X] T019 [P] `ecc:security-reviewer` 评审(涉及认证/外部 API),修复 CRITICAL/HIGH
 - [ ] T020 执行 [quickstart.md](quickstart.md) 验证矩阵,手动确认 `authStatus` 字段
 
 ---

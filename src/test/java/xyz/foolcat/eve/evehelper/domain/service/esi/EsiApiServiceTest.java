@@ -1,10 +1,5 @@
 package xyz.foolcat.eve.evehelper.domain.service.esi;
 
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.crypto.RSASSASigner;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.SignedJWT;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,186 +7,208 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiAssetsConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiIndustryJobConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiInvTypesConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiMiningDetailConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiStructureConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiUniverseNameConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiWalletJournalConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiApiService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.AssetsApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CharacterApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CorporationApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UniverseApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.WalletApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CharacterPublicInfoResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.Id2NameResponse;
-import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
-import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
+import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.text.ParseException;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * EsiApiService 授权获取单元测试(Mockito,不启动 Spring 上下文)。
+ * EsiApiService.getAuthorizationStatus 单元测试(纯 Mockito,不依赖 Spring/DB/Redis)。
  * <p>
- * 覆盖 HIGH 1 修复:{@code getAccessToken(Integer, Integer)} 的归属校验前置、
- * 缓存键用户隔离({@code esi_access_token:{userId}:{characterId}})、缓存命中/未命中三态。
+ * 覆盖四态判定(AUTHORIZED/EXPIRED/NOT_AUTHORIZED/UNKNOWN)+ 缓存命中/未命中路径,
+ * 对应 003-esi-auth-status 任务 T003-T006 + T011。
+ * <p>
+ * EsiApiService 已迁至 infrastructure/external/esi(004 US1),测试 import 用 infra 路径,
+ * 测试文件位置按 tasks.md 保持放在 domain/service/esi 下。
  *
  * @author Leojan
+ * date 2026-08-07
  */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("ESI 授权获取测试 - 归属校验与缓存键隔离")
+@DisplayName("ESI 授权状态判定单元测试 - 四态 + 缓存")
 class EsiApiServiceTest {
 
+    @Mock
+    CacheGateway cacheGateway;
+
+    @Mock
+    EveAccountService eveAccountService;
+
+    @Mock
+    AuthorizeOAuth authorizeOAuth;
+
+    @Mock
+    CharacterApi characterApi;
+
+    @Mock
+    UniverseApi universeApi;
+
+    @InjectMocks
+    EsiApiService esiApiService;
+
     private static final Integer USER_ID = 100;
-    private static final Integer CHARACTER_ID = 95465499;
-    private static final Integer CORP_ID = 98000001;
-    private static final Integer ALLIANCE_ID = 99000002;
-
-    @Mock private CacheGateway cacheGateway;
-    @Mock private EveAccountService eveAccountService;
-    @Mock private AuthorizeOAuth authorizeOAuth;
-    @Mock private CharacterApi characterApi;
-    @Mock private UniverseApi universeApi;
-    @Mock private AssetsApi assetsApi;
-    @Mock private CorporationApi corporationApi;
-    @Mock private IndustryApi industryApi;
-    @Mock private WalletApi walletApi;
-    @Mock private EsiAssetsConverter esiAssetsConverter;
-    @Mock private EsiIndustryJobConverter esiIndustryJobConverter;
-    @Mock private EsiInvTypesConverter esiInvTypesConverter;
-    @Mock private EsiMiningDetailConverter esiMiningDetailConverter;
-    @Mock private EsiStructureConverter esiStructureConverter;
-    @Mock private EsiUniverseNameConverter esiUniverseNameConverter;
-    @Mock private EsiWalletJournalConverter esiWalletJournalConverter;
-
-    @InjectMocks private EsiApiService esiApiService;
+    private static final Integer CID = 95465499;
+    private static final String STATUS_KEY = "esi_auth_status:" + CID;
+    private static final String LOCK_KEY = "esi_auth_status_lock:" + CID;
+    private static final String ACCESS_TOKEN_KEY = "esi_access_token:" + USER_ID + ":" + CID;
 
     /**
-     * 构造 RS256 签名 JWT(含 sub=CHARACTER:EVE:{characterId} 与 name claim),
-     * 供 updateRefreshToken 内 SignedJWT.parse 提取 characterId。
+     * 构造一个含 userId/characterId/refreshToken 的测试角色。
      */
-    private String buildSignedJwt(Integer characterId, String name) throws Exception {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-        kpg.initialize(2048);
-        KeyPair kp = kpg.generateKeyPair();
-        JWTClaimsSet claims = new JWTClaimsSet.Builder()
-                .subject("CHARACTER:EVE:" + characterId)
-                .claim("name", name)
-                .build();
-        SignedJWT jwt = new SignedJWT(new JWSHeader(JWSAlgorithm.RS256), claims);
-        jwt.sign(new RSASSASigner(kp.getPrivate()));
-        return jwt.serialize();
+    private EveAccount account(String refreshToken) {
+        EveAccount a = new EveAccount();
+        a.setUserId(USER_ID);
+        a.setCharacterId(CID);
+        a.setRefreshToken(refreshToken);
+        return a;
     }
 
-    @Test
-    @DisplayName("归属校验失败统一抛 ESI_AUTHORIZATION_FAILURE,不泄露账户存在性 oracle")
-    void getAccessToken_ownershipCheckFails_throwsEsiAuthorizationFailure() {
-        // EveAccountService.getAccountOne 找不到账户抛 EveHelperException(USER_ACCOUNT_NOT_EXIST)
-        when(eveAccountService.getAccountOne(USER_ID, CHARACTER_ID))
-                .thenThrow(new EveHelperException(
-                        xyz.foolcat.eve.evehelper.shared.result.ResultCode.USER_ACCOUNT_NOT_EXIST));
-
-        EsiException ex = assertThrows(EsiException.class,
-                () -> esiApiService.getAccessToken(CHARACTER_ID, USER_ID));
-
-        assertEquals(ResultCode.ESI_AUTHORIZATION_FAILURE, ex.getResultCode());
-        // 归属校验前置:缓存读取与 ESI 换 token 均不应触发
-        verify(cacheGateway, never()).get(anyString());
-        verify(authorizeOAuth, never()).updateAccessToken(any(), any());
+    /**
+     * 模拟缓存未命中 + 成功获取 per-character 锁。
+     * cacheGateway.get 被调用两次(锁前检查 + 持锁后 double-check),均返回 null。
+     */
+    private void stubCacheMissAndLockAcquired() {
+        when(cacheGateway.get(STATUS_KEY)).thenReturn(null);
+        when(cacheGateway.setIfAbsent(eq(LOCK_KEY), anyString(), anyLong(), eq(TimeUnit.SECONDS))).thenReturn(true);
     }
 
+    // ── T003: refreshToken 为空 -> NOT_AUTHORIZED ──
+
     @Test
-    @DisplayName("缓存命中直接返回 token 且不触发 ESI 换 token")
-    void getAccessToken_cacheHit_returnsCachedTokenAndSkipsRefresh() throws ParseException {
-        EveAccount account = new EveAccount();
-        account.setCharacterId(CHARACTER_ID);
-        when(eveAccountService.getAccountOne(USER_ID, CHARACTER_ID)).thenReturn(account);
-        String cachedToken = GlobalConstants.TOKEN_PERN + "cached-access";
-        when(cacheGateway.get(GlobalConstants.ESI_ACCESS_TOKEN_KEY + USER_ID + ":" + CHARACTER_ID))
-                .thenReturn(cachedToken);
+    @DisplayName("refreshToken 为空或 null -> NOT_AUTHORIZED,不触发 ESI/缓存/锁")
+    void blankRefreshToken_returnsNotAuthorized() {
+        assertEquals(EsiAuthStatus.NOT_AUTHORIZED, esiApiService.getAuthorizationStatus(account("")));
+        assertEquals(EsiAuthStatus.NOT_AUTHORIZED, esiApiService.getAuthorizationStatus(account(null)));
 
-        String token = esiApiService.getAccessToken(CHARACTER_ID, USER_ID);
+        verify(authorizeOAuth, never()).updateAccessToken(any(), anyString());
+        verify(cacheGateway, never()).setIfAbsent(anyString(), anyString(), anyLong(), eq(TimeUnit.SECONDS));
+    }
 
-        assertEquals(cachedToken, token);
-        verify(authorizeOAuth, never()).updateAccessToken(any(), any());
+    // ── T006: 缓存命中 -> 直接返回,不调 ESI ──
 
-        // 缓存键格式:esi_access_token:{userId}:{characterId}(用户隔离核心)
+    @Test
+    @DisplayName("状态缓存命中(AUTHORIZED) -> 直接返回,不调用 authorizeOAuth")
+    void cacheHit_returnsCachedStatus() {
+        EveAccount acc = account("rt");
+        when(cacheGateway.get(STATUS_KEY)).thenReturn("AUTHORIZED");
+
+        EsiAuthStatus status = esiApiService.getAuthorizationStatus(acc);
+
+        assertEquals(EsiAuthStatus.AUTHORIZED, status);
+        verify(authorizeOAuth, never()).updateAccessToken(any(), anyString());
+        verify(cacheGateway, never()).setIfAbsent(anyString(), anyString(), anyLong(), eq(TimeUnit.SECONDS));
+    }
+
+    // ── T004: 缓存未命中 + 刷新成功 -> AUTHORIZED ──
+
+    @Test
+    @DisplayName("缓存未命中 + 刷新成功 -> AUTHORIZED,用 ArgumentCaptor 验证缓存写入键/值")
+    void cacheMiss_refreshSuccess_returnsAuthorized() {
+        EveAccount acc = account("old-rt");
+        AuthTokenResponse token = new AuthTokenResponse();
+        token.setAccessToken("at");
+        token.setRefreshToken("new-rt");
+        stubCacheMissAndLockAcquired();
+        when(eveAccountService.insertOrUpdateSelective(any(EveAccount.class))).thenReturn(1);
+        when(authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, "old-rt")).thenReturn(Mono.just(token));
+
+        EsiAuthStatus status = esiApiService.getAuthorizationStatus(acc);
+
+        assertEquals(EsiAuthStatus.AUTHORIZED, status);
+
+        // 验证 refreshToken 回写(新 token 与旧 token 不同时触发 insertOrUpdateSelective)
+        ArgumentCaptor<EveAccount> accountCaptor = ArgumentCaptor.forClass(EveAccount.class);
+        verify(eveAccountService).insertOrUpdateSelective(accountCaptor.capture());
+        assertEquals(CID, accountCaptor.getValue().getCharacterId());
+        assertEquals("new-rt", accountCaptor.getValue().getRefreshToken());
+
+        // 用 ArgumentCaptor 验证缓存写入键/值(set 被调用两次:accessToken + status)
         ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
-        verify(cacheGateway).get(keyCaptor.capture());
-        assertEquals(GlobalConstants.ESI_ACCESS_TOKEN_KEY + USER_ID + ":" + CHARACTER_ID,
-                keyCaptor.getValue());
+        ArgumentCaptor<Object> valueCaptor = ArgumentCaptor.forClass(Object.class);
+        verify(cacheGateway, times(2)).set(keyCaptor.capture(), valueCaptor.capture(), anyLong(), eq(TimeUnit.SECONDS));
+        // 第一次:accessToken 缓存
+        assertEquals(ACCESS_TOKEN_KEY, keyCaptor.getAllValues().get(0));
+        assertEquals("Bearer at", valueCaptor.getAllValues().get(0));
+        // 第二次:状态缓存
+        assertEquals(STATUS_KEY, keyCaptor.getAllValues().get(1));
+        assertEquals("AUTHORIZED", valueCaptor.getAllValues().get(1));
+
+        // 锁释放在 finally 中执行
+        verify(cacheGateway).delete(LOCK_KEY);
     }
 
+    // ── T005: ESI_AUTHORIZATION_FAILURE(4xx) -> EXPIRED ──
+
     @Test
-    @DisplayName("缓存未命中换 token 成功,缓存键含 userId 并写入新 token")
-    void getAccessToken_cacheMiss_refreshesAndCachesToken() throws Exception {
-        EveAccount account = new EveAccount();
-        account.setCharacterId(CHARACTER_ID);
-        account.setRefreshToken("old-refresh");
-        when(eveAccountService.getAccountOne(USER_ID, CHARACTER_ID)).thenReturn(account);
-        when(cacheGateway.get(anyString())).thenReturn(null);
+    @DisplayName("缓存未命中 + EsiException(ESI_AUTHORIZATION_FAILURE) -> EXPIRED")
+    void cacheMiss_authFailure_returnsExpired() {
+        EveAccount acc = account("rt");
+        stubCacheMissAndLockAcquired();
+        when(authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, "rt"))
+                .thenReturn(Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE)));
 
-        String accessToken = buildSignedJwt(CHARACTER_ID, "TestPilot");
-        AuthTokenResponse authToken = new AuthTokenResponse();
-        authToken.setAccessToken(accessToken);
-        authToken.setRefreshToken("new-refresh");
-        when(authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, "old-refresh"))
-                .thenReturn(Mono.just(authToken));
+        EsiAuthStatus status = esiApiService.getAuthorizationStatus(acc);
 
-        // updateRefreshToken 依赖:角色公开信息 + 名称解析
-        CharacterPublicInfoResponse charInfo = new CharacterPublicInfoResponse();
-        charInfo.setCorporationId(CORP_ID);
-        charInfo.setAllianceId(ALLIANCE_ID);
-        when(characterApi.queryCharacter(eq(CHARACTER_ID), eq(EsiClientConfig.SERENITY)))
-                .thenReturn(Mono.just(charInfo));
-        Id2NameResponse corp = new Id2NameResponse();
-        corp.setId(CORP_ID);
-        corp.setName("TestCorp");
-        Id2NameResponse ally = new Id2NameResponse();
-        ally.setId(ALLIANCE_ID);
-        ally.setName("TestAlly");
-        when(universeApi.queryUniverseNames(anyList(), eq(EsiClientConfig.SERENITY)))
-                .thenReturn(Flux.just(corp, ally));
+        assertEquals(EsiAuthStatus.EXPIRED, status);
+        // 授权失败时不回写 token
+        verify(eveAccountService, never()).insertOrUpdateSelective(any(EveAccount.class));
+        verify(cacheGateway).set(eq(STATUS_KEY), eq("EXPIRED"), anyLong(), eq(TimeUnit.SECONDS));
+        verify(cacheGateway).delete(LOCK_KEY);
+    }
 
-        String token = esiApiService.getAccessToken(CHARACTER_ID, USER_ID);
+    // ── T011a: ESI_SERVER_FAILURE(5xx) -> UNKNOWN ──
 
-        assertEquals(GlobalConstants.TOKEN_PERN + accessToken, token);
+    @Test
+    @DisplayName("缓存未命中 + EsiException(ESI_SERVER_FAILURE) -> UNKNOWN")
+    void cacheMiss_serverFailure_returnsUnknown() {
+        EveAccount acc = account("rt");
+        stubCacheMissAndLockAcquired();
+        when(authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, "rt"))
+                .thenReturn(Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE)));
 
-        // 写缓存键格式:esi_access_token:{userId}:{characterId}
-        ArgumentCaptor<String> writeKeyCaptor = ArgumentCaptor.forClass(String.class);
-        verify(cacheGateway).set(writeKeyCaptor.capture(),
-                eq(GlobalConstants.TOKEN_PERN + accessToken),
-                anyLong(), eq(TimeUnit.SECONDS));
-        assertEquals(GlobalConstants.ESI_ACCESS_TOKEN_KEY + USER_ID + ":" + CHARACTER_ID,
-                writeKeyCaptor.getValue());
+        EsiAuthStatus status = esiApiService.getAuthorizationStatus(acc);
+
+        assertEquals(EsiAuthStatus.UNKNOWN, status);
+        verify(cacheGateway).set(eq(STATUS_KEY), eq("UNKNOWN"), anyLong(), eq(TimeUnit.SECONDS));
+        verify(cacheGateway).delete(LOCK_KEY);
+    }
+
+    // ── T011b: TimeoutException -> UNKNOWN ──
+
+    @Test
+    @DisplayName("缓存未命中 + TimeoutException -> UNKNOWN")
+    void cacheMiss_timeout_returnsUnknown() {
+        EveAccount acc = account("rt");
+        stubCacheMissAndLockAcquired();
+        when(authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, "rt"))
+                .thenReturn(Mono.error(new TimeoutException()));
+
+        EsiAuthStatus status = esiApiService.getAuthorizationStatus(acc);
+
+        assertEquals(EsiAuthStatus.UNKNOWN, status);
+        verify(cacheGateway).set(eq(STATUS_KEY), eq("UNKNOWN"), anyLong(), eq(TimeUnit.SECONDS));
+        verify(cacheGateway).delete(LOCK_KEY);
     }
 }

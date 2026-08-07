@@ -6,12 +6,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.domain.model.vo.TokenResult;
 import xyz.foolcat.eve.evehelper.domain.service.security.LoginRateLimiterService;
 import xyz.foolcat.eve.evehelper.domain.service.security.TokenService;
+import xyz.foolcat.eve.evehelper.infrastructure.config.security.SysUserDetails;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 
 import jakarta.servlet.ServletException;
@@ -19,6 +21,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 认证成功处理器
@@ -39,13 +43,24 @@ public class AuthenticationSuccessServletHandler implements AuthenticationSucces
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
-        SysUser sysUser = (SysUser) authentication.getPrincipal();
+        Object principal = authentication.getPrincipal();
+        if (!(principal instanceof SysUserDetails sysUserDetails)) {
+            log.warn("无法识别的认证主体类型: {}", principal == null ? "null" : principal.getClass().getName());
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            return;
+        }
+        SysUser sysUser = sysUserDetails.getSysUser();
+
+        // 从 Authentication 提取权限列表,写入 JWT authorities claim
+        List<String> authorities = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList());
 
         // 清除登录失败记录
         loginRateLimiterService.clearAttempts(sysUser.getUsername());
 
         // 生成Token对(领域读模型)
-        TokenResult tokenResult = tokenService.generateTokenPair(sysUser);
+        TokenResult tokenResult = tokenService.generateTokenPair(sysUser, authorities);
 
         log.info("用户登录成功: userId={}, username={}", sysUser.getId(), sysUser.getUsername());
 

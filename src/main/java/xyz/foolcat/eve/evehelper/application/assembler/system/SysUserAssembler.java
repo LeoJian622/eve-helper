@@ -35,7 +35,6 @@ public interface SysUserAssembler {
             @Mapping(target = "mobile",ignore = true),
             @Mapping(target = "status",ignore = true),
             @Mapping(target = "deleted",ignore = true),
-            @Mapping(target = "authorities",ignore = true),
             @Mapping(target = "lastLoginTime",ignore = true),
     })
     SysUser userDto2SysUser(UserDTO userDTO);

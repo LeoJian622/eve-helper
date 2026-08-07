@@ -12,9 +12,12 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.domain.model.vo.TokenResult;
 import xyz.foolcat.eve.evehelper.domain.service.security.TokenBlacklistService;
 import xyz.foolcat.eve.evehelper.domain.service.security.TokenService;
+import xyz.foolcat.eve.evehelper.domain.service.system.SysRoleService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.SecurityConstant;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -41,12 +44,15 @@ class AuthApplicationServiceUnitTest {
     @Mock
     SysUserService sysUserService;
 
+    @Mock
+    SysRoleService sysRoleService;
+
     private AuthApplicationService authApplicationService;
 
     @BeforeEach
     void setUp() {
         authApplicationService = new AuthApplicationService(
-                tokenBlacklistService, tokenService, sysUserService);
+                tokenBlacklistService, tokenService, sysUserService, sysRoleService);
     }
 
     @Test
@@ -115,8 +121,10 @@ class AuthApplicationServiceUnitTest {
         when(tokenService.getUserIdFromRefreshToken("123e4567-e89b-12d3-a456-426614174000")).thenReturn(1);
         SysUser user = new SysUser();
         when(sysUserService.loadUserById(1)).thenReturn(user);
+        List<String> authorities = List.of("ADMIN");
+        when(sysRoleService.queryRolesByUserId(1)).thenReturn(authorities);
         TokenResult tokenResult = new TokenResult("Bearer accessToken", "refreshToken", 3600L, "Bearer");
-        when(tokenService.refreshAccessTokenWithUser("123e4567-e89b-12d3-a456-426614174000", user)).thenReturn(tokenResult);
+        when(tokenService.refreshAccessTokenWithUser("123e4567-e89b-12d3-a456-426614174000", user, authorities)).thenReturn(tokenResult);
 
         TokenResult result = authApplicationService.refreshToken(request);
 

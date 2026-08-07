@@ -2,7 +2,7 @@ package xyz.foolcat.eve.evehelper.domain.util;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
+import xyz.foolcat.eve.evehelper.domain.port.security.AuthenticatedPrincipal;
 
 /**
  * 用户工具 - 从安全上下文获取当前用户ID
@@ -10,7 +10,6 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
  * @author Leojan
  * date 2023-07-30 11:21
  */
-
 public class UserUtil {
 
     /**
@@ -31,8 +30,10 @@ public class UserUtil {
             return UNAUTHENTICATED;
         }
         Object principal = authentication.getPrincipal();
-        if (principal instanceof SysUser user) {
-            return user.getId() == null ? UNAUTHENTICATED : user.getId();
+        // 认证适配器(SysUserDetails)实现 AuthenticatedPrincipal 端口
+        if (principal instanceof AuthenticatedPrincipal ap) {
+            Integer id = ap.getUserId();
+            return id == null ? UNAUTHENTICATED : id;
         }
         // JWT 认证时主体为 userId claim（Number），匿名访问时为字符串
         if (principal instanceof Number number) {
