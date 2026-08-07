@@ -3,25 +3,26 @@ package xyz.foolcat.eve.evehelper.infrastructure.util;
 
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONObject;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.domain.model.entity.eve.InvUniqueNames;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
+import xyz.foolcat.eve.evehelper.domain.model.vo.ExtractionVO;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.eve.InvuniquenamesService;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.service.system.StructureService;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.WebSocket;
-import xyz.foolcat.eve.evehelper.domain.model.vo.ExtractionVO;
-import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 
-import jakarta.validation.constraints.NotNull;
 import java.text.ParseException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -62,7 +63,7 @@ public class MiningTask {
     /**
      * 通知卫星矿可开采时间
      */
-//    @Scheduled(cron = "0 0 19 * * ? ")
+    @Scheduled(cron = "0 0 19 * * ? ")
     public void noticeExtraction() {
         log.info("noticeExtraction");
         // 定时任务无安全上下文，显式声明系统身份（authorize 为请求路径专用，会拒绝）
@@ -85,7 +86,7 @@ public class MiningTask {
     /**
      * 通知卫星矿可开采时间
      */
-//    @Scheduled(cron = "0 0 19 * * 1 ")
+    @Scheduled(cron = "0 0 19 * * 1 ")
     public void noticeExtraction7Day() {
         log.info("noticeExtraction");
         Integer characterId = 2112818290;
