@@ -39,15 +39,9 @@ build/
 rebel.xml
 
 ### Environment Variables ###
-.env
-.env.aliw
-.env.dev
-.env.prd
-*.env
+# .env* 覆盖所有 .env 开头的文件(含 .env.dev/.env.pro/.env.prd 等历史命名),!.env.example 保留模板
+.env*
 !.env.example
 
-application-ali.yml
-application-aliw.yml
-application-pro.yml
-application-dev.yml
-application-test.yml
+# 环境配置文件均不入库(application.yml 入库,application-{profile}.yml 不入库)
+application-*.yml

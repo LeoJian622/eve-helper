@@ -35,7 +35,7 @@ spring:
             merge-sql: true
             slow-sql-millis: 5000
       eve:
-        username: ${DB_SYSTEM_USERNAME}
+        username: ${DB_EVE_USERNAME}
         password: ${DB_EVE_PASSWORD}
         url: jdbc:mysql://${DB_HOST}:${DB_PORT}/eve?useUnicode=true&characterEncoding=utf8
         driverClassName: com.mysql.cj.jdbc.Driver
