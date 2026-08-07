@@ -22,7 +22,7 @@
 - **磁盘**: 20GB以上可用空间
 
 #### 软件要求
-- **JDK**: 11 或更高版本
+- **JDK**: 17
 - **MySQL**: 8.0+
 - **Redis**: 5.0+
 - **Nginx**: 1.18+ (可选,用于反向代理)
@@ -60,10 +60,10 @@ wget https://ci.example.com/artifacts/eve-helper-0.0.2-SNAPSHOT.jar
 ```bash
 # Ubuntu/Debian
 sudo apt update
-sudo apt install openjdk-11-jdk
+sudo apt install openjdk-17-jdk
 
 # CentOS/RHEL
-sudo yum install java-11-openjdk-devel
+sudo yum install java-17-openjdk-devel
 
 # 验证安装
 java -version
@@ -122,9 +122,9 @@ GRANT SELECT ON eve.* TO 'eve_app'@'localhost';
 FLUSH PRIVILEGES;
 EOF
 
-# 导入数据库结构
-mysql -u root -p eve_helper < db/schema.sql
-mysql -u root -p eve < db/eve_schema.sql
+# 表结构不随仓库分发,请从现有环境导出或依据 PO/Mapper XML 自行建表
+# mysql -u root -p eve_helper < schema.sql
+# mysql -u root -p eve < eve_schema.sql
 ```
 
 ### 4. 配置环境变量
@@ -200,7 +200,7 @@ ExecStart=/usr/bin/java \
     -Xmx2g \
     -XX:+UseG1GC \
     -XX:MaxGCPauseMillis=200 \
-    -Dspring.profiles.active=prod \
+    -Dspring.profiles.active=pro \
     -Dserver.port=9999 \
     -Dlogging.file.path=/opt/eve-helper/logs \
     -jar /opt/eve-helper/eve-helper-0.0.2-SNAPSHOT.jar
@@ -333,7 +333,7 @@ tail -f /opt/eve-helper/logs/spring.log
 
 ### 生产环境配置
 
-创建 `application-prod.yml`:
+创建 `application-prod.yml`(对应 `pro` profile):
 
 ```yaml
 server:
@@ -344,7 +344,7 @@ server:
 
 spring:
   profiles:
-    active: prod
+    active: pro
   datasource:
     druid:
       system:
@@ -463,8 +463,8 @@ sudo systemctl enable grafana-server
 - **错误率**: `rate(http_server_requests_seconds_count{status=~"5.."}[5m])`
 
 #### 数据库指标
-- **连接池使用率**: `hikaricp_connections_active / hikaricp_connections_max`
-- **慢查询**: 通过MySQL慢查询日志监控
+- **连接池**: 项目使用 **Druid**(非 HikariCP);活跃/最大连接经 Druid StatView 或 `/actuator/metrics/druid.*` 监控
+- **慢查询**: Druid `slow-sql-millis` 阈值(5000ms,见 `application.yml`)+ MySQL 慢查询日志
 
 #### Redis指标
 - **连接数**: `redis_connected_clients`
@@ -520,15 +520,15 @@ groups:
           summary: "错误率过高"
           description: "5xx错误率超过5%"
 
-      # 数据库连接池告警
+      # 数据库连接池告警 (Druid;指标名以实际暴露为准)
       - alert: DatabaseConnectionPoolExhausted
-        expr: (hikaricp_connections_active / hikaricp_connections_max) > 0.9
+        expr: (druid_connections_active / druid_connections_max) > 0.9
         for: 5m
         labels:
           severity: warning
         annotations:
           summary: "数据库连接池即将耗尽"
-          description: "连接池使用率超过90%"
+          description: "Druid 连接池使用率超过90%"
 ```
 
 ## 🔥 常见问题处理
@@ -620,9 +620,9 @@ sudo systemctl restart eve-helper
 # 1. 查看数据库连接数
 mysql -u root -p -e "SHOW PROCESSLIST;"
 
-# 2. 查看应用连接池状态
-curl http://localhost:9999/actuator/metrics/hikaricp.connections.active
-curl http://localhost:9999/actuator/metrics/hikaricp.connections.max
+# 2. 查看应用连接池状态 (Druid;指标名以实际暴露为准)
+curl http://localhost:9999/actuator/metrics/druid.connections.active
+curl http://localhost:9999/actuator/metrics/druid.connections.max
 
 # 3. 查看慢查询
 mysql -u root -p -e "SELECT * FROM information_schema.processlist WHERE time > 10;"
@@ -817,5 +817,5 @@ appendfsync everysec
 
 ---
 
-**最后更新**: 2026-02-01
+**最后更新**: 2026-08-07
 **维护者**: EVE Helper Ops Team

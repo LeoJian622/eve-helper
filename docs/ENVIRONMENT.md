@@ -13,19 +13,30 @@
 
 ### 1. 复制环境变量模板
 
+按 profile 命名 `.env.{profile}`(与 `application-{profile}.yml` 对应):
+
 ```bash
-cp .env.example .env
+cp .env.example .env.dev      # 开发环境 (dev)
+# cp .env.example .env.pro    # 生产环境 (pro)
+# cp .env.example .env.test   # 测试环境 (test)
 ```
+
+> **加载方式**: Spring Boot 不自动读取 `.env` 文件,需通过以下方式之一注入:
+> - **IntelliJ IDEA**: 安装 *EnvFile* 插件,在运行配置中勾选 `.env.dev`;
+> - **命令行**: 启动前 `export $(cat .env.dev | xargs)`(Linux/Mac);
+> - **systemd**: 用 `EnvironmentFile=/opt/eve-helper/config/.env.pro` 指定(见 [部署手册](./DEPLOYMENT.md))。
+>
+> 所有 `.env*` 文件均在 `.gitignore` 中忽略,**不要提交**。
 
 ### 2. 编辑 .env 文件
 
-使用文本编辑器打开 `.env` 文件,填入实际的配置值。
+使用文本编辑器打开 `.env.dev` 文件,填入实际的配置值。
 
 ### 3. 验证配置
 
 ```bash
 # 检查环境变量是否正确加载
-mvn spring-boot:run -Dspring.profiles.active=dev
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
 ## 📝 环境变量列表
@@ -108,6 +119,21 @@ mvn spring-boot:run -Dspring.profiles.active=dev
 
 ### JWT密钥库配置
 
+#### KEYSTORE_LOCATION
+- **描述**: JWT 签名密钥库文件路径(`eve-jwt.jks`)
+- **类型**: String
+- **默认值**: 无
+- **示例**: `classpath:eve-jwt.jks`、`/opt/eve-helper/config/eve-jwt.jks`
+- **必需**: 是
+- **用途**: 定位 RSA 密钥库文件
+
+#### KEYSTORE_ALIAS
+- **描述**: 密钥库中 JWT 签名密钥的别名
+- **类型**: String
+- **默认值**: 无
+- **示例**: `eve-jwt`
+- **必需**: 是
+
 #### KEYSTORE_PASSWORD
 - **描述**: Java KeyStore密钥库密码
 - **类型**: String
@@ -129,12 +155,21 @@ mvn spring-boot:run -Dspring.profiles.active=dev
 - **用途**: 用于保护JWT签名私钥
 - **安全提示**: 同 KEYSTORE_PASSWORD
 
+### OneBot 配置
+
+#### ONEBOT_WEBSOCKET_SECRET
+- **描述**: OneBot WebSocket 接入鉴权密钥
+- **类型**: String
+- **默认值**: 空(未设置则不校验)
+- **示例**: `your_websocket_secret`
+- **必需**: 否(生产环境建议设置)
+
 ## 📚 配置示例
 
 ### 开发环境配置
 
 ```bash
-# .env (开发环境)
+# .env.dev (开发环境)
 
 # 数据库配置 - 使用本地数据库
 DB_HOST=localhost
@@ -157,7 +192,7 @@ KEY_PASSWORD=dev_key_pass
 ### 测试环境配置
 
 ```bash
-# .env (测试环境)
+# .env.test (测试环境)
 
 # 数据库配置 - 使用测试数据库
 DB_HOST=test-db.internal
@@ -180,7 +215,7 @@ KEY_PASSWORD=${TEST_KEY_PASSWORD}
 ### 生产环境配置
 
 ```bash
-# .env (生产环境)
+# .env.pro (生产环境)
 # 注意: 生产环境应该使用密钥管理服务 (如 AWS Secrets Manager, HashiCorp Vault)
 
 # 数据库配置 - 使用生产数据库
@@ -320,5 +355,5 @@ keytool -genkeypair -alias eve-jwt -keyalg RSA -keysize 2048 \
 
 ---
 
-**最后更新**: 2026-02-01
+**最后更新**: 2026-08-07
 **维护者**: EVE Helper Team

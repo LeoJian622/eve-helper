@@ -17,13 +17,13 @@ EVE Online 玩家的市场与资产分析工具。读取角色/军团的订单�
 cp .env.example .env.dev
 
 # 2. 构建
-./mvnw clean package
+mvn clean package
 
 # 3. 运行（默认 dev profile）
-./mvnw spring-boot:run
+mvn spring-boot:run
 
 # 4. 运行测试
-./mvnw test
+mvn test
 ```
 
 启动后访问：
@@ -45,7 +45,9 @@ cp .env.example .env.dev
 | [开发指南](docs/DEVELOPMENT.md) | 项目结构、DDD 分层、代码规范、Maven 命令 |
 | [环境变量配置](docs/ENVIRONMENT.md) | 配置项说明 |
 | [部署运维手册](docs/DEPLOYMENT.md) | 部署与运维 |
+| [AI 开发工作流](docs/AI_WORKFLOW.md) | Spec-Kit + Superpowers + ECC 分级流程 |
 | [CLAUDE.md](CLAUDE.md) | AI 辅助开发的架构约束与流程速查 |
+| [AGENTS.md](AGENTS.md) | 跨 AI 工具入口指针 |
 
 ### 人物授权
 * esi-bookmarks.read_character_bookmarks.v1<br>

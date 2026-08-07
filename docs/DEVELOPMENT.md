@@ -15,7 +15,7 @@
 
 ### 前置要求
 
-- **JDK**: 11 或更高版本
+- **JDK**: 17
 - **Maven**: 3.6+
 - **MySQL**: 8.0+
 - **Redis**: 5.0+
@@ -48,11 +48,11 @@ mysql -u root -p << EOF
 CREATE DATABASE IF NOT EXISTS eve_helper CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS eve CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 EOF
-
-# 导入数据库结构 (如果有SQL文件)
-mysql -u root -p eve_helper < db/schema.sql
-mysql -u root -p eve < db/eve_schema.sql
 ```
+
+> 仓库不分发 schema SQL。请从现有环境导出表结构,或依据
+> `src/main/java/.../infrastructure/persistence/entity` 下的 PO 定义与
+> `src/main/resources/mapper` 下的 XML 自行建表。
 
 ### 4. 安装依赖
 
@@ -64,7 +64,7 @@ mvn clean install
 
 ```bash
 # 使用开发环境配置启动
-mvn spring-boot:run -Dspring.profiles.active=dev
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
 
 # 或者使用IDE运行 EveHelperApplication.java
 ```
@@ -113,8 +113,7 @@ eve-helper/
 │   │   │   └── shared/               # 共享层 - 通用组件
 │   │   └── resources/
 │   │       ├── application.yml       # 主配置文件 (仅此文件入库)
-│   │       ├── application-dev.yml   # 开发环境配置 (不入库)
-│   │       └── application-test.yml  # 测试环境配置 (不入库)
+│   │       └── application-{dev,test,ali,aliw,prod}.yml  # 环境配置 (均不入库)
 │   └── test/                         # 测试代码
 │       ├── java/                     # 单元测试和集成测试
 │       └── resources/                # 测试资源
@@ -163,21 +162,22 @@ git checkout -b feature/your-feature-name
 
 ### 2. 开发流程
 
-#### 步骤 1: 定义接口 (interfaces层)
+#### 步骤 1: 领域模型 (domain层)
 
 ```java
-@RestController
-@RequestMapping("/api/v1/market")
-public class MarketController {
+// domain/model/entity 或 domain/model/vo
+public class Order { /* 领域实体或读模型 */ }
+```
 
-    @GetMapping("/orders")
-    public ResponseEntity<List<OrderDTO>> getOrders() {
-        // TODO: 实现
-    }
+#### 步骤 2: 仓储接口 (domain层,签名只用领域类型)
+
+```java
+public interface OrderRepository {
+    List<Order> findAll();
 }
 ```
 
-#### 步骤 2: 创建应用服务 (application层)
+#### 步骤 3: 应用服务 (application层)
 
 ```java
 @Service
@@ -193,28 +193,13 @@ public class MarketApplicationService {
 }
 ```
 
-#### 步骤 3: 实现领域逻辑 (domain层)
-
-```java
-@Service
-public class MarketDomainService {
-
-    private final OrderRepository orderRepository;
-
-    public List<Order> findAllOrders() {
-        return orderRepository.findAll();
-    }
-}
-```
-
-#### 步骤 4: 实现基础设施 (infrastructure层)
+#### 步骤 4: 基础设施实现 (infrastructure层)
 
 ```java
 @Repository
 public class OrderRepositoryImpl implements OrderRepository {
 
-    @Autowired
-    private OrderMapper orderMapper;
+    private final OrderMapper orderMapper;
 
     @Override
     public List<Order> findAll() {
@@ -222,6 +207,24 @@ public class OrderRepositoryImpl implements OrderRepository {
     }
 }
 ```
+
+#### 步骤 5: 接口层 (interfaces层)
+
+```java
+@RestController
+@RequestMapping("/api/v1/market")
+public class MarketController {
+
+    private final MarketApplicationService marketApplicationService;
+
+    @GetMapping("/orders")
+    public Result<List<OrderDTO>> getOrders() {
+        return Result.success(marketApplicationService.getOrders());
+    }
+}
+```
+
+> 领域优先的完整流程与跨层类型规则见 [CLAUDE.md - 添加新功能](../CLAUDE.md)。
 
 ### 3. 编写测试
 
@@ -231,9 +234,6 @@ mvn test
 
 # 运行特定测试类
 mvn test -Dtest=MarketControllerTest
-
-# 运行测试并生成覆盖率报告
-mvn test jacoco:report
 ```
 
 ### 4. 代码审查
@@ -241,13 +241,11 @@ mvn test jacoco:report
 ```bash
 # 提交代码前检查
 mvn clean verify
-
-# 格式化代码
-mvn spotless:apply
-
-# 静态代码分析
-mvn spotbugs:check
 ```
+
+> 项目 `pom.xml` 未集成 spotless/spotbugs/jacoco 插件;代码质量由 ECC 评审门禁
+> (`ecc:java-reviewer` / `ecc:security-reviewer`)与测试要求保障,详见
+> [AI 开发工作流](./AI_WORKFLOW.md)。
 
 ### 5. 提交代码
 
@@ -288,7 +286,7 @@ git push origin feature/your-feature-name
 | 命令 | 描述 |
 |------|------|
 | `mvn spring-boot:run` | 启动应用 |
-| `mvn spring-boot:run -Dspring.profiles.active=dev` | 使用dev配置启动 |
+| `mvn spring-boot:run -Dspring-boot.run.profiles=dev` | 使用dev配置启动 |
 | `mvn spring-boot:run -Ddebug` | 调试模式启动 |
 
 ### 测试命令
@@ -312,9 +310,9 @@ git push origin feature/your-feature-name
 
 | 命令 | 描述 |
 |------|------|
-| `mvn spotless:check` | 检查代码格式 |
-| `mvn spotless:apply` | 自动格式化代码 |
-| `mvn spotbugs:check` | 静态代码分析 |
+| `mvn clean verify` | 编译 + 测试 + 质量检查 |
+
+> `pom.xml` 未集成 spotless/spotbugs/jacoco;质量门禁由 ECC 评审流程承担。
 
 ## 📝 代码规范
 
@@ -397,7 +395,14 @@ logging:
     root: INFO
     xyz.foolcat.eve.evehelper: DEBUG
     org.springframework.web: DEBUG
-    org.hibernate.SQL: DEBUG
+```
+
+打印 SQL 由 MyBatis Plus 配置控制(见 `application.yml`):
+
+```yaml
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 ```
 
 ### 4. 使用Actuator监控
@@ -470,5 +475,5 @@ lsof -i :9999                 # Linux/Mac
 
 ---
 
-**最后更新**: 2026-02-01
+**最后更新**: 2026-08-07
 **维护者**: EVE Helper Team

@@ -9,9 +9,9 @@ EVE Helper 项目文档中心。
 | 文档 | 描述 | 最后更新 |
 |------|------|----------|
 | [Readme.md](../Readme.md) | 项目概述、快速开始、ESI 授权 scope 清单 | 2026-08-06 |
-| [环境变量配置](./ENVIRONMENT.md) | 环境变量配置详细说明 | 2026-02-01 |
+| [环境变量配置](./ENVIRONMENT.md) | 环境变量配置详细说明 | 2026-08-07 |
 | [开发指南](./DEVELOPMENT.md) | 开发工作流程和规范(含测试编写与命令) | 2026-08-06 |
-| [部署运维手册](./DEPLOYMENT.md) | 部署流程和运维指南 | 2026-02-01 |
+| [部署运维手册](./DEPLOYMENT.md) | 部署流程和运维指南 | 2026-08-07 |
 
 ### 架构文档
 
@@ -19,9 +19,9 @@ EVE Helper 项目文档中心。
 |------|------|----------|
 | [应用层README](../src/main/java/xyz/foolcat/eve/evehelper/application/README.md) | 应用层架构说明 | 2025-01-29 |
 | [领域层README](../src/main/java/xyz/foolcat/eve/evehelper/domain/README.md) | 领域层架构说明(实体/读模型/仓储/端口) | 2026-08-06 |
-| [基础设施层README](../src/main/java/xyz/foolcat/eve/evehelper/infrastructure/README.md) | 基础设施层架构说明 | 2025-01-29 |
+| [基础设施层README](../src/main/java/xyz/foolcat/eve/evehelper/infrastructure/README.md) | 基础设施层架构说明 | 2026-08-07 |
 | [接口层README](../src/main/java/xyz/foolcat/eve/evehelper/interfaces/README.md) | 接口层架构说明(控制器/异常处理) | 2026-08-06 |
-| [共享层README](../src/main/java/xyz/foolcat/eve/evehelper/shared/README.md) | 共享层架构说明 | 2025-01-29 |
+| [共享层README](../src/main/java/xyz/foolcat/eve/evehelper/shared/README.md) | 共享层架构说明 | 2026-08-07 |
 
 ### 工具文档
 
@@ -152,7 +152,7 @@ EVE Helper 项目文档中心。
 
 ## 📊 文档统计
 
-- **docs/ 目录**: 5 个(INDEX、AI_WORKFLOW、DEVELOPMENT、DEPLOYMENT、ENVIRONMENT)
+- **docs/ 目录**: 5 个 Markdown(INDEX、AI_WORKFLOW、DEVELOPMENT、DEPLOYMENT、ENVIRONMENT)+ superpowers/(plans/specs)
 - **分层架构 README**: 5 个(application/domain/infrastructure/interfaces/shared)
 - **根目录**: Readme.md、CLAUDE.md、AGENTS.md
 - **最近更新**: 2026-08-06
@@ -175,7 +175,7 @@ EVE Helper 项目文档中心。
 
 ---
 
-**最后更新**: 2026-08-06
+**最后更新**: 2026-08-07
 **维护者**: EVE Helper Documentation Team
 
 **文档版本**: v1.0.2
