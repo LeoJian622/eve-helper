@@ -1,13 +1,23 @@
 package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.system;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
+import xyz.foolcat.eve.evehelper.domain.model.query.StructurePageCriteria;
+import xyz.foolcat.eve.evehelper.domain.model.vo.StructureDetailDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.StructureFuelDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.StructureListItemDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.StructureServiceDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.StructureSummaryDTO;
+import xyz.foolcat.eve.evehelper.domain.model.vo.StructureTimerDTO;
 import xyz.foolcat.eve.evehelper.domain.repository.system.StructureRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.StructurePoConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.StructurePO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.StructureMapper;
+import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 
 import java.util.List;
 
@@ -71,5 +81,52 @@ public class StructureRepositoryImpl implements StructureRepository {
     public int batchInsertOrUpdate(List<Structure> list) {
         return structureMapper.batchInsertOrUpdate(structurePoConverter.domain2Po(list));
     }
-    // TODO: 实现 BaseRepository<Structure, Long> 的方法
+
+    @Override
+    public PageResult<StructureListItemDTO> selectStructuresWithNames(StructurePageCriteria criteria) {
+        IPage<StructureListItemDTO> page = new Page<>(criteria.getCurrent(), criteria.getSize());
+        StructurePageCriteria.SortField sortField = criteria.getSortField();
+        page = structureMapper.selectStructuresWithNames(
+                page,
+                criteria.getCorporationId(),
+                criteria.getName(),
+                criteria.getState(),
+                criteria.isLowFuelOnly(),
+                sortField == null ? null : sortField.getColumn(),
+                criteria.isAscending());
+        return PageResult.<StructureListItemDTO>builder()
+                .records(page.getRecords())
+                .total(page.getTotal())
+                .current(page.getCurrent())
+                .size(page.getSize())
+                .pages(page.getPages())
+                .hasNext(page.getPages() - page.getCurrent() > 0)
+                .hasPrevious(page.getCurrent() > 1)
+                .build();
+    }
+
+    @Override
+    public StructureDetailDTO selectDetailById(Long structureId) {
+        return structureMapper.selectDetailById(structureId);
+    }
+
+    @Override
+    public List<StructureFuelDTO> selectFuelExpiresListWithNames(String corporationId, Integer hour) {
+        return structureMapper.selectFuelExpiresListWithNames(corporationId, hour);
+    }
+
+    @Override
+    public StructureServiceDTO selectServicesById(Long structureId) {
+        return structureMapper.selectServicesById(structureId);
+    }
+
+    @Override
+    public List<StructureSummaryDTO> selectSummary(String corporationId) {
+        return structureMapper.selectSummary(corporationId);
+    }
+
+    @Override
+    public List<StructureTimerDTO> selectTimers(String corporationId) {
+        return structureMapper.selectTimers(corporationId);
+    }
 }
