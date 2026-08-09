@@ -244,8 +244,8 @@ mvn clean verify
 ```
 
 > 项目 `pom.xml` 未集成 spotless/spotbugs/jacoco 插件;代码质量由 ECC 评审门禁
-> (`ecc:java-reviewer` / `ecc:security-reviewer`)与测试要求保障,详见
-> [AI 开发工作流](./AI_WORKFLOW.md)。
+> (`ecc:java-reviewer` / `ecc:security-reviewer`)与测试要求保障,评审记录归档至
+> `docs/reviews/`,详见 [工程开发规则](./AI_WORKFLOW.md)。
 
 ### 5. 提交代码
 

@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**开始任何开发任务前先阅读**: @docs/AI_WORKFLOW.md (分级开发流程与工具链规则)
+**开始任何开发任务前先阅读**: @docs/AI_WORKFLOW.md (工程开发规则:统一 Spec-First 流程与工具链协议)
 
 ## 项目概述
 
@@ -79,16 +79,21 @@ mvn package -DskipTests
 - **缓存**: Redis 主缓存,默认 TTL 3000 秒
 - **异步**: @EnableScheduling + AsyncConfiguration,市场订单线程池
 
-## 分级开发流程(速查)
-所有开发必须遵循分级开发流程。
+## 标准开发流程(速查)
+所有变更统一走同一流程,**不按规模分级**,无"小改动可跳过"的例外。
 
-| 级别 | 适用场景 | 流程 |
-|------|----------|------|
-| **L1** | 中大型功能、跨层变更 | Spec-Kit: `/speckit-specify` → `/speckit-clarify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` |
-| **L2** | 小改动(单文件/局部逻辑) | Superpowers TDD: RED → GREEN → IMPROVE |
-| **L3** | 紧急修复 | `superpowers:systematic-debugging` → 最小修复 → 回归测试 |
+| 阶段 | 动作 |
+|------|------|
+| ① 澄清 | 需求模糊时 `/speckit-clarify` 或 `superpowers:brainstorming`,列 ≥3 个边界条件并经用户确认 |
+| ② 规格 | `/speckit-specify` → `specs/<NNN>-<slug>/spec.md` |
+| ③ 计划 | `/speckit-plan` + `ecc:security-reviewer` 设计评审 |
+| ④ 拆解 | `/speckit-tasks`,原子任务 < 2 小时,每项明确 AC |
+| ⑤ 实现 | `/speckit-implement`,逐任务 TDD: RED → GREEN → REFACTOR |
+| ⑥ 验证 | `superpowers:verification-before-completion` |
+| ⑦ 评审 | `ecc:java-reviewer` 必审;涉安全追加 `ecc:security-reviewer`;记录归档 `docs/reviews/` |
+| ⑧ 提交 | `mvn test` 全绿后按 Conventional Commits 提交,关联 feature 编号 |
 
-所有级别实现后强制评审: `ecc:java-reviewer` 必审;涉及认证/用户输入/外部 API/加密时追加 `ecc:security-reviewer`;构建失败用 `ecc:java-build-resolver`。详见 @docs/AI_WORKFLOW.md。
+**紧急修复无豁免**: 必须先写完整 spec 才能动手,一律走完整 ①~⑧,**禁止事后补文档**。差异仅在①用 `superpowers:systematic-debugging` 定位根因并作为 spec 输入。诊断阶段(读代码/加日志/跑测试/调试器复现)允许,但④完成前禁改业务代码。线上故障止血(回滚/降级/下线入口)属运维动作,不等于修复,代码修复仍走完整流程。构建失败用 `ecc:java-build-resolver`。详见 @docs/AI_WORKFLOW.md。
 
 ## 安全红线
 
@@ -100,15 +105,15 @@ mvn package -DskipTests
 ## 重要文件
 
 - `pom.xml`: Maven 依赖与构建配置(冻结技术栈的版本以此为准)
-- `src/main/resources/application.yml`: profile 选择 (active: dev)
-- `src/main/resources/application-{dev,test,ali,aliw,pro}.yml`: 环境配置(**均不入库**,已在 `.gitignore` 忽略;测试用 `@ActiveProfiles("test")` 走 `application-test.yml`)
+- `src/main/resources/application.yml`: 公共配置(数据源/Druid 等,入库;未声明 `spring.profiles.active`,profile 由启动参数指定)
+- `src/main/resources/application-{ali,aliw,prod,test}.yml`: 环境配置(**均不入库**,已在 `.gitignore` 忽略;测试用 `@ActiveProfiles("test")` 走 `application-test.yml`)
 - `.env.example`: 环境变量模板
-- `.specify/memory/constitution.md`: 项目宪法(含技术栈冻结条款)
-- `docs/INDEX.md`: 文档索引;`docs/AI_WORKFLOW.md`: AI 开发工作流
+- `.specify/memory/constitution.md`: 项目宪法(含技术栈冻结条款与统一 Spec-First 流程)
+- `docs/INDEX.md`: 文档索引;`docs/AI_WORKFLOW.md`: 工程开发规则;`docs/reviews/`: ECC 评审记录
 
 ## 注意事项
 
 - MapStruct 组装器必须在编译期由注解处理器生成
 - Redis 必须运行;两个 MySQL 数据库(eve 和 eve_helper)必须可访问
 - 中文注释和文档是有意的(目标受众)
-- 业务代码变更须走分级开发流程;技术栈本身不可变更
+- 业务代码变更须走统一 Spec-First 流程(不分级、无例外);技术栈本身不可变更

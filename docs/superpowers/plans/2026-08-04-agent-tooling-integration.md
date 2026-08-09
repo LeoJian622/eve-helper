@@ -53,7 +53,7 @@ Expected: 第一条输出 `OK: .env 不在 git 视野中`;第二条输出 `.giti
 - [ ] **Step 4: 确认用户 WIP 未受影响**
 
 Run: `git diff --cached --name-only`
-Expected: 只剩 `src/main/resources/application-ali.yml` `application-aliw.yml` `application-pro.yml`(无 .env)。本任务**不提交**——文件从未入库,移出索引即完成。
+Expected: 只剩 `src/main/resources/application-ali.yml` `application-aliw.yml` `application-prod.yml`(无 .env)。本任务**不提交**——文件从未入库,移出索引即完成。
 
 ---
 

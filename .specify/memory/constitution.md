@@ -1,14 +1,15 @@
-<!-- Sync Impact Report: Constitution v1.4.0
-- Version change: 1.3.0 -> 1.4.0 (MINOR: Added tiered development process as constitutional principle)
-- Modified principles: None
-- Added principles: V. Tiered Development Process (NON-NEGOTIABLE)
-- Removed sections: None
+<!-- Sync Impact Report: Constitution v1.5.0
+- Version change: 1.4.0 -> 1.5.0 (MINOR: Replaced tiered process with uniform Spec-First process)
+- Modified principles: V. Tiered Development Process -> V. Uniform Spec-First Process (NON-NEGOTIABLE)
+- Added principles: None
+- Removed sections: L1/L2/L3 tier classification (routing changes by scope is no longer permitted); urgent-fix retroactive-documentation allowance (spec must precede implementation without exception)
 - Templates requiring updates:
   ✅ .specify/templates/plan-template.md (checked, no principle-name references)
   ✅ .specify/templates/spec-template.md (checked, no principle-name references)
   ✅ .specify/templates/tasks-template.md (checked, no principle-name references)
   ✅ .specify/templates/constitution-template.md (generic Spec-Kit examples only, unchanged)
-- Follow-up TODOs: None (new principle formalizes existing AI_WORKFLOW.md tiered process; no code migration required)
+- Documents synced: docs/AI_WORKFLOW.md (rewritten as 工程开发规则), CLAUDE.md, docs/INDEX.md, Readme.md, docs/DEVELOPMENT.md
+- Follow-up TODOs: specs/005-structure-query-api/plan.md retains a historical "分级流程(第五条)" gate reference; left as-is as an archived record
 
 -->
 
@@ -37,10 +38,12 @@ The core technology stack is frozen: Java 17, Spring Boot 3.5.x, MyBatis Plus, D
 Upgrading, replacing, or introducing core dependencies requires the constitutional amendment process (version bump + Sync Impact Report + migration plan)
 Experimental libraries may only be used in prototypes and must not enter the main codebase without amendment
 
-### V. Tiered Development Process (NON-NEGOTIABLE)
-All development operations must follow the tiered process classified by change scope: L1 (medium/large features, cross-layer changes) via Spec-Kit specification-driven flow (specify -> clarify -> plan -> tasks -> implement); L2 (small changes, single-file/localized logic) via Superpowers TDD (RED -> GREEN -> IMPROVE); L3 (urgent fixes) via systematic debugging with minimal fix and regression tests
-Mandatory post-implementation review gate for all tiers: ecc:java-reviewer required on Java changes; ecc:security-reviewer added for auth/user-input/external-API/crypto changes; ecc:java-build-resolver on build failure
-L1 changes must not bypass spec/plan/tasks to write code directly; implementation claims require test/build evidence (superpowers:verification-before-completion)
+### V. Uniform Spec-First Process (NON-NEGOTIABLE)
+All development operations follow one uniform process regardless of change scope — routing work into lighter tiers by size is not permitted: clarify (when ambiguous) -> `/speckit-specify` -> `/speckit-plan` (with `ecc:security-reviewer` design review) -> `/speckit-tasks` (atomic tasks < 2h, each with explicit AC) -> `/speckit-implement` under strict TDD (RED -> GREEN -> REFACTOR)
+Mandatory post-implementation review gate: `ecc:java-reviewer` required on Java changes; `ecc:security-reviewer` added for auth/user-input/external-API/crypto changes; `ecc:java-build-resolver` on build failure; review records archived under `docs/reviews/`
+No change may bypass spec/plan/tasks to write code directly; implementation claims require test/build evidence (`superpowers:verification-before-completion`)
+Urgent fixes receive NO exemption and must complete the full spec/plan/tasks sequence before any implementation code is touched: `superpowers:systematic-debugging` establishes root cause as input to `/speckit-specify` (recording reproduction steps, root cause, blast radius, and fix boundary), then plan/tasks (including a failing regression test task), then TDD implementation. Retroactive documentation is prohibited
+Diagnosis is not implementation: reading code, adding logs, running tests, and debugger-based reproduction are permitted during root-cause analysis; modifying business code before tasks are approved is not. Production incidents separate mitigation from repair — rollback/degrade/rate-limit/disable-entrypoint are operational actions, while the code fix still follows the full process
 
 ## API Performance Requirements
 All REST API endpoints must:
@@ -65,5 +68,5 @@ Constitution supersedes all other practices; Amendments require documentation, a
 All changes must include performance impact assessment and test coverage analysis
 
 ## Memory Files
-CONSTITUTION_VERSION: 1.4.0 | RATIFICATION_DATE: 2026-05-12 | LAST_AMENDED_DATE: 2026-08-07
-<!-- Version: 1.3.0 | Ratified: 2026-05-12 | Last Amended: 2026-08-04 -->
+CONSTITUTION_VERSION: 1.5.0 | RATIFICATION_DATE: 2026-05-12 | LAST_AMENDED_DATE: 2026-08-09
+<!-- Version: 1.5.0 | Ratified: 2026-05-12 | Last Amended: 2026-08-09 -->
