@@ -412,7 +412,7 @@
   <select id="selectFuelExpiresList" parameterType="integer" resultMap="BaseResultMap">
     select <include refid="Base_Column_List"/>
     from structure
-    where (fuel_expires <![CDATA[<]]> date_add(now()+8,interval #{hour}-8 hour) or fuel_expires is null)
+    where (fuel_expires <![CDATA[<]]> date_add(now() + interval 8 hour,interval #{hour}-8 hour) or fuel_expires is null)
     and corporation_id = #{corporationId}
     </select>
 
@@ -422,4 +422,128 @@
         #{item}
       </foreach>
     </delete>
+
+  <select id="selectStructuresWithNames" resultType="xyz.foolcat.eve.evehelper.domain.model.vo.StructureListItemDTO">
+    select
+      s.structure_id as structureId,
+      s.`name` as name,
+      s.type_id as typeId,
+      it.name as typeName,
+      s.system_id as systemId,
+      un.name as systemName,
+      s.`state` as state,
+      s.fuel_expires as fuelExpires,
+      s.corporation_id as corporationId
+    from `structure` s
+      left join inv_types it on s.type_id = it.type_id
+      left join universe_name un on s.system_id = un.id and un.category = 'solar_system'
+    <where>
+      s.corporation_id = #{corporationId}
+      <if test="name != null">
+        and s.`name` like concat('%', #{name}, '%')
+      </if>
+      <if test="state != null">
+        and s.`state` = #{state}
+      </if>
+      <if test="lowFuelOnly">
+        and (s.fuel_expires &lt; date_add(now() + interval 8 hour,interval 72-8 hour) or s.fuel_expires is null)
+      </if>
+    </where>
+    <choose>
+      <when test="sortColumn != null">
+        order by ${sortColumn}
+        <choose>
+          <when test="ascending">asc</when>
+          <otherwise>desc</otherwise>
+        </choose>
+      </when>
+      <otherwise>
+        order by s.structure_id desc
+      </otherwise>
+    </choose>
+  </select>
+
+  <select id="selectDetailById" resultType="xyz.foolcat.eve.evehelper.domain.model.vo.StructureDetailDTO">
+    select
+      s.structure_id as structureId,
+      s.corporation_id as corporationId,
+      s.fuel_expires as fuelExpires,
+      s.`name` as name,
+      s.next_reinforce_apply as nextReinforceApply,
+      s.next_reinforce_hour as nextReinforceHour,
+      s.profile_id as profileId,
+      s.reinforce_hour as reinforceHour,
+      s.`state` as state,
+      s.state_timer_end as stateTimerEnd,
+      s.state_timer_start as stateTimerStart,
+      s.system_id as systemId,
+      s.type_id as typeId,
+      s.unanchors_at as unanchorsAt,
+      s.services as servicesJson,
+      it.name as typeName,
+      un.name as systemName
+    from `structure` s
+      left join inv_types it on s.type_id = it.type_id
+      left join universe_name un on s.system_id = un.id and un.category = 'solar_system'
+    where s.structure_id = #{structureId}
+  </select>
+
+  <select id="selectFuelExpiresListWithNames" resultType="xyz.foolcat.eve.evehelper.domain.model.vo.StructureFuelDTO">
+    select
+      s.structure_id as structureId,
+      s.`name` as name,
+      it.name as typeName,
+      un.name as systemName,
+      s.`state` as state,
+      s.fuel_expires as fuelExpires,
+      TIMESTAMPDIFF(HOUR, now() + interval 8 hour, s.fuel_expires) as remainingHours
+    from `structure` s
+      left join inv_types it on s.type_id = it.type_id
+      left join universe_name un on s.system_id = un.id and un.category = 'solar_system'
+    where s.corporation_id = #{corporationId}
+      and (s.fuel_expires &lt; date_add(now() + interval 8 hour,interval #{hour}-8 hour) or s.fuel_expires is null)
+    order by s.fuel_expires asc
+  </select>
+
+  <select id="selectServicesById" resultType="xyz.foolcat.eve.evehelper.domain.model.vo.StructureServiceDTO">
+    select
+      s.structure_id as structureId,
+      s.corporation_id as corporationId,
+      s.`name` as name,
+      s.services as servicesJson
+    from `structure` s
+    where s.structure_id = #{structureId}
+  </select>
+
+  <select id="selectSummary" resultType="xyz.foolcat.eve.evehelper.domain.model.vo.StructureSummaryDTO">
+    select
+      s.`state` as state,
+      count(*) as stateCount,
+      sum(IF(s.fuel_expires is null, 1, 0)) as fuelExpiredCount,
+      sum(IF(s.fuel_expires &lt; date_add(now() + interval 8 hour,interval 72-8 hour), 1, 0)) as lowFuelCount
+    from `structure` s
+    where s.corporation_id = #{corporationId}
+    group by s.`state`
+  </select>
+
+  <select id="selectTimers" resultType="xyz.foolcat.eve.evehelper.domain.model.vo.StructureTimerDTO">
+    select
+      s.structure_id as structureId,
+      s.`name` as name,
+      it.name as typeName,
+      un.name as systemName,
+      s.`state` as state,
+      s.reinforce_hour as reinforceHour,
+      s.next_reinforce_hour as nextReinforceHour,
+      s.next_reinforce_apply as nextReinforceApply,
+      s.state_timer_start as stateTimerStart,
+      s.state_timer_end as stateTimerEnd,
+      s.unanchors_at as unanchorsAt
+    from `structure` s
+      left join inv_types it on s.type_id = it.type_id
+      left join universe_name un on s.system_id = un.id and un.category = 'solar_system'
+    where s.corporation_id = #{corporationId}
+      and (s.`state` like '%vulnerable%' or (s.unanchors_at is not null and s.unanchors_at &lt; date_add(now() + interval 8 hour,interval 168 hour)))
+    order by s.state_timer_end asc, s.unanchors_at asc
+  </select>
 </mapper>

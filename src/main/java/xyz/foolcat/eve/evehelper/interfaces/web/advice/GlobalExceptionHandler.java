@@ -20,8 +20,10 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
+import xyz.foolcat.eve.evehelper.shared.result.IResultCode;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.rmi.ServerException;
 import java.util.regex.Matcher;
@@ -163,16 +165,35 @@ public class GlobalExceptionHandler {
 
     /**
      * 业务异常
+     * 按 ResultCode 区分 HTTP 状态码:RESOURCE_NOT_FOUND->404,ACCESS_UNAUTHORIZED->403,其余->400(M3)
      */
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(EveHelperException.class)
-    public <T> Result<T> handleEveHelperException(EveHelperException e) {
+    public <T> Result<T> handleEveHelperException(EveHelperException e, HttpServletResponse response) {
         log.warn("业务异常: code={}, msg={}",
                 e.getResultCode() == null ? null : e.getResultCode().getCode(), e.getMessage());
-        if (e.getResultCode() != null) {
-            return Result.result(e.getResultCode().getCode(), e.getMessage(), null);
+        IResultCode resultCode = e.getResultCode();
+        response.setStatus(resolveHttpStatus(resultCode).value());
+        if (resultCode != null) {
+            return Result.result(resultCode.getCode(), e.getMessage(), null);
         }
         return Result.failed(e.getMessage());
+    }
+
+    /**
+     * 根据业务结果码解析 HTTP 状态码(M3)
+     */
+    private HttpStatus resolveHttpStatus(IResultCode resultCode) {
+        if (resultCode == null) {
+            return HttpStatus.BAD_REQUEST;
+        }
+        String code = resultCode.getCode();
+        if (ResultCode.RESOURCE_NOT_FOUND.getCode().equals(code)) {
+            return HttpStatus.NOT_FOUND;
+        }
+        if (ResultCode.ACCESS_UNAUTHORIZED.getCode().equals(code)) {
+            return HttpStatus.FORBIDDEN;
+        }
+        return HttpStatus.BAD_REQUEST;
     }
 
     /**

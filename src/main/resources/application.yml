@@ -78,9 +78,11 @@ spring:
   #  ai:
   #    dashscope:
   #      api-key: ${AI_DASHSCOPE_API_KEY}
-  data.redis.host: ${REDIS_HOST}
-  data.redis.password: ${REDIS_PASSWORD}
-  data.redis.port: 6379
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      password: ${REDIS_PASSWORD}
+      port: 6379
 # 日志配置
 logging:
   level:
