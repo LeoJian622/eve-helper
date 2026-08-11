@@ -9,6 +9,7 @@
 - [监控告警](#监控告警)
 - [常见问题处理](#常见问题处理)
 - [回滚流程](#回滚流程)
+- [JWT 签名密钥轮换(007)](#jwt-签名密钥轮换007)
 - [性能优化](#性能优化)
 
 ## 🚀 部署流程
@@ -155,7 +156,10 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_PASSWORD=your_redis_password
 
-# JWT密钥库配置
+# JWT密钥库配置(007:生产密钥必须文件系统外置,详见「JWT 签名密钥轮换」章节)
+# location 必须是绝对路径;classpath/裸文件名会被 SecurityBaselineValidator 拒绝启动
+KEYSTORE_LOCATION=/etc/eve-helper/eve-jwt.jks
+KEYSTORE_ALIAS=eve-jwt
 KEYSTORE_PASSWORD=your_keystore_password
 KEY_PASSWORD=your_key_password
 ```
@@ -168,11 +172,15 @@ KEY_PASSWORD=your_key_password
 # 复制JAR文件
 sudo cp eve-helper-0.0.2-SNAPSHOT.jar /opt/eve-helper/
 
-# 复制密钥库文件
-sudo cp eve-jwt.jks /opt/eve-helper/config/
+# 部署密钥库文件(007:统一放 /etc/eve-helper/,不放应用目录;详见「JWT 签名密钥轮换」章节)
+sudo mkdir -p /etc/eve-helper
+sudo cp eve-jwt.jks /etc/eve-helper/eve-jwt.jks
 
-# 设置权限
+# 设置权限(SC-009:目录 700 / 文件 600 / 属主为服务账号)
 sudo chown -R eve-app:eve-app /opt/eve-helper
+sudo chown -R eve-app:eve-app /etc/eve-helper
+sudo chmod 700 /etc/eve-helper
+sudo chmod 600 /etc/eve-helper/eve-jwt.jks
 sudo chmod 600 /opt/eve-helper/config/.env
 ```
 
@@ -803,6 +811,216 @@ appendfsync everysec
 - 异步处理耗时操作
 - 使用CDN加速静态资源
 
+## 🔑 JWT 签名密钥轮换(007)
+
+> **适用事件**:`src/main/resources/eve-jwt.jks`(旧生产 RSA 签名密钥)自提交 `5d139d8「增加token认证」` 起长期处于版本控制中,须视为已泄露。
+> 本章节既是该事件的执行清单,也是今后例行轮换的模板。**全文严禁出现真实口令** —— 所有命令中的口令均为占位符。
+
+### 事件声明(SC-007 / FR-013)
+
+- **旧签名密钥已泄露**:旧私钥(`eve-jwt.jks`,别名 `eve-jwt`)长期存在于 git 历史,且当时生产 profile 配置伴随明文弱 keystore 口令,**必须视为已被攻击者获取**。
+- **旧密钥不得再用于任何环境**(包括测试环境);其签发的任何 token 均不可信。
+- 不改写 git 历史(FR-014:禁止强推共享分支)——轮换后旧私钥不再验证任何 token,历史中的副本失去价值。
+- 轮换日期:`____`(执行人填写,必填)
+
+### 轮换前公告(Q5,必须提前发布)
+
+本次轮换会清空全部 refresh token,**所有用户将被登出**,必须提前公告。模板:
+
+```text
+【维护公告】EVE Helper 计划于 <日期> <时间段> 进行安全升级(签名密钥轮换)。
+期间服务将重启,可能出现短暂不可用(约 <时长>);
+升级完成后所有登录状态将被重置,请在升级后重新登录。
+给您带来不便,敬请谅解。
+```
+
+公告发布记录:时间 `____` / 渠道 `____`
+
+### 轮换步骤
+
+> 建议低峰期执行(FR-011)。执行人为人类用户(口令由用户单独生成与保管,FR-002:不经 AI、不入文档、不入库)。
+
+#### 步骤 1:新密钥对(生成 / 核验)
+
+```bash
+# 生成新 RSA 密钥对(若新密钥已生成,跳过本步,直接做步骤 3 指纹核对)
+keytool -genkeypair \
+  -alias eve-jwt \
+  -keyalg RSA -keysize 2048 \
+  -validity 3650 \
+  -keystore eve-helper.jks \
+  -storepass '<STORE_PASS>' \
+  -keypass '<KEY_PASS>' \
+  -dname "CN=eve-helper, OU=Ops, O=EveHelper, C=CN"
+```
+
+- 密钥长度必须 ≥ 2048 位:`KeyStoreKeyFactory` 启动时硬校验,弱密钥直接拒绝启动。
+- `<STORE_PASS>` / `<KEY_PASS>` 由执行人自行生成,仅记录在秘密管理渠道(不得出现在本文档、仓库或 AI 对话中)。
+- keystore 文件**严禁进入 git**:直接在目标服务器生成,或离线传输。
+
+#### 步骤 2:部署到服务器固定路径(SC-009)
+
+```bash
+sudo mkdir -p /etc/eve-helper
+sudo cp <新keystore路径> /etc/eve-helper/eve-jwt.jks
+sudo chown -R eve-app:eve-app /etc/eve-helper
+sudo chmod 700 /etc/eve-helper
+sudo chmod 600 /etc/eve-helper/eve-jwt.jks
+
+# 留证(SC-009):以下命令输出粘贴到「轮换记录」
+stat /etc/eve-helper /etc/eve-helper/eve-jwt.jks
+```
+
+#### 步骤 3:指纹核对(L-5)
+
+```bash
+keytool -list -v -keystore /etc/eve-helper/eve-jwt.jks -storepass '<STORE_PASS>'
+```
+
+- [ ] 新生产密钥指纹 **≠** `test-only.jks` 指纹 `FD:9F:19:27:61:...:CA:0F:B4` —— 防止把入库的测试 keystore 误部署为生产密钥
+- [ ] 新密钥指纹(SHA-256)已记录:`____`
+
+#### 步骤 4:配置切换
+
+1. 部署环境变量文件(参考 `.env.example`)添加:
+   ```bash
+   KEYSTORE_LOCATION=/etc/eve-helper/eve-jwt.jks
+   KEYSTORE_ALIAS=eve-jwt
+   KEYSTORE_PASSWORD=<经秘密管理渠道配置>
+   KEY_PASSWORD=<经秘密管理渠道配置>
+   ```
+2. 生产 profile(如 `application-aliw.yml`)的 `security.keystore.location` 改为 `/etc/eve-helper/eve-jwt.jks`:
+   - ⚠️ **必须是文件系统绝对路径**:`classpath:` 前缀或裸文件名在生产 profile 下会被 `SecurityBaselineValidator` 拒绝启动(fail-closed,SC-005),防止静默回退到旧 keystore。
+   - ⚠️ profile 若自定义 `eve.helper.whiteUrlList`,必须包含 `POST:/auth/tokens`(List 属性整体覆盖 application.yml,漏掉则 refresh 端点加白静默失效,SC-016)。
+
+#### 步骤 5:重启(FR-022,禁止滚动重启)
+
+- **单实例**:`sudo systemctl restart eve-helper`
+- **多实例**:必须**停机窗口**或**全部实例同时重启**,**禁止滚动重启** —— 滚动期间新旧密钥并存会造成随机认证失败;且 `TokenService` 在生成新 token 前先删除旧 refresh token,客户端重试循环会消耗掉 refresh token。
+- 重启后验证:
+  - `curl http://localhost:9999/actuator/health` 正常
+  - 启动日志无 keystore 加载失败(口令/别名/路径错误会直接拒绝启动,不会带病运行)
+  - 构建产物检查(SC-003):`mvn clean package` 后 `unzip -l target/*.jar | grep '\.jks'` 仅含 `test-only.jks`(入库测试密钥,设计内),不含生产 keystore
+
+#### 步骤 6:轮换验证(SC-014 / SC-006)
+
+**SC-014 是唯一能证明「密钥对确实换掉」的验证**(仅验证「已存在的旧 token 失效」在别名/口令变更但密钥未变时会误判通过):
+
+1. 用旧私钥**现场签发一个全新的(未过期)token**,调用任一受保护 API → 断言返回 **401**。
+2. 断言新公钥 modulus 与旧公钥 modulus **不同**(`keytool -list -v` 输出比对)。
+3. **SC-006**:用旧 refresh token `POST /auth/tokens` → 返回 HTTP 400 与明确业务错误(「Refresh Token无效或已过期」),而非异常逃逸或 403。
+
+#### 步骤 7:清空 Redis `refresh_token:*`(SC-008)
+
+```bash
+# ① 必填:记录清空前数量
+redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a '<REDIS_PASSWORD>' \
+  --scan --pattern 'refresh_token:*' | wc -l
+# 清空前数量: ____
+
+# ② 清空(分批 DEL)
+redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a '<REDIS_PASSWORD>' \
+  --scan --pattern 'refresh_token:*' \
+  | xargs -r -n 200 redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a '<REDIS_PASSWORD>' DEL
+
+# ③ 必填:验证清空后数量为 0
+redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a '<REDIS_PASSWORD>' \
+  --scan --pattern 'refresh_token:*' | wc -l
+# 清空后数量: ____ (必须为 0)
+```
+
+- 键模式来自 `TokenService`(`refresh_token:{jti}` → userId);清空后全体用户 refresh 失败、被迫重新登录(Q1 决策选项 B)。
+- ESI accessToken 缓存(约 19 分钟 TTL)自然过期即可,无需手动清理。
+
+#### 步骤 8:六表审计(FR-021 / SC-013)
+
+**为什么是六张表**:RBAC 的 url→role 映射来自 `sys_permission` / `sys_role_permission` / `sys_role` 三表 JOIN;伪造 ROOT token 提权**不必碰 `sys_permission`** —— 只在 `sys_role_permission` 插一行即可。
+
+**能力边界(执行前必读)**:表审计只能发现**新增/篡改**痕迹;对**读取型外泄**(`sys_user` 的 BCrypt 口令哈希、`eve_account.refresh_token` 明文存储的 ESI 长期凭证)**完全失明,亦无补偿控制**。若怀疑 ESI 凭证已被读走,唯一处置是让受影响角色重新走 ESI 授权。
+
+时间锚点:提交 `5d139d8`(「增加token认证」)是最早可能入侵时间,重点看其后创建/变更的行。
+
+**1. `sys_user`** —— 全表比对预期账号清单
+```sql
+SELECT id, username, nickname, `status`, deleted, gmt_create, gmt_modified
+FROM eve_helper.sys_user ORDER BY id;
+```
+判断方法:是否存在预期清单之外的账号(重点 `5d139d8` 之后创建);`status` / `deleted` 有无异常值。
+结论(执行人填):____
+
+**2. `sys_user_role`** —— 是否有非预期 ROOT/管理员绑定
+```sql
+SELECT ur.id, ur.user_id, u.username, ur.role_id, r.`name` AS role_name
+FROM eve_helper.sys_user_role ur
+  LEFT JOIN eve_helper.sys_user u ON ur.user_id = u.id
+  LEFT JOIN eve_helper.sys_role r ON ur.role_id = r.id
+ORDER BY ur.id;
+```
+判断方法:预期清单外的用户是否绑定了特权角色。
+结论(执行人填):____
+
+**3. `sys_permission`** —— 权限定义有无新增/篡改
+```sql
+SELECT id, `name`, url_perm, btn_perm, gmt_create, gmt_modified
+FROM eve_helper.sys_permission ORDER BY id;
+```
+判断方法:有无新增/变更的 `url_perm`(格式 `METHOD:PATH`)。
+结论(执行人填):____
+
+**4. `sys_role_permission`** —— 提权的**最易被漏掉路径**
+```sql
+SELECT rp.id, rp.role_id, r.`name` AS role_name, rp.permission_id, p.url_perm
+FROM eve_helper.sys_role_permission rp
+  LEFT JOIN eve_helper.sys_role r ON rp.role_id = r.id
+  LEFT JOIN eve_helper.sys_permission p ON rp.permission_id = p.id
+ORDER BY rp.id;
+```
+判断方法:普通角色是否新增了不该有的权限关联。
+结论(执行人填):____
+
+**5. `sys_role`** —— 有无新增角色或篡改
+```sql
+SELECT id, `name`, code, `status`, gmt_create, gmt_modified
+FROM eve_helper.sys_role ORDER BY id;
+```
+判断方法:有无未知角色,`code` / `status` 有无异常变更。
+结论(执行人填):____
+
+**6. `eve_account`** —— 有无非预期角色绑定
+```sql
+SELECT character_id, character_name, user_id, `type`, gmt_create, gmt_modified
+FROM eve_helper.eve_account ORDER BY character_id;
+```
+判断方法:有无预期清单外的游戏角色 / 用户绑定。⚠️ `refresh_token` 列刻意不在查询列中 —— 其是否被读走审计不可见(见能力边界)。
+结论(执行人填):____
+
+**升级路径**:任何一张表发现非预期账号/角色/权限映射 → **立即暂停轮换收尾,升级为入侵响应**:强制全体改密 + 吊销全部会话 + ESI 重新授权。
+
+#### 步骤 9:记录归档
+
+审计总结论**只能表述为**(SC-013 强制措辞):
+
+> 已审计 6 表,未发现**新增/篡改**痕迹;读取型外泄(口令哈希、ESI 凭证)无法检测。
+
+**严禁**表述为「确认未被入侵」—— 审计对读取型外泄失明,该表述会构成虚假的安全结论。
+
+归档位置:下方「轮换记录」+ `docs/reviews/`。
+
+### 轮换记录(每次执行填写)
+
+| 项 | 记录 |
+|----|------|
+| 轮换日期 / 执行人 | ____ |
+| 公告发布时间 / 渠道 | ____ |
+| 新密钥 SHA-256 指纹 | ____ |
+| 指纹 ≠ test-only.jks(`FD:9F:19:27:61:...:CA:0F:B4`)核对 | ☐ |
+| SC-009 stat 留证(目录 700 / 文件 600 / 属主服务账号) | ____ |
+| SC-014 旧密钥新签 token 被拒验证 | ☐ |
+| SC-006 旧 refresh token 明确业务错误验证 | ☐ |
+| `refresh_token:*` 清空前数量 | ____ |
+| `refresh_token:*` 清空后数量(= 0) | ____ |
+| 六表审计总结论(强制措辞) | ____ |
+
 ## 📚 相关文档
 
 - [环境变量配置](./ENVIRONMENT.md)
@@ -817,5 +1035,5 @@ appendfsync everysec
 
 ---
 
-**最后更新**: 2026-08-07
+**最后更新**: 2026-08-12(新增 007 JWT 签名密钥轮换章节)
 **维护者**: EVE Helper Ops Team

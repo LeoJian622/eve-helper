@@ -157,8 +157,8 @@ description: "Task list for 007-jwt-key-rotation"
 
 - [ ] T028 [US3] **FR-012(有门禁)**:`git rm src/main/resources/eve-jwt.jks`。⚠️ 前置条件(先验证再执行):①`application-aliw.yml`(不入库,用户提供证据)的 `security.keystore.location` 已改为文件系统绝对路径;②新生产密钥已按 `docs/DEPLOYMENT.md` 部署到 `/etc/eve-helper/`(权限 600/目录 700,SC-009 留证)。前置不满足则**停止并报告**,不得执行
   - AC: 前置证据齐备;`git rm` 后 T027 转 GREEN(jar 仅含 test-only.jks)
-- [ ] T029 [US3] `docs/DEPLOYMENT.md` 轮换章节:轮换步骤(keytool 命令用占位符口令)+ 六表审计清单(SQL + 判断方法,结论留空由用户填)+ 公告模板(Q5)+ `refresh_token:*` 清空前后计数记录项(SC-008)+ **新生产密钥指纹 ≠ test-only.jks 指纹 `FD:9F:19:27:61:...:CA:0F:B4` 核对项**(L-5)+ 「旧密钥已泄露」声明(SC-007);全文不得含真实口令
-  - AC: 对照 SC-007/008/013 逐项可勾选;无口令明文
+- [x] T029 [US3] `docs/DEPLOYMENT.md` 轮换章节:轮换步骤(keytool 命令用占位符口令)+ 六表审计清单(SQL + 判断方法,结论留空由用户填)+ 公告模板(Q5)+ `refresh_token:*` 清空前后计数记录项(SC-008)+ **新生产密钥指纹 ≠ test-only.jks 指纹 `FD:9F:19:27:61:...:CA:0F:B4` 核对项**(L-5)+ 「旧密钥已泄露」声明(SC-007);全文不得含真实口令
+  - AC: 对照 SC-007/008/013 逐项可勾选;无口令明文 ✅(2026-08-12:新增「🔑 JWT 签名密钥轮换(007)」章节 = 事件声明(SC-007/FR-013)+ 公告模板(Q5)+ 9 步轮换流程(生成→部署 SC-009→指纹核对 L-5→配置切换 fail-closed 警示→FR-022 禁滚动重启→SC-014/SC-006 验证→`refresh_token:{jti}` 清空前后计数 SC-008→六表审计 SQL+判断方法+能力边界声明→SC-013 强制措辞归档)+ 轮换记录表;同步修正既有部署章节(.env 加 KEYSTORE_LOCATION/ALIAS、keystore 部署改 /etc/eve-helper/ 权限 700/600);grep 自查全文无真实口令,仅 `<STORE_PASS>` 类占位符;六表列名逐一对照 PO 实证(sys_user/sys_user_role/sys_permission/sys_role_permission/sys_role/eve_account + BaseEntity gmt_create/gmt_modified),Redis 键模式对照 TokenService:44)
 - [ ] T030 [US3] `specs/006-character-access-token-api/spec.md` 的 L-10 条目:标注「已由 007 实现(SecurityBaselineValidator)」
   - AC: 006 spec 无悬空待办
 
@@ -168,8 +168,8 @@ description: "Task list for 007-jwt-key-rotation"
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T031 [P] 全量回归:`./mvnw clean test`,与序 0 基线(509/F4/E219)做用例级 diff;`target/classes/` 确认无 `jwt.jks` 类残留文件
-  - AC: 无新增失败用例名
+- [x] T031 [P] 全量回归:`./mvnw clean test`,与序 0 基线(509/F4/E219)做用例级 diff;`target/classes/` 确认无 `jwt.jks` 类残留文件
+  - AC: 无新增失败用例名 ✅(2026-08-12,US2 后全量 **553/F4/E216/S2**:总数 = T019 535 + 18(US2 新测试)算术吻合;Failures 仍为基线 3 类 4 例;Errors 216 = 204 EveHelperException + 9 FileNotFound + 2 EsiException + 1 BadSqlGrammar(surefire 目录未 clean,2 个 InvalidCookieException 为已删除诊断测试的残留报告文件,非本轮产物);context 加载失败 0;target/classes 仅 eve-jwt.jks(待 T028)与 test-only.jks(设计内)两个已知资源,无意外残留)
 - [ ] T032 [P] 变异测试五项(plan §6):删 `ResponseUtils` 新 case → 401 断言失败;删 filter 白名单放行分支 → T009 失败;删 filter `return` → 有测试捕获;fail-closed 改 fail-open → T021 失败;L2 改硬拒(503)→ T010 失败
   - AC: 五项变异全部被既有测试捕获,记录结果
 - [ ] T033 人工核验清单(用户执行,留证):SC-011(生产 profile 口令均为环境变量)+ SC-016(生产 profile whiteUrlList 含 `POST:/auth/tokens` 或未定义)+ SC-006 在**生产 profile 实际配置**下验收 + SC-009(stat 权限)
