@@ -45,3 +45,16 @@ rebel.xml
 
 # 环境配置文件均不入库(application.yml 入库,application-{profile}.yml 不入库)
 application-*.yml
+# 但 .yml.example 模板需入库(为部署者提供含安全基线的正确起点)
+!application-*.yml.example
+
+### Keystores / 私钥 ###
+# JWT 签名 keystore 与任何私钥材料永不入库(CLAUDE.md 安全红线)
+# 注意:eve-jwt.jks 在本规则加入前已被提交(自 5d139d8),仍处于跟踪状态 ——
+# 已跟踪文件不受 .gitignore 约束。该私钥应视为已泄露,处置需轮换密钥而非仅删文件。
+*.jks
+*.p12
+*.pfx
+*.jceks
+*.key
+*.pem
