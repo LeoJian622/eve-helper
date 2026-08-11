@@ -4,9 +4,9 @@
 **规格**: [spec.md](./spec.md)(已按阶段③评审修订)
 **评审记录**: [设计评审 BLOCK](../../docs/reviews/2026-08-11-007-jwt-key-rotation-design-review.md)
 **创建日期**: 2026-08-11(v2,基于选项 B 重写)
-**状态**: 计划草案 v2,待重新评审
+**状态**: **BLOCK(第二轮)** — v2 经复审仍被驳回,3 项 CRITICAL(其中 2 项为 v2 修订**新引入**)。上轮 9 项清单仅 3 项真正闭合。本文件已按复审更新 §2(序 0)、§3.2(CRITICAL-1)、§3.3(限流方案撤回),但**仍需 v3 重写**:白名单共享组件设计、限流按 userId 方案、序 0 后重测基线
 
-> **v1 已废弃**。原计划基于「用户无感」方案,其关键决策论证与测试策略均被评审推翻。本版按选项 B(清空 refresh token + 四表审计,暂不强制改密)重写。
+> **v1 已废弃**。原计划基于「用户无感」方案,其关键决策论证与测试策略均被评审推翻。本版按选项 B(清空 refresh token + 六表审计,暂不强制改密)重写。
 
 ---
 
@@ -26,7 +26,7 @@
 
 ### 做(文档/清单,非代码)
 
-- `docs/DEPLOYMENT.md` 的轮换步骤、四表审计清单、公告模板(FR-013、FR-021、Q5)
+- `docs/DEPLOYMENT.md` 的轮换步骤、六表审计清单、公告模板(FR-013、FR-021、Q5)
 
 ### 不做(运维动作,由用户执行)
 
@@ -35,24 +35,47 @@
 | 生成新密钥对与新口令 | FR-002:口令不经 AI |
 | 部署 keystore 到 `/etc/eve-helper/` 并设权限 | 需服务器访问 |
 | 清空 `refresh_token:*` | 生产 Redis 操作 |
-| **执行四表审计** | 需业务判断「哪些账号是预期的」—— AI 无此基线 |
+| **执行六表审计** | 需业务判断「哪些账号是预期的」—— AI 无此基线 |
 | 重启实例、发布公告 | 运维动作 |
 | **验证 SC-001/SC-006/SC-014** | 需新口令,故必须人工(M3) |
 
 ---
 
-## 2. 实现顺序的强制约束
+## 2. 实现顺序的强制约束(**已按第二轮评审更正**)
 
-**FR-016(401 链路)必须先做。** 理由:
+### ⚠️ 序 0 必须先做:恢复测试上下文可加载
 
-```
-未修:  旧 token → InvalidCookieException 逃逸 → 容器错误页
-                 ↑ 实测确认(JwtFilterDiagnosticTest)
-       后果:所有涉及「旧 token 被拒」的验收场景都无法观测,
-             SC-002/SC-010 无从验证,US1/US3 的场景 1 写不出断言
-```
+**当前工作区状态(2026-08-11 20:06 之后,实测)**:
 
-诊断测试 `JwtFilterDiagnosticTest` 已在仓库中,当前 3 用例里 2 个以 ERROR 结束 —— 这就是**天然的 RED 状态**。序 1 完成后把它改写为断言式回归测试。
+| 事实 | 证据 |
+|------|------|
+| 根目录新增 `eve-helper.jks`(2722 字节) | 用户于 20:06 生成,**不在任何 classpath 根上** |
+| `application-test.yml:159` 指向 `eve-helper.jks`,别名 `eve-helper` | 已改(非 plan v2 文件清单里写的 `test-only-jwt.jks`) |
+| `src/test/resources/` **不存在** | `ls` 确认 |
+| `KeyPairConfig.java:44` 用 `ClassPathResource` 解析 | → `FileNotFoundException: class path resource [eve-helper.jks] cannot be opened` |
+| **全部 59 个 `@SpringBootTest` 无法加载 ApplicationContext** | 实跑 `JwtFilterDiagnosticTest`:`Tests run: 3, Errors: 3`,全部因 keyPair bean 创建失败 |
+| `eve-helper.jks` 未出现在 `git status` | **被 `.gitignore:55` 的 `*.jks` 静默吞掉** —— 评审 HIGH-3 预言的问题已实际发生 |
+
+**两处 plan v2 的陈述由此失效**:
+
+1. ~~「诊断测试 2 个用例以 ERROR 结束 = 天然 RED 状态」~~ —— **错误**。当前 3 个用例**全部** ERROR,且原因是上下文起不来,**与 C2/C3 无关**。修完 FR-016 后它们依然全红,GREEN 判据失效
+2. ~~「基线 502 tests / Failures 4 / Errors 216」~~ —— **失效**。该数字测于 keystore 变更之前
+
+> 早前(keystore 变更前)的 C2/C3 实测结论仍然有效 —— 那次运行成功返回了 `401 AUT00201` 与异常逃逸。但**现在无法复现**,须在序 0 后重测。
+
+**序 0 的内容**:
+- 决定测试 keystore 的归属:放 `src/test/resources/`(需 `git add -f` 或 `.gitignore` 反向规则),或改 test profile 用绝对路径
+- 别名与生产**显著区分**(现 `eve-helper` vs 生产 `eve-jwt` 仅一词之差,不满足 M3)
+- 恢复 59 个 `@SpringBootTest` 可加载
+- **重新测定回归基线并记录**(不再用固定 Errors 阈值,改为同环境逐用例 diff)
+
+### 序 1:抽出白名单共享匹配组件(CRITICAL-1 的前提)
+
+见 3.2 —— FR-016 与 FR-020 在当前设计下**互相拆台**,必须先解决。
+
+### 序 2:FR-016(401 链路)
+
+原 plan v2 的序 1。理由仍成立(未修时无法观测「旧 token 被拒」),但**它不是最先** —— 序 0、序 1 是其前提。
 
 ---
 
@@ -65,9 +88,46 @@
 | **白名单加 `POST:/auth/tokens` 是窄授权** | 已核实 `RbacAuthorizationManager:67-73` 用 `restfulPath.equals(white)` **精确字符串匹配**,非 Ant 通配。故加这一条不会误开 `/auth/**` 下其他路径 |
 | **限流须新建按 IP 的实现,不能直接复用 `LoginRateLimiterService`** | 已核实其 API 全部按 username 计数(`recordFailedAttempt(String username)` 等 5 个方法)。refresh 请求**没有 username**。方案:抽出按 key 计数的通用逻辑,或新建 `IpRateLimiterService` 复用同一 Redis 计数模式。⚠️ **但"按 IP"本身在当前架构下不成立 —— 见 3.1** |
 
-### 3.1 ⚠️ 已查明:全仓无真实 IP 处理,按 IP 限流在反代后不成立
+### 3.2 🔴 CRITICAL-1:FR-016 与 FR-020 在原设计下互相拆台
 
-实测结果:
+**这是第二轮评审最重要的发现,我完全没想到。**
+
+过滤器执行顺序决定了两处改造会互相抵消:
+
+```
+带旧 access token 的 refresh 请求
+  ↓
+JwtAuthorizationTokenFilter        ← 位于 UsernamePasswordAuthenticationFilter 之前(SecurityConfig:67)
+  ↓ 验签失败
+  [FR-016] writeErrorInfo(401) + return     ← 请求在此终止
+  ✗ 永远到不了 AuthorizationFilter(链末端)
+  ✗ 白名单根本没被读到 —— RbacAuthorizationManager 才是白名单判定处
+  ✗ 永远到不了 AuthController.refreshToken
+```
+
+**后果**:
+- US1 验收场景 2「用旧 refresh token 调 `POST /auth/tokens` **必须到达 controller**」→ 两项都修完后**仍然失败**
+- SC-006 → 失败
+- 客户端的 `401 → refresh → 401 → refresh` **死循环依然存在** —— 只是从「异常逃逸」变成了「干净的 401 死循环」
+
+**比未修更隐蔽**:HTTP 语义看起来正确了,链路依旧是断的。
+
+**修法**:白名单判定须成为过滤器**可见**的单一事实来源:
+
+| 方案 | 说明 |
+|------|------|
+| **A(推荐)** 抽出 `WhiteUrlMatcher` | 封装 `method + ":" + uri` 精确匹配,同时被 `RbacAuthorizationManager` 与 JWT filter 消费。filter 在白名单路径上**不拒绝**(仅不写入 `SecurityContext`) |
+| B | 覆写 `OncePerRequestFilter.shouldNotFilter`,对白名单路径跳过整个 filter |
+
+**须补的 AC**:「带旧 access token 请求白名单端点 → 到达 controller」。
+
+> 附带:现方案唯一能侥幸跑通的前提是「客户端 refresh 时会摘掉 Authorization 头」—— 该假设从未写进 spec,也不该依赖。服务端必须自己兜住。
+
+### 3.3 🔴 CRITICAL-2:我的限流「纠偏」被否决,须重做
+
+**事实前提成立,但我推出的方案是错的,且比原问题更危险。** 评审逐层驳回:
+
+实测结果(事实部分,评审确认成立):
 
 | 检查项 | 结果 |
 |--------|------|
@@ -79,20 +139,33 @@
 - 阈值设低 → **误伤全体用户**(一个人触发即全员被限)
 - 阈值设高 → **限流形同虚设**(单个攻击者远达不到阈值)
 
-**这不是实现细节,而是 FR-020 的可行性前提。** 三条出路:
+**这不是实现细节,而是 FR-020 的可行性前提。** 但我据此提出的方案被评审逐层驳回:
 
-| 方案 | 说明 | 前置条件 |
-|------|------|---------|
-| **A** 配 `server.forward-headers-strategy: framework` + 取 `X-Forwarded-For` | Spring Boot 内建支持,改动小 | **必须确认反代已正确设置该头,且外部无法伪造** —— 若可伪造则限流可被绕过(攻击者每次换一个假 IP) |
-| **B** 按 refresh token 值限流 | 无需 IP。同一个 refresh token 反复调用即限流 | 防不住「攻击者每次换一个随机 UUID 探测」—— 但这类探测本就受 UUID 空间保护,且每次仅一次 Redis 查询 |
-| **C** 全局限流(不分主体) | 保护端点总吞吐,防放大攻击 | 会在轮换瞬间的合法 refresh 尖峰中误伤 |
+| 我提的方案 | 评审判定 |
+|------|---------|
+| ~~**B** 按 refresh token 值限流~~ | **❌ 无效且危险**。①攻击者每次换随机 UUID → 每次都是全新计数 key → 计数恒为 1,**限流永不触发**;它声称防的「同一 token 重放」本已被 `TokenService:181` 的先撤销后换发挡住。②**更严重**:该端点加白后未认证可达,每个不同 token 值都在 Redis 种一个新 key → **无认证的 Redis 键空间放大 DoS**。Redis 是本项目硬依赖(RBAC 规则/refresh token/黑名单全在里面),这比原问题严重得多。③限流 key 含 refresh token 明文,会使机密出现在键空间(`SCAN`/`MONITOR`/slowlog 可见) |
+| ~~**C** 全局限流~~ | **❌ 自伤开关**。轮换瞬间全体客户端同时 refresh,全局桶意味着**攻击者只要打满阈值就能让所有合法用户无法恢复会话** —— 恰在人人都必须重新认证的窗口。阈值高则形同虚设(与我拒绝方案 A 的理由同构),低则误伤全员。**B+C 组合比不做限流更糟** |
+| **A** 配 `forward-headers-strategy` + 受信代理 | 评审指出我**高估了成本**:这是一处配置项,伪造问题正由受信代理列表解决,不是「独立架构问题」 |
 
-**推荐 B + C 组合**:按 refresh token 限流(防重放)+ 全局速率上限(防放大),**都不依赖 IP**,规避 3.1 的整个问题。若日后需要按 IP,再单独处理反代头(那是独立的架构问题,涉及全部端点而非仅此一个)。
+**评审给出的方案(应采纳)**:
 
-> 规格 FR-020 写的是「按 IP 限流」,**须据此修订为不依赖 IP 的方案**。这是本计划相对规格的一处主动纠偏,须在评审中确认。
+1. **按 userId 限流,且只计失败**:先 UUID 格式校验(`AuthApplicationService:110` 已有)→ 一次 Redis GET 解出 userId → 以 userId 为桶。**键空间被真实用户数有界约束**,无 B 的膨胀问题;只计失败则合法尖峰不受影响
+2. **全局仅告警/降级,不做硬拒**,避免单点可用性总闸
+3. 若确需按 IP,重新评估方案 A
+
+**另须避免**:不要把 `LoginRateLimiterService` 当范本 —— 它按 username 计数、5 次锁 30 分钟(`LoginRateLimiterService:25-26`),意味着任何人可用 5 次错误口令**定向锁死任意已知用户 30 分钟**(既有的账户锁定 DoS,超出 007 范围但不可复制)。
+
+> **结论:FR-020 的限流条款须重写,现方案不得进入实现。这是我的判断错误,评审驳回成立。**
+
+---
+
+## 3.4 其余关键决策(承 3.1)
+
+| 决策 | 理由 |
+|------|------|
 | **启动基线校验用 fail-closed 正向白名单** | 评审 H4(b):生产判定靠启动参数,误启为 test profile 即完整回退到明文弱口令 + classpath keystore。故判定改为「**仅当 profile 明确属于 `{test}` 才允许 classpath**;未知/缺失 profile 一律按生产处理」 |
 | **不实现双密钥并行** | 与选项 B 的全体登出目标冲突,且会延长泄露私钥有效期(详见 spec 第 4 节,论证已按评审重写) |
-| **保留 `classpath:` 分支** | 58 个 `@SpringBootTest` 全部加载 `KeyPairConfig`;测试需要可移植路径。由上述 fail-closed 判定在生产侧堵住 |
+| **保留 `classpath:` 分支** | 59 个 `@SpringBootTest` 全部加载 `KeyPairConfig`;测试需要可移植路径。由上述 fail-closed 判定在生产侧堵住 |
 
 ---
 
@@ -125,9 +198,9 @@
 | `application-prod.yml.example` | 补 `security.keystore` 段 |
 | `application-test.yml`(不入库) | 口令改 `${...}`;location 改 `classpath:test-only-jwt.jks`;alias 改 `test-only` |
 | `application-aliw.yml`(不入库) | 口令改 `${...}`;**location 改文件系统绝对路径**(评审 H4a:我原 FR-018 遗漏了 location) |
-| `AuthenticationFailureServletHandler.java:69-70` | 清理 `InvalidCookieException` 死分支(评审 L2) |
+| `AuthenticationFailureServletHandler.java:68-69` | 清理 `InvalidCookieException` 死分支(评审 L2) |
 | `src/main/resources/eve-jwt.jks` | **`git rm`**(FR-012) |
-| `docs/DEPLOYMENT.md` | 轮换章节 + 四表审计清单 + 公告模板 |
+| `docs/DEPLOYMENT.md` | 轮换章节 + 六表审计清单 + 公告模板 |
 | `specs/006-.../spec.md` L-10 | 标注「已由 007 实现」 |
 
 ---
@@ -210,7 +283,7 @@ case TOKEN_ACCESS_EXPIRED:          // ← 新增,现落 default → 400
 | refresh 端点加白后被滥用 | FR-020 的限流是交付前提而非可选;白名单精确匹配不扩散 |
 | ~~按 IP 限流取到反代 IP~~ **已规避** | 已查明全仓无真实 IP 处理且未配 `forward-headers-strategy`(见 3.1)。改用「按 refresh token + 全局速率」方案,不依赖 IP,该风险不存在 |
 | 58 个 `@SpringBootTest` 集体失败 | 序 3/4 前先备好 `test-only-jwt.jks`,分两次提交 |
-| 四表审计无基线可比 | **AI 无法判断「哪些账号是预期的」**。`DEPLOYMENT.md` 须给出审计**方法**(SQL + 判断依据),结论由用户填写 |
+| 六表审计无基线可比 | **AI 无法判断「哪些账号是预期的」**。`DEPLOYMENT.md` 须给出审计**方法**(SQL + 判断依据),结论由用户填写 |
 | 多实例滚动重启 | FR-022:禁止滚动;须先确认拓扑 |
 
 ---
@@ -231,7 +304,7 @@ case TOKEN_ACCESS_EXPIRED:          // ← 新增,现落 default → 400
 
 按第 1 节的 7 个序号拆,每序一个提交。序 1、2 建议各自独立提交并跑全量回归 —— 它们改动认证主链路。
 
-**交付边界**:代码 + 测试 + 文档就绪即为本 feature 完成。生产轮换与四表审计由用户执行,其结果回填 `DEPLOYMENT.md`。
+**交付边界**:代码 + 测试 + 文档就绪即为本 feature 完成。生产轮换与六表审计由用户执行,其结果回填 `DEPLOYMENT.md`。
 
 ---
 

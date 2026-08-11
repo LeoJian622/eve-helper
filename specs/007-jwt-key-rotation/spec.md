@@ -59,7 +59,12 @@
 |--------|--------|
 | 「私钥已泄露但口令未泄露,攻击者无法使用」 | **口令强度不足以抵抗离线暴破。** JKS 私钥条目用 PBE 保护,对 6 字符字典词形态口令,单机破解在**秒级到分钟级** |
 | 「轮换优先级:高但不紧急」 | **紧急。** 拿到 git 中的 `eve-jwt.jks` 即可在极短时间内取出私钥,进而伪造任意用户(含 ROOT)的 access token |
-| 「只有 test 环境用弱口令」 | `application-aliw.yml` 是生产 profile,同样明文同样弱口令 |
+| 「只有 test 环境用弱口令」 | `application-aliw.yml` 是**生产 profile**,同样明文、同样 6 字符弱口令 |
+
+> **2026-08-11 20:06 后的现状更正**(第二轮评审指出我的描述已过期):用户已把 `application-test.yml` 的口令改为 **20 字符随机串**,且**与 aliw 不同**。但:
+> - `application-aliw.yml`(**生产**)**仍是 6 字符明文** → 紧急性判断不变
+> - 两者**都仍是明文写死**,故 FR-018 对两者均适用
+> - test 的新 keystore(`eve-helper.jks`)当前**不在 classpath 上**,导致 59 个 `@SpringBootTest` 全部无法加载 —— 见 [第二轮评审 CRITICAL-3](../../docs/reviews/2026-08-11-007-jwt-key-rotation-design-review-round2.md)
 
 **这不改变方案设计,但改变时间表**:轮换应尽快执行,而非排入常规迭代。
 
@@ -119,21 +124,39 @@
 | 审计 `sys_user` / `sys_user_role` / `sys_permission` / `eve_account` | ✅ | 伪造 ROOT token 可造成的持久化影响**不受密钥轮换约束**,必须人工核查 |
 | 强制全体改密 | ❌ **暂不做** | 见下方残余风险 |
 
-**明确接受的残余风险(用户已知悉并接受)**:
+**明确接受的残余风险(用户已知悉;第二轮评审后补全 —— 原表述不完整)**:
 
-不强制改密意味着:**若攻击者曾利用泄露私钥伪造 ROOT token、并借此为自己注册的账号赋予了权限,则该账号的口令是攻击者自己设定的真实口令 —— 清空 refresh token 与轮换密钥都不影响他重新登录。** 唯一的防线是 US3 的表审计能发现这个账号。
+不强制改密意味着以下三条向量**均不被本 feature 的任何动作覆盖**:
 
-因此**审计的完整性直接决定本次处置是否有效**,它不是可选的收尾动作。审计范围:
+| # | 残余向量 | 为何轮换/清空/审计都无效 |
+|---|---------|------------------------|
+| 1 | **攻击者自注册账号 + 自设口令 + 已提权** | 口令是他自己设的真实口令,轮换密钥与清空 refresh token 都不影响其登录。**仅靠表审计能发现** |
+| 2 | **`sys_user` 的 BCrypt 口令哈希可能已被读走** | 伪造 ROOT token 后读用户表是最自然的动作。哈希外泄后弱口令用户在离线爆破下失守 —— **这恰恰只能靠强制改密缓解**;审计**看不出**哈希是否被读过(无审计日志) |
+| 3 | **`eve_account.refresh_token`(ESI 长期凭证)外泄后不因本次轮换失效** | 该列明文存储(006 L-2);`CharacterAccessTokenController` 可直接交出可冒用的 bearer 凭证。若攻击者曾以 ROOT 身份取走这些 ESI refresh token,**本 feature 无任何动作能撤销** —— 唯一处置是让角色重新走 ESI 授权 |
+
+**关键修正**:原表述称「六表审计是唯一防线」—— **不准确**。准确表述:
+
+> 表审计只能发现**新增/篡改**痕迹(向量 1);对**读取型**外泄(向量 2 的口令哈希、向量 3 的 ESI 凭证)**完全失明,亦无补偿控制**。「无法证明未被利用」这句话对读取型外泄同样成立。
+
+选项 B 可以是合理的风险决策,但它接受的是**不可观测的**残余风险,而非「审计能兜住的」风险。
+
+**审计范围(第二轮评审后由 4 表扩至 6 表)**:
+
+RBAC 的 url→role 映射来自三表 JOIN(`SysPermissionMapper.xml:201-211`:`sys_permission` LEFT JOIN `sys_role_permission` LEFT JOIN `sys_role`)。攻击者提权**不必碰 `sys_permission`** —— 只要在 `sys_role_permission` 插一行把自己的角色关联到既有权限,或改 `sys_role`,即可获得访问权。原 4 表清单**漏了后两张**,审计通过会给出虚假的安全结论。
 
 1. `sys_user`:全表比对预期账号清单,重点看 `5d139d8` 提交之后创建的行
 2. `sys_user_role`:是否有非预期的 ROOT/管理员角色绑定
-3. `sys_permission`:`url_perm` → role 映射是否与预期基线一致(RBAC 规则来自 DB 并缓存 Redis)
-4. `eve_account`:是否有异常的角色绑定(可能被用于窃取 ESI 凭证)
+3. `sys_permission`:`url_perm` → 权限定义是否与预期基线一致
+4. **`sys_role_permission`(新增)**:角色↔权限关联是否被插入新行
+5. **`sys_role`(新增)**:角色定义是否被篡改
+6. `eve_account`:是否有异常的角色绑定
+
+> `sys_menu` / `sys_role_menu` 仅影响 UI 展示,低优先。
 
 **验收场景**:
 1. **Given** 轮换完成,**When** 执行 `SCAN MATCH refresh_token:* + DEL`,**Then** 全部 refresh token 失效,`POST /auth/tokens` 返回明确错误(而非异常逃逸)
-2. **Given** 审计四张表,**When** 发现任何非预期账号/角色/权限映射,**Then** **暂停轮换收尾,升级为入侵响应**(此时强制改密与吊销全部会话成为必须)
-3. **Given** 审计未发现异常,**When** 记录审计结论,**Then** 在 `docs/DEPLOYMENT.md` 留档「已审计,未发现持久化痕迹」并注明审计时间与范围 —— **不得**表述为「确认未被入侵」(审计只能证伪明显痕迹,不能证明无入侵)
+2. **Given** 审计上述 6 张表,**When** 发现任何非预期账号/角色/权限映射/关联,**Then** **暂停轮换收尾,升级为入侵响应**(此时强制改密、吊销全部会话、ESI 重新授权均成为必须)
+3. **Given** 审计未发现异常,**When** 记录审计结论,**Then** 在 `docs/DEPLOYMENT.md` 留档「已审计 6 表,未发现**新增/篡改**痕迹;读取型外泄无法检测」并注明时间与范围 —— **不得**表述为「确认未被入侵」
 
 ---
 
@@ -162,11 +185,12 @@
 - **FR-016**(**升为交付前提**)验签失败必须返回 **HTTP 401** 且响应体 code 为 `AUT00210`(`TOKEN_ACCESS_EXPIRED`,`ResultCode.java:43`)。实测证明当前是**异常逃逸**(见 1.4),故本项须包含两处改造:
   - 改造 `JwtAuthorizationTokenFilter`:在 `doFilterInternal` 内捕获并直接写 401 响应(复用 `ResponseUtils`),不得依赖上游的 `ExceptionTranslationFilter`
   - 修正 `ResponseUtils.writeErrorInfo:26-35` 的 switch,使 `TOKEN_ACCESS_EXPIRED` 映射 401(现落 `default` → 400)
-- **FR-020**(**限流方案已按计划阶段调研修订**)`POST:/auth/tokens` 必须在无有效 access token 时**可达 controller**(实测当前返回 401 `AUT00201` 未到达)。加入 `whiteUrlList`(已核实 `RbacAuthorizationManager:67-73` 为精确字符串匹配,不会扩散授权),并**同步引入限流** —— 该端点加白后变为完全未认证可达,无限流可被用于放大攻击。
-  - **限流不按 IP**:已查明全仓无 `X-Forwarded-For`/`getRemoteAddr` 处理,且未配 `server.forward-headers-strategy`。反代/SLB 后 `getRemoteAddr()` 取到的是负载均衡器 IP,全体用户共享一桶 → 阈值低则误伤全员、高则形同虚设
-  - **改为「按 refresh token 值 + 全局速率」双层**:前者防同一 token 重放,后者防放大攻击,均不依赖 IP
-  - 不能直接复用 `LoginRateLimiterService` —— 其 API 全部按 username 计数,而 refresh 请求无 username
-- **FR-021** 审计 `sys_user`、`sys_user_role`、`sys_permission`、`eve_account` 四张表,范围与结论记入 `docs/DEPLOYMENT.md`;发现异常即升级为入侵响应(US3)
+- **FR-020**(**限流条款经第二轮评审驳回后重写**)`POST:/auth/tokens` 必须在无有效 access token 时**可达 controller**。两部分:
+  - **可达性**:加入 `whiteUrlList`(已核实 `RbacAuthorizationManager:67-73` 为精确字符串匹配,不扩散授权)。⚠️ **但仅加白名单不够** —— 白名单判定在过滤器链末端的 `AuthorizationFilter`,而 `JwtAuthorizationTokenFilter` 在其上游会先拒掉带旧 token 的请求。须抽出白名单匹配为过滤器可见的共享组件(见 plan 3.2 CRITICAL-1)
+  - **限流**:**按 userId 计数,且只计失败**。流程:UUID 格式校验(`AuthApplicationService:110` 已有)→ 一次 Redis GET 解出 userId → 以 userId 为桶。键空间被真实用户数**有界约束**;只计失败则轮换瞬间的合法尖峰不受影响。全局层面**仅告警/降级,不做硬拒**
+  - **已驳回的两个方案**(勿重提):按 refresh token 值计数 —— 攻击者换随机 UUID 即绕过,且每个新值在 Redis 种一个 key,构成**未认证的键空间放大 DoS**;全局硬限流 —— 攻击者打满阈值即可让全体用户无法恢复会话,是自伤总闸
+  - **不得**以 `LoginRateLimiterService` 为范本:其按 username 计数、5 次锁 30 分钟(`:25-26`),任何人可定向锁死任意已知用户(既有 DoS,超出 007 范围但不可复制)
+- **FR-021**(**范围经第二轮评审由 4 表扩至 6 表**)审计 `sys_user`、`sys_user_role`、`sys_permission`、**`sys_role_permission`**、**`sys_role`**、`eve_account`。补入后两张的理由:RBAC 的 url→role 映射来自三表 JOIN(`SysPermissionMapper.xml:208-210`),攻击者提权**不必碰 `sys_permission`** —— 在 `sys_role_permission` 插一行即可。范围与结论记入 `docs/DEPLOYMENT.md`;发现异常即升级为入侵响应(US3)
 - **FR-022** 明确部署拓扑。若为多实例,轮换**必须停机窗口或全量同时重启,禁止滚动重启** —— 滚动期间新旧密钥并存会造成随机认证失败,且 `TokenService:181` 在生成新 token 前就删除旧 refresh token,重试循环会消耗掉 refresh token
 - **FR-023** 重写 `KeyStoreKeyFactory`:去除无效的双重 `synchronized`(内层对同一 lock 重入,无作用)与可变 `store` 字段;别名不存在时显式 null 检查并给出「别名错误」而非误导性的「Cannot load keys from store」;异常分类(文件不存在/口令错误/别名错误/非 RSA 密钥)各给独立信息;**错误信息禁含口令**;加载后断言 RSA modulus ≥ 2048 位(FR-001 当前无任何位数校验,无法验证)
 
@@ -202,10 +226,12 @@
 - **SC-008**(**已修订**)轮换后 Redis `refresh_token:*` 键数量为 **0**(FR-015:已清空);清空前的数量已记录
 - **SC-009** keystore 文件权限为 600、目录 700、属主为服务账号(`stat` 输出留证)
 - **SC-010**(**已修订**)验签失败返回 **HTTP 401** 且 body code 为 `AUT00210` —— 当前实测为异常逃逸,该断言现在**必然失败**,正是 TDD 的 RED 起点
-- **SC-013** 四张表审计完成,结论记入 `docs/DEPLOYMENT.md`,表述为「已审计未发现痕迹」而非「确认未被入侵」
+- **SC-013** **6 张表**审计完成,结论记入 `docs/DEPLOYMENT.md`,表述为「已审计 6 表,未发现**新增/篡改**痕迹;读取型外泄(口令哈希、ESI 凭证)无法检测」而非「确认未被入侵」
 - **SC-014** 用**旧私钥现场签发一个全新的**(未过期)token,断言其被拒绝;并断言新公钥 modulus 与旧公钥不同 —— **这是唯一能证明密钥对确实换掉的验证**(仅验证「已存在的旧 token 失效」在别名/口令变更但密钥未变时会误判通过)
 - **SC-015** `POST /auth/tokens` 有限流:同一 refresh token 反复调用被拒;全局速率超限被拒。**不依赖客户端 IP**(理由见 FR-020)
-- **SC-011** 全部 profile 的 `security.keystore.password` / `key-password` 均为 `${...}` 环境变量引用,`grep` 全仓无明文口令(FR-018)
+- **SC-011**(**验证方式经评审更正 —— 原写法是假门禁**)全部 profile 的 `security.keystore.password` / `key-password` / `location` 均为 `${...}` 环境变量引用。
+  - ⚠️ **不能用「`grep` 全仓无明文口令」验证**:`application-{test,ali,aliw,prod}.yml` 全在 `.gitignore` 中,仓库里根本没有它们 → grep **恒为通过**,是个假门禁
+  - **正确验证**:由**人工**核验部署环境的实际配置文件并留证(与 FR-002 的职责边界一致 —— AI 无法访问这些文件)
 - **SC-012** 新 keystore 口令为高强度随机串,与旧口令无关联(FR-017;由用户自行核验,不留证于文档)
 
 ---
@@ -214,7 +240,7 @@
 
 | # | 问题 | **决策** | 说明 |
 |---|------|---------|------|
-| Q1 | 是否强制全体用户重新登录? | **是(选项 B)** —— 2026-08-11 重新决策 | 原「不强制」的依据被评审 C2/C3 推翻。现:清空 `refresh_token:*` + 审计四张表,**暂不强制改密**(残余风险见 US3) |
+| Q1 | 是否强制全体用户重新登录? | **是(选项 B)** —— 2026-08-11 重新决策 | 原「不强制」的依据被评审 C2/C3 推翻。现:清空 `refresh_token:*` + 审计六张表,**暂不强制改密**(残余风险见 US3) |
 | Q2 | 现有 keystore 口令强度 | **由用户单独掌握** | 口令不进入本仓库、不进入任何文档、不由 AI 评估。**但编写规格时在 `application-test.yml` 与 `application-aliw.yml` 中发现明文弱口令 —— 见 1.2.1,该发现使轮换升为紧急** |
 | Q3 | keystore 新位置 | **服务器固定路径** | `/etc/eve-helper/eve-jwt.jks`,文件权限 600,属主为运行应用的服务账号 |
 | Q4 | 合并实现 006 的 L-10 fail-fast | **是** | 一个 `ApplicationRunner` 同时校验 4 项配置基线,见第 8 节 |
@@ -252,7 +278,7 @@
 | 旧 keystore 仍留在服务器上被误用 | 轮换失效 | 轮换后重命名/删除旧文件;FR-013 文档记录 |
 | 认为「删了文件就安全了」 | 虚假的安全感 | 本 spec 第 1.3 节已明确论证 |
 | 轮换瞬间 refresh 请求突发 | 全部在线客户端同时收到 401 并各试一次 refresh,形成尖峰 | 低峰期执行(FR-011)+ FR-020 的全局速率限流。选项 B 下每次 refresh 快速失败(仅一次 Redis 查询),压力小于成功换取 token 的场景。⚠️ 全局限流阈值须高于合法尖峰,否则误伤 |
-| **审计不彻底导致攻击者账号存活** | 选项 B 暂不强制改密,若攻击者曾自注册并提权,清空 refresh token 与轮换密钥都不影响他登录 | **US3 的四表审计是唯一防线,不是可选收尾**。发现异常即升级为入侵响应(强制改密 + 吊销全部会话) |
+| **审计不彻底导致攻击者账号存活** | 选项 B 暂不强制改密,若攻击者曾自注册并提权,清空 refresh token 与轮换密钥都不影响他登录 | **US3 的六表审计是唯一防线,不是可选收尾**。发现异常即升级为入侵响应(强制改密 + 吊销全部会话) |
 | 多实例滚动重启期间新旧密钥并存 | 随机认证失败;`TokenService:181` 在生成新 token 前删除旧 refresh token,重试循环会消耗掉它 | FR-022:明确拓扑,多实例须停机窗口或全量同时重启,**禁止滚动重启** |
 
 ---
