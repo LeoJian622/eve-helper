@@ -1,149 +1,189 @@
-# Implementation Plan: JWT 签名密钥轮换
+# Implementation Plan: JWT 签名密钥轮换(选项 B)
 
 **Feature**: `007-jwt-key-rotation`
-**规格**: [spec.md](./spec.md)
-**创建日期**: 2026-08-11
-**状态**: **BLOCK** — `ecc:security-reviewer` 设计评审驳回(2026-08-11)。3 项 CRITICAL,详见 [评审记录](../../docs/reviews/2026-08-11-007-jwt-key-rotation-design-review.md)。本计划的第 2 节关键决策(排除 kid 双密钥)论证已被指出错误,第 6 节测试策略未覆盖 C2/C3 的修复,均需重写
+**规格**: [spec.md](./spec.md)(已按阶段③评审修订)
+**评审记录**: [设计评审 BLOCK](../../docs/reviews/2026-08-11-007-jwt-key-rotation-design-review.md)
+**创建日期**: 2026-08-11(v2,基于选项 B 重写)
+**状态**: 计划草案 v2,待重新评审
+
+> **v1 已废弃**。原计划基于「用户无感」方案,其关键决策论证与测试策略均被评审推翻。本版按选项 B(清空 refresh token + 四表审计,暂不强制改密)重写。
 
 ---
 
 ## 1. 目标与范围
 
-### 做
+### 做(代码)
 
-| 项 | 对应需求 | 性质 |
-|----|---------|------|
-| `KeyPairConfig` 支持文件系统路径加载 keystore | FR-005、FR-006 | 代码 |
-| keystore 缺失/无法解密时 fail-fast 拒绝启动 | FR-007 | 代码 |
-| 生产 profile 下 classpath keystore 拒绝启动 | FR-008 | 代码(与 006 L-10 合并) |
-| 启动校验 4 项配置安全基线 | FR-008 + 006 L-10 | 代码 |
-| 全部 profile 口令改环境变量引用 | FR-018、FR-019 | 配置(部分不入库) |
-| `.env.example` 补 `KEYSTORE_LOCATION`/`KEYSTORE_ALIAS` | FR-004 配套 | 配置 |
-| `application-prod.yml.example` 补 keystore 段 | FR-004 配套 | 配置 |
-| 从工作区删除 `src/main/resources/eve-jwt.jks` | FR-012 | 代码库清理 |
-| 生成测试专用 keystore(入库,标注仅测试用) | FR-019 | 测试资产 |
-| `docs/DEPLOYMENT.md` 记录轮换步骤与已泄露事实 | FR-013 | 文档 |
+| 序 | 项 | 需求 | 依赖 |
+|----|----|------|------|
+| 1 | 验签失败返回 401 + `AUT00210` | FR-016 | 无 —— **其余一切的前置** |
+| 2 | `POST:/auth/tokens` 可达 + 限流(**不依赖 IP**,见 3.1) | FR-020、M2 | 序 1 |
+| 3 | 重写 `KeyStoreKeyFactory` | FR-023 | 无(可与 1/2 并行) |
+| 4 | keystore 文件系统加载 + fail-fast | FR-005~007 | 序 3 |
+| 5 | 启动基线校验(fail-closed) | FR-008 + 006 L-10 | 序 4 |
+| 6 | 配置与模板补全 | FR-018、FR-019 | 序 4 |
+| 7 | 清理与文档 | FR-012、FR-013、FR-021 | 全部 |
 
-### 不做(运维动作,非代码)
+### 做(文档/清单,非代码)
 
-- **生成生产新密钥对与新口令** —— 由用户执行,口令不经 AI(FR-002、FR-017)
-- **把 keystore 放到 `/etc/eve-helper/` 并设权限 600** —— 部署动作(FR-005)
-- **重启生产实例完成轮换** —— 运维动作(FR-011)
-- **轮换后的三项验证** —— 需真实环境(FR-010)
+- `docs/DEPLOYMENT.md` 的轮换步骤、四表审计清单、公告模板(FR-013、FR-021、Q5)
 
-> 代码改动使轮换**可行且安全**;轮换本身由用户在生产执行。本 feature 的交付物是「改造后的加载机制 + 启动门禁 + 文档」,不含密钥材料。
+### 不做(运维动作,由用户执行)
+
+| 项 | 为何不由 AI 做 |
+|----|--------------|
+| 生成新密钥对与新口令 | FR-002:口令不经 AI |
+| 部署 keystore 到 `/etc/eve-helper/` 并设权限 | 需服务器访问 |
+| 清空 `refresh_token:*` | 生产 Redis 操作 |
+| **执行四表审计** | 需业务判断「哪些账号是预期的」—— AI 无此基线 |
+| 重启实例、发布公告 | 运维动作 |
+| **验证 SC-001/SC-006/SC-014** | 需新口令,故必须人工(M3) |
 
 ---
 
-## 2. 关键决策
+## 2. 实现顺序的强制约束
+
+**FR-016(401 链路)必须先做。** 理由:
+
+```
+未修:  旧 token → InvalidCookieException 逃逸 → 容器错误页
+                 ↑ 实测确认(JwtFilterDiagnosticTest)
+       后果:所有涉及「旧 token 被拒」的验收场景都无法观测,
+             SC-002/SC-010 无从验证,US1/US3 的场景 1 写不出断言
+```
+
+诊断测试 `JwtFilterDiagnosticTest` 已在仓库中,当前 3 用例里 2 个以 ERROR 结束 —— 这就是**天然的 RED 状态**。序 1 完成后把它改写为断言式回归测试。
+
+---
+
+## 3. 关键决策(v2)
 
 | 决策 | 理由 |
 |------|------|
-| **不引入 `kid` 双密钥并行** | 一次性轮换。客户端已有 401→refresh 重试(spec 6.1),900 秒窗口由 refresh 流程兜住。引入 kid 需改 JWT header、维护 keyId→key 映射、`JwtAuthorizationTokenFilter` 支持多验签者 —— 为一次性操作留下长期复杂度 |
-| **保留 `classpath:` 加载分支** | **58 个 `@SpringBootTest` 类全部会加载 `KeyPairConfig`**。若只支持文件系统路径,这些测试需要一个固定的绝对路径,在 CI/多开发机上不可移植。故 `classpath:` 前缀分支是测试的必要兼容路径,而非"方便留的后门" —— 生产由 FR-008 的启动断言堵住 |
-| **测试用独立 keystore 并入库** | 测试 keystore 不保护任何真实凭证。入库可让 58 个测试在任何机器上开箱即跑。须显式命名与注释标明「仅测试用」,避免下一个人误以为它是生产密钥 |
-| **启动断言与 006 L-10 合并** | 两者都是「生产 profile 配置安全基线校验」,同一个 `ApplicationRunner` 内完成,避免两处散落的校验逻辑 |
-| **`KEYSTORE_ALIAS` 保留环境变量** | 见 4.1 的实测结论:`application.yml:115-117` 的三个占位符在现有任何 profile 下**从未被实际解析过**,须改为带默认值形式并补全 `.env.example` |
+| **401 响应在 filter 内直接写出** | 不能依赖 `ExceptionTranslationFilter`(JWT filter 在其上游,实测异常逃逸)。方案:`doFilterInternal` 内 try-catch,调 `ResponseUtils.writeErrorInfo(response, TOKEN_ACCESS_EXPIRED)` 后 **return(不继续 filterChain)**。备选方案「改 filter 顺序至 `ExceptionTranslationFilter` 下游」风险更大 —— 会影响所有认证路径的既有行为 |
+| **同时修 `ResponseUtils` 的 switch** | `TOKEN_ACCESS_EXPIRED`(`AUT00210`)现落 `default` → 400。仅改 filter 不改 switch,结果是 400 而非 401,SC-010 仍失败 |
+| **白名单加 `POST:/auth/tokens` 是窄授权** | 已核实 `RbacAuthorizationManager:67-73` 用 `restfulPath.equals(white)` **精确字符串匹配**,非 Ant 通配。故加这一条不会误开 `/auth/**` 下其他路径 |
+| **限流须新建按 IP 的实现,不能直接复用 `LoginRateLimiterService`** | 已核实其 API 全部按 username 计数(`recordFailedAttempt(String username)` 等 5 个方法)。refresh 请求**没有 username**。方案:抽出按 key 计数的通用逻辑,或新建 `IpRateLimiterService` 复用同一 Redis 计数模式。⚠️ **但"按 IP"本身在当前架构下不成立 —— 见 3.1** |
 
-### 2.1 实测发现:现有配置存在未被触发的部署陷阱
+### 3.1 ⚠️ 已查明:全仓无真实 IP 处理,按 IP 限流在反代后不成立
 
-编写计划时实测各 profile 的 `security` 段:
+实测结果:
 
-| profile | `security` 段 | 实际取值来源 |
-|---------|--------------|-------------|
-| `application.yml`(入库) | 有,全为 `${...}` 占位符 | 需 4 个环境变量 |
-| `application-test.yml` | **有,明文** | 完全覆盖 application.yml,不走占位符 |
-| `application-aliw.yml` | **有,明文** | 同上 |
-| `application-prod.yml` | **无** | 回落到 `application.yml` → **必须设置 4 个环境变量** |
-| `application-ali.yml` | **无** | 同上 |
+| 检查项 | 结果 |
+|--------|------|
+| `X-Forwarded-For` / `X-Real-IP` / `getRemoteAddr` / 取客户端 IP 的代码 | **全仓 0 处** |
+| `server.forward-headers-strategy` 配置 | **未配置**(5 个 profile 均无) |
 
-**两个结论**:
+含义:若生产部署在 Nginx / 阿里云 SLB 之后(`application-ali.yml`、`application-aliw.yml` 的命名强烈暗示如此),`request.getRemoteAddr()` 返回的是**负载均衡器的 IP**。后果是全体用户共享同一个限流桶 ——
 
-1. **`application.yml:115-117` 的占位符从未被真正解析过** —— 唯一会用到它们的 prod/ali 若未设环境变量,启动即因占位符无解而失败。这个路径可能从未被走通过(现有部署或许一直用 aliw)
-2. **`.env.example` 缺 `KEYSTORE_LOCATION` 与 `KEYSTORE_ALIAS`** —— 只列了 `KEYSTORE_PASSWORD`、`KEY_PASSWORD`(`.env.example:18-19`)。照模板配置的人在 prod 启动时必然撞墙
+- 阈值设低 → **误伤全体用户**(一个人触发即全员被限)
+- 阈值设高 → **限流形同虚设**(单个攻击者远达不到阈值)
 
-这不是本次轮换引入的问题,但**轮换会强制走通这条路径**(FR-018 要求 test/aliw 也改用环境变量),所以必须在本 feature 内修好:补全 `.env.example`、给 `alias` 加默认值 `${KEYSTORE_ALIAS:eve-jwt}`(与 `SecurityProperties:36` 的 Java 默认值一致)。
+**这不是实现细节,而是 FR-020 的可行性前提。** 三条出路:
 
-> `location` 与两个口令**不给默认值** —— 缺失就该 fail-fast(FR-007)。只有 `alias` 适合给默认值,因为它不是秘密。
+| 方案 | 说明 | 前置条件 |
+|------|------|---------|
+| **A** 配 `server.forward-headers-strategy: framework` + 取 `X-Forwarded-For` | Spring Boot 内建支持,改动小 | **必须确认反代已正确设置该头,且外部无法伪造** —— 若可伪造则限流可被绕过(攻击者每次换一个假 IP) |
+| **B** 按 refresh token 值限流 | 无需 IP。同一个 refresh token 反复调用即限流 | 防不住「攻击者每次换一个随机 UUID 探测」—— 但这类探测本就受 UUID 空间保护,且每次仅一次 Redis 查询 |
+| **C** 全局限流(不分主体) | 保护端点总吞吐,防放大攻击 | 会在轮换瞬间的合法 refresh 尖峰中误伤 |
+
+**推荐 B + C 组合**:按 refresh token 限流(防重放)+ 全局速率上限(防放大),**都不依赖 IP**,规避 3.1 的整个问题。若日后需要按 IP,再单独处理反代头(那是独立的架构问题,涉及全部端点而非仅此一个)。
+
+> 规格 FR-020 写的是「按 IP 限流」,**须据此修订为不依赖 IP 的方案**。这是本计划相对规格的一处主动纠偏,须在评审中确认。
+| **启动基线校验用 fail-closed 正向白名单** | 评审 H4(b):生产判定靠启动参数,误启为 test profile 即完整回退到明文弱口令 + classpath keystore。故判定改为「**仅当 profile 明确属于 `{test}` 才允许 classpath**;未知/缺失 profile 一律按生产处理」 |
+| **不实现双密钥并行** | 与选项 B 的全体登出目标冲突,且会延长泄露私钥有效期(详见 spec 第 4 节,论证已按评审重写) |
+| **保留 `classpath:` 分支** | 58 个 `@SpringBootTest` 全部加载 `KeyPairConfig`;测试需要可移植路径。由上述 fail-closed 判定在生产侧堵住 |
 
 ---
 
-## 3. 新增/修改文件清单
+## 4. 新增/修改文件清单
 
 ### 新增
 
 | 文件 | 用途 |
 |------|------|
-| `infrastructure/config/security/SecurityBaselineValidator.java` | `ApplicationRunner`,生产 profile 下校验 4 项基线,不合则拒绝启动 |
-| `src/test/resources/test-only-jwt.jks` | 测试专用 keystore,文件名自带「test-only」警示 |
-| `src/test/.../SecurityBaselineValidatorTest.java` | 校验器单测:各违规组合应拒绝启动,合规应通过 |
-| `src/test/.../KeyPairConfigTest.java` | 加载机制单测:classpath 分支、文件系统分支、文件缺失 fail-fast |
+| `infrastructure/config/security/SecurityBaselineValidator.java` | `ApplicationRunner`,fail-closed 校验 4 项基线 |
+| `domain/service/security/RefreshRateLimiterService.java` | 按 refresh token 值 + 全局速率限流(**不依赖 IP**,见 3.1) |
+| `src/test/resources/test-only-jwt.jks` | 测试 keystore,别名 `test-only`(与生产显著区分,见 M3) |
+| `src/test/.../JwtAuthFailureResponseTest.java` | 401 链路回归测试(由 `JwtFilterDiagnosticTest` 改写而来) |
+| `src/test/.../SecurityBaselineValidatorTest.java` | 各违规组合 → 拒绝启动;非生产 profile → 跳过 |
+| `src/test/.../KeyStoreKeyFactoryTest.java` | 异常分类、别名错误、RSA 位数断言、错误信息不含口令 |
+| `src/test/.../RefreshTokenEndpointAccessTest.java` | 无 token / 失效 token 时可达 controller;限流生效 |
 
 ### 修改
 
 | 文件 | 改动 |
 |------|------|
-| `KeyPairConfig.java:43-46` | `ClassPathResource` → 按 `classpath:` 前缀分派 `ClassPathResource` / `FileSystemResource`;补文件存在性检查与明确错误信息 |
-| `application.yml:117` | `${KEYSTORE_ALIAS}` → `${KEYSTORE_ALIAS:eve-jwt}`(见 2.1;`location` 与两个口令不给默认值,缺失即 fail-fast) |
-| `.env.example:18-19` | 补 `KEYSTORE_LOCATION`、`KEYSTORE_ALIAS`(现仅有两个口令,prod/ali 会因缺变量启动失败 —— 见 2.1) |
-| `application-prod.yml.example` | 补 `security.keystore` 段,`location` 示例为 `/etc/eve-helper/eve-jwt.jks` |
-| `application-test.yml`(不入库) | 口令改 `${...}`;keystore 改指 `classpath:test-only-jwt.jks` |
-| `application-aliw.yml`(不入库) | 口令改 `${...}`;location 改文件系统路径 |
-| `docs/DEPLOYMENT.md` | 新增「JWT 密钥轮换」章节:生成命令(口令占位符)、权限设置、验证步骤、已泄露记录 |
-| `src/main/resources/eve-jwt.jks` | **删除**(`git rm`) |
+| `JwtAuthorizationTokenFilter.java:64-106` | try-catch 内直接写 401 响应并 return,不再抛 `InvalidCookieException` |
+| `ResponseUtils.java:26-35` | switch 增加 `TOKEN_ACCESS_EXPIRED` → 401 分支 |
+| `KeyStoreKeyFactory.java` | 全面重写(FR-023) |
+| `KeyPairConfig.java:43-51` | 按 `classpath:` 前缀分派 Resource;文件存在性检查 |
+| `SecurityProperties.java:26` | **移除 `location` 默认值** `"eve-jwt.jks"`(评审 H4a) |
+| `application.yml:122-124` | `whiteUrlList` 增 `POST:/auth/tokens` |
+| `application.yml:117` | `${KEYSTORE_ALIAS}` → `${KEYSTORE_ALIAS:eve-jwt}` |
+| `.env.example` | 补 `KEYSTORE_LOCATION`、`KEYSTORE_ALIAS` |
+| `application-prod.yml.example` | 补 `security.keystore` 段 |
+| `application-test.yml`(不入库) | 口令改 `${...}`;location 改 `classpath:test-only-jwt.jks`;alias 改 `test-only` |
+| `application-aliw.yml`(不入库) | 口令改 `${...}`;**location 改文件系统绝对路径**(评审 H4a:我原 FR-018 遗漏了 location) |
+| `AuthenticationFailureServletHandler.java:69-70` | 清理 `InvalidCookieException` 死分支(评审 L2) |
+| `src/main/resources/eve-jwt.jks` | **`git rm`**(FR-012) |
+| `docs/DEPLOYMENT.md` | 轮换章节 + 四表审计清单 + 公告模板 |
 | `specs/006-.../spec.md` L-10 | 标注「已由 007 实现」 |
 
 ---
 
-## 4. 加载机制设计
+## 5. 401 链路改造设计(FR-016)
 
-```
-KEYSTORE_LOCATION 取值            → 解析方式
-─────────────────────────────────────────────────────
-"classpath:test-only-jwt.jks"    → ClassPathResource("test-only-jwt.jks")
-"/etc/eve-helper/eve-jwt.jks"    → FileSystemResource(绝对路径)
-"eve-jwt.jks"(无前缀,相对)       → FileSystemResource(相对 cwd) ⚠️ 见下
-未设置 / 空                       → 拒绝启动
-文件不存在 / 不可读                → 拒绝启动
-口令错误(KeyStore.load 抛异常)    → 拒绝启动,错误信息不含口令
+```java
+// JwtAuthorizationTokenFilter.doFilterInternal 目标形态(伪码)
+try {
+    SignedJWT signedJWT = SignedJWT.parse(token);
+    if (!signedJWT.verify(verifier)) {
+        ResponseUtils.writeErrorInfo(response, ResultCode.TOKEN_ACCESS_EXPIRED);
+        return;                        // 关键:不继续 filterChain
+    }
+    // ... 过期检查、黑名单检查同样改为 writeErrorInfo + return
+} catch (ParseException | JOSEException e) {
+    log.warn("JWT 校验失败: {}", e.getClass().getSimpleName());   // 不记 token 内容
+    ResponseUtils.writeErrorInfo(response, ResultCode.TOKEN_ACCESS_EXPIRED);
+    return;
+}
 ```
 
-⚠️ **无前缀相对路径的歧义**:现有 `application-test.yml`/`application-aliw.yml` 写的是裸 `eve-jwt.jks`,现语义为 classpath。改造后若按文件系统解析,这两个配置会静默指向 cwd 下不存在的文件 → 启动失败(fail-fast,可接受)但错误信息须指出「疑似遗留的 classpath 写法,请加 `classpath:` 前缀或改绝对路径」。**不做静默回退** —— 回退会让生产误用 classpath 中的旧 keystore,正是 FR-007 要禁止的。
+配套 `ResponseUtils.writeErrorInfo` 的 switch 增加:
+
+```java
+case ACCESS_UNAUTHORIZED:
+case TOKEN_INVALID_OR_EXPIRED:
+case TOKEN_ACCESS_EXPIRED:          // ← 新增,现落 default → 400
+    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+```
+
+**须注意的副作用**:改为「写响应 + return」后,原先靠异常中断的路径变为正常返回。须确认:
+- 响应未被后续 filter 覆写(`ResponseUtils` 已 `setStatus` + 写 body,`return` 后不再进 chain,应无覆写)
+- 日志**不得**打印 token 内容(现 `:101` `log.error("JWT解析失败", e)` 会带堆栈,须确认堆栈不含 token)
 
 ---
 
-## 5. 启动基线校验设计(FR-008 + 006 L-10)
+## 6. 测试策略(v2)
 
-生产 profile 集合:`prod`、`ali`、`aliw`。仅当 `spring.profiles.active` 含其中之一时校验:
+| 层 | 测试 | 关键断言 |
+|----|------|---------|
+| **401 链路** | `JwtAuthFailureResponseTest`(由诊断测试改写) | 验签失败 → **HTTP 401** 且 body code `AUT00210`;过期 token → 401;黑名单 token → 401;**响应体不含 token 片段** |
+| **refresh 可达** | `RefreshTokenEndpointAccessTest` | 无 token → 到达 controller(非 401 `AUT00201`);失效 token → 到达 controller;refresh token 不存在 → 明确业务错误;同一 refresh token 反复调用 → 限流拒绝;全局速率超限 → 拒绝 |
+| **KeyStoreKeyFactory** | `KeyStoreKeyFactoryTest` | 别名不存在 → 错误信息含「别名」而非「Cannot load keys」;口令错 → 错误信息**不含口令**;文件不存在 → 明确路径;RSA <2048 → 拒绝 |
+| **启动校验** | `SecurityBaselineValidatorTest` | 4 项各自违规 → 拒绝;profile 缺失/未知 → **按生产校验(fail-closed)**;`test` profile → 允许 classpath |
+| **回归** | 既有 58 个 `@SpringBootTest` | 换 `test-only-jwt.jks` 后仍能签发/验签;**Errors 数不高于 216** |
 
-| 校验项 | 违规条件 | 来源 |
-|--------|---------|------|
-| `mybatis-plus.configuration.log-impl` | 含 `StdOutImpl` | 006 L-10 |
-| `logging.level.web` | 为 `debug` / `trace` | 006 L-10 |
-| `eve.helper.debug.access-token-endpoint.enabled` | 为 `true` | 006 L-10 |
-| `security.keystore.location` | 以 `classpath:` 开头或无前缀相对路径 | 007 FR-008 |
+**变异测试**(比照 006):
+- `ResponseUtils` 的新 case 删掉 → 401 断言应失败(证明不是靠别的路径蒙对)
+- filter 的 `return` 删掉 → 应有测试捕获(请求继续走到 controller)
+- 基线校验的 fail-closed 改为 fail-open(未知 profile 放行)→ 应有测试失败
+- 限流阈值改为无限 → 限流测试应失败
 
-**失败行为**:抛异常终止启动,日志列出全部违规项(不止第一项)与对应环境变量名。**不得**只 warn —— warn 会被忽略,那就等于没有门禁。
+**基线**:`502 tests / Failures 4 / Errors 216`。Errors 因测试库缺角色 `2112818290` 的 ESI 授权行,与本 feature 无关。
 
-**实现位置**:`infrastructure/config/security/`。虽然它校验的不止 security 项,但 keystore 校验是其中最关键的一项,且该包已有 `SecurityProperties`/`KeyPairConfig` 上下文。
-
----
-
-## 6. 测试策略
-
-| 层 | 测试 | 关键点 |
-|----|------|--------|
-| `KeyPairConfig` | 单测 | `classpath:` 前缀分派、文件系统分派、文件缺失时异常类型与消息、口令错误时**异常消息不含口令** |
-| `SecurityBaselineValidator` | 单测 | 4 项各自违规 → 拒绝;全部合规 → 通过;非生产 profile → 跳过校验。用 `ApplicationContextRunner` 或直接构造 `Environment` mock |
-| 既有 58 个 `@SpringBootTest` | 回归 | 改用 `classpath:test-only-jwt.jks` 后须仍能加载并签发 token。**这是本 feature 最大的回归面** |
-| `TokenService` | 需确认是否已有 | 轮换不改签发逻辑,但须确认换 keystore 后签发/验签闭环仍通 |
-
-**变异测试**(比照 006 的做法):
-- 把 `classpath:` 判断改为恒真 → 文件系统分支测试应失败
-- 把校验器的拒绝改为 warn → 基线测试应失败
-- 把生产 profile 集合改为空 → 生产校验测试应失败
-
-**基线**:当前 `502 tests / Failures 4 / Errors 216`。Errors 216 因测试库缺角色 `2112818290` 的 ESI 授权行,与本 feature 无关;但**换 keystore 后须确认这个数字不上升** —— 若上升说明测试的 keystore 加载被改坏了。
+> ⚠️ **回归风险最高的一处**:改 401 链路会影响**所有**带无效 token 的请求路径。既有 4 个 Failures 中 `CharacterControllerTest.addCharacterAuth` 就是 401 —— 须确认其断言不因本改动而变化。
 
 ---
 
@@ -151,37 +191,33 @@ KEYSTORE_LOCATION 取值            → 解析方式
 
 | 风险 | 缓解 |
 |------|------|
-| 58 个 `@SpringBootTest` 因 keystore 改造集体失败 | 先做 `classpath:` 分支 + 测试 keystore,跑通全量后再动生产配置。分两个提交,便于回退 |
-| **prod/ali 的 4 个环境变量从未被走通过**(见 2.1) | 本 feature 内补全 `.env.example` 与 `application-prod.yml.example`;`alias` 给默认值。轮换前须在 test profile 用**完整环境变量形态**验证一次,而非依赖 aliw 的明文配置 |
-| 裸相对路径配置(`eve-jwt.jks`)语义变更引发部署事故 | 错误信息明确提示改法;`DEPLOYMENT.md` 与 `.example` 模板给正确写法 |
-| 启动断言误伤本地开发 | 只在生产 profile 生效;`dev`/`test`/无 profile 不校验 |
-| 测试 keystore 被误用于生产 | 文件名 `test-only-jwt.jks` 自带警示;放 `src/test/resources`(不进主 jar);FR-008 断言也会拦住 |
-| **轮换后攻击者仍持有效 refresh token**(若其曾用伪造 token 取得) | **spec 未讨论,已提交安全评审。若成立,「不强制登出」决策需重新审视** |
+| **401 链路改造影响既有认证行为** | 最大回归面。序 1 单独提交,跑全量对比 Failures/Errors 逐用例;特别核对 `CharacterControllerTest.addCharacterAuth`(现 401) |
+| refresh 端点加白后被滥用 | FR-020 的限流是交付前提而非可选;白名单精确匹配不扩散 |
+| ~~按 IP 限流取到反代 IP~~ **已规避** | 已查明全仓无真实 IP 处理且未配 `forward-headers-strategy`(见 3.1)。改用「按 refresh token + 全局速率」方案,不依赖 IP,该风险不存在 |
+| 58 个 `@SpringBootTest` 集体失败 | 序 3/4 前先备好 `test-only-jwt.jks`,分两次提交 |
+| 四表审计无基线可比 | **AI 无法判断「哪些账号是预期的」**。`DEPLOYMENT.md` 须给出审计**方法**(SQL + 判断依据),结论由用户填写 |
+| 多实例滚动重启 | FR-022:禁止滚动;须先确认拓扑 |
 
 ---
 
 ## 8. 合宪性检查
 
-| 宪法条款 | 符合性 |
-|---------|--------|
-| 第四条 技术栈冻结 | ✅ 不新增依赖。`ApplicationRunner`、`FileSystemResource` 均为 Spring Boot 自带;算法仍 RS256 |
-| 第五条 Spec-First | ✅ 阶段②规格已提交(`0199a57`/`42d9298`),本文件为阶段③ |
-| DDD 分层 | ✅ 改动集中在 `infrastructure/config/security`,不触碰 domain 层。`KeyPairConfig` 本就是基础设施配置 |
-| TDD | ✅ 第 6 节测试策略;实现须 RED→GREEN→REFACTOR |
-| 安全红线「永不提交 token 或密码」 | ⚠️ 本 feature 正是在修复该红线的既有违反。测试 keystore 入库属例外,已论证(不保护真实凭证)且显式标注 |
+| 条款 | 符合性 |
+|------|--------|
+| 第四条 技术栈冻结 | ✅ 无新依赖。`ApplicationRunner`/`FileSystemResource` 为 Boot 自带;限流复用既有 Redis 模式 |
+| 第五条 Spec-First | ✅ 规格已修订并提交(`dd3d3c1`);本文件为阶段③ v2 |
+| DDD 分层 | ⚠️ `RefreshRateLimiterService` 置于 `domain/service/security`(与既有 `LoginRateLimiterService` 同包)。它依赖 `CacheGateway` 端口,不直接依赖 Redis,符合分层 |
+| TDD | ✅ 诊断测试已提供天然 RED 状态 |
+| 安全红线 | ⚠️ 测试 keystore 入库属论证过的例外(不保护真实凭证,别名 `test-only`,置于 `src/test/resources` 不进主 jar) |
 
 ---
 
-## 9. 阶段④ 拆解方向(预告,详见 tasks.md)
+## 9. 阶段④ 拆解方向
 
-建议分三批,每批可独立提交与回退:
+按第 1 节的 7 个序号拆,每序一个提交。序 1、2 建议各自独立提交并跑全量回归 —— 它们改动认证主链路。
 
-1. **批 A(纯测试兼容)**:生成 `test-only-jwt.jks` + `KeyPairConfig` 的 `classpath:` 分派 + 单测。跑通 58 个 `@SpringBootTest`
-2. **批 B(门禁)**:`SecurityBaselineValidator` + 单测 + `.env.example` / `.example` 模板补全
-3. **批 C(清理与文档)**:`git rm eve-jwt.jks`、`DEPLOYMENT.md` 轮换章节、006 L-10 标注已实现
-
-生产轮换在批 C 之后由用户执行。
+**交付边界**:代码 + 测试 + 文档就绪即为本 feature 完成。生产轮换与四表审计由用户执行,其结果回填 `DEPLOYMENT.md`。
 
 ---
 
-**下一步**: `ecc:security-reviewer` 设计评审(已启动),评审通过后 `/speckit-tasks`。
+**下一步**: `ecc:security-reviewer` 复审本计划(v1 已 BLOCK,须确认 9 项清单均已落入设计),通过后 `/speckit-tasks`。

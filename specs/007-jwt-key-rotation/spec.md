@@ -162,7 +162,10 @@
 - **FR-016**(**升为交付前提**)验签失败必须返回 **HTTP 401** 且响应体 code 为 `AUT00210`(`TOKEN_ACCESS_EXPIRED`,`ResultCode.java:43`)。实测证明当前是**异常逃逸**(见 1.4),故本项须包含两处改造:
   - 改造 `JwtAuthorizationTokenFilter`:在 `doFilterInternal` 内捕获并直接写 401 响应(复用 `ResponseUtils`),不得依赖上游的 `ExceptionTranslationFilter`
   - 修正 `ResponseUtils.writeErrorInfo:26-35` 的 switch,使 `TOKEN_ACCESS_EXPIRED` 映射 401(现落 `default` → 400)
-- **FR-020** `POST:/auth/tokens` 必须在无有效 access token 时**可达 controller**(实测当前返回 401 `AUT00201` 未到达)。加入 `whiteUrlList`,并**同步引入按 IP 限流**(复用 `LoginRateLimiterService` 模式)—— 该端点加白后变为完全未认证可达,无限流可被用于放大攻击
+- **FR-020**(**限流方案已按计划阶段调研修订**)`POST:/auth/tokens` 必须在无有效 access token 时**可达 controller**(实测当前返回 401 `AUT00201` 未到达)。加入 `whiteUrlList`(已核实 `RbacAuthorizationManager:67-73` 为精确字符串匹配,不会扩散授权),并**同步引入限流** —— 该端点加白后变为完全未认证可达,无限流可被用于放大攻击。
+  - **限流不按 IP**:已查明全仓无 `X-Forwarded-For`/`getRemoteAddr` 处理,且未配 `server.forward-headers-strategy`。反代/SLB 后 `getRemoteAddr()` 取到的是负载均衡器 IP,全体用户共享一桶 → 阈值低则误伤全员、高则形同虚设
+  - **改为「按 refresh token 值 + 全局速率」双层**:前者防同一 token 重放,后者防放大攻击,均不依赖 IP
+  - 不能直接复用 `LoginRateLimiterService` —— 其 API 全部按 username 计数,而 refresh 请求无 username
 - **FR-021** 审计 `sys_user`、`sys_user_role`、`sys_permission`、`eve_account` 四张表,范围与结论记入 `docs/DEPLOYMENT.md`;发现异常即升级为入侵响应(US3)
 - **FR-022** 明确部署拓扑。若为多实例,轮换**必须停机窗口或全量同时重启,禁止滚动重启** —— 滚动期间新旧密钥并存会造成随机认证失败,且 `TokenService:181` 在生成新 token 前就删除旧 refresh token,重试循环会消耗掉 refresh token
 - **FR-023** 重写 `KeyStoreKeyFactory`:去除无效的双重 `synchronized`(内层对同一 lock 重入,无作用)与可变 `store` 字段;别名不存在时显式 null 检查并给出「别名错误」而非误导性的「Cannot load keys from store」;异常分类(文件不存在/口令错误/别名错误/非 RSA 密钥)各给独立信息;**错误信息禁含口令**;加载后断言 RSA modulus ≥ 2048 位(FR-001 当前无任何位数校验,无法验证)
@@ -201,7 +204,7 @@
 - **SC-010**(**已修订**)验签失败返回 **HTTP 401** 且 body code 为 `AUT00210` —— 当前实测为异常逃逸,该断言现在**必然失败**,正是 TDD 的 RED 起点
 - **SC-013** 四张表审计完成,结论记入 `docs/DEPLOYMENT.md`,表述为「已审计未发现痕迹」而非「确认未被入侵」
 - **SC-014** 用**旧私钥现场签发一个全新的**(未过期)token,断言其被拒绝;并断言新公钥 modulus 与旧公钥不同 —— **这是唯一能证明密钥对确实换掉的验证**(仅验证「已存在的旧 token 失效」在别名/口令变更但密钥未变时会误判通过)
-- **SC-015** `POST /auth/tokens` 有按 IP 限流,超限返回 429 或既有限流响应
+- **SC-015** `POST /auth/tokens` 有限流:同一 refresh token 反复调用被拒;全局速率超限被拒。**不依赖客户端 IP**(理由见 FR-020)
 - **SC-011** 全部 profile 的 `security.keystore.password` / `key-password` 均为 `${...}` 环境变量引用,`grep` 全仓无明文口令(FR-018)
 - **SC-012** 新 keystore 口令为高强度随机串,与旧口令无关联(FR-017;由用户自行核验,不留证于文档)
 
@@ -248,7 +251,7 @@
 | `/etc/eve-helper/` 权限配置错误 | keystore 被非授权用户读取,轮换失去意义 | 目录 700、文件 600、属主为服务账号;部署后 `stat` 核验并记录 |
 | 旧 keystore 仍留在服务器上被误用 | 轮换失效 | 轮换后重命名/删除旧文件;FR-013 文档记录 |
 | 认为「删了文件就安全了」 | 虚假的安全感 | 本 spec 第 1.3 节已明确论证 |
-| 轮换瞬间 refresh 请求突发 | 全部在线客户端同时收到 401 并各试一次 refresh,形成尖峰 | 低峰期执行(FR-011)+ FR-020 的按 IP 限流。选项 B 下每次 refresh 快速失败(仅一次 Redis 查询),压力小于成功换取 token 的场景 |
+| 轮换瞬间 refresh 请求突发 | 全部在线客户端同时收到 401 并各试一次 refresh,形成尖峰 | 低峰期执行(FR-011)+ FR-020 的全局速率限流。选项 B 下每次 refresh 快速失败(仅一次 Redis 查询),压力小于成功换取 token 的场景。⚠️ 全局限流阈值须高于合法尖峰,否则误伤 |
 | **审计不彻底导致攻击者账号存活** | 选项 B 暂不强制改密,若攻击者曾自注册并提权,清空 refresh token 与轮换密钥都不影响他登录 | **US3 的四表审计是唯一防线,不是可选收尾**。发现异常即升级为入侵响应(强制改密 + 吊销全部会话) |
 | 多实例滚动重启期间新旧密钥并存 | 随机认证失败;`TokenService:181` 在生成新 token 前删除旧 refresh token,重试循环会消耗掉它 | FR-022:明确拓扑,多实例须停机窗口或全量同时重启,**禁止滚动重启** |
 
