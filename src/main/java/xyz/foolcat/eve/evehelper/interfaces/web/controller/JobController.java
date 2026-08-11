@@ -34,7 +34,7 @@ public class JobController {
             @Parameter(name = "id", description = "人物或军团的ID", required = true),
             @Parameter(name = "complete", description = "是否包含已完成任务", required = true)
     })
-    @Operation(summary = "工业制造-制造线数据同步")
+    @Operation(summary = "工业制造-制造线数据同步",description = "调用服务器去获取ESI的数据")
     @PostMapping("/{type}/{id}/{complete}")
     public Result syncJobs(@PathVariable String type, @PathVariable String complete, @PathVariable Integer id) {
         jobApplicationService.syncJobs(type, id, complete);

@@ -28,7 +28,7 @@ public class AssetsController {
     @Parameters({
             @Parameter(name = "cid",description = "人物或军团的ID" ,required = true)
     })
-    @Operation(summary = "游戏资产-资产同步")
+    @Operation(summary = "游戏资产-资产同步",description = "调用服务器去获取ESI的数据")
     @PostMapping("/{cid}/sync")
     public Result syncAssets(@PathVariable Integer cid) {
         assetsApplicationService.syncAssets(cid);

@@ -31,7 +31,7 @@ public class MiningController {
             @Parameter(name = "characterId", description = "人物ID" ,required = true),
             @Parameter(name = "observerId", description = "月矿堡ID" ,required = true)
     })
-    @Operation(summary = "月矿采掘-开采明细同步")
+    @Operation(summary = "月矿采掘-开采明细同步",description = "调用服务器去获取ESI的数据")
     @PostMapping("/{characterId}/{observerId}")
     public Result syncMiningByObserver(@PathVariable Integer characterId, @PathVariable Long observerId) {
         miningApplicationService.syncMiningByObserver(characterId, observerId);
