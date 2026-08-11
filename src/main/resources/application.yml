@@ -122,6 +122,11 @@ eve:
     whiteUrlList:
       #      - GET:/
       - POST:/user
+      # 007 T014:refresh 端点须在无有效 access token 时可达(否则旧 token 客户端陷入 401 死循环)。
+      # ⚠️ whiteUrlList 是 List 属性,profile 文件整体覆盖 application.yml ——
+      # 任何自带 whiteUrlList 的 profile(test/ali/aliw/prod)都必须同步本行,
+      # 否则加白在该 profile 静默失效(SC-016 同型风险)。
+      - POST:/auth/tokens
     debug:
       access-token-endpoint:
         # 角色 ESI accessToken 查询端点开关。该端点交出可直接冒用的 bearer 凭证,

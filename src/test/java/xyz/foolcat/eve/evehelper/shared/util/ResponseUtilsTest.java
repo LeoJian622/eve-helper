@@ -8,24 +8,23 @@ import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * {@link ResponseUtils#writeErrorInfo} 现状诊断(007 FR-016 前置调研)。
+ * {@link ResponseUtils#writeErrorInfo} 目标行为测试(007 T011;T012 实现的 RED 判据)。
  *
  * <p>FR-016 将让 {@code JwtAuthorizationTokenFilter} 复用该方法直接写 401 响应。
- * 在此之前须查明两件事,它们决定 FR-016 的设计是否需要额外处理:</p>
+ * 诊断阶段查明的两处现状(结论已归档于评审记录)在此固化为目标断言:</p>
  * <ol>
  *   <li><b>状态码映射</b>:{@code TOKEN_ACCESS_EXPIRED}(AUT00210)当前落 switch 的
- *       {@code default} 分支 → 400。FR-016 须新增 401 分支 —— 本测试固化现状,
- *       实现后该断言需同步改为 401(届时它就是 RED→GREEN 的判据)</li>
- *   <li><b>字符编码</b>:该方法只 {@code setContentType},<b>不</b>设
- *       {@code setCharacterEncoding}(对比 {@code AuthenticationFailureServletHandler:79}
- *       设了)。而全部 {@code ResultCode} 的 msg 为中文。本测试查明响应体是否可正确解码,
- *       以及 Content-Type 是否声明 charset</li>
+ *       {@code default} 分支 → 400。T012 新增 401 分支 —— 本测试断言 401(当前 RED)</li>
+ *   <li><b>字符编码</b>:该方法当前只 {@code setContentType},不声明 charset,
+ *       而 msg 均为中文,客户端可能按默认编码解码乱码。
+ *       T012 补 {@code charset=UTF-8} —— 本测试断言 Content-Type 含 charset(当前 RED)</li>
  * </ol>
  *
- * <p>本测试不断言"应该"如何,只固化当前行为 —— 属调研性质,实现 FR-016 时改写。</p>
+ * <p>UTF-8 可解码用例固化「方法手工写 UTF-8 字节」的事实,不参与 RED→GREEN。</p>
  *
  * @author Leojan
  * date 2026-08-11
@@ -34,18 +33,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ResponseUtilsTest {
 
     @Test
-    @DisplayName("AUT00210(TOKEN过期)当前映射的状态码 —— FR-016 须改为 401")
-    void writeErrorInfo_tokenAccessExpired_currentStatus() throws Exception {
+    @DisplayName("AUT00210(TOKEN过期)应映射 401(007 FR-016)")
+    void writeErrorInfo_tokenAccessExpired_maps401() throws Exception {
         // Arrange
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         // Act
         ResponseUtils.writeErrorInfo(response, ResultCode.TOKEN_ACCESS_EXPIRED);
 
-        // Assert:固化现状 —— 落 default 分支得 400。
-        // FR-016 实现后此处应为 401,该断言即 RED→GREEN 判据。
-        assertEquals(400, response.getStatus(),
-                "现状应为 400(落 switch default);若已是 401 说明 FR-016 已实现,请更新本断言");
+        // Assert:RED 判据 —— 现状落 switch default 得 400;T012 增 401 分支后转 GREEN
+        assertEquals(401, response.getStatus(),
+                "TOKEN_ACCESS_EXPIRED 必须映射 401(现状落 switch default → 400)");
     }
 
     @Test
@@ -77,22 +75,21 @@ class ResponseUtilsTest {
     }
 
     @Test
-    @DisplayName("Content-Type 是否声明 charset —— 决定客户端能否正确解码")
-    void writeErrorInfo_contentTypeCharsetDeclaration() throws Exception {
+    @DisplayName("Content-Type 应声明 charset=UTF-8(007 FR-016,中文 msg 防乱码)")
+    void writeErrorInfo_contentTypeDeclaresUtf8Charset() throws Exception {
         // Arrange
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         // Act
         ResponseUtils.writeErrorInfo(response, ResultCode.TOKEN_ACCESS_EXPIRED);
 
-        // Assert:固化现状。方法只 setContentType(APPLICATION_JSON_VALUE),不设 charset。
+        // Assert:RED 判据 —— 现状只 setContentType(APPLICATION_JSON_VALUE) 不含 charset;
+        // T012 补 charset 后转 GREEN。
         String contentType = response.getContentType();
-        System.out.println("[FR-016] Content-Type      = " + contentType);
-        System.out.println("[FR-016] characterEncoding = " + response.getCharacterEncoding());
-        System.out.println("[FR-016] 说明: 若 Content-Type 无 charset 且 encoding 非 UTF-8,"
-                + "客户端可能按默认编码解码中文 msg 而乱码");
-
-        assertEquals("application/json", contentType,
-                "现状应为不含 charset 的 application/json");
+        assertNotNull(contentType, "Content-Type 不应为 null");
+        assertTrue(contentType.contains("application/json"),
+                "应为 application/json,实际: " + contentType);
+        assertTrue(contentType.toLowerCase().contains("charset=utf-8"),
+                "中文 msg 须声明 charset,否则客户端按默认编码解码乱码;实际: " + contentType);
     }
 }

@@ -8,7 +8,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.web.authentication.rememberme.InvalidCookieException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.domain.service.security.LoginRateLimiterService;
@@ -66,8 +65,9 @@ public class AuthenticationFailureServletHandler implements AuthenticationFailur
                 message = "账户已被锁定";
             } else if (exception instanceof InternalAuthenticationServiceException) {
                 message = "用户账号不存在";
-            } else if (exception instanceof InvalidCookieException) {
-                message = "登录已过期";
+            // 007 T018:原 InvalidCookieException 分支已删除 —— 其唯一来源
+            // JwtAuthorizationTokenFilter 在 T013 重写后不再抛该异常(失败统一
+            // 走 rejectOrPass 直写 401),此分支不可达
             } else {
                 message = "登录失败: " + exception.getMessage();
             }

@@ -25,6 +25,10 @@ public class ResponseUtils {
         switch (resultCode) {
             case ACCESS_UNAUTHORIZED:
             case TOKEN_INVALID_OR_EXPIRED:
+            // 007 T012(FR-016):TOKEN过期/验签失败/被撤销统一 401,由
+            // JwtAuthorizationTokenFilter 直写。统一返回 AUT00210 是防信息泄露的
+            // 有意决策(LOW-2),勿当 bug「修复」为按原因区分的状态码
+            case TOKEN_ACCESS_EXPIRED:
                 response.setStatus(HttpStatus.UNAUTHORIZED.value());
                 break;
             case TOKEN_ACCESS_FORBIDDEN:
@@ -34,7 +38,8 @@ public class ResponseUtils {
                 response.setStatus(HttpStatus.BAD_REQUEST.value());
                 break;
         }
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        // 007 T012:声明 charset —— msg 为中文,不声明则客户端可能按默认编码解码乱码
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8");
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Cache-Control", "no-cache");
         String body = JSONUtil.toJsonStr(Result.failed(resultCode));

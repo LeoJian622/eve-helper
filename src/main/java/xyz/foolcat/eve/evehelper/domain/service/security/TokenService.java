@@ -196,17 +196,6 @@ public class TokenService {
     }
 
     /**
-     * 验证Refresh Token是否有效
-     *
-     * @param refreshToken Refresh Token
-     * @return true-有效, false-无效
-     */
-    public boolean isRefreshTokenValid(String refreshToken) {
-        String key = REFRESH_TOKEN_PREFIX + refreshToken;
-        return Boolean.TRUE.equals(cacheGateway.hasKey(key));
-    }
-
-    /**
      * 解析 Access Token 并提取关键声明(jti / 过期时间 / 用户ID)。
      * 将 JWT 解析细节收拢到领域层,供登出等流程使用。
      *

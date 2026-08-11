@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.application.dto.request.RefreshTokenRequest;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.domain.model.vo.TokenResult;
+import xyz.foolcat.eve.evehelper.domain.service.security.RefreshRateLimiterService;
 import xyz.foolcat.eve.evehelper.domain.service.security.TokenBlacklistService;
 import xyz.foolcat.eve.evehelper.domain.service.security.TokenService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysRoleService;
@@ -44,6 +45,8 @@ public class AuthApplicationService {
     private final TokenService tokenService;
     private final SysUserService sysUserService;
     private final SysRoleService sysRoleService;
+    /** 007 T017:refresh 两层限流(仅失败路径调用,成功路径零影响) */
+    private final RefreshRateLimiterService refreshRateLimiterService;
 
     /**
      * 用户登出:解析并校验 Authorization 头中的 Bearer Token,将其 jti 加入黑名单。
@@ -109,14 +112,22 @@ public class AuthApplicationService {
         }
         if (!UUID_PATTERN.matcher(refreshToken).matches()) {
             log.warn("Refresh Token格式错误: token={}", SensitiveDataMasker.maskToken(refreshToken));
+            // 007 T017:格式非法属洪泛主向量(此阶段拿不到 userId)→ L2 观测 + 延迟整形
+            refreshRateLimiterService.observeInvalidRefresh();
             throw new EveHelperException("Refresh Token格式错误");
         }
-        if (!tokenService.isRefreshTokenValid(refreshToken)) {
+        // 007 T015:原「③ 存在性校验(hasKey)+ ④ 取 userId(get)」两次 Redis 操作
+        // 合并为单次 get(null 即无效),消除两次操作间 token 恰好过期的 TOCTOU 窗口。
+        // 该失败路径尚未解析出 userId,属 L2 洪泛观测范围(T017 接线)。
+        final Integer userId;
+        try {
+            userId = tokenService.getUserIdFromRefreshToken(refreshToken);
+        } catch (IllegalArgumentException e) {
             log.warn("Refresh Token无效: refreshToken={}", SensitiveDataMasker.maskToken(refreshToken));
+            // 007 T017:随机 UUID 洪泛在此被挡(解析不出 userId)→ L2 观测 + 延迟整形
+            refreshRateLimiterService.observeInvalidRefresh();
             throw new EveHelperException("Refresh Token无效或已过期");
         }
-
-        Integer userId = tokenService.getUserIdFromRefreshToken(refreshToken);
         if (userId == null || userId <= 0) {
             log.error("无效的用户ID: userId={}", userId);
             throw new EveHelperException("无效的用户信息");
@@ -125,6 +136,8 @@ public class AuthApplicationService {
         SysUser user = sysUserService.loadUserById(userId);
         if (user == null) {
             log.error("用户不存在: userId={}", userId);
+            // 007 T017:已有 userId 的失败 → L1 按用户观测(仅计数,禁止锁定)
+            refreshRateLimiterService.recordUserFailure(userId);
             throw new EveHelperException("用户不存在");
         }
 
