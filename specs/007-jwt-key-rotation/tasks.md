@@ -125,25 +125,25 @@ description: "Task list for 007-jwt-key-rotation"
 
 ### Tests for User Story 2(先写,必须失败)⚠️
 
-- [ ] T020 [P] [US2] `src/test/java/.../infrastructure/config/security/KeyStoreKeyFactoryTest.java`:别名不存在 → 错误信息含「别名」;口令错 → 信息**不含口令**;文件不存在 → 明确路径;RSA <2048 → 拒绝;**PKCS12 与 JKS 两种物理格式 fixture 均可加载**(M-4);InputStream 关闭(无资源泄漏)
-  - AC: 对旧实现的断言失败 = RED
-- [ ] T021 [P] [US2] `src/test/java/.../infrastructure/config/security/SecurityBaselineValidatorTest.java`:4 项基线各自违规 → 拒绝启动;profile 缺失/未知 → **按生产校验(fail-closed)**;`test` profile → 允许 classpath;**生产 profile + `classpath:test-only.jks` → 拒绝启动**(round3 §3.1 指定用例)
-  - AC: Validator 不存在 → RED
+- [x] T020 [P] [US2] `src/test/java/.../infrastructure/config/security/KeyStoreKeyFactoryTest.java`:别名不存在 → 错误信息含「别名」;口令错 → 信息**不含口令**;文件不存在 → 明确路径;RSA <2048 → 拒绝;**PKCS12 与 JKS 两种物理格式 fixture 均可加载**(M-4);InputStream 关闭(无资源泄漏)
+  - AC: 对旧实现的断言失败 = RED ✅(2026-08-12,旧实现 4 失败/3 回归守卫通过;fixture 为 keytool 合成密钥入库 `src/test/resources/keystore-fixtures/`,.gitignore 例外规则已加;PKCS12 单口令限制:keypass=storepass)T022 后 7/7 GREEN
+- [x] T021 [P] [US2] `src/test/java/.../infrastructure/config/security/SecurityBaselineValidatorTest.java`:4 项基线各自违规 → 拒绝启动;profile 缺失/未知 → **按生产校验(fail-closed)**;`test` profile → 允许 classpath;**生产 profile + `classpath:test-only.jks` → 拒绝启动**(round3 §3.1 指定用例)
+  - AC: Validator 不存在 → RED ✅(2026-08-12,编译失败;T025 后 11/11 GREEN)
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] 重写 `KeyStoreKeyFactory.java`(FR-023):去除双重 synchronized 与可变 store 字段;try-with-resources;异常分类(文件不存在/口令错/别名错/非 RSA)各给独立信息且**不含口令**;加载后断言 RSA modulus ≥ 2048;支持 PKCS12 与 JKS 双格式(不得破坏 DualFormat 现状)
-  - AC: T020 GREEN
-- [ ] T023 [US2] `KeyPairConfig.java:43-51`:`classpath:` 前缀 → ClassPathResource,否则 FileSystemResource;加载前存在性检查,fail-fast 拒绝启动并指明缺失项;日志只打文件名不打完整路径(LOW-5)
-  - AC: T021 部分 GREEN(加载路径分派正确)
-- [ ] T024 [US2] `SecurityProperties.java:26`:移除 `location` 默认值 `"eve-jwt.jks"`(H4a)
-  - AC: 未配 location 时启动报「缺失配置」而非静默用默认
-- [ ] T025 [US2] 实现 `SecurityBaselineValidator` `src/main/java/.../infrastructure/config/security/SecurityBaselineValidator.java`(`ApplicationRunner`,fail-closed 正向白名单):校验 `log-impl` / `logging.level.web` / `access-token-endpoint.enabled` / `KEYSTORE_LOCATION` 四项;**仅当 profile 明确属于 `{test}` 才允许 classpath**,未知/缺失按生产处理(006 L-10 合并实现)
-  - AC: T021 GREEN
-- [ ] T026 [P] [US2] 配置模板:`src/main/resources/application.yml:117` `${KEYSTORE_ALIAS}` → `${KEYSTORE_ALIAS:eve-jwt}`;`.env.example` 补 `KEYSTORE_LOCATION`、`KEYSTORE_ALIAS`;`application-prod.yml.example` 补 `security.keystore` 段(location 用 `/etc/eve-helper/eve-jwt.jks` 占位 + 口令为 `${KEYSTORE_PASSWORD}`)
-  - AC: 模板中无任何真实口令;环境变量名与 `SecurityProperties` 一致
-- [ ] T027 [US2] SC-003 验证:`./mvnw clean package` 后 `unzip -l target/*.jar | grep '\.jks'` 断言**仅含 `test-only.jks`**(此时 eve-jwt.jks 仍在库中 → 预期失败,RED 保留至 T028)。记录实测输出
-  - AC: 验证脚本/命令可重复执行;RED 状态留证
+- [x] T022 [US2] 重写 `KeyStoreKeyFactory.java`(FR-023):去除双重 synchronized 与可变 store 字段;try-with-resources;异常分类(文件不存在/口令错/别名错/非 RSA)各给独立信息且**不含口令**;加载后断言 RSA modulus ≥ 2048;支持 PKCS12 与 JKS 双格式(不得破坏 DualFormat 现状)
+  - AC: T020 GREEN ✅(2026-08-12,7/7;DualFormat `getInstance("jks")` 沿用,双 fixture 回归守卫通过)
+- [x] T023 [US2] `KeyPairConfig.java:43-51`:`classpath:` 前缀 → ClassPathResource,否则 FileSystemResource;加载前存在性检查,fail-fast 拒绝启动并指明缺失项;日志只打文件名不打完整路径(LOW-5)
+  - AC: T021 部分 GREEN(加载路径分派正确)✅(2026-08-12,存在性检查由工厂 `resource.exists()` 承担;`application-test.yml` 同步为 `classpath:test-only.jks`(裸文件名按文件系统处理,fail-closed 约定);JwtAuthFailureResponseTest 上下文冒烟验证分派生效)
+- [x] T024 [US2] `SecurityProperties.java:26`:移除 `location` 默认值 `"eve-jwt.jks"`(H4a)
+  - AC: 未配 location 时启动报「缺失配置」而非静默用默认 ✅(2026-08-12,KeyPairConfig fail-fast + Validator 缺失拒绝双保险)
+- [x] T025 [US2] 实现 `SecurityBaselineValidator` `src/main/java/.../infrastructure/config/security/SecurityBaselineValidator.java`(`ApplicationRunner`,fail-closed 正向白名单):校验 `log-impl` / `logging.level.web` / `access-token-endpoint.enabled` / `KEYSTORE_LOCATION` 四项;**仅当 profile 明确属于 `{test}` 才允许 classpath**,未知/缺失按生产处理(006 L-10 合并实现)
+  - AC: T021 GREEN ✅(2026-08-12,11/11;test 判定为「active profile 明确且仅为 test」,比草案更严)
+- [x] T026 [P] [US2] 配置模板:`src/main/resources/application.yml:117` `${KEYSTORE_ALIAS}` → `${KEYSTORE_ALIAS:eve-jwt}`;`.env.example` 补 `KEYSTORE_LOCATION`、`KEYSTORE_ALIAS`;`application-prod.yml.example` 补 `security.keystore` 段(location 用 `/etc/eve-helper/eve-jwt.jks` 占位 + 口令为 `${KEYSTORE_PASSWORD}`)
+  - AC: 模板中无任何真实口令;环境变量名与 `SecurityProperties` 一致 ✅(2026-08-12,三处已补;口令全部环境变量占位)
+- [x] T027 [US2] SC-003 验证:`./mvnw clean package` 后 `unzip -l target/*.jar | grep '\.jks'` 断言**仅含 `test-only.jks`**(此时 eve-jwt.jks 仍在库中 → 预期失败,RED 保留至 T028)。记录实测输出
+  - AC: 验证脚本/命令可重复执行;RED 状态留证 ✅(2026-08-12,实测 `jar tf target/eve-helper-0.0.2-SNAPSHOT.jar | grep '\.jks'`(unzip 等价命令)= `BOOT-INF/classes/eve-jwt.jks` + `BOOT-INF/classes/test-only.jks` —— **RED 留证**:eve-jwt.jks 在库即入 jar;T028 后应仅剩 test-only.jks)
 
 **Checkpoint**: US2 独立可验 —— 生产可从文件系统加载、fail-closed 生效、jar 内容可断言
 

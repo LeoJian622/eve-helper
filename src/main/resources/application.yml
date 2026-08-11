@@ -114,7 +114,8 @@ security:
   keystore:
     location: ${KEYSTORE_LOCATION}
     password: ${KEYSTORE_PASSWORD}
-    alias: ${KEYSTORE_ALIAS}
+    # 007 T026:别名给默认值 eve-jwt(生产新密钥沿用该别名,减少环境变量面)
+    alias: ${KEYSTORE_ALIAS:eve-jwt}
     key-password: ${KEY_PASSWORD}
 
 eve:

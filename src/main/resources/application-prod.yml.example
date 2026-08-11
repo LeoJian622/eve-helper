@@ -132,6 +132,16 @@ jwt-token:
   issuer: eve-helper.xyz
   subject: eve-helper
   expirationTime: 7200
+# 007(US2):生产 keystore 必须文件系统外置加载 ——
+#   ① location 必须是绝对路径(classpath/裸文件名被 SecurityBaselineValidator 拒启);
+#   ② 密钥文件部署到 /etc/eve-helper/(权限 600、目录 700,SC-009),永不入库;
+#   ③ 口令只走环境变量,本模板不得出现真实口令(安全红线)。
+security:
+  keystore:
+    location: ${KEYSTORE_LOCATION:/etc/eve-helper/eve-jwt.jks}
+    password: ${KEYSTORE_PASSWORD}
+    alias: ${KEYSTORE_ALIAS:eve-jwt}
+    key-password: ${KEY_PASSWORD}
 eve:
   helper:
     whiteUrlList:

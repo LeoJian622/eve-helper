@@ -63,3 +63,10 @@ application-*.yml
 # 其口令(123456)与别名(test-only)是公开的,不含任何生产密钥材料。
 # 防线不在保密,而在启动期 fail-closed 基线校验拒绝生产 profile 使用它(007 FR-008)。
 !src/main/resources/test-only.jks
+# 例外:T020 KeyStoreKeyFactoryTest 的合成 fixture(keytool 生成的测试密钥,
+# 口令为 synthetic-store-pass / synthetic-key-pass,公开于测试代码)。
+# 用途:PKCS12/JKS 双物理格式加载、RSA 位数门禁、异常分类契约。
+# 不含任何生产密钥材料;防线同 test-only.jks(007 FR-008 fail-closed)。
+!src/test/resources/keystore-fixtures/rsa2048.p12
+!src/test/resources/keystore-fixtures/rsa2048.jks
+!src/test/resources/keystore-fixtures/rsa1024.p12
