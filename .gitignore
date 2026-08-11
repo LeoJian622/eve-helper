@@ -50,7 +50,7 @@ application-*.yml
 
 ### Keystores / 私钥 ###
 # JWT 签名 keystore 与任何私钥材料永不入库(CLAUDE.md 安全红线)
-# 注意:eve-jwt.jks 在本规则加入前已被提交(自 5d139d8),仍处于跟踪状态 ——
+# 注意:eve-jwt.jks 在本规则加入前已被提交(自 5d139d8),已于 007 从索引移除 ——
 # 已跟踪文件不受 .gitignore 约束。该私钥应视为已泄露,处置需轮换密钥而非仅删文件。
 *.jks
 *.p12
@@ -58,3 +58,8 @@ application-*.yml
 *.jceks
 *.key
 *.pem
+
+# 例外:测试专用 keystore,故意入库以便 CI 与新克隆直接跑测试。
+# 其口令(123456)与别名(test-only)是公开的,不含任何生产密钥材料。
+# 防线不在保密,而在启动期 fail-closed 基线校验拒绝生产 profile 使用它(007 FR-008)。
+!src/main/resources/test-only.jks

@@ -2,7 +2,7 @@
 
 **Feature**: `007-jwt-key-rotation`
 **创建日期**: 2026-08-11
-**状态**: 规格已按阶段③评审修订(2026-08-11)。Q1 重新决策为**选项 B**(清空 refresh token + 审计,暂不强制改密)。**计划(plan.md)需重写后再评审**
+**状态**: 规格已第三次修订(2026-08-11 21:50)。**序 0 已完成**(测试 keystore 上 classpath、59 个 `@SpringBootTest` 恢复、新基线 `509/F4/E219` 已测定)。Q1 决策为**选项 B**(清空 refresh token + 六表审计,暂不强制改密)。SC-003 已按用户决策改为「不含**生产** keystore」。**`plan.md` 待写 v3** —— 须补白名单共享组件设计与按 userId 限流方案(第二轮评审 CRITICAL-1/2)
 **来源**: 006 提交前安全检查发现 —— `src/main/resources/eve-jwt.jks` 自 `5d139d8「增加token认证」` 起已在版本控制中
 
 ---
@@ -51,7 +51,9 @@
 
 ### 1.2.1 ⚠️ 该缓解基本不成立(2026-08-11 编写规格时发现)
 
-调研 `KeyPairConfig` 的测试依赖时发现:`application-test.yml:158-163` 与 **`application-aliw.yml:157-162`(生产环境之一)** 均以**明文写死** keystore 口令与密钥口令,且为**同一个 6 字符弱口令**(纯小写字母+数字,字典词+数字后缀形态。**实际值不在本文档中记录**)。
+调研 `KeyPairConfig` 的测试依赖时发现:`application-test.yml` 与 **`application-aliw.yml:157-162`(生产环境之一)** 均以**明文写死** keystore 口令与密钥口令。**编写规格当时**两者为同一个 6 字符弱口令(纯小写字母+数字,字典词+数字后缀形态。**实际值不在本文档中记录**)。
+
+> ⚠️ **该「同一个弱口令」的描述已不成立**(第二轮评审 MEDIUM-3 指出,本次修订更正):`application-test.yml` 现已改用独立的 `test-only.jks`,口令与生产**无任何关联**。**`application-aliw.yml`(生产)仍是 6 字符明文口令** —— 下表的紧急性论证**仅凭这一条即成立**。
 
 由此:
 
@@ -59,19 +61,30 @@
 |--------|--------|
 | 「私钥已泄露但口令未泄露,攻击者无法使用」 | **口令强度不足以抵抗离线暴破。** JKS 私钥条目用 PBE 保护,对 6 字符字典词形态口令,单机破解在**秒级到分钟级** |
 | 「轮换优先级:高但不紧急」 | **紧急。** 拿到 git 中的 `eve-jwt.jks` 即可在极短时间内取出私钥,进而伪造任意用户(含 ROOT)的 access token |
-| 「只有 test 环境用弱口令」 | `application-aliw.yml` 是**生产 profile**,同样明文、同样 6 字符弱口令 |
+| 「只有 test 环境用弱口令」 | `application-aliw.yml` 是**生产 profile**,明文 6 字符弱口令 |
 
-> **2026-08-11 20:06 后的现状更正**(第二轮评审指出我的描述已过期):用户已把 `application-test.yml` 的口令改为 **20 字符随机串**,且**与 aliw 不同**。但:
-> - `application-aliw.yml`(**生产**)**仍是 6 字符明文** → 紧急性判断不变
-> - 两者**都仍是明文写死**,故 FR-018 对两者均适用
-> - test 的新 keystore(`eve-helper.jks`)当前**不在 classpath 上**,导致 59 个 `@SpringBootTest` 全部无法加载 —— 见 [第二轮评审 CRITICAL-3](../../docs/reviews/2026-08-11-007-jwt-key-rotation-design-review-round2.md)
+> **2026-08-11 21:35 现状更正**(第三次更正 —— 前两次描述均已过期,本次基于实测):
+>
+> | 密钥 | 实际身份 | 位置 | git 状态 |
+> |------|---------|------|---------|
+> | `eve-helper.jks` | **生产新密钥**(非测试密钥 —— 前版本误认) | **已移出工作区**(用户执行) | 从未入库,历史干净 |
+> | `test-only.jks` | 测试专用(别名 `test-only`,2048 RSA,口令公开) | `src/main/resources/` | 故意入库,`.gitignore:65` 反向放行 |
+> | `eve-jwt.jks` | **旧生产密钥,已泄露** | `src/main/resources/` | **仍跟踪**(用户决定暂留,FR-012 待执行) |
+>
+> - `application-aliw.yml`(**生产**)**仍是 6 字符明文口令** → 紧急性判断不变
+> - `application-test.yml` 现为 `location: test-only.jks` / `alias: test-only` / 明文口令(测试专用,有意公开)
+> - **59 个 `@SpringBootTest` 已恢复可加载** —— 序 0 完成,实测 `Failed to load ApplicationContext` 计数为 **0**
+> - **新回归基线(2026-08-11 21:47,`mvn clean test` 实测)**:`509 tests / Failures 4 / Errors 219`。现存错误根因为外部依赖(MySQL 通信 4、Socket 3、超时 2、SQL 语法 2、SSL 1),**与 007 无关**;keystore 相关错误 **0 处**
 
 **这不改变方案设计,但改变时间表**:轮换应尽快执行,而非排入常规迭代。
 
 **追加要求**:
 - **FR-017** 新口令必须为高强度随机串(建议 ≥32 字符随机生成),不得为字典词或其变形
 - **FR-018** 所有 profile 的 `security.keystore.password` / `key-password` 必须改为 `${KEYSTORE_PASSWORD}` / `${KEY_PASSWORD}` 环境变量引用,禁止明文 —— 现仅 `application.yml`(入库那份)做到了,`application-test.yml` 与 `application-aliw.yml` 未做到
-- **FR-019** test profile 亦须改为环境变量,并使用**与生产不同**的 keystore 与口令(测试 keystore 可单独生成、可入库,因其不保护任何真实凭证 —— 但须显式声明「仅测试用」)
+- **FR-019**(**已按 2026-08-11 现状与用户决策修订**)test profile 须使用**与生产不同**的 keystore 与口令。**已完成部分**:`test-only.jks`(别名 `test-only`,2048 RSA)置于 `src/main/resources/`,`.gitignore:65` 加反向放行规则 `!src/main/resources/test-only.jks` 使其入库,`application-test.yml` 三项配置已对齐并实测可加载。
+  - **口令保持明文,这是有意决策**:测试 keystore 不保护任何真实凭证,口令公开无损失;入库 + 明文口令使 CI 与新克隆可直接跑测试(无需额外注入 keystore)
+  - **故 FR-018 的「所有 profile 改环境变量」不适用于 test profile** —— 这是与 FR-018 的有意分歧,而非遗漏
+  - **代价**:`test-only.jks` 会进生产 jar(SC-003 已按此修订)。防线是 FR-008 的 fail-closed 校验,而非文件缺席
 
 > 注:`application-prod.yml` 与 `application-ali.yml` 无 `security:` 段,依赖 `application.yml` 的环境变量形态,这两个是正确的。
 
@@ -111,7 +124,7 @@
 **验收场景**:
 1. **Given** keystore 置于 `src/main/resources` 之外的路径,**When** 通过 `KEYSTORE_LOCATION` 指定文件系统绝对路径,**Then** 应用正常加载并签发 token
 2. **Given** `KEYSTORE_LOCATION` 指向不存在的路径,**When** 应用启动,**Then** **拒绝启动**并给出明确错误(不得退化为 classpath 回退,那会静默用回旧 keystore)
-3. **Given** 构建产物,**When** 检查 jar 内容,**Then** 不含任何 `.jks` 文件
+3. **Given** 构建产物,**When** 检查 jar 内容,**Then** 不含**生产** keystore(允许含 `test-only.jks`,见 SC-003 修订说明)
 
 ### US3 — 清空 refresh token 并审计入侵痕迹(P1,决策已修订)
 
@@ -218,21 +231,32 @@ RBAC 的 url→role 映射来自三表 JOIN(`SysPermissionMapper.xml:201-211`:`s
 
 - **SC-001** 新密钥对签发的 token 可正常通过验签,受保护端点返回 200
 - **SC-002** 旧密钥签发的 access token 一律返回 401
-- **SC-003** 构建产物(jar)内不含任何 `.jks` 文件
+- **SC-003**(**已按用户决策修订,2026-08-11**)构建产物(jar)内**不含生产 keystore**(`eve-jwt.jks` 或任何生产密钥)。
+  - ⚠️ **不再要求「不含任何 `.jks`」** —— `test-only.jks` 有意置于 `src/main/resources/` 并入库(供 CI 与新克隆直接跑测试),它**必然进 jar**,原措辞在此方案下永不可满足
+  - **真正的防线不是「jar 里没有 jks」,而是 FR-008 的 fail-closed 基线校验**:生产 profile 若指向 classpath keystore 则拒绝启动。这与第二轮评审 HIGH-3② 的判断一致(「文件命名只降低误认概率,真正防线是 fail-closed 基线校验」)
+  - **验证方式**:`mvn clean package` 后 `unzip -l target/*.jar | grep '\.jks'`,断言结果**仅含 `test-only.jks`**。须在 `mvn clean` 后执行,否则 `target/classes/` 残留导致假阴性(评审 HIGH-3③)
+  - **实测现状(2026-08-11 21:47,`mvn clean test` 后)**:`target/classes/` 含 `eve-jwt.jks` 与 `test-only.jks` → 生产密钥确实会进 jar,**这是干净的 RED 证据**,由 FR-012 + US2 解决
 - **SC-004** `KEYSTORE_LOCATION` 缺失或指向不可读文件时应用拒绝启动,错误信息明确指出缺哪个环境变量
 - **SC-005** 生产 profile 下 keystore 位于 classpath 时拒绝启动
-- **SC-006**(**已修订**)轮换且清空 refresh token 后,`POST /auth/tokens` 用旧 refresh token **到达 controller 并返回明确的业务错误**(而非异常逃逸或 403),使客户端能判定「需重新登录」
+- **SC-006**(**已修订**)轮换且清空 refresh token 后,`POST /auth/tokens` 用旧 refresh token **到达 controller 并返回明确的业务错误**(而非异常逃逸或 403),使客户端能判定「需重新登录」。
+  - ⚠️ **须在 `生产 profile 实际配置`下验收,不得仅凭 test profile 结论外推**(第三轮评审 HIGH-1):whiteUrlList 是 List 属性,profile 文件整体覆盖 application.yml,加白可能在生产静默失效
 - **SC-007** `docs/DEPLOYMENT.md` 含轮换步骤与「旧密钥已泄露」的明确记录,且不含任何真实口令
 - **SC-008**(**已修订**)轮换后 Redis `refresh_token:*` 键数量为 **0**(FR-015:已清空);清空前的数量已记录
 - **SC-009** keystore 文件权限为 600、目录 700、属主为服务账号(`stat` 输出留证)
 - **SC-010**(**已修订**)验签失败返回 **HTTP 401** 且 body code 为 `AUT00210` —— 当前实测为异常逃逸,该断言现在**必然失败**,正是 TDD 的 RED 起点
 - **SC-013** **6 张表**审计完成,结论记入 `docs/DEPLOYMENT.md`,表述为「已审计 6 表,未发现**新增/篡改**痕迹;读取型外泄(口令哈希、ESI 凭证)无法检测」而非「确认未被入侵」
 - **SC-014** 用**旧私钥现场签发一个全新的**(未过期)token,断言其被拒绝;并断言新公钥 modulus 与旧公钥不同 —— **这是唯一能证明密钥对确实换掉的验证**(仅验证「已存在的旧 token 失效」在别名/口令变更但密钥未变时会误判通过)
-- **SC-015** `POST /auth/tokens` 有限流:同一 refresh token 反复调用被拒;全局速率超限被拒。**不依赖客户端 IP**(理由见 FR-020)
+- **SC-015** `POST /auth/tokens` 有限流(两层,均不依赖客户端 IP,理由见 FR-020)。
+  - **同一 refresh token 反复调用**:第二次起因旧 token 已被撤销(`TokenService:181` 先撤销后换发)而返回明确业务错误 —— **这是 token 轮换机制,非限流**(L-10)
+  - **洪泛观测**:L2 全局单键计数无效 token 请求,超阈值触发**告警 + 固定延迟**(**非硬拒**;硬拒 = 自伤总闸,第二轮已否决)
+  - **被盗 token 场景**:被盗 refresh token 走**成功路径**,两层计数均不触发 —— 此为**已接受的残余风险**,由 US3 六表审计兜底(M-2)
 - **SC-011**(**验证方式经评审更正 —— 原写法是假门禁**)全部 profile 的 `security.keystore.password` / `key-password` / `location` 均为 `${...}` 环境变量引用。
   - ⚠️ **不能用「`grep` 全仓无明文口令」验证**:`application-{test,ali,aliw,prod}.yml` 全在 `.gitignore` 中,仓库里根本没有它们 → grep **恒为通过**,是个假门禁
   - **正确验证**:由**人工**核验部署环境的实际配置文件并留证(与 FR-002 的职责边界一致 —— AI 无法访问这些文件)
 - **SC-012** 新 keystore 口令为高强度随机串,与旧口令无关联(FR-017;由用户自行核验,不留证于文档)
+- **SC-016**(**新增,第三轮评审 HIGH-1**)所有**生产 profile 实际文件**的 `eve.helper.whiteUrlList` 均含 `POST:/auth/tokens`,或确认其未定义 whiteUrlList(由 application.yml 生效)。
+  - ⚠️ 与 SC-011 同型:`application-{ali,aliw,prod}.yml` 不入库,grep 仓库恒通过是假门禁,**须人工核验部署环境实际文件并留证**
+  - 背景:Spring Boot 对同名 List 属性是**整体替换**而非合并,`application-prod.yml.example:137` 自带 whiteUrlList 副本即为明证
 
 ---
 
@@ -292,19 +316,21 @@ RBAC 的 url→role 映射来自三表 JOIN(`SysPermissionMapper.xml:201-211`:`s
 
 **下一步**:
 
-1. **重写 `plan.md`** —— 现有计划基于「无感」方案,其第 2 节关键决策论证与第 6 节测试策略均需按选项 B 与新增 FR-016/020~023 重做
+1. ~~重写 `plan.md`~~ → **写 v3**:须补第二轮评审的两项 CRITICAL 设计 —— 白名单共享匹配组件(CRITICAL-1)、按 userId 只计失败的限流(CRITICAL-2);并更新序 0 为「已完成」
 2. 重新执行 `ecc:security-reviewer` 设计评审(门禁:涉及认证与加密)
 3. 评审通过后 `/speckit-tasks`
 
-**实现顺序建议**(C3 是其余一切的前提):
+**实现顺序**(已按第二轮评审 HIGH-4 重排;序 0 已完成):
 
-| 序 | 内容 | 为何这个位置 |
+| 序 | 内容 | 状态 / 为何这个位置 |
 |----|------|------------|
-| 1 | **FR-016** 401 链路(filter + `ResponseUtils`) | 现有诊断测试 `JwtFilterDiagnosticTest` 已证明当前失败,直接改写为断言式 RED 测试。这是 SC-010 的起点,也是其余验收场景可观测的前提 |
-| 2 | **FR-020** refresh 端点可达 + 限流 | 依赖 1 的 401 链路才能验证「客户端不陷入循环」 |
-| 3 | **FR-023** 重写 `KeyStoreKeyFactory` | 独立于 1/2,可并行;是 FR-007 错误信息质量的基础 |
-| 4 | **FR-005~008** 加载机制 + 启动基线校验 | 依赖 3 的异常分类 |
-| 5 | **FR-012/013/021** 清理、文档、审计清单 | 收尾 |
-| 6 | 生产轮换(运维) | 全部代码就绪后由用户执行;**SC-001/SC-006/SC-014 的验证须人工完成**(FR-002 口令不经 AI) |
+| **0** | 测试 keystore 上 classpath + 重测基线 | ✅ **已完成(2026-08-11 21:47)**。`test-only.jks` 就位、`.gitignore` 反向规则已加、`ApplicationContext` 加载失败数 0、新基线 `509/F4/E219` |
+| 1 | **白名单共享匹配组件**(`WhiteUrlMatcher`) | **CRITICAL-1 的前提**。不先做,FR-016 与 FR-020 会互相拆台(详见 plan §3.2) |
+| 2 | **FR-016** 401 链路(filter + `ResponseUtils`) | 依赖序 1。SC-010 的起点,也是其余验收场景可观测的前提 |
+| 3 | **FR-020** refresh 端点可达 + 按 userId 限流 | 依赖序 1、2 |
+| 4 | **FR-023** 重写 `KeyStoreKeyFactory` | 独立,可与 1~3 并行;是 FR-007 错误信息质量的基础 |
+| 5 | **FR-005~008** 加载机制 + 启动基线校验(fail-closed) | 依赖序 4 |
+| 6 | **FR-012/013/021** 清理、文档、审计清单 | 收尾。FR-012(`git rm eve-jwt.jks`)**须在 aliw profile 切到文件系统路径之后**,否则生产启动即失败 |
+| 7 | 生产轮换(运维) | 全部代码就绪后由用户执行;**SC-001/SC-006/SC-014 的验证须人工完成**(FR-002 口令不经 AI) |
 
 **状态**: 规格修订完成(选项 B)。`plan.md` 待重写。

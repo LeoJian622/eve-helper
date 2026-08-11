@@ -3,10 +3,10 @@
 **Feature**: `007-jwt-key-rotation`
 **规格**: [spec.md](./spec.md)(已按阶段③评审修订)
 **评审记录**: [设计评审 BLOCK](../../docs/reviews/2026-08-11-007-jwt-key-rotation-design-review.md)
-**创建日期**: 2026-08-11(v2,基于选项 B 重写)
-**状态**: **BLOCK(第二轮)** — v2 经复审仍被驳回,3 项 CRITICAL(其中 2 项为 v2 修订**新引入**)。上轮 9 项清单仅 3 项真正闭合。本文件已按复审更新 §2(序 0)、§3.2(CRITICAL-1)、§3.3(限流方案撤回),但**仍需 v3 重写**:白名单共享组件设计、限流按 userId 方案、序 0 后重测基线
+**创建日期**: 2026-08-11(**v3**,序 0 完成后按实测重写)
+**状态**: **v3 待评审** — 序 0 已完成(基线已重测);CRITICAL-1(白名单共享组件)与 CRITICAL-2(按 userId 限流)已给出设计,见 §3.2 / §3.3。**须经第三轮 `ecc:security-reviewer` 评审后方可进入 `/speckit-tasks`**
 
-> **v1 已废弃**。原计划基于「用户无感」方案,其关键决策论证与测试策略均被评审推翻。本版按选项 B(清空 refresh token + 六表审计,暂不强制改密)重写。
+> **v1 已废弃**(基于「用户无感」方案,依据被推翻)。**v2 被第二轮评审 BLOCK**(3 项 CRITICAL,其中 2 项为 v2 修订新引入)。本 v3 基于 2026-08-11 21:47 的实测状态重写。
 
 ---
 
@@ -14,15 +14,19 @@
 
 ### 做(代码)
 
+> ⚠️ **序号已按第二轮评审 HIGH-4 与第三轮评审确认重排**(M-3①):白名单共享组件是 FR-016 的前提(CRITICAL-1),不再是 FR-016 打头。与 [spec 实现顺序表](./spec.md)及 §2 一致。
+
 | 序 | 项 | 需求 | 依赖 |
 |----|----|------|------|
-| 1 | 验签失败返回 401 + `AUT00210` | FR-016 | 无 —— **其余一切的前置** |
-| 2 | `POST:/auth/tokens` 可达 + 限流(**不依赖 IP**,见 3.1) | FR-020、M2 | 序 1 |
-| 3 | 重写 `KeyStoreKeyFactory` | FR-023 | 无(可与 1/2 并行) |
-| 4 | keystore 文件系统加载 + fail-fast | FR-005~007 | 序 3 |
-| 5 | 启动基线校验(fail-closed) | FR-008 + 006 L-10 | 序 4 |
-| 6 | 配置与模板补全 | FR-018、FR-019 | 序 4 |
-| 7 | 清理与文档 | FR-012、FR-013、FR-021 | 全部 |
+| 0 | ✅ **已完成**:测试 keystore 上 classpath + 重测基线 | 序 0 | — |
+| 1 | 抽出白名单共享匹配组件 `WhiteUrlMatcher` | CRITICAL-1、FR-016/020 前提 | 序 0 |
+| 2 | 验签失败返回 401 + `AUT00210`(白名单路径放行) | FR-016 | 序 1 |
+| 3 | `POST:/auth/tokens` 可达 + 两层限流(**不依赖 IP**,见 3.3) | FR-020 | 序 1、2 |
+| 4 | 重写 `KeyStoreKeyFactory` | FR-023 | 无(可与 1~3 并行) |
+| 5 | keystore 文件系统加载 + fail-fast | FR-005~007 | 序 4 |
+| 6 | 启动基线校验(fail-closed) | FR-008 + 006 L-10 | 序 5 |
+| 7 | 配置与模板补全 | FR-018、FR-019 | 序 5 |
+| 8 | 清理与文档 | FR-012、FR-013、FR-021 | 全部 |
 
 ### 做(文档/清单,非代码)
 
@@ -41,45 +45,52 @@
 
 ---
 
-## 2. 实现顺序的强制约束(**已按第二轮评审更正**)
+## 2. 实现顺序的强制约束(**序 0 已完成,v3 按实测更新**)
 
-### ⚠️ 序 0 必须先做:恢复测试上下文可加载
+### ✅ 序 0 已完成(2026-08-11 21:47)
 
-**当前工作区状态(2026-08-11 20:06 之后,实测)**:
+**执行内容与实测结果**:
 
-| 事实 | 证据 |
-|------|------|
-| 根目录新增 `eve-helper.jks`(2722 字节) | 用户于 20:06 生成,**不在任何 classpath 根上** |
-| `application-test.yml:159` 指向 `eve-helper.jks`,别名 `eve-helper` | 已改(非 plan v2 文件清单里写的 `test-only-jwt.jks`) |
-| `src/test/resources/` **不存在** | `ls` 确认 |
-| `KeyPairConfig.java:44` 用 `ClassPathResource` 解析 | → `FileNotFoundException: class path resource [eve-helper.jks] cannot be opened` |
-| **全部 59 个 `@SpringBootTest` 无法加载 ApplicationContext** | 实跑 `JwtFilterDiagnosticTest`:`Tests run: 3, Errors: 3`,全部因 keyPair bean 创建失败 |
-| `eve-helper.jks` 未出现在 `git status` | **被 `.gitignore:55` 的 `*.jks` 静默吞掉** —— 评审 HIGH-3 预言的问题已实际发生 |
+| 动作 | 结果 | 证据 |
+|------|------|------|
+| 测试 keystore 上 classpath | `test-only.jks` 置于 `src/main/resources/`,别名 `test-only`,2048 位 RSA | `keytool -list` 确认别名与位数;证书指纹 `FD:9F:19:...:FB:4` |
+| `.gitignore` 反向放行 | `!src/main/resources/test-only.jks`(`.gitignore:65`) | `git check-ignore -v` 返回负向匹配;`git status` 中以 `??` 出现 |
+| 恢复 `@SpringBootTest` 可加载 | **`Failed to load ApplicationContext` 计数 = 0** | `mvn clean test` 全量日志 grep |
+| keystore 相关错误清零 | **0 处** | grep `KeyPairConfig|KeyStoreKeyFactory|FileNotFoundException` 无命中 |
+| **重测回归基线** | **`509 tests / Failures 4 / Errors 219`** | `mvn clean test`,EXIT=1 |
+| 生产密钥移出工作区 | `eve-helper.jks` 已由用户移出;从未入库,历史干净 | `git log --all` 为空 |
 
-**两处 plan v2 的陈述由此失效**:
+**新基线的性质判定**(替代 v2 失效的 `502/F4/E216`):
 
-1. ~~「诊断测试 2 个用例以 ERROR 结束 = 天然 RED 状态」~~ —— **错误**。当前 3 个用例**全部** ERROR,且原因是上下文起不来,**与 C2/C3 无关**。修完 FR-016 后它们依然全红,GREEN 判据失效
-2. ~~「基线 502 tests / Failures 4 / Errors 216」~~ —— **失效**。该数字测于 keystore 变更之前
+现存 219 errors 的根因分布(`Caused by` 聚合)全部是**外部依赖不可达**:MySQL 通信异常 4、Socket 异常 3、超时 2、SQL 语法 2、SSL 1 等。**与 007 的改造范围无关**。
 
-> 早前(keystore 变更前)的 C2/C3 实测结论仍然有效 —— 那次运行成功返回了 `401 AUT00201` 与异常逃逸。但**现在无法复现**,须在序 0 后重测。
+> **回归门禁改法(评审 MEDIUM-5)**:**不使用固定 Errors 阈值**(该数字随外部环境浮动,v2 的「≤216」已被证明无意义)。改为**同环境逐用例 diff**:以本次 `509/F4/E219` 的用例级结果为基准,改造后比对**用例名集合**的增删,只允许「原 ERROR 转 PASS」,不允许出现新的失败用例名。
 
-**序 0 的内容**:
-- 决定测试 keystore 的归属:放 `src/test/resources/`(需 `git add -f` 或 `.gitignore` 反向规则),或改 test profile 用绝对路径
-- 别名与生产**显著区分**(现 `eve-helper` vs 生产 `eve-jwt` 仅一词之差,不满足 M3)
-- 恢复 59 个 `@SpringBootTest` 可加载
-- **重新测定回归基线并记录**(不再用固定 Errors 阈值,改为同环境逐用例 diff)
+### ⚠️ 序 0 的一项遗留发现:SC-003 原措辞不可满足
+
+`mvn clean` 后实测 `target/classes/` 含 **`eve-jwt.jks` 与 `test-only.jks`**。
+
+- `eve-jwt.jks` 进 jar → **真阴性 RED 证据**,由 FR-012 + US2 解决
+- `test-only.jks` 进 jar → **有意为之**。故 SC-003 已按用户决策(2026-08-11)改为「不含**生产** keystore」,验证方式 `unzip -l target/*.jar | grep '\.jks'` 断言仅含 `test-only.jks`
+- **防线不是「jar 里没有 jks」,而是序 5 的 fail-closed 基线校验** —— 与评审 HIGH-3② 判断一致
 
 ### 序 1:抽出白名单共享匹配组件(CRITICAL-1 的前提)
 
-见 3.2 —— FR-016 与 FR-020 在当前设计下**互相拆台**,必须先解决。
+见 §3.2 —— FR-016 与 FR-020 在 v2 设计下**互相拆台**,必须先解决。
 
 ### 序 2:FR-016(401 链路)
 
-原 plan v2 的序 1。理由仍成立(未修时无法观测「旧 token 被拒」),但**它不是最先** —— 序 0、序 1 是其前提。
+理由仍成立(未修时无法观测「旧 token 被拒」),但**它不是最先** —— 序 1 是其前提。
+
+### 序 3~7
+
+见 [spec.md 末尾的实现顺序表](./spec.md)。**序 6 的 `git rm eve-jwt.jks` 有前置条件**:须在 `application-aliw.yml` 切到文件系统绝对路径之后,否则生产启动即因找不到 classpath keystore 而失败。
+
+> **当前状态**:`eve-jwt.jks` 仍处跟踪状态(用户 2026-08-11 明确决定暂留)。FR-012 待序 6 执行。
 
 ---
 
-## 3. 关键决策(v2)
+## 3. 关键决策(v3)
 
 | 决策 | 理由 |
 |------|------|
@@ -112,14 +123,57 @@ JwtAuthorizationTokenFilter        ← 位于 UsernamePasswordAuthenticationFilt
 
 **比未修更隐蔽**:HTTP 语义看起来正确了,链路依旧是断的。
 
-**修法**:白名单判定须成为过滤器**可见**的单一事实来源:
+**修法**:白名单判定须成为过滤器**可见**的单一事实来源。
 
-| 方案 | 说明 |
+#### v3 设计:抽出 `WhiteUrlMatcher`(方案 A,已具化)
+
+**已核实的代码事实**(2026-08-11 21:50 读码):
+
+| 事实 | 位置 |
 |------|------|
-| **A(推荐)** 抽出 `WhiteUrlMatcher` | 封装 `method + ":" + uri` 精确匹配,同时被 `RbacAuthorizationManager` 与 JWT filter 消费。filter 在白名单路径上**不拒绝**(仅不写入 `SecurityContext`) |
-| B | 覆写 `OncePerRequestFilter.shouldNotFilter`,对白名单路径跳过整个 filter |
+| 白名单来源 | `EveHelperSecurityConfig`(`@ConfigurationProperties(prefix="eve.helper")`),字段 `List<String> whiteUrlList` |
+| 判定逻辑 | `RbacAuthorizationManager:66-76`,`restfulPath.equals(white)` **精确字符串匹配**(非 Ant 通配) |
+| `restfulPath` 构造 | `RbacAuthorizationManager:61` = `method + ":" + request.getRequestURI()` |
+| OPTIONS 短路 | `RbacAuthorizationManager:55-58` 先于白名单判定直接放过 |
+| JWT filter 位置 | `JwtAuthorizationTokenFilter extends OncePerRequestFilter`,`SecurityConfig` 中位于 `UsernamePasswordAuthenticationFilter` 之前 |
+| 现有白名单内容 | `application.yml:122-124` 仅 `POST:/user`(另有注释掉的 `GET:/`) |
 
-**须补的 AC**:「带旧 access token 请求白名单端点 → 到达 controller」。
+**新组件**:`infrastructure/config/security/WhiteUrlMatcher.java`
+
+```java
+@Component
+@RequiredArgsConstructor
+public class WhiteUrlMatcher {
+    private final EveHelperSecurityConfig config;
+
+    /** 与 RbacAuthorizationManager 完全一致的匹配语义:method + ":" + URI 精确相等 */
+    public boolean isWhiteListed(HttpServletRequest request) {
+        String restfulPath = request.getMethod() + ":" + request.getRequestURI();
+        List<String> list = config.getWhiteUrlList();
+        return list != null && list.stream().anyMatch(restfulPath::equals);
+    }
+}
+```
+
+**两处消费方改造**:
+
+| 消费方 | 改动 | 目的 |
+|--------|------|------|
+| `RbacAuthorizationManager:66-76` | 替换内联 stream 为 `whiteUrlMatcher.isWhiteListed(request)` | 消除重复实现,保证语义永不漂移(**单一事实来源**) |
+| `JwtAuthorizationTokenFilter.doFilterInternal` | **验签失败时**:若 `whiteUrlMatcher.isWhiteListed(request)` 为真 → **不写 401,直接 `filterChain.doFilter` 放行**(不写入 `SecurityContext`);否则写 401 并 return | 使白名单端点在携带旧/无效 token 时仍可达 controller |
+
+**关键语义**:filter 在白名单路径上「**不拒绝**」而非「**不解析**」。区别在于:若 token 恰好有效,仍应写入 `SecurityContext`(便于 controller 侧可选地识别用户);仅在**验签失败**时才走「放行但无认证」分支。
+
+> **为何不选方案 B(`shouldNotFilter`)**:`shouldNotFilter` 会让白名单路径**完全跳过** filter,连有效 token 也不解析。`POST:/auth/tokens` 的 controller 若日后需要识别「谁在 refresh」,将无从获取。方案 A 保留了这个可能性,成本仅多一个分支。
+
+**须补的 AC**(spec US1 场景 2 的强化):
+
+1. 带**旧密钥签发的** access token 请求 `POST /auth/tokens` → **到达 controller**(断言 controller 被调用,非仅断言状态码)
+2. 带**格式非法的** token(`ParseException` 路径)请求白名单端点 → 同样到达 controller
+3. 带旧 token 请求**非白名单**端点 → 401 + `AUT00210`(不得因本改造而放宽)
+4. `WhiteUrlMatcher` 与 `RbacAuthorizationManager` 对同一组输入给出**相同判定**(防语义漂移的契约测试)
+
+> ⚠️ **遗留风险(须在评审中确认)**:`RbacAuthorizationManager:55-58` 的 OPTIONS 短路**不在** `WhiteUrlMatcher` 内。若 JWT filter 也需对 OPTIONS 放行,须显式处理 —— 但 CORS 预检通常不带 `Authorization` 头,会走 filter 开头的「非 JWT 不处理」分支(`JwtAuthorizationTokenFilter:56-61`),故**大概率无影响**。此判断未经实测,列为待验证项。
 
 > 附带:现方案唯一能侥幸跑通的前提是「客户端 refresh 时会摘掉 Authorization 头」—— 该假设从未写进 spec,也不该依赖。服务端必须自己兜住。
 
@@ -155,7 +209,60 @@ JwtAuthorizationTokenFilter        ← 位于 UsernamePasswordAuthenticationFilt
 
 **另须避免**:不要把 `LoginRateLimiterService` 当范本 —— 它按 username 计数、5 次锁 30 分钟(`LoginRateLimiterService:25-26`),意味着任何人可用 5 次错误口令**定向锁死任意已知用户 30 分钟**(既有的账户锁定 DoS,超出 007 范围但不可复制)。
 
-> **结论:FR-020 的限流条款须重写,现方案不得进入实现。这是我的判断错误,评审驳回成立。**
+#### v3 设计:按 userId 限流(采纳评审方案,但**修正其一处前提**)
+
+**已核实的代码事实**(2026-08-11 21:52 读码 `AuthApplicationService.refreshToken:104-137`):
+
+现有校验链顺序为:
+
+```
+① 空值校验            → EveHelperException「不能为空」
+② UUID 格式校验:110   → EveHelperException「格式错误」        ← 无 Redis 访问
+③ isRefreshTokenValid → EveHelperException「无效或已过期」    ← 第 1 次 Redis 访问
+④ getUserIdFromRefreshToken:120 → userId                     ← 第 2 次 Redis 访问
+⑤ loadUserById        → 查库
+⑥ refreshAccessTokenWithUser → TokenService:181 先撤销后换发
+```
+
+**⚠️ 评审方案的前提在此处需要修正**:评审说「一次 Redis GET 解出 userId 后以 userId 为桶」,但**对最主要的攻击向量,userId 根本解不出来**:
+
+| 攻击输入 | 在哪一步失败 | 能否解出 userId | 能否按 userId 计数 |
+|---------|------------|----------------|------------------|
+| 随机 UUID(**主要向量**) | ③ `isRefreshTokenValid` | **否** —— Redis 中无此键 | **不能** |
+| 非 UUID 垃圾串 | ② 格式校验 | 否 | 不能 |
+| 已撤销的真实 token | ③ | 否(键已删) | 不能 |
+| 有效 token 重复调用 | 不失败 | 是 | 能,但**这不是攻击** |
+
+**结论:纯「按 userId 计数」无法约束随机 UUID 洪泛** —— 而那恰是端点加白后最容易被打的方式。评审正确否决了「按 token 值计数」(会造成 Redis 键空间放大),但其替代方案覆盖不到主向量。
+
+**v3 的方案(两层,均不新增无界键空间)—— 已按第三轮评审 §2.3/2.4 修订**:
+
+| 层 | 机制 | 键空间 | 作用(诚实表述,round3 §2.3/2.5) |
+|----|------|--------|------|
+| **L1 按用户异常观测计数器** | 仅在 ④ 之后、⑤/⑥ 失败时计数(如用户恰被删除的竞态)。键 `refresh:fail:{userId}`,**TTL 60s**,触发动作**仅告警** | 有界(真实用户数),攻击者无法主动构造(round3 §2.2) | **定位是观测,不是防护** —— 持被盗 token 的攻击者走成功路径,只计失败的 L1 一次都不计数(M-2)。**禁止任何锁定动作**:按 userId 锁定 = 复制 `LoginRateLimiterService` 的定向锁死 DoS,本 plan 自己刚谴责过 |
+| **L2 无效 token 洪泛的检测 + 速率整形(全局单键)** | **单一固定键** `refresh:invalid:global` 计数「②/③ 阶段失败」总次数,**固定窗口**(`INCR`+`EXPIRE`)。超阈值时**仅告警 + 固定延迟(100–300ms,仅失败路径)** | **常量 1 个键** —— 无放大 | **真价值是检测 + 速率整形,为运维响应争取时间**;结构性抗洪泛来自失败路径廉价(③ 即止、不触 DB/不触 token 生成/不触 RBAC Redis 读)。**不做硬性拦截** |
+
+**L2 降级形式已裁决:固定延迟,否决 503(HIGH-2,round3 §2.4)**:
+
+- ~~返回 503~~ **删除此选项**。选项 B 下轮换瞬间**全体**合法客户端的 refresh 都在 ③ 失败,L2 必然触发;503 会把合法请求挡在 controller 外 —— 恰是 SC-006 验收的时刻。503 = 换状态码的硬拒 = 第二轮已否决的自伤总闸从后门请回
+- **锁定为固定延迟(100–300ms,仅施加于 ②/③ 失败路径,永不施加于成功路径)**。延迟不破坏可达性(客户端拿到延迟后的 `400 + "Refresh Token无效或已过期"`,照样跳登录页);持有效 token 的正常 refresh 不受影响
+
+**L2 配套实现约束(须写入 tasks,round3 §2.4)**:
+
+| 约束 | 内容 |
+|------|------|
+| 窗口 | **固定窗口**(`INCR`+`EXPIRE`),非滑动窗口 —— 滑动需 ZSET ≥3 条命令/请求,在洪泛路径上反而加重 Redis 负载 |
+| 过期竞态 | **每次 INCR 后都重设 EXPIRE**,杜绝「INCR 与 EXPIRE 之间崩溃 → 键永不过期 → 永久降级」 |
+| Redis 故障 | **fail-open**(try-catch 跳过 L2):Redis 不可用时 ③ 本身就会失败,refresh 整体不可用,L2 不应新增失败面 |
+| 告警 | 接入 **Prometheus**(pom 已有 metrics 依赖),而非仅日志 |
+| 阈值定标 | 窗口内阈值 ≥ 预估轮换尖峰(在线用户数 × 每客户端 refresh 重试次数),使「L2 触发 ≈ 异常流量」,轮换本身不误触发;若阈值低于尖峰,也仅允许延迟型降级 |
+| 实现范本 | 复用 `LoginRateLimiterService:39-49` 已验证的 `increment`+首次 `expire` 模式;**但其「按 username 计数 + 锁 30 分钟」的模式禁止照搬**(可定向锁死任意已知用户) |
+
+**为何 L2 用单键而非按 token 值**:计数器是**一个固定键**,攻击者无论换多少随机 UUID 都只 `INCR` 同一个键 → **无键空间放大**(评审驳回方案 B 的核心理由被规避),且 token 明文不进键空间。
+
+**为何 L2 不硬拒**:评审对「全局硬限流 = 自伤总闸」的判断成立 —— 轮换瞬间全体客户端同时 refresh,硬拒会让合法用户无法恢复会话。故 L2 **仅告警/降级**,与评审建议 2 一致。
+
+> ✅ **多实例说明(第三轮评审已确认)**:L2 计数器在多实例下经 Redis 全局共享(真全局视图),延迟在各实例本地执行、无协调成本;Redis 故障按上表 fail-open。
 
 ---
 
@@ -175,53 +282,81 @@ JwtAuthorizationTokenFilter        ← 位于 UsernamePasswordAuthenticationFilt
 
 | 文件 | 用途 |
 |------|------|
+| `infrastructure/config/security/WhiteUrlMatcher.java` | **白名单匹配单一事实来源**(CRITICAL-1),供 `RbacAuthorizationManager` 与 JWT filter 共同消费 |
 | `infrastructure/config/security/SecurityBaselineValidator.java` | `ApplicationRunner`,fail-closed 校验 4 项基线 |
-| `domain/service/security/RefreshRateLimiterService.java` | 按 refresh token 值 + 全局速率限流(**不依赖 IP**,见 3.1) |
-| `src/test/resources/test-only-jwt.jks` | 测试 keystore,别名 `test-only`(与生产显著区分,见 M3) |
+| `domain/service/security/RefreshRateLimiterService.java` | 两层限流:L1 按 userId 只计失败 + L2 全局单键洪泛观测(**不依赖 IP**,见 §3.3) |
+| ~~`src/test/resources/test-only-jwt.jks`~~ | ✅ **已完成,但路径与命名与 v2 计划不同**:实际为 `src/main/resources/test-only.jks`(别名 `test-only`),经用户决策留在 main resources 并入库 |
 | `src/test/.../JwtAuthFailureResponseTest.java` | 401 链路回归测试(由 `JwtFilterDiagnosticTest` 改写而来) |
-| `src/test/.../SecurityBaselineValidatorTest.java` | 各违规组合 → 拒绝启动;非生产 profile → 跳过 |
-| `src/test/.../KeyStoreKeyFactoryTest.java` | 异常分类、别名错误、RSA 位数断言、错误信息不含口令 |
-| `src/test/.../RefreshTokenEndpointAccessTest.java` | 无 token / 失效 token 时可达 controller;限流生效 |
+| `src/test/.../WhiteUrlMatcherContractTest.java` | `WhiteUrlMatcher` 与 `RbacAuthorizationManager` 判定一致性契约测试(防语义漂移,AC#4) |
+| `src/test/.../SecurityBaselineValidatorTest.java` | 各违规组合 → 拒绝启动;非生产 profile → 跳过;**生产 + `classpath:test-only.jks` → 拒启**(round3 §3.1) |
+| `src/test/.../KeyStoreKeyFactoryTest.java` | 异常分类、别名错误、RSA 位数断言、错误信息不含口令;**PKCS12 与 JKS 双格式 fixture**(M-4) |
+| `src/test/.../RefreshTokenEndpointAccessTest.java` | 无 token / 失效 token 时可达 controller |
+| `src/test/.../RefreshRateLimiterTest.java` | L2 超阈值 → 告警+固定延迟(非硬拒);成功路径不延迟;Redis 故障 fail-open;L1 无锁定动作 |
 
 ### 修改
 
 | 文件 | 改动 |
 |------|------|
-| `JwtAuthorizationTokenFilter.java:64-106` | try-catch 内直接写 401 响应并 return,不再抛 `InvalidCookieException` |
-| `ResponseUtils.java:26-35` | switch 增加 `TOKEN_ACCESS_EXPIRED` → 401 分支 |
-| `KeyStoreKeyFactory.java` | 全面重写(FR-023) |
-| `KeyPairConfig.java:43-51` | 按 `classpath:` 前缀分派 Resource;文件存在性检查 |
+| `RbacAuthorizationManager.java:67-73` | **替换内联白名单 stream 为 `whiteUrlMatcher.isWhiteListed(request)`**(CRITICAL-1,消除重复实现)。⚠️ 保留 OPTIONS 短路(:56-58)原样 —— 与 filter 对 OPTIONS 的语义分歧是**有意的**(round3 §1.3),注释说明防后人「对齐」 |
+| `JwtAuthorizationTokenFilter.java:52-109` | **全部 5 个失败出口**(验签/过期/黑名单/Parse/JOSE)统一走 `rejectOrPass`:白名单路径→匿名放行不写认证;非白名单→直写 401 + return。不再抛 `InvalidCookieException`。**须加 `response.isCommitted()` 守卫**(评审 MEDIUM-1②);`log.error("JWT解析失败", e)` 降级为 warn + 只打异常类名(MEDIUM-1④) |
+| `ResponseUtils.java:26-35` | switch 增加 `TOKEN_ACCESS_EXPIRED` → 401 分支;**`Content-Type` 补 `charset=UTF-8`**(评审 MEDIUM-1①)。**风险登记(L-4)**:`Access-Control-Allow-Origin: *` 硬编码将出现在更多 401 响应上(既有行为,本次不修,仅登记) |
+| `KeyStoreKeyFactory.java` | 全面重写(FR-023);**`getInputStream()` 改 try-with-resources**(评审 MEDIUM-2,原代码从不关闭);**AC 增加「能加载 PKCS12 与 JKS 两种物理格式」**——现 `test-only.jks` 实为 PKCS12,靠 DualFormat 兼容被 `getInstance("jks")` 加载,重写若改严格将致 59 个测试集体失败(M-4) |
+| `KeyPairConfig.java:43-51` | 按 `classpath:` 前缀分派 Resource;文件存在性检查;**日志只打文件名不打完整路径**(评审 LOW-5) |
 | `SecurityProperties.java:26` | **移除 `location` 默认值** `"eve-jwt.jks"`(评审 H4a) |
+| `AuthApplicationService.refreshToken:114-119` | **M-5(设计优化)**:③ `hasKey` + ④ `get` 两次 Redis 往返合并为单次 `get`(null 即无效),洪泛单请求成本 2→1 命令,并消除 ③④ 间 TOCTOU。`:158` 的第三次读取(撤销前权威校验)保留 |
 | `application.yml:122-124` | `whiteUrlList` 增 `POST:/auth/tokens` |
-| `application.yml:117` | `${KEYSTORE_ALIAS}` → `${KEYSTORE_ALIAS:eve-jwt}` |
+| `application.yml:117` | `${KEYSTORE_ALIAS}` → `${KEYSTORE_ALIAS:eve-jwt}`(评审 LOW-1:与移除 location 默认值方向相反,但别名危害远小于 location,故可接受) |
 | `.env.example` | 补 `KEYSTORE_LOCATION`、`KEYSTORE_ALIAS` |
-| `application-prod.yml.example` | 补 `security.keystore` 段 |
-| `application-test.yml`(不入库) | 口令改 `${...}`;location 改 `classpath:test-only-jwt.jks`;alias 改 `test-only` |
-| `application-aliw.yml`(不入库) | 口令改 `${...}`;**location 改文件系统绝对路径**(评审 H4a:我原 FR-018 遗漏了 location) |
-| `AuthenticationFailureServletHandler.java:68-69` | 清理 `InvalidCookieException` 死分支(评审 L2) |
-| `src/main/resources/eve-jwt.jks` | **`git rm`**(FR-012) |
-| `docs/DEPLOYMENT.md` | 轮换章节 + 六表审计清单 + 公告模板 |
+| `application-prod.yml.example` | 补 `security.keystore` 段;**whiteUrlList 同步增 `POST:/auth/tokens`**(HIGH-1:List 属性被 profile 整体覆盖,模板不同步则加白在生产静默失效 —— 已随本 plan 修订落地) |
+| ~~`application-test.yml`~~ | ✅ **已完成(序 0)**:`location: test-only.jks` / `alias: test-only`。**口令保持明文,不改环境变量** —— 见 spec FR-019 修订(测试 keystore 有意公开,以便 CI 直接跑) |
+| `application-aliw.yml`(不入库) | 口令改 `${...}`;**location 改文件系统绝对路径**(评审 H4a)。**这是 FR-012 的前置条件** |
+| `AuthenticationFailureServletHandler.java:69-70` | 清理 `InvalidCookieException` 死分支(评审 L2/LOW-3;**L-8:第二轮「更正」方向错了,实测死分支在 `:69-70`** 而非 `:68-69`) |
+| `src/main/resources/eve-jwt.jks` | **`git rm`**(FR-012)。⚠️ **须在 aliw profile 切绝对路径之后**,否则生产启动失败。用户 2026-08-11 决定暂留,待序 6 |
+| `docs/DEPLOYMENT.md` | 轮换章节 + **六**表审计清单 + 公告模板 + **新生产密钥指纹 ≠ `test-only.jks` 公开指纹(`FD:9F:19:27:61:...:CA:0F:B4`)核对项**(L-5:SC-014 检测不到「误把 test-only.jks 当新生产密钥部署」) |
 | `specs/006-.../spec.md` L-10 | 标注「已由 007 实现」 |
 
 ---
 
 ## 5. 401 链路改造设计(FR-016)
 
+> ⚠️ **本节与 §3.2 的白名单放行设计强耦合**。实现时两节必须同时对照 —— v2 伪码曾因缺少白名单分支与 §3.2 矛盾,被第三轮评审 HIGH-3 驳回(见 round3 §五)。本节伪码已覆盖 filter 的**全部 5 个失败出口**(M-1)。
+
 ```java
-// JwtAuthorizationTokenFilter.doFilterInternal 目标形态(伪码)
+// JwtAuthorizationTokenFilter.doFilterInternal 目标形态(伪码,第三轮评审后重写)
+private void rejectOrPass(HttpServletRequest request, HttpServletResponse response,
+                          FilterChain chain, ResultCode code) throws IOException, ServletException {
+    if (whiteUrlMatcher.isWhiteListed(request)) {
+        chain.doFilter(request, response);        // 白名单路径:匿名放行,不写 SecurityContext
+        return;
+    }
+    ResponseUtils.writeErrorInfo(response, code); // 非白名单:直写 401,不继续 chain
+}
+
 try {
     SignedJWT signedJWT = SignedJWT.parse(token);
     if (!signedJWT.verify(verifier)) {
-        ResponseUtils.writeErrorInfo(response, ResultCode.TOKEN_ACCESS_EXPIRED);
-        return;                        // 关键:不继续 filterChain
+        rejectOrPass(request, response, chain, TOKEN_ACCESS_EXPIRED);   // 出口①验签失败
+        return;
     }
-    // ... 过期检查、黑名单检查同样改为 writeErrorInfo + return
+    if (jwtClaimsSet.getExpirationTime().getTime() < now) {
+        rejectOrPass(request, response, chain, TOKEN_ACCESS_EXPIRED);   // 出口②过期
+        return;
+    }
+    if (tokenBlacklistService.isBlacklisted(jti)) {
+        rejectOrPass(request, response, chain, TOKEN_ACCESS_EXPIRED);   // 出口③黑名单
+        return;
+    }
+    // ... 写 SecurityContext,继续 chain
 } catch (ParseException | JOSEException e) {
-    log.warn("JWT 校验失败: {}", e.getClass().getSimpleName());   // 不记 token 内容
-    ResponseUtils.writeErrorInfo(response, ResultCode.TOKEN_ACCESS_EXPIRED);
+    log.warn("JWT 校验失败: {}", e.getClass().getSimpleName());          // 不记 token 内容
+    rejectOrPass(request, response, chain, TOKEN_ACCESS_EXPIRED);       // 出口④⑤解析/JOSE 异常
     return;
 }
 ```
+
+**白名单语义(与 §3.2 一致)**:白名单路径上**任何** token 校验失败一律匿名放行 —— 白名单 = 该端点不要求认证。覆盖范围:验签失败(①)、过期(②)、黑名单(③)、ParseException(④)、JOSEException(⑤),共 5 个出口。
+
+**有意的设计决策(防后人当 bug 修,LOW-2)**:验签失败/过期/撤销**统一返回 `AUT00210`**,不区分具体原因 —— 这是防信息泄露的有意取舍(泄露「为何失败」会帮助攻击者区分密钥状态),语义上对撤销场景不够精确,但安全性优先。
 
 配套 `ResponseUtils.writeErrorInfo` 的 switch 增加:
 
@@ -235,6 +370,7 @@ case TOKEN_ACCESS_EXPIRED:          // ← 新增,现落 default → 400
 **须注意的副作用**:改为「写响应 + return」后,原先靠异常中断的路径变为正常返回。须确认:
 - 响应未被后续 filter 覆写(`ResponseUtils` 已 `setStatus` + 写 body,`return` 后不再进 chain,应无覆写)
 - 日志**不得**打印 token 内容(现 `:101` `log.error("JWT解析失败", e)` 会带堆栈,须确认堆栈不含 token)
+- 白名单分支的 `chain.doFilter` 后不再写 `SecurityContext` —— 与 §3.2「放行但不写认证」一致,STATELESS 会话策略下无跨请求泄漏面(round3 §1.2 已核验)
 
 ### 5.1 已实测:`ResponseUtils` 的现状(排除了两个疑虑)
 
@@ -253,23 +389,30 @@ case TOKEN_ACCESS_EXPIRED:          // ← 新增,现落 default → 400
 
 ---
 
-## 6. 测试策略(v2)
+## 6. 测试策略(v3)
+
+> 基线与门禁已按序 0 实测更新(M-3②):旧值 `502/F4/E216` 与「Errors ≤ 216」均失效。
 
 | 层 | 测试 | 关键断言 |
 |----|------|---------|
 | **401 链路** | `JwtAuthFailureResponseTest`(由诊断测试改写) | 验签失败 → **HTTP 401** 且 body code `AUT00210`;过期 token → 401;黑名单 token → 401;**响应体不含 token 片段** |
-| **refresh 可达** | `RefreshTokenEndpointAccessTest` | 无 token → 到达 controller(非 401 `AUT00201`);失效 token → 到达 controller;refresh token 不存在 → 明确业务错误;同一 refresh token 反复调用 → 限流拒绝;全局速率超限 → 拒绝 |
-| **KeyStoreKeyFactory** | `KeyStoreKeyFactoryTest` | 别名不存在 → 错误信息含「别名」而非「Cannot load keys」;口令错 → 错误信息**不含口令**;文件不存在 → 明确路径;RSA <2048 → 拒绝 |
-| **启动校验** | `SecurityBaselineValidatorTest` | 4 项各自违规 → 拒绝;profile 缺失/未知 → **按生产校验(fail-closed)**;`test` profile → 允许 classpath |
-| **回归** | 既有 58 个 `@SpringBootTest` | 换 `test-only-jwt.jks` 后仍能签发/验签;**Errors 数不高于 216** |
+| **白名单放行** | `WhiteUrlMatcherContractTest` + `RefreshTokenEndpointAccessTest` | `WhiteUrlMatcher` 与 `RbacAuthorizationManager` 对同一组输入判定一致(防语义漂移,AC#4);带旧/非法 token 请求白名单端点 → **到达 controller**(AC#1/#2);带旧 token 请求非白名单端点 → 401(AC#3) |
+| **refresh 可达** | `RefreshTokenEndpointAccessTest` | 无 token → 到达 controller(非 401 `AUT00201`);失效 token → 到达 controller;refresh token 不存在 → 明确业务错误;同一 refresh token 反复调用 → 第二次起因撤销而业务错误(L-10,非限流) |
+| **限流** | `RefreshRateLimiterTest` | L2 超阈值 → **告警 + 固定延迟**(断言响应被延迟,非硬拒);L2 失败路径不施加于成功路径;Redis 故障 fail-open;L1 **无锁定动作** |
+| **KeyStoreKeyFactory** | `KeyStoreKeyFactoryTest` | 别名不存在 → 错误信息含「别名」而非「Cannot load keys」;口令错 → 错误信息**不含口令**;文件不存在 → 明确路径;RSA <2048 → 拒绝;**能加载 PKCS12 与 JKS 两种物理格式**(M-4:现 `test-only.jks` 实为 PKCS12,靠 DualFormat 兼容被 `getInstance("jks")` 加载,重写不得破坏) |
+| **启动校验** | `SecurityBaselineValidatorTest` | 4 项各自违规 → 拒绝;profile 缺失/未知 → **按生产校验(fail-closed)**;`test` profile → 允许 classpath;**生产 profile + `classpath:test-only.jks` → 拒绝启动**(SC-005 具体用例,round3 §3.1) |
+| **回归** | 既有 59 个 `@SpringBootTest` | 换 `test-only.jks` 后仍能签发/验签;**同环境逐用例 diff**(见下,不用固定 Errors 阈值) |
+
+**回归门禁(MEDIUM-5 修订)**:以序 0 的 `509/F4/E219` 用例级结果为基准,**比对用例名集合的增删** —— 只允许「原 ERROR 转 PASS」,不允许出现新的失败用例名。**不用「Errors ≤ 216」类固定阈值**(该数字随外部环境浮动,已被证明无意义)。
 
 **变异测试**(比照 006):
 - `ResponseUtils` 的新 case 删掉 → 401 断言应失败(证明不是靠别的路径蒙对)
+- filter 的白名单放行分支删掉 → `RefreshTokenEndpointAccessTest` 应失败(请求被 401 挡住)
 - filter 的 `return` 删掉 → 应有测试捕获(请求继续走到 controller)
 - 基线校验的 fail-closed 改为 fail-open(未知 profile 放行)→ 应有测试失败
-- 限流阈值改为无限 → 限流测试应失败
+- L2 降级改为硬拒(503)→ 限流测试应失败(断言的是延迟非拒绝)
 
-**基线**:`502 tests / Failures 4 / Errors 216`。Errors 因测试库缺角色 `2112818290` 的 ESI 授权行,与本 feature 无关。
+**基线(2026-08-11 21:47 实测)**:`509 tests / Failures 4 / Errors 219 / Skipped 2`。`Failed to load ApplicationContext` 计数 0,keystore 相关错误 0。现存 Errors 根因全为外部依赖(MySQL 通信 4、Socket 3、超时 2、SQL 语法 2、SSL 1 等),与本 feature 无关。
 
 > ⚠️ **回归风险最高的一处**:改 401 链路会影响**所有**带无效 token 的请求路径。既有 4 个 Failures 中 `CharacterControllerTest.addCharacterAuth` 就是 401 —— 须确认其断言不因本改动而变化。
 
@@ -279,10 +422,11 @@ case TOKEN_ACCESS_EXPIRED:          // ← 新增,现落 default → 400
 
 | 风险 | 缓解 |
 |------|------|
-| **401 链路改造影响既有认证行为** | 最大回归面。序 1 单独提交,跑全量对比 Failures/Errors 逐用例;特别核对 `CharacterControllerTest.addCharacterAuth`(现 401) |
-| refresh 端点加白后被滥用 | FR-020 的限流是交付前提而非可选;白名单精确匹配不扩散 |
-| ~~按 IP 限流取到反代 IP~~ **已规避** | 已查明全仓无真实 IP 处理且未配 `forward-headers-strategy`(见 3.1)。改用「按 refresh token + 全局速率」方案,不依赖 IP,该风险不存在 |
-| 58 个 `@SpringBootTest` 集体失败 | 序 3/4 前先备好 `test-only-jwt.jks`,分两次提交 |
+| **401 链路改造影响既有认证行为** | 最大回归面。序 2 单独提交,跑全量逐用例 diff;特别核对 `CharacterControllerTest.addCharacterAuth`(现 401) |
+| refresh 端点加白后被滥用 | FR-020 两层限流是交付前提而非可选;白名单精确匹配不扩散;白名单路径零 Redis RBAC 成本(抗洪泛结构属性) |
+| ~~按 IP 限流取到反代 IP~~ **已规避** | 已查明全仓无真实 IP 处理且未配 `forward-headers-strategy`(见 3.1)。改用**按 userId(L1 观测)+ 全局单键(L2 检测/整形)**两层方案,不依赖 IP,该风险不存在。**⚠️ 不是「按 refresh token 值 + 全局速率」—— 那是第二轮 CRITICAL-2 否决的方案**(键空间放大 DoS),M-3③ |
+| ~~59 个 `@SpringBootTest` 集体失败~~ **已解除** | 序 0 已完成:`test-only.jks` 上 classpath,`Failed to load ApplicationContext` 计数 0 |
+| **`whiteUrlList` 在生产被整体覆盖、加白静默失效**(HIGH-1) | prod 模板已同步;SC-016 人工核验生产 profile 实际文件;SC-006 须在生产配置下验收 |
 | 六表审计无基线可比 | **AI 无法判断「哪些账号是预期的」**。`DEPLOYMENT.md` 须给出审计**方法**(SQL + 判断依据),结论由用户填写 |
 | 多实例滚动重启 | FR-022:禁止滚动;须先确认拓扑 |
 
@@ -292,20 +436,24 @@ case TOKEN_ACCESS_EXPIRED:          // ← 新增,现落 default → 400
 
 | 条款 | 符合性 |
 |------|--------|
-| 第四条 技术栈冻结 | ✅ 无新依赖。`ApplicationRunner`/`FileSystemResource` 为 Boot 自带;限流复用既有 Redis 模式 |
-| 第五条 Spec-First | ✅ 规格已修订并提交(`dd3d3c1`);本文件为阶段③ v2 |
+| 第四条 技术栈冻结 | ✅ 无新依赖。`ApplicationRunner`/`FileSystemResource` 为 Boot 自带;限流复用既有 Redis 模式;告警复用既有 Prometheus metrics |
+| 第五条 Spec-First | ✅ 规格已修订;本文件为阶段③ **v3**(序 0 后按实测重写) |
 | DDD 分层 | ⚠️ `RefreshRateLimiterService` 置于 `domain/service/security`(与既有 `LoginRateLimiterService` 同包)。它依赖 `CacheGateway` 端口,不直接依赖 Redis,符合分层 |
-| TDD | ✅ 诊断测试已提供天然 RED 状态 |
-| 安全红线 | ⚠️ 测试 keystore 入库属论证过的例外(不保护真实凭证,别名 `test-only`,置于 `src/test/resources` 不进主 jar) |
+| TDD | ✅ 序 0 后 `JwtFilterDiagnosticTest` 的失败即 RED 起点;白名单放行/限流各配契约测试 |
+| 安全红线 | ⚠️ 测试 keystore 入库属论证过的例外(不保护真实凭证,别名 `test-only`,置于 **`src/main/resources/`** 且**有意进主 jar**,防线为 FR-008 fail-closed,见 SC-003 修订)。**M-3④ 事实更正**:v2 曾误写「置于 src/test/resources 不进主 jar」 |
 
 ---
 
 ## 9. 阶段④ 拆解方向
 
-按第 1 节的 7 个序号拆,每序一个提交。序 1、2 建议各自独立提交并跑全量回归 —— 它们改动认证主链路。
+按第 1 节的 8 个序号拆,每序一个提交。序 1、2、3 建议各自独立提交并跑全量逐用例 diff —— 它们改动认证主链路。
 
 **交付边界**:代码 + 测试 + 文档就绪即为本 feature 完成。生产轮换与六表审计由用户执行,其结果回填 `DEPLOYMENT.md`。
 
+**交付前置动作(第三轮评审 LOW 项落为交付项)**:
+- **L-7**:实现(序 1)开始前建 `007-jwt-key-rotation` 分支 —— 当前 007 文档在 006 分支上,与 AI_WORKFLOW「feature 分支按编号创建」不符。文档提交是否迁移由用户定
+- **L-6**:`test-only.jks` 现为 `??` 未提交。其存在意义就是入库供 CI/新克隆直跑;序 1 提交时须一并 `git add`,否则「新克隆直跑」不成立
+
 ---
 
-**下一步**: `ecc:security-reviewer` 复审本计划(v1 已 BLOCK,须确认 9 项清单均已落入设计),通过后 `/speckit-tasks`。
+**下一步**: 本 v3 已按第三轮评审放行条件(HIGH-1/2/3 + M-3)完成文本修订。**评审明确:无需第四轮全量评审,由评审人抽查修订 diff 即可放行 `/speckit-tasks`。** M-2/M-4/M-5 与 LOW 项已映射为本文件与 tasks.md 的任务。

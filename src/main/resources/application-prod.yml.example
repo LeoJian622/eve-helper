@@ -136,6 +136,10 @@ eve:
   helper:
     whiteUrlList:
       - POST:/user
+      # 007:refresh 端点须在无有效 access token 时可达(否则旧 token 客户端陷入 401 死循环)。
+      # ⚠️ whiteUrlList 是 List 属性,profile 文件整体覆盖 application.yml ——
+      # 任何自带 whiteUrlList 的生产 profile 都必须同步本行,否则加白在生产静默失效(SC-011 同型风险)。
+      - POST:/auth/tokens
     debug:
       access-token-endpoint:
         # 🔒 安全基线:生产环境必须为 false。
