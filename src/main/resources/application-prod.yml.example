@@ -1,3 +1,24 @@
+# ============================================================================
+# 生产 profile 配置模板(006 C1 纵深防御)
+#
+# 用法:复制为 application-prod.yml 后填入实际值。
+#   cp src/main/resources/application-prod.yml.example src/main/resources/application-prod.yml
+#
+# 为什么需要这个模板:
+#   .gitignore 忽略 application-*.yml,故 prod/ali/aliw 的配置不入库。
+#   这意味着「安全基线是否被应用」无法靠版本控制保证 —— 任何人 clone 仓库后
+#   手写 application-prod.yml,都可能漏掉下面标注 🔒 的三项,而不会有任何报警。
+#   本模板提供一个安全的起点。
+#
+# ⚠️ profile 配置优先级高于 application.yml。
+#    application.yml 里的安全值不是兜底 —— 此处一旦写错即生效。
+#
+# 🔒 标记的三项为安全基线,生产环境不得更改:
+#    1. mybatis-plus.configuration.log-impl = Slf4jImpl
+#    2. logging.level.web = info
+#    3. eve.helper.debug.access-token-endpoint.enabled = false
+# ============================================================================
+
 server:
   port: 9999
 
@@ -5,9 +26,10 @@ spring:
   datasource:
     druid:
       system:
-        username: ${DB_SYSTEM_USERNAME}
-        password: ${DB_SYSTEM_PASSWORD}
-        url: jdbc:mysql://${DB_HOST}:${DB_PORT}/eve_helper?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
+        username: ${DB_USERNAME:root}
+        # 🔑 禁止硬编码:改用环境变量注入
+        password: ${DB_PASSWORD}
+        url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/eve_helper?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
         driverClassName: com.mysql.cj.jdbc.Driver
         #初始化连接池的连接数量 大小，最小，最大
         initial-size: 5
@@ -21,7 +43,7 @@ spring:
         min-evictable-idle-time-millis: 30000
         # 配置一个连接在池中最大生存的时间，单位是毫秒
         max-evictable-idle-time-millis: 300000
-        validation-query: SELECT 1
+        validation-query: SELECT 1 FROM user
         test-while-idle: true
         test-on-borrow: true
         test-on-return: false
@@ -29,15 +51,19 @@ spring:
         pool-prepared-statements: true
         max-pool-prepared-statement-per-connection-size: 20
         # 配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
+        # 注意:slf4j filter 会经 logger `druid.sql.Statement` 输出 SQL 参数。
+        # root=info 下不打印;若为排查临时打开 druid.sql 的 debug,
+        # refresh_token 会经此通道泄露 —— 该路径不受 log-impl 保护(006 复审第 4 点)。
         filters: stat,wall,slf4j
         filter:
           stat:
             merge-sql: true
             slow-sql-millis: 5000
       eve:
-        username: ${DB_EVE_USERNAME}
-        password: ${DB_EVE_PASSWORD}
-        url: jdbc:mysql://${DB_HOST}:${DB_PORT}/eve?useUnicode=true&characterEncoding=utf8
+        username: ${EVE_DB_USERNAME:root}
+        # 🔑 禁止硬编码:改用环境变量注入
+        password: ${EVE_DB_PASSWORD}
+        url: jdbc:mysql://${EVE_DB_HOST:127.0.0.1}:${EVE_DB_PORT:3306}/eve?useUnicode=true&characterEncoding=utf8
         driverClassName: com.mysql.cj.jdbc.Driver
         #初始化连接池的连接数量 大小，最小，最大
         initial-size: 5
@@ -51,7 +77,7 @@ spring:
         min-evictable-idle-time-millis: 30000
         # 配置一个连接在池中最大生存的时间，单位是毫秒
         max-evictable-idle-time-millis: 300000
-        validation-query: SELECT 1
+        validation-query: SELECT 1 FROM user
         test-while-idle: true
         test-on-borrow: true
         test-on-return: false
@@ -65,6 +91,7 @@ spring:
             merge-sql: true
             slow-sql-millis: 5000
       #3.基础监控配置
+      # 生产环境保持 false:Druid 监控页会暴露 SQL 与连接信息
       web-stat-filter:
         enabled: false
       stat-view-servlet:
@@ -72,65 +99,49 @@ spring:
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     time-zone: GMT+8
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      # 🔑 生产环境 Redis 必须设密码:缓存中含明文 accessToken(TTL 19 分钟)
+      password: ${REDIS_PASSWORD}
   cache:
     redis:
       time-to-live: 3000s
-  #  ai:
-  #    dashscope:
-  #      api-key: ${AI_DASHSCOPE_API_KEY}
-  data:
-    redis:
-      host: ${REDIS_HOST}
-      password: ${REDIS_PASSWORD}
-      port: 6379
 # 日志配置
 logging:
   level:
     root: info
-    # 不可设为 debug:AbstractHttpMessageConverter 在 DEBUG 下会打印响应体片段,
-    # 使 ESI accessToken 的 "Bearer eyJ..." 开头落入日志(006 feature FR-014)
-    web:  info
+    # 🔒 安全基线:不得为 debug/trace。
+    # web=debug 会打印请求/响应体,accessToken 随之落盘(006 FR-014)。
+    web: info
     com:
       bolingcavalry:
         druidtwosource:
-          mapper: debug
-#  file:
-#    path: src\main\resource\log\
+          mapper: info
 mybatis-plus:
   configuration:
     # 驼峰下划线转换
     map-underscore-to-camel-case: true
-    # 必须用 Slf4jImpl 而非 StdOutImpl:后者无条件打印全部 SQL 绑定参数,
-    # 会把 eve_account.refresh_token(ESI 长期凭证,明文存储)输出到 stdout(006 feature FR-014)
+    # 🔒 安全基线:生产环境必须为 Slf4jImpl,绝不可用 StdOutImpl。
+    # StdOutImpl.isDebugEnabled() 硬编码返回 true(字节码 iconst_1; ireturn),
+    # 无法通过任何日志级别关闭,会把 refresh_token 明文打进 stdout(006 FR-014)。
+    # Slf4jImpl 则委托 slf4j 级别判断,root=info 下不输出 SQL 参数。
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 jwt-token:
   issuer: eve-helper.xyz
   subject: eve-helper
   expirationTime: 7200
-  accessTokenExpirationTime: 900  # 15分钟
-  refreshTokenExpirationTime: 604800  # 7天
-
-security:
-  keystore:
-    location: ${KEYSTORE_LOCATION}
-    password: ${KEYSTORE_PASSWORD}
-    alias: ${KEYSTORE_ALIAS}
-    key-password: ${KEY_PASSWORD}
-
 eve:
   helper:
     whiteUrlList:
-      #      - GET:/
       - POST:/user
     debug:
       access-token-endpoint:
-        # 角色 ESI accessToken 查询端点开关。该端点交出可直接冒用的 bearer 凭证,
-        # 仅供内部调试/运维排查,生产必须保持 false;需要排查时临时开启并及时关闭。
+        # 🔒 安全基线:生产环境必须为 false。
+        # 该端点按角色 ID 返回 ESI accessToken,仅供内部调试/运维排查。
+        # 开启后即使有 JWT + RBAC + 归属校验三重门禁,仍扩大凭证暴露面(006 FR-017)。
         enabled: ${ACCESS_TOKEN_ENDPOINT_ENABLED:false}
-
-onebot:
-  websocket:
-    secret: ${ONEBOT_WEBSOCKET_SECRET:}
 # springdoc-openapi项目配置
 springdoc:
   swagger-ui:
@@ -139,6 +150,8 @@ springdoc:
     operations-sorter: alpha
   api-docs:
     path: /v3/api-docs
+  # 注意:必须是单元素 map(group/paths-to-match/packages-to-scan 同属一个 `-`)。
+  # 写成三个 `-` 会让 springdoc 收到 3 个配置项、后两个 group 为 null,启动即失败。
   group-configs:
     - group: 'eve-helper-api'
       paths-to-match: '/**'
