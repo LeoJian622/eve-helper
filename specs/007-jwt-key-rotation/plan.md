@@ -3,7 +3,7 @@
 **Feature**: `007-jwt-key-rotation`
 **规格**: [spec.md](./spec.md)
 **创建日期**: 2026-08-11
-**状态**: 计划草案(待 `ecc:security-reviewer` 设计评审)
+**状态**: **BLOCK** — `ecc:security-reviewer` 设计评审驳回(2026-08-11)。3 项 CRITICAL,详见 [评审记录](../../docs/reviews/2026-08-11-007-jwt-key-rotation-design-review.md)。本计划的第 2 节关键决策(排除 kid 双密钥)论证已被指出错误,第 6 节测试策略未覆盖 C2/C3 的修复,均需重写
 
 ---
 
@@ -62,7 +62,7 @@
 1. **`application.yml:115-117` 的占位符从未被真正解析过** —— 唯一会用到它们的 prod/ali 若未设环境变量,启动即因占位符无解而失败。这个路径可能从未被走通过(现有部署或许一直用 aliw)
 2. **`.env.example` 缺 `KEYSTORE_LOCATION` 与 `KEYSTORE_ALIAS`** —— 只列了 `KEYSTORE_PASSWORD`、`KEY_PASSWORD`(`.env.example:18-19`)。照模板配置的人在 prod 启动时必然撞墙
 
-这不是本次轮换引入的问题,但**轮换会强制走通这条路径**(FR-018 要求 test/aliw 也改用环境变量),所以必须在本 feature 内修好:补全 `.env.example`、给 `alias` 加默认值 `${KEYSTORE_ALIAS:eve-jwt}`(与 `SecurityProperties:38` 的 Java 默认值一致)。
+这不是本次轮换引入的问题,但**轮换会强制走通这条路径**(FR-018 要求 test/aliw 也改用环境变量),所以必须在本 feature 内修好:补全 `.env.example`、给 `alias` 加默认值 `${KEYSTORE_ALIAS:eve-jwt}`(与 `SecurityProperties:36` 的 Java 默认值一致)。
 
 > `location` 与两个口令**不给默认值** —— 缺失就该 fail-fast(FR-007)。只有 `alias` 适合给默认值,因为它不是秘密。
 

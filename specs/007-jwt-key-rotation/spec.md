@@ -2,27 +2,44 @@
 
 **Feature**: `007-jwt-key-rotation`
 **创建日期**: 2026-08-11
-**状态**: 边界已确认(2026-08-11,Q1~Q5 + 客户端 401 重试已确认);**可进入 ③ 计划**
+**状态**: **BLOCK** — 阶段③安全评审驳回(2026-08-11),3 项 CRITICAL 使方案三个核心前提均不成立(见 1.4)。**Q1「不强制登出」的决策依据已被推翻,需用户重新决策**
 **来源**: 006 提交前安全检查发现 —— `src/main/resources/eve-jwt.jks` 自 `5d139d8「增加token认证」` 起已在版本控制中
 
 ---
 
 ## 1. 背景与问题陈述
 
-### 1.1 事实认定(已核实,勿重复质疑)
+### 1.1 事实认定(已读代码核实;**行号经阶段③评审更正**)
+
+> ⚠️ 本节初稿曾写「已核实,勿重复质疑」。该措辞已删除 —— 阶段③安全评审正是因为**重新核实**才发现 3 项 CRITICAL(见 [设计评审记录](../../docs/reviews/2026-08-11-007-jwt-key-rotation-design-review.md))。**欢迎质疑本节任何一条。**
 
 | 事实 | 证据 |
 |------|------|
 | `eve-jwt.jks`(2172 字节,含 RSA 私钥)已被 git 跟踪 | `git ls-files '*.jks'` 返回该路径;`git log --follow` 显示自 `5d139d8` 入库 |
 | `.gitignore` 此前无 `*.jks` 规则 | 已于 `84c099a` 补上,但**已跟踪文件不受 .gitignore 约束**,故其状态未变 |
-| keystore 口令**未**泄露 | `application.yml:114-118` 全部使用 `${KEYSTORE_PASSWORD}` / `${KEY_PASSWORD}` 环境变量;实测 `keytool -storepass changeit` 报 "Keystore was tampered with, or password was incorrect" |
+| keystore 口令**未**泄露 | `application.yml:113-118` 全部使用 `${KEYSTORE_PASSWORD}` / `${KEY_PASSWORD}` 环境变量;实测 `keytool -storepass changeit` 报 "Keystore was tampered with, or password was incorrect" |
 | 私钥用于签发系统 JWT | `TokenService.java:98` `new RSASSASigner(keyPair.getPrivate())`,算法 RS256(`:95`) |
 | 公钥用于验签 | `JwtAuthorizationTokenFilter.java:67-68` `new RSASSAVerifier((RSAPublicKey) keyPair.getPublic())` |
 | **ESI 授权不受影响** | `EsiApiService.java:414` 解析的是 CCP 签发的 token,只读 claim **不验签**,与本 keystore 无关 |
 | **refresh token 不含签名** | `TokenService.java:111-116` refresh token 是随机 UUID,存 Redis `refresh_token:{uuid} -> userId`。轮换密钥**不使其失效** |
-| refresh 端点存在 | `POST /auth/tokens`(`AuthController.java:51-52` → `AuthApplicationService:134`) |
+| refresh 端点存在 | `POST /auth/tokens`(`AuthController.java:51-52` → `AuthApplicationService:134`)。⚠️ **但不在白名单,无有效 access token 时不可达 —— 见 1.4** |
 | access token TTL = 900s | `JwtTokenProperties:30` `accessTokenExpirationTime = 900` |
 | refresh token TTL = 604800s(7 天) | `JwtTokenProperties:35` |
+| refresh token 只在两处签发 | `AuthenticationSuccessServletHandler:63`(表单登录,需真实口令)与 `TokenService:184`(需已存在的 refresh token)。**伪造 access token 无法换取 refresh token** —— 阶段③评审核实 |
+
+### 1.4 ⚠️ 阶段③评审推翻的三项核心前提(实测确认)
+
+初稿方案建立在三个前提上,**经诊断测试 `JwtFilterDiagnosticTest` 实测,全部不成立**:
+
+| 初稿论断 | 实测结果 | 影响 |
+|---------|---------|------|
+| 「验签失败必然返回 401,客户端 401 重试会被触发」(原 6.1) | **异常直接逃逸**。`JwtAuthorizationTokenFilter:71-73` 抛的 `InvalidCookieException` 因该过滤器位于 `ExceptionTranslationFilter` **上游**而冒泡至容器,连响应都不生成 | US1 验收场景 1、SC-002 **不成立**;客户端 401 重试**不会触发** |
+| 「客户端凭 refresh token 调 `POST /auth/tokens` 换新 token」 | **端点不可达**。无 token 时返回 401 `AUT00201`「用户未登录」,未到 controller;带失效 token 时异常逃逸 | US1、US3、SC-006 **不成立** |
+| 「残余风险仅为攻击者可能窃取 refresh token」(原 US3) | **严重低估攻击者能力**。伪造 ROOT token 可篡改 `sys_permission` 的 url_perm→role 映射或给自注册账号赋 ROOT(`POST /user` 在白名单,无需伪造);其效果**完全不受密钥轮换约束** | Q1「不强制登出」的决策依据**被推翻**,需重新决策 |
+
+**附带确证**:`ResponseUtils.java:26-35` 的 switch 中 `TOKEN_ACCESS_EXPIRED`(`AUT00210`)**不在** 401 分支,落 `default` → **400**。故原 FR-016/SC-010 描述的「401 + AUT00210」在现有代码下是**不可达状态**。
+
+**结论:本规格需实质修订,当前状态为 BLOCK。** 修订清单见评审记录第七节。
 
 ### 1.2 风险评估
 
@@ -34,7 +51,7 @@
 
 ### 1.2.1 ⚠️ 该缓解基本不成立(2026-08-11 编写规格时发现)
 
-调研 `KeyPairConfig` 的测试依赖时发现:`application-test.yml:158-163` 与 **`application-aliw.yml:158-162`(生产环境之一)** 均以**明文写死** keystore 口令与密钥口令,且为**同一个 6 字符弱口令**(纯小写字母+数字,字典词+数字后缀形态。**实际值不在本文档中记录**)。
+调研 `KeyPairConfig` 的测试依赖时发现:`application-test.yml:158-163` 与 **`application-aliw.yml:157-162`(生产环境之一)** 均以**明文写死** keystore 口令与密钥口令,且为**同一个 6 字符弱口令**(纯小写字母+数字,字典词+数字后缀形态。**实际值不在本文档中记录**)。
 
 由此:
 
@@ -108,7 +125,7 @@
 
 - **FR-001** 新密钥对必须为 RSA 2048 位或以上(现有代码固定 RS256,见 `TokenService:95`;不改算法)
 - **FR-002** 新 keystore 口令与密钥口令必须与旧值不同,且不得写入任何入库文件。**口令由用户单独生成与保管,不经 AI、不入文档**(Q2)
-- **FR-003** keystore 别名可沿用 `eve-jwt`(`SecurityProperties:38` 默认值),或改用新别名并同步 `KEYSTORE_ALIAS`
+- **FR-003** keystore 别名可沿用 `eve-jwt`(`SecurityProperties:36` 默认值),或改用新别名并同步 `KEYSTORE_ALIAS`
 - **FR-004** 生成命令必须记录于 `docs/DEPLOYMENT.md`,但**命令中的口令须为占位符**
 
 ### 加载方式改造
