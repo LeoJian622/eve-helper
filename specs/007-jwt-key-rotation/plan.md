@@ -163,6 +163,21 @@ case TOKEN_ACCESS_EXPIRED:          // ← 新增,现落 default → 400
 - 响应未被后续 filter 覆写(`ResponseUtils` 已 `setStatus` + 写 body,`return` 后不再进 chain,应无覆写)
 - 日志**不得**打印 token 内容(现 `:101` `log.error("JWT解析失败", e)` 会带堆栈,须确认堆栈不含 token)
 
+### 5.1 已实测:`ResponseUtils` 的现状(排除了两个疑虑)
+
+新增 `ResponseUtilsTest`(4 用例,现状固化型)实测结果:
+
+| 观测项 | 实测值 | 对 FR-016 的含义 |
+|--------|--------|-----------------|
+| `TOKEN_ACCESS_EXPIRED`(`AUT00210`)状态码 | **400**(落 switch `default`) | ✅ 确认须加 401 分支。该测试的 `assertEquals(400, ...)` 就是 RED 判据 —— 实现后改为 401 |
+| `TOKEN_INVALID_OR_EXPIRED`(`AUT00201`) | 401 | 已正确 |
+| `ACCESS_UNAUTHORIZED`(`AUT00301`) | 401 | 已正确 |
+| 中文 msg 按 UTF-8 解码 | ✅ 正确 | **编码疑虑排除** |
+| `response.getCharacterEncoding()` | **UTF-8** | 容器默认已是 UTF-8 |
+| `Content-Type` | `application/json`(**无 charset**) | 小瑕疏:JSON 默认 UTF-8(RFC 8259),多数客户端可正确处理。**不阻断 FR-016**,可选改进 |
+
+**结论**:switch 只需**新增一个 case**(`TOKEN_ACCESS_EXPIRED` 并入现有 401 分支),无需重写;`ResponseUtils` 虽未显式 `setCharacterEncoding`(对比 `AuthenticationFailureServletHandler:79` 设了),但它手工 `body.getBytes(UTF_8)` 直写字节,绕开了容器编码,故中文安全。
+
 ---
 
 ## 6. 测试策略(v2)
