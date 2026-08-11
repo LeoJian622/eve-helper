@@ -29,13 +29,12 @@ public class CharacterController {
     private final CharacterApplicationService characterApplicationService;
 
     @Parameters({
-            @Parameter(name = "type", description = "枚举值，人物：char; 公司：crop; 技能：skill; 基础：normal" ,required = true),
             @Parameter(name = "code", description = "授权code" ,required = true)
     })
     @Operation(summary = "角色服务- 角色授权绑定")
-    @PostMapping("/{type}/{code}")
-    public Result addCharacterAuth(@PathVariable String type, @PathVariable String code) {
-        characterApplicationService.authorizeCharacter(type, code, UserUtil.getUserId());
+    @PostMapping("/{code}")
+    public Result addCharacterAuth( @PathVariable String code) {
+        characterApplicationService.authorizeCharacter( code, UserUtil.getUserId());
         return Result.success();
     }
 }

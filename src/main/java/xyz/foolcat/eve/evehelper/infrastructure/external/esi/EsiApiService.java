@@ -153,23 +153,22 @@ public class EsiApiService implements EsiGateway {
      * <p>
      * 优先从redis缓存中获取accesstoken，如果不存在 则授权已过期。
      * <p>
-     * 如果code为认证code，则调用认证接口获取授权。
-     * 如果code为角色ID，则调用refreshtoken获取授权
+     * characterId为角色ID，则调用refreshtoken获取授权
      *
-     * @param code 人物或者公司的ID
+     * @param characterId 人物或者公司的ID
      * @param userId
      * @return
      * @throws ParseException
      */
     @Override
-    public String getAccessToken(Integer code, Integer userId) throws ParseException {
+    public String getAccessToken(Integer characterId, Integer userId) throws ParseException {
 
         // 归属校验前置:用传入 userId(来自 eveAccount.getUserId()),不依赖 SecurityContext,
         // HTTP 路径与内部路径(MiningTask 无安全上下文)统一适用;顺带修复 MiningTask 缓存未命中即崩溃的现存 bug。
         // catch 归属失败统一转 ESI_AUTHORIZATION_FAILURE(不暴露 USER_ACCOUNT_NOT_EXIST 账户存在性 oracle)。
         EveAccount character;
         try {
-            character = eveAccountService.getAccountOne(userId, code);
+            character = eveAccountService.getAccountOne(userId, characterId);
         } catch (EveHelperException e) {
             throw new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE);
         }
@@ -202,7 +201,7 @@ public class EsiApiService implements EsiGateway {
      * @throws ParseException
      */
     @Override
-    public String getAccessToken(String code, Integer userId) throws ParseException {
+    public String authorize(String code, Integer userId) throws ParseException {
         AuthTokenResponse authToken = authorizeOAuth.updateAccessToken(GrantType.AUTHORIZATION_CODE, code).block();
         assert authToken != null;
         String accessToken = authToken.getAccessToken();

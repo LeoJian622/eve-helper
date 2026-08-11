@@ -24,15 +24,14 @@ public class CharacterApplicationService {
     /**
      * 使用授权 code 绑定角色到当前用户。
      *
-     * @param type   授权类型(char/crop/skill/normal)
      * @param code   授权 code
      * @param userId 用户 ID
      */
-    public void authorizeCharacter(String type, String code, Integer userId) {
+    public void authorizeCharacter(String code, Integer userId) {
         try {
-            esiApiService.getAccessToken(code, userId);
+            esiApiService.authorize(code, userId);
         } catch (ParseException e) {
-            log.error("角色授权失败: type={}, userId={}", type, userId, e);
+            log.error("角色授权失败:  code={}",  code, e);
             throw new EveHelperException("角色授权失败", e);
         }
     }

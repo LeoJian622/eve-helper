@@ -45,7 +45,7 @@ public interface EsiGateway {
      * @return 带前缀的 accessToken
      * @throws ParseException JWT 解析失败
      */
-    String getAccessToken(String code, Integer userId) throws ParseException;
+    String authorize(String code, Integer userId) throws ParseException;
 
     /**
      * 判定绑定角色的 ESI 授权状态。

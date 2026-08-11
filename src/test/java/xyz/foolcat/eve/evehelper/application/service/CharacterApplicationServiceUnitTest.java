@@ -35,17 +35,17 @@ class CharacterApplicationServiceUnitTest {
     @Test
     @DisplayName("授权成功 -> 调用 ESI getAccessToken")
     void authorizeCharacter_success() throws Exception {
-        characterApplicationService.authorizeCharacter("char", "code123", 1);
+        characterApplicationService.authorizeCharacter("code123", 1);
 
-        verify(esiApiService).getAccessToken("code123", 1);
+        verify(esiApiService).authorize("code123", 1);
     }
 
     @Test
     @DisplayName("ESI 抛 ParseException -> 转 EveHelperException")
     void authorizeCharacter_parseError_throws() throws Exception {
-        doThrow(new ParseException("bad", 0)).when(esiApiService).getAccessToken("code123", 1);
+        doThrow(new ParseException("bad", 0)).when(esiApiService).authorize("code123", 1);
 
         assertThrows(EveHelperException.class,
-                () -> characterApplicationService.authorizeCharacter("char", "code123", 1));
+                () -> characterApplicationService.authorizeCharacter("code123", 1));
     }
 }
