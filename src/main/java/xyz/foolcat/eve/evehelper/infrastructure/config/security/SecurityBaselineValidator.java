@@ -48,6 +48,13 @@ import java.util.Map;
  * <p>任一违规 → 抛 {@link IllegalStateException} 终止启动。契约测试见
  * {@code SecurityBaselineValidatorTest}。</p>
  *
+ * <p><b>⚠️ 能力边界:只校验路径语法,不校验密钥身份</b>(T039 已由用户否决,2026-08-12)。
+ * 基线④ 确认 {@code location} 是文件系统绝对路径,<b>但不检查该文件里的密钥是哪一把</b> ——
+ * 把 {@code location} 指向已泄露的旧 {@code eve-jwt.jks} 可通过全部 4 项校验。
+ * 这正是 007 CRITICAL-1 的原始成因,该路径<b>依然敞开</b>。故「生产是否用了正确密钥」
+ * 只能靠部署时人工比对指纹(见 {@code docs/DEPLOYMENT.md} 轮换章节),
+ * <b>本类不提供该保证</b>。修改本类时勿把「基线校验通过」误读为「密钥正确」。</p>
+ *
  * @author Leojan
  * date 2026-08-12
  */

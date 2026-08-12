@@ -260,8 +260,13 @@ description: "Task list for 007-jwt-key-rotation"
 
 ### 建议同期完成(MEDIUM,使 fail-closed 名副其实)
 
-- [ ] T039 [MEDIUM-1(security)]**密钥身份门禁**:`SecurityBaselineValidator` 当前只校验路径**语法**不校验密钥**身份**,这正是 CRITICAL-1 穿过全部 4 项校验的原因。加:启动期读实际加载的 `RSAPublicKey`,拒绝命中「已知禁用指纹表」(至少含 `test-only.jks` 与旧 `eve-jwt.jks` 公钥 SHA-256),拒绝 alias == `test-only`。指纹表入库无风险(公钥非秘密)
+- [-] ~~T039 [MEDIUM-1(security)]**密钥身份门禁**~~:`SecurityBaselineValidator` 当前只校验路径**语法**不校验密钥**身份**,这正是 CRITICAL-1 穿过全部 4 项校验的原因。加:启动期读实际加载的 `RSAPublicKey`,拒绝命中「已知禁用指纹表」(至少含 `test-only.jks` 与旧 `eve-jwt.jks` 公钥 SHA-256),拒绝 alias == `test-only`。指纹表入库无风险(公钥非秘密)
   - AC: 用 `test-only.jks` 配生产 profile → 拒启;新密钥 → 通过
+  - 🚫 **用户明确否决(2026-08-12):「不做T039」**。不再提议,后续如需重启须由用户主动提出
+  - **未实现所留下的能力边界(须知情而非遗忘)**:
+    - 校验器**只保证 keystore 路径是文件系统绝对路径,不保证该文件里的密钥不是已泄露的那一把**。把 `location` 指向旧 `eve-jwt.jks`(md5 `1be3633d52ebcaa3cd9fd18e1045aa72`)可通过全部 4 项基线 —— 这正是 CRITICAL-1 的原始成因,该路径**依然敞开**
+    - 因此「生产是否用了正确密钥」**只能靠人工留证**(T035 的 md5 比对),无法由机器在启动期拦住。同型误判本 feature 已发生过一次(见 `docs/reviews/2026-08-12-007-java-reviewer.md`)
+    - 若日后再次发生密钥误配,排查时应首先想到此处**无自动门禁**
 - [ ] T040 [MEDIUM-2(security)/LOW-6(java)]**fail-closed 时机前移**:`ApplicationRunner` 在 web 容器已监听端口**之后**才执行,拒启前存在可服务请求的窗口。改为 `EnvironmentPostProcessor` / `ApplicationContextInitializer` / `@PostConstruct`(与 `KeyPairConfig` fail-fast 同阶段)
 - [ ] T041 [MEDIUM-4(security)]**审计能力边界补全**(`docs/DEPLOYMENT.md`):六表判断方法依赖 `gmt_create`/`gmt_modified`,而**有写权限的攻击者可伪造这两列** → 「未发现新增/篡改痕迹」对精心操作的写入型入侵亦是可能假阴性。补一句边界声明 + 步骤 8 增加「检查 binlog/慢日志保留期」
 - [ ] T042 [MEDIUM-3(java)]**TOCTOU 残留窗口**:T015 只消除一半 —— `TokenService:158` 的 `refreshAccessTokenWithUser` **又做了一次 `cacheGateway.get(key)`**,窗口平移到「第 1 次与第 3 次 get 间」且跨越两次 DB 往返,**被显著拉长**。并发双请求可各得一套 token 对。要么加 `GETDEL`/Lua 原语,要么在 `spec.md` 显式记录该残留窗口与接受理由(不得留在已勾选的 T015 之下)
