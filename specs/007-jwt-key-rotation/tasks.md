@@ -156,16 +156,19 @@ description: "Task list for 007-jwt-key-rotation"
 
 **Independent Test**: `git ls-files | grep eve-jwt.jks` 为空;DEPLOYMENT.md 含全部清单
 
-- [x] T028 [US3] **FR-012(有门禁)**:`git rm src/main/resources/eve-jwt.jks`。⚠️ 前置条件(先验证再执行):①`application-aliw.yml`(不入库,用户提供证据)的 `security.keystore.location` 已改为文件系统绝对路径;②新生产密钥已按 `docs/DEPLOYMENT.md` 部署到 `/etc/eve-helper/`(权限 600/目录 700,SC-009 留证)。前置不满足则**停止并报告**,不得执行
-  - AC: 前置证据齐备;`git rm` 后 T027 转 GREEN(jar 仅含 test-only.jks)✅(2026-08-12:用户确认「T028 T033核验通过」,两项前置由用户核验放行 —— aliw location 与服务器部署均在仓库外,AI 不可见,依 FR-002 职责边界由用户留证)
-  - 执行留证:`git rm` 前确认索引内两个 jks(`eve-jwt.jks` md5 `1be3633d…`、`test-only.jks` md5 `05a19e52…`),`eve-jwt.jks` 溯源 `5d139d8「增加token认证」`;`git rm` 后 `git ls-files src/main/resources | grep jks` 仅剩 `test-only.jks`,工作区同样仅剩该文件
-  - **SC-003 由 RED 转 GREEN**:`./mvnw clean package -DskipTests` 后 `jar tf` 输出仅 `BOOT-INF/classes/test-only.jks`(生产 keystore 已不在构建产物);`target/classes/` 亦仅 `test-only.jks`
+- [~] T028 [US3] **FR-012(有门禁)**:`git rm src/main/resources/eve-jwt.jks`。⚠️ 前置条件(先验证再执行):①`application-aliw.yml`(不入库,用户提供证据)的 `security.keystore.location` 已改为文件系统绝对路径;②新生产密钥已按 `docs/DEPLOYMENT.md` 部署到 `/etc/eve-helper/`(权限 600/目录 700,SC-009 留证)。前置不满足则**停止并报告**,不得执行
+  - 🚨 **状态回退为「部分完成」(2026-08-12,T034 评审推翻原结论)**:`git rm` 动作已执行且 SC-003 已 GREEN,但**前置条件①实际未满足**,详见 `docs/reviews/2026-08-12-007-security-reviewer.md` CRITICAL-1
+  - **推翻依据(AI 实测,md5 逐字节对照)**:`application-aliw.yml:159` 的 `location` = `D:\IdeaProjects\eve-jwt.jks`,该文件 md5 `1be3633d52ebcaa3cd9fd18e1045aa72` 与 `git show 67333f7:src/main/resources/eve-jwt.jks` **完全相同** —— 即生产 profile 仍在加载**同一把已泄露的私钥**。用户生成的新密钥 `D:\IdeaProjects\eve-helper.jks`(md5 `612ee34cedff607245ace2a39ccfbc4b`)**未被任何 profile 引用**。前置①只做到「路径从 classpath 改成文件系统」,没做到「指向新密钥」
+  - **后果**:SC-002(旧密钥签发的 token 一律 401)与 SC-014 在**部署态不成立**;旧 token 仍能通过验签。本任务的目标(移除泄露密钥的误用风险)只在仓库层面达成,**生产层面未达成**
+  - 已完成部分(保留留证):`git rm` 前确认索引内两个 jks(`eve-jwt.jks` md5 `1be3633d…`、`test-only.jks` md5 `05a19e52…`),`eve-jwt.jks` 溯源 `5d139d8「增加token认证」`;`git rm` 后 `git ls-files src/main/resources | grep jks` 仅剩 `test-only.jks`
+  - **SC-003 已由 RED 转 GREEN**:`./mvnw clean package -DskipTests` 后 `jar tf` 输出仅 `BOOT-INF/classes/test-only.jks`;`target/classes/` 亦仅 `test-only.jks`
   - **回归**:全量 `./mvnw test` = **553/F4/E216/S2**,与 T031 基线逐位一致;Failures 仍为同 4 例(`AssertsControllerTest.syncAssets`、`BlueprintsControllerTest.addBlueprintsList`、`BlueprintsControllerTest.getBlueprintsList`、`CharacterControllerTest.addCharacterAuth`),**零新增失败用例名**
-  - ⚠️ **git 历史仍含旧私钥**(FR-014 有意不改写历史,禁止强推共享分支):旧密钥的失效依赖**生产已完成轮换**,而非本次删除。删除只是移除工作区与构建产物中的误用风险
+  - ⚠️ **git 历史仍含旧私钥**(FR-014 有意不改写历史,禁止强推共享分支):旧密钥的失效依赖**生产完成轮换**,而非本次删除。**当前轮换未完成 → 该项是活跃威胁,不是残余风险**
+  - **闭合条件**:`application-aliw.yml`(及 ali/prod)的 `location` 切到新密钥 + SC-014 现场验证(旧私钥新签 token → 401、新旧 modulus 不同)通过后,方可勾 `[x]`
 - [x] T029 [US3] `docs/DEPLOYMENT.md` 轮换章节:轮换步骤(keytool 命令用占位符口令)+ 六表审计清单(SQL + 判断方法,结论留空由用户填)+ 公告模板(Q5)+ `refresh_token:*` 清空前后计数记录项(SC-008)+ **新生产密钥指纹 ≠ test-only.jks 指纹 `FD:9F:19:27:61:...:CA:0F:B4` 核对项**(L-5)+ 「旧密钥已泄露」声明(SC-007);全文不得含真实口令
   - AC: 对照 SC-007/008/013 逐项可勾选;无口令明文 ✅(2026-08-12:新增「🔑 JWT 签名密钥轮换(007)」章节 = 事件声明(SC-007/FR-013)+ 公告模板(Q5)+ 9 步轮换流程(生成→部署 SC-009→指纹核对 L-5→配置切换 fail-closed 警示→FR-022 禁滚动重启→SC-014/SC-006 验证→`refresh_token:{jti}` 清空前后计数 SC-008→六表审计 SQL+判断方法+能力边界声明→SC-013 强制措辞归档)+ 轮换记录表;同步修正既有部署章节(.env 加 KEYSTORE_LOCATION/ALIAS、keystore 部署改 /etc/eve-helper/ 权限 700/600);grep 自查全文无真实口令,仅 `<STORE_PASS>` 类占位符;六表列名逐一对照 PO 实证(sys_user/sys_user_role/sys_permission/sys_role_permission/sys_role/eve_account + BaseEntity gmt_create/gmt_modified),Redis 键模式对照 TokenService:44)
-- [ ] T030 [US3] `specs/006-character-access-token-api/spec.md` 的 L-10 条目:标注「已由 007 实现(SecurityBaselineValidator)」
-  - AC: 006 spec 无悬空待办
+- [x] T030 [US3] `specs/006-character-access-token-api/spec.md` 的 L-10 条目:标注「已由 007 实现(SecurityBaselineValidator)」
+  - AC: 006 spec 无悬空待办 ✅(2026-08-12,commit `3f73358`:L-10 行(:170)追加实现指向 `SecurityBaselineValidator`(`ApplicationRunner`,校验 4 项)+ 说明「判定方向按 fail-closed 反转」(不枚举生产 profile,改为仅豁免明确且仅为 `test` 的 active profile)+ 测试指向 `SecurityBaselineValidatorTest`(11 例);优先级列改为 ~~高~~ → **已解决**)
 
 **Checkpoint**: 代码交付完成;生产轮换窗口由用户按 DEPLOYMENT.md 执行(SC-001/006/014 人工验证)
 
@@ -187,11 +190,52 @@ description: "Task list for 007-jwt-key-rotation"
     - ✅ 变异 ④(`SecurityBaselineValidator` fail-closed 改 fail-open:`length==0 || "test".equals(...)`)→ `SecurityBaselineValidatorTest.noProfile_failClosedAsProduction` FAIL(`Expected IllegalStateException to be thrown, but nothing was thrown`)
     - ✅ 变异 ⑤(L2 `applyFixedDelay()` 改抛 503)→ `RefreshRateLimiterTest.l2_overThreshold_fixedDelayButNotHardReject` FAIL(`Unexpected exception thrown`)+ `l2_overThreshold_prometheusCounterIncrements` ERROR
   - **执行纪律留证**:①②③ 依赖 `@SpringBootTest`,首轮(10:00 前后)因 MySQL 测试库 `Connection timed out` 全部 context 加载失败,**已用未变异代码复跑确认属环境问题**,未据此下任何结论;10:29 数据库恢复后先跑未变异基线 3/3 GREEN 作对照,再逐项植入变异。还原后 6/6 GREEN
-- [x] T033 人工核验清单(用户执行,留证):SC-011(生产 profile 口令均为环境变量)+ SC-016(生产 profile whiteUrlList 含 `POST:/auth/tokens` 或未定义)+ SC-006 在**生产 profile 实际配置**下验收 + SC-009(stat 权限)
-  - AC: 四项核验记录归档至 `docs/reviews/` 或 DEPLOYMENT.md ✅(2026-08-12,用户回复「T028 T033核验通过」)
-  - ⚠️ **证据边界(据实记录,勿在评审中当作 AI 已验证)**:四项均涉及 `.gitignore` 内的生产配置与服务器文件系统,**AI 不可访问**(FR-002 职责边界)。此处记录的是**用户的核验结论**,AI 未见 `stat` 输出、profile 文本与生产环境 SC-006 响应。若后续排障发现与结论不符,应重新核验而非引用本行
-- [ ] T034 评审记录收尾:`docs/reviews/` 确认三轮评审 + 本轮 tasks 执行记录齐全(AI_WORKFLOW 要求评审归档)
-  - AC: docs/INDEX.md(如有)或目录自洽
+- [ ] T033 人工核验清单(用户执行,留证):SC-011(生产 profile 口令均为环境变量)+ SC-016(生产 profile whiteUrlList 含 `POST:/auth/tokens` 或未定义)+ SC-006 在**生产 profile 实际配置**下验收 + SC-009(stat 权限)
+  - 🚨 **原结论已被推翻(2026-08-12,T034 评审)**:用户 2026-08-12 回复「T028 T033核验通过」,但 AI 在 T034 评审中实测发现**至少两项不成立**,故本任务回退为未完成。详见 `docs/reviews/2026-08-12-007-security-reviewer.md` CRITICAL-2 / HIGH-2
+  - ❌ **SC-011 不成立**:`application-aliw.yml:160,162` 的 keystore 口令与 key 口令是**字面量明文**,非 `${KEYSTORE_PASSWORD}` / `${KEY_PASSWORD}` 占位符(同文件 DB/Redis 口令亦为字面量)。加固只落在 `application-prod.yml.example`,未落在生效配置
+  - ❌ **SC-016 不成立**:`application-aliw.yml:142-144` 的 `whiteUrlList` 只有 `- POST:/user`,**无 `POST:/auth/tokens`**。List 属性 profile 整体覆盖 → refresh 端点在该 profile 恒不可达(正是 T014 注释与 `DEPLOYMENT.md` 都警告过的失效模式)。`application-{ali,prod}.yml` 同型问题由评审 agent 报告,**AI 未亲自核验**(读凭证文件被安全策略正确拦截),须用户自查
+  - ⚠️ **SC-006 / SC-009 仍未获独立验证**:两项涉及服务器文件系统与生产运行态,AI 不可访问(FR-002 职责边界)。鉴于 SC-011/SC-016 已被推翻,**原「核验通过」的整体可信度需重新建立** —— 建议逐项重新核验并留下可核对的证据(命令输出/截图),而非仅口头确认
+  - **教训(写入流程改进)**:AI 不可验证的核验项,不应仅凭一句「核验通过」就标记完成。后续同类门禁须要求**可核对的证据形式**(如 `grep -c '\${' <file>` 的输出、`stat` 原文、实际 HTTP 响应),否则 spec 的验收标准形同虚设
+- [x] T034 评审记录收尾:`docs/reviews/` 确认三轮评审 + 本轮 tasks 执行记录齐全(AI_WORKFLOW 要求评审归档)
+  - AC: docs/INDEX.md(如有)或目录自洽 ✅(2026-08-12,`docs/reviews/` 现含 007 五份记录:三轮设计评审(`…design-review.md` / `-round2` / `-round3`)+ 实现阶段两份(`2026-08-12-007-java-reviewer.md` / `2026-08-12-007-security-reviewer.md`),命名符合 README 规范)
+  - 🚨 **实现阶段评审结论:双 BLOCK**。两个 reviewer 独立收敛到同一批阻塞项:
+    - `ecc:java-reviewer` → **BLOCK**(3 HIGH / 6 MEDIUM / 8 LOW)
+    - `ecc:security-reviewer` → **BLOCK**(2 CRITICAL / 2 HIGH / 6 MEDIUM / 4 LOW)
+  - **007 当前不满足合并条件**(AI_WORKFLOW §4「禁止忽略 CRITICAL 或 HIGH」)。阻塞项已拆解为 T035~T038(见下)
+
+---
+
+## Phase 7: 评审阻塞项修复(T034 评审产出,CRITICAL/HIGH 必须闭合)
+
+**Purpose**: 关闭实现阶段两份评审的全部 CRITICAL 与 HIGH。**未完成前 007 不得合并**
+
+- [ ] T035 🚨 **[CRITICAL-1 + CRITICAL-2 + HIGH-2]生产 profile 三项修正**(用户执行,涉 gitignore 私有配置,AI 不代改):`application-{aliw,ali,prod}.yml` 各自 ①`security.keystore.location` 切到**新密钥**(现 aliw 指向的 `D:\IdeaProjects\eve-jwt.jks` 与已泄露密钥字节相同);②keystore/key 口令改 `${KEYSTORE_PASSWORD}` / `${KEY_PASSWORD}` 占位符;③`whiteUrlList` 补 `- POST:/auth/tokens`
+  - AC: 每项留下**可核对的证据**(而非口头确认)—— location 指向的文件 md5 ≠ `1be3633d52ebcaa3cd9fd18e1045aa72`;`grep -c 'password.*\${' ` 输出;`grep -A5 whiteUrlList` 输出含 auth/tokens
+  - 依赖:本任务闭合后 T028 / T033 才能勾 `[x]`
+- [ ] T036 🚨 **[HIGH-1]移除请求线程上的 `Thread.sleep`**(`RefreshRateLimiterService:118-125`):当前实现是 DoS 放大器 —— `POST /auth/tokens` 已加白(未认证可达),超阈值后每个失败请求占住一个 Tomcat 工作线程 100~300ms,默认 200 线程下约 1000 req/s 即可拖垮**全站**;且清空 `refresh_token:*` 后全体客户端同时 refresh 失败会**自我触发**该路径
+  - 方案三选一:①仅保留计数器 + 告警(去掉延迟);②Servlet 异步延迟提交;③超阈值直接 429
+  - ⚠️ **TDD 注意**:`RefreshRateLimiterTest:96-112` 现把 `elapsed >= 100ms` 固化为期望行为,**该用例必须随方案改写**,否则会锁死错误设计。新增断言:「超阈值时不占用调用线程」
+  - AC: 新测试 RED → GREEN;全量回归无新增失败用例名;显式设定 `server.tomcat.threads.max` 与 `accept-count`
+- [ ] T037 🚨 **[HIGH-1(java)+ MEDIUM-4]告警通路名实一致**:`RefreshRateLimiterService` 注册 Counter 到 `MeterRegistry` 并声称「Prometheus 抓取触发告警」,但 `pom.xml` **无 `micrometer-registry-prometheus`**、全部 yml **无 `management:` 配置** → 指标写入 `SimpleMeterRegistry`,永不被抓取;L1 计数亦只写不读
+  - 方案二选一:①补 registry 依赖 + `management.endpoints.web.exposure.include`(⚠️ 技术栈冻结,新增依赖需确认是否属既有 `spring-boot-starter-actuator` 生态内,否则走宪法修订);②不引依赖 → 改为结构化 WARN 日志 + 日志告警规则,**同步修正**类注释、`plan.md` §3.3 表述、`RefreshRateLimiterTest.l2_overThreshold_prometheusCounterIncrements` 的立论
+  - AC: 代码/注释/plan/测试对告警能力的描述与实际一致(当前**描述不实**是 BLOCK 主因之一)
+- [ ] T038 🚨 **[HIGH-3]基线校验改正向白名单**(`SecurityBaselineValidator`):`checkAccessTokenEndpoint` 用 `Boolean.parseBoolean(null)` = false → 生产 profile 该键根本不存在 → **恒放行**,却照打「基线校验通过(4/4)」,是虚假保证。同类:`checkWebLogLevel` 只查 `logging.level.web`,`root: debug` 可绕过
+  - 改法:3 项 boolean/枚举基线从「查到违规值才拒」改为「**必须显式配置为安全值**」(与该类 `isTestProfile` 自身的正向白名单思路一致);日志级别校验扩展到 `root` / `org.springframework.web` / `org.springframework.security`
+  - AC: 补「键缺失 → 拒启」与「root:debug → 拒启」用例,RED → GREEN
+
+### 建议同期完成(MEDIUM,使 fail-closed 名副其实)
+
+- [ ] T039 [MEDIUM-1(security)]**密钥身份门禁**:`SecurityBaselineValidator` 当前只校验路径**语法**不校验密钥**身份**,这正是 CRITICAL-1 穿过全部 4 项校验的原因。加:启动期读实际加载的 `RSAPublicKey`,拒绝命中「已知禁用指纹表」(至少含 `test-only.jks` 与旧 `eve-jwt.jks` 公钥 SHA-256),拒绝 alias == `test-only`。指纹表入库无风险(公钥非秘密)
+  - AC: 用 `test-only.jks` 配生产 profile → 拒启;新密钥 → 通过
+- [ ] T040 [MEDIUM-2(security)/LOW-6(java)]**fail-closed 时机前移**:`ApplicationRunner` 在 web 容器已监听端口**之后**才执行,拒启前存在可服务请求的窗口。改为 `EnvironmentPostProcessor` / `ApplicationContextInitializer` / `@PostConstruct`(与 `KeyPairConfig` fail-fast 同阶段)
+- [ ] T041 [MEDIUM-4(security)]**审计能力边界补全**(`docs/DEPLOYMENT.md`):六表判断方法依赖 `gmt_create`/`gmt_modified`,而**有写权限的攻击者可伪造这两列** → 「未发现新增/篡改痕迹」对精心操作的写入型入侵亦是可能假阴性。补一句边界声明 + 步骤 8 增加「检查 binlog/慢日志保留期」
+- [ ] T042 [MEDIUM-3(java)]**TOCTOU 残留窗口**:T015 只消除一半 —— `TokenService:158` 的 `refreshAccessTokenWithUser` **又做了一次 `cacheGateway.get(key)`**,窗口平移到「第 1 次与第 3 次 get 间」且跨越两次 DB 往返,**被显著拉长**。并发双请求可各得一套 token 对。要么加 `GETDEL`/Lua 原语,要么在 `spec.md` 显式记录该残留窗口与接受理由(不得留在已勾选的 T015 之下)
+
+### 登记但不在本 feature 修(超出 007 边界,须另开 spec)
+
+- [ ] T043 [MEDIUM-5(security)]登录端点**用户名枚举**:`SecurityConfig:75` 的 `setHideUserNotFoundExceptions(false)` + `AuthenticationFailureServletHandler:66` 使「用户账号不存在」与「用户名或密码错误,剩余尝试次数: N」可区分 → 可枚举有效账号并探知锁定状态。**既存缺陷,非 007 引入**,与 007「统一 AUT00210 防原因区分」是同类问题的相反做法
+- [ ] T044 [MEDIUM-6(security)]`MODE_INHERITABLETHREADLOCAL` + 线程池 → **认证上下文跨用户泄漏**:请求线程提交任务时 `Authentication` 被继承给池化线程,而池化线程无人 `clearContext()`。**既存缺陷**
+- [ ] T045 LOW 项汇总(两份评审共 12 条,择机 polish):`writeTokenInfo` 通配 ACAO + `no-cache` 应改 `no-store`(LOW-1s);refresh DTO 缺 `@Size` + `maskToken` 可 CRLF 注入日志(LOW-2s);孤立 `public.key`(LOW-3s);`redis-cli -a` 改 `REDISCLI_AUTH`(LOW-4s);`KeyStoreKeyFactory` 死代码重载/全限定名/自重抛/硬编码位数文案(LOW-1~4j);`ResponseUtils` 两方法编码不一致(LOW-5j);登录失败回显原始 message(LOW-7j)
 
 ---
 

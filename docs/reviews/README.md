@@ -34,6 +34,16 @@ YYYY-MM-DD-<feature-编号>-<reviewer>.md
 <CRITICAL 与 HIGH 必须全部修复后方可合并；MEDIUM/LOW 若延后，需说明原因并登记至 tasks.md>
 ```
 
+## 当前未闭合的 BLOCK
+
+| feature | 评审记录 | 结论 | 阻塞项 |
+|---------|----------|------|--------|
+| `007-jwt-key-rotation` | [java-reviewer](./2026-08-12-007-java-reviewer.md) | **BLOCK** | 3 HIGH:告警通路不存在、aliw 基线绕过、基线③空校验 |
+| `007-jwt-key-rotation` | [security-reviewer](./2026-08-12-007-security-reviewer.md) | **BLOCK** | 2 CRITICAL:生产仍加载已泄露私钥、生产口令明文;2 HIGH:限流是 DoS 放大器、加白在生产静默失效 |
+
+> 阻塞项已拆解为 `specs/007-jwt-key-rotation/tasks.md` 的 T035~T038(CRITICAL/HIGH,必须闭合)与 T039~T045(MEDIUM/LOW)。
+> **007 在 T035~T038 全部闭合前不得合并**(AI_WORKFLOW §4:禁止忽略 CRITICAL 或 HIGH)。
+
 ## 门禁要求
 
 - Java 代码变更：`ecc:java-reviewer` 必审
