@@ -965,7 +965,7 @@ redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a '<REDIS_PASSWORD>' \
 
 **为什么是六张表**:RBAC 的 url→role 映射来自 `sys_permission` / `sys_role_permission` / `sys_role` 三表 JOIN;伪造 ROOT token 提权**不必碰 `sys_permission`** —— 只在 `sys_role_permission` 插一行即可。
 
-**能力边界(执行前必读)**:表审计只能发现**新增/篡改**痕迹;对**读取型外泄**(`sys_user` 的 BCrypt 口令哈希、`eve_account.refresh_token` 明文存储的 ESI 长期凭证)**完全失明,亦无补偿控制**。若怀疑 ESI 凭证已被读走,唯一处置是让受影响角色重新走 ESI 授权。
+**能力边界(执行前必读)**:表审计只能发现**新增/篡改**痕迹;对**读取型外泄**(`sys_user` 的 BCrypt 口令哈希、`eve_account.refresh_token` 明文存储的 ESI 长期凭证)**完全失明,亦无补偿控制**。若怀疑 ESI 凭证已被读走,唯一处置是让受影响角色重新走 ESI 授权。此外,本节时间判断依赖 `gmt_create`/`gmt_modified`,而**有数据库写权限的攻击者可事后伪造这两列**——对精心操作的写入型入侵,「未发现新增/篡改痕迹」亦是可能假阴性;须以第 7 项的 binlog 保留期核查作为旁证(007 T041)。
 
 时间锚点:提交 `5d139d8`(「增加token认证」)是最早可能入侵时间,重点看其后创建/变更的行。
 
@@ -1023,15 +1023,25 @@ FROM eve_helper.eve_account ORDER BY character_id;
 判断方法:有无预期清单外的游戏角色 / 用户绑定。⚠️ `refresh_token` 列刻意不在查询列中 —— 其是否被读走审计不可见(见能力边界)。
 结论(执行人填):____
 
+**7. binlog / 慢日志保留期核查(时间列可伪造的补偿证据,007 T041)** —— 上述六表的时间列可被写权限攻击者伪造,binlog 是独立于表数据的可信写入记录;慢日志可佐证入侵窗口内的异常重查询。
+```sql
+SHOW VARIABLES LIKE 'log_bin';
+SHOW VARIABLES LIKE 'binlog_expire_logs_seconds';
+SHOW BINARY LOGS;
+SHOW VARIABLES LIKE 'slow_query_log';
+```
+判断方法:binlog 是否开启、保留期(`binlog_expire_logs_seconds` / 现存最早 binlog 时间)是否**覆盖时间锚点 `5d139d8`**。若覆盖:用 `mysqlbinlog` 过滤该窗口内对六表的写语句,与上面 1~6 的审计结论交叉核对,不一致处以 binlog 为准;若未覆盖(binlog 已轮转清理):本步结论只能表述为「仅凭表内时间列,不能排除伪造」,并如实记入归档。
+结论(执行人填):____
+
 **升级路径**:任何一张表发现非预期账号/角色/权限映射 → **立即暂停轮换收尾,升级为入侵响应**:强制全体改密 + 吊销全部会话 + ESI 重新授权。
 
 #### 步骤 9:记录归档
 
 审计总结论**只能表述为**(SC-013 强制措辞):
 
-> 已审计 6 表,未发现**新增/篡改**痕迹;读取型外泄(口令哈希、ESI 凭证)无法检测。
+> 已审计 6 表并完成 binlog 保留期核查(结论见步骤 8 第 7 项),未发现**新增/篡改**痕迹;时间列可被伪造、读取型外泄(口令哈希、ESI 凭证)无法检测。
 
-**严禁**表述为「确认未被入侵」—— 审计对读取型外泄失明,该表述会构成虚假的安全结论。
+**严禁**表述为「确认未被入侵」—— 审计对读取型外泄失明、时间列可被伪造(binlog 未覆盖入侵窗口时尤甚),该表述会构成虚假的安全结论。
 
 归档位置:下方「轮换记录」+ `docs/reviews/`。
 
@@ -1048,7 +1058,7 @@ FROM eve_helper.eve_account ORDER BY character_id;
 | SC-006 旧 refresh token 明确业务错误验证 | ☐ |
 | `refresh_token:*` 清空前数量 | ____ |
 | `refresh_token:*` 清空后数量(= 0) | ____ |
-| 六表审计总结论(强制措辞) | ____ |
+| 审计总结论(强制措辞,含步骤 8 第 7 项 binlog 核查结论) | ____ |
 
 ## 📚 相关文档
 

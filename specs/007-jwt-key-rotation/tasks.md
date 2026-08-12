@@ -298,7 +298,11 @@ description: "Task list for 007-jwt-key-rotation"
   - **双锁防回归**:① 反射锁 —— 断言不得再 `implements ApplicationRunner/CommandLineRunner` 且必须存在 `@PostConstruct` 方法;② **行为锁** —— 构造违规基线的真实上下文,断言拒启时 `webServerInitialized == false`,即**端口从未对外 accept**(证明窗口被消除而非平移)
   - **变异测试**:① 改回 `ApplicationRunner` → 反射锁失败 ✅;② 删除 `@PostConstruct` → **双重失败**,行为锁报「Expected Exception to be thrown, but nothing was thrown」精确指出校验根本没执行 ✅
   - **回归**:007 相关 40/40 全绿(14+3+23);全量 Failures 仍为既有 4 项(500/401,MySQL 不通),`启动基线校验失败` 出现 0 次
-- [ ] T041 [MEDIUM-4(security)]**审计能力边界补全**(`docs/DEPLOYMENT.md`):六表判断方法依赖 `gmt_create`/`gmt_modified`,而**有写权限的攻击者可伪造这两列** → 「未发现新增/篡改痕迹」对精心操作的写入型入侵亦是可能假阴性。补一句边界声明 + 步骤 8 增加「检查 binlog/慢日志保留期」
+- [x] T041 [MEDIUM-4(security)]**审计能力边界补全**(`docs/DEPLOYMENT.md`):六表判断方法依赖 `gmt_create`/`gmt_modified`,而**有写权限的攻击者可伪造这两列** → 「未发现新增/篡改痕迹」对精心操作的写入型入侵亦是可能假阴性。补一句边界声明 + 步骤 8 增加「检查 binlog/慢日志保留期」
+  - **边界声明**:「能力边界(执行前必读)」段追加一句 —— 时间判断依赖 `gmt_create`/`gmt_modified`,有数据库写权限的攻击者可事后伪造,「未发现新增/篡改痕迹」对精心操作的写入型入侵亦是可能假阴性;与既有「读取型外泄失明」区分表述(后者无补偿控制,前者以 binlog 为补偿证据)
+  - **步骤 8 新增第 7 项**:binlog / 慢日志保留期核查 —— `SHOW VARIABLES` 四查(`log_bin`/`binlog_expire_logs_seconds`/`SHOW BINARY LOGS`/`slow_query_log`);判断保留期是否覆盖时间锚点 `5d139d8`:覆盖则 `mysqlbinlog` 过滤六表写语句与 1~6 结论交叉核对、不一致处以 binlog 为准;未覆盖则结论降级为「仅凭表内时间列,不能排除伪造」并如实记入归档
+  - **步骤 9 强制措辞同步自洽**(超出任务字面两处、但属「边界补全」必要一致性):原「已审计 6 表」改为「已审计 6 表并完成 binlog 保留期核查(结论见步骤 8 第 7 项)」,严禁条款补「时间列可被伪造(binlog 未覆盖入侵窗口时尤甚)」;归档表行改「审计总结论(强制措辞,含步骤 8 第 7 项 binlog 核查结论)」
+  - 纯文档变更,无代码/测试影响;`六表|6 表` 全文 grep 核验四处引用自洽
 - [x] T042 [MEDIUM-3(java)]**TOCTOU 残留窗口**:T015 只消除一半 —— `TokenService:158` 的 `refreshAccessTokenWithUser` **又做了一次 `cacheGateway.get(key)`**,窗口平移到「第 1 次与第 3 次 get 间」且跨越两次 DB 往返,**被显著拉长**。并发双请求可各得一套 token 对。要么加 `GETDEL`/Lua 原语,要么在 `spec.md` 显式记录该残留窗口与接受理由(不得留在已勾选的 T015 之下)
   - **RED 先复现可利用性**:新增 `TokenServiceConcurrentRefreshTest`(纯 Mockito,`RSAKeyGenerator` 现场生成密钥对,不依赖 keystore 与 DB)。mock 精确模拟 Redis 语义:key 未被删前 `get` 恒有值、`delete` 只有第一次返回 true。双线程同 token 并发刷新 → **「实际成功 2 个」**,漏洞确认可复现,轮换的「一次性」保证失效
   - **不需要 Lua/GETDEL**:`RedisCacheGateway.delete` 直接返回 `redisTemplate.delete(key)`,即 Redis `DEL` 的原语结果 —— **DEL 本身就是原子的 compare-and-claim**,只有真正删掉的调用得 true。原实现的问题不是缺原语,而是 `revokeRefreshToken` **丢弃了这个返回值**
