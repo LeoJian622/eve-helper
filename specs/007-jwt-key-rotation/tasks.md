@@ -170,16 +170,18 @@ description: "Task list for 007-jwt-key-rotation"
 
 - [x] T031 [P] 全量回归:`./mvnw clean test`,与序 0 基线(509/F4/E219)做用例级 diff;`target/classes/` 确认无 `jwt.jks` 类残留文件
   - AC: 无新增失败用例名 ✅(2026-08-12,US2 后全量 **553/F4/E216/S2**:总数 = T019 535 + 18(US2 新测试)算术吻合;Failures 仍为基线 3 类 4 例;Errors 216 = 204 EveHelperException + 9 FileNotFound + 2 EsiException + 1 BadSqlGrammar(surefire 目录未 clean,2 个 InvalidCookieException 为已删除诊断测试的残留报告文件,非本轮产物);context 加载失败 0;target/classes 仅 eve-jwt.jks(待 T028)与 test-only.jks(设计内)两个已知资源,无意外残留)
-- [ ] T032 [P] 变异测试五项(plan §6):删 `ResponseUtils` 新 case → 401 断言失败;删 filter 白名单放行分支 → T009 失败;删 filter `return` → 有测试捕获;fail-closed 改 fail-open → T021 失败;L2 改硬拒(503)→ T010 失败
-  - AC: 五项变异全部被既有测试捕获,记录结果
-  - **进度(2026-08-12):3/5 已验证被捕获,2 项因环境阻塞待补**
-    - ✅ 变异 1(`ResponseUtils` 删 `case TOKEN_ACCESS_EXPIRED`)→ `ResponseUtilsTest.writeErrorInfo_tokenAccessExpired_maps401` FAIL(`expected: <401> but was: <400>`),已还原
-    - ⏸️ 变异 2(filter 删白名单放行分支)→ **未能验证**:`RefreshTokenEndpointAccessTest` 3 例全部 `Failed to load ApplicationContext`,根因 `java.net.ConnectException: Connection timed out`(MySQL 测试库不可达)。**已用未变异代码复跑确认同样失败** → 属环境问题,非变异效果;变异已还原
-    - ⏸️ 变异 3(filter 删 `return`)→ 同上环境阻塞,未执行
-    - ✅ 变异 4(`SecurityBaselineValidator` fail-closed 改 fail-open:`length==0 || "test".equals(...)`)→ `SecurityBaselineValidatorTest.noProfile_failClosedAsProduction` FAIL(`Expected IllegalStateException to be thrown, but nothing was thrown`),已还原
-    - ✅ 变异 5(L2 `applyFixedDelay()` 改抛 503)→ `RefreshRateLimiterTest.l2_overThreshold_fixedDelayButNotHardReject` FAIL(`Unexpected exception thrown`)+ `l2_overThreshold_prometheusCounterIncrements` ERROR,已还原
-    - 还原核验:`git diff --stat src/main/java` 空;`WhiteUrlMatcherContractTest` 17/17 GREEN
-    - **待办**:MySQL 测试库恢复后补跑变异 2/3(依赖 `@SpringBootTest` 上下文)
+- [x] T032 [P] 变异测试五项(plan §6):删 `ResponseUtils` 新 case → 401 断言失败;删 filter 白名单放行分支 → T009 失败;删 filter `return` → 有测试捕获;fail-closed 改 fail-open → T021 失败;L2 改硬拒(503)→ T010 失败
+  - AC: 五项变异全部被既有测试捕获,记录结果 —— **实测 4/5 被捕获;第 5 项(变异 ③)经查证为不可观测的防御性冗余,AC 按实测结论修正(2026-08-12)**
+  - **结果明细**(每项植入后立即还原;`git diff --stat src/main/java` 空为还原判据)
+    - ✅ 变异 ①(`ResponseUtils` 删 `case TOKEN_ACCESS_EXPIRED`)→ `ResponseUtilsTest.writeErrorInfo_tokenAccessExpired_maps401` FAIL(`expected: <401> but was: <400>`)
+    - ✅ 变异 ②(filter 删白名单放行分支)→ `RefreshTokenEndpointAccessTest` 2 例 FAIL(`expected: <400> but was: <401>`,body `{"code":"AUT00210"}`):白名单删除后 `POST /auth/tokens` 被 401 挡住、到不了 controller,正是 CRITICAL-1 要防的失效模式
+    - ⚠️ 变异 ③(filter 删放行分支的 `return`)→ **未被捕获,且经查证为「不可捕获」而非测试无力**:
+      - 单删 `return`:`RefreshTokenEndpointAccessTest` + `JwtAuthFailureResponseTest` 6/6 GREEN;日志出现 `JwtAuthorizationTokenFilter : 响应已提交,跳过写入 401` → 证明控制流确实继续往下走,但被 `response.isCommitted()` 守卫吸收
+      - 进一步同时移除 `return` **与** `isCommitted` 守卫:仍 6/6 GREEN。原因:白名单请求经 controller 处理后响应已提交,Servlet 规范下 `setStatus` 对已提交响应无效,追加字节不改变 status 与断言所查 body 片段
+      - **结论**:该 `return` 与 `isCommitted` 守卫构成双保险(纵深防御),在当前架构下**无可观测的外部行为差异**,故无法用黑盒测试约束。保留二者(防御性冗余,后续若有 filter 在 controller 之后写响应的场景即成为必要),但**不虚构一个测试去假装覆盖它**
+    - ✅ 变异 ④(`SecurityBaselineValidator` fail-closed 改 fail-open:`length==0 || "test".equals(...)`)→ `SecurityBaselineValidatorTest.noProfile_failClosedAsProduction` FAIL(`Expected IllegalStateException to be thrown, but nothing was thrown`)
+    - ✅ 变异 ⑤(L2 `applyFixedDelay()` 改抛 503)→ `RefreshRateLimiterTest.l2_overThreshold_fixedDelayButNotHardReject` FAIL(`Unexpected exception thrown`)+ `l2_overThreshold_prometheusCounterIncrements` ERROR
+  - **执行纪律留证**:①②③ 依赖 `@SpringBootTest`,首轮(10:00 前后)因 MySQL 测试库 `Connection timed out` 全部 context 加载失败,**已用未变异代码复跑确认属环境问题**,未据此下任何结论;10:29 数据库恢复后先跑未变异基线 3/3 GREEN 作对照,再逐项植入变异。还原后 6/6 GREEN
 - [ ] T033 人工核验清单(用户执行,留证):SC-011(生产 profile 口令均为环境变量)+ SC-016(生产 profile whiteUrlList 含 `POST:/auth/tokens` 或未定义)+ SC-006 在**生产 profile 实际配置**下验收 + SC-009(stat 权限)
   - AC: 四项核验记录归档至 `docs/reviews/` 或 DEPLOYMENT.md
 - [ ] T034 评审记录收尾:`docs/reviews/` 确认三轮评审 + 本轮 tasks 执行记录齐全(AI_WORKFLOW 要求评审归档)

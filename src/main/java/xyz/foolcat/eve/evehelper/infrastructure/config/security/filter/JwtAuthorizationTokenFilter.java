@@ -142,6 +142,10 @@ public class JwtAuthorizationTokenFilter extends OncePerRequestFilter {
                               FilterChain filterChain, ResultCode code) throws IOException, ServletException {
         if (whiteUrlMatcher.isWhiteListed(request)) {
             filterChain.doFilter(request, response);
+            // 与下方 isCommitted 守卫构成双保险(纵深防御)。007 T032 变异测试实测:
+            // 单删本 return、或连同 isCommitted 守卫一起删,黑盒测试均无法捕获 ——
+            // 白名单请求经 controller 后响应已提交,Servlet 规范下 setStatus 无效。
+            // 即本行无可观测行为差异,故无测试保护;勿因「无测试覆盖」当冗余删除
             return;
         }
         if (response.isCommitted()) {
