@@ -116,3 +116,8 @@ mvn package -DskipTests
 - Redis 必须运行;两个 MySQL 数据库(eve 和 eve_helper)必须可访问
 - 中文注释和文档是有意的(目标受众)
 - 业务代码变更须走统一 Spec-First 流程(不分级、无例外);技术栈本身不可变更
+
+<!-- SPECKIT START -->
+当前 feature: `008-security-review-followup`(安全评审遗留修复)
+实现计划: [specs/008-security-review-followup/plan.md](specs/008-security-review-followup/plan.md)
+<!-- SPECKIT END -->
