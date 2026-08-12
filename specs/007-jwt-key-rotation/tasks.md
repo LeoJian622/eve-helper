@@ -144,6 +144,7 @@ description: "Task list for 007-jwt-key-rotation"
   - AC: 模板中无任何真实口令;环境变量名与 `SecurityProperties` 一致 ✅(2026-08-12,三处已补;口令全部环境变量占位)
 - [x] T027 [US2] SC-003 验证:`./mvnw clean package` 后 `unzip -l target/*.jar | grep '\.jks'` 断言**仅含 `test-only.jks`**(此时 eve-jwt.jks 仍在库中 → 预期失败,RED 保留至 T028)。记录实测输出
   - AC: 验证脚本/命令可重复执行;RED 状态留证 ✅(2026-08-12,实测 `jar tf target/eve-helper-0.0.2-SNAPSHOT.jar | grep '\.jks'`(unzip 等价命令)= `BOOT-INF/classes/eve-jwt.jks` + `BOOT-INF/classes/test-only.jks` —— **RED 留证**:eve-jwt.jks 在库即入 jar;T028 后应仅剩 test-only.jks)
+  - **GREEN 转换留证(T028 执行后,2026-08-12)**:同命令输出仅 `BOOT-INF/classes/test-only.jks` → SC-003 达成
 
 **Checkpoint**: US2 独立可验 —— 生产可从文件系统加载、fail-closed 生效、jar 内容可断言
 
@@ -155,8 +156,12 @@ description: "Task list for 007-jwt-key-rotation"
 
 **Independent Test**: `git ls-files | grep eve-jwt.jks` 为空;DEPLOYMENT.md 含全部清单
 
-- [ ] T028 [US3] **FR-012(有门禁)**:`git rm src/main/resources/eve-jwt.jks`。⚠️ 前置条件(先验证再执行):①`application-aliw.yml`(不入库,用户提供证据)的 `security.keystore.location` 已改为文件系统绝对路径;②新生产密钥已按 `docs/DEPLOYMENT.md` 部署到 `/etc/eve-helper/`(权限 600/目录 700,SC-009 留证)。前置不满足则**停止并报告**,不得执行
-  - AC: 前置证据齐备;`git rm` 后 T027 转 GREEN(jar 仅含 test-only.jks)
+- [x] T028 [US3] **FR-012(有门禁)**:`git rm src/main/resources/eve-jwt.jks`。⚠️ 前置条件(先验证再执行):①`application-aliw.yml`(不入库,用户提供证据)的 `security.keystore.location` 已改为文件系统绝对路径;②新生产密钥已按 `docs/DEPLOYMENT.md` 部署到 `/etc/eve-helper/`(权限 600/目录 700,SC-009 留证)。前置不满足则**停止并报告**,不得执行
+  - AC: 前置证据齐备;`git rm` 后 T027 转 GREEN(jar 仅含 test-only.jks)✅(2026-08-12:用户确认「T028 T033核验通过」,两项前置由用户核验放行 —— aliw location 与服务器部署均在仓库外,AI 不可见,依 FR-002 职责边界由用户留证)
+  - 执行留证:`git rm` 前确认索引内两个 jks(`eve-jwt.jks` md5 `1be3633d…`、`test-only.jks` md5 `05a19e52…`),`eve-jwt.jks` 溯源 `5d139d8「增加token认证」`;`git rm` 后 `git ls-files src/main/resources | grep jks` 仅剩 `test-only.jks`,工作区同样仅剩该文件
+  - **SC-003 由 RED 转 GREEN**:`./mvnw clean package -DskipTests` 后 `jar tf` 输出仅 `BOOT-INF/classes/test-only.jks`(生产 keystore 已不在构建产物);`target/classes/` 亦仅 `test-only.jks`
+  - **回归**:全量 `./mvnw test` = **553/F4/E216/S2**,与 T031 基线逐位一致;Failures 仍为同 4 例(`AssertsControllerTest.syncAssets`、`BlueprintsControllerTest.addBlueprintsList`、`BlueprintsControllerTest.getBlueprintsList`、`CharacterControllerTest.addCharacterAuth`),**零新增失败用例名**
+  - ⚠️ **git 历史仍含旧私钥**(FR-014 有意不改写历史,禁止强推共享分支):旧密钥的失效依赖**生产已完成轮换**,而非本次删除。删除只是移除工作区与构建产物中的误用风险
 - [x] T029 [US3] `docs/DEPLOYMENT.md` 轮换章节:轮换步骤(keytool 命令用占位符口令)+ 六表审计清单(SQL + 判断方法,结论留空由用户填)+ 公告模板(Q5)+ `refresh_token:*` 清空前后计数记录项(SC-008)+ **新生产密钥指纹 ≠ test-only.jks 指纹 `FD:9F:19:27:61:...:CA:0F:B4` 核对项**(L-5)+ 「旧密钥已泄露」声明(SC-007);全文不得含真实口令
   - AC: 对照 SC-007/008/013 逐项可勾选;无口令明文 ✅(2026-08-12:新增「🔑 JWT 签名密钥轮换(007)」章节 = 事件声明(SC-007/FR-013)+ 公告模板(Q5)+ 9 步轮换流程(生成→部署 SC-009→指纹核对 L-5→配置切换 fail-closed 警示→FR-022 禁滚动重启→SC-014/SC-006 验证→`refresh_token:{jti}` 清空前后计数 SC-008→六表审计 SQL+判断方法+能力边界声明→SC-013 强制措辞归档)+ 轮换记录表;同步修正既有部署章节(.env 加 KEYSTORE_LOCATION/ALIAS、keystore 部署改 /etc/eve-helper/ 权限 700/600);grep 自查全文无真实口令,仅 `<STORE_PASS>` 类占位符;六表列名逐一对照 PO 实证(sys_user/sys_user_role/sys_permission/sys_role_permission/sys_role/eve_account + BaseEntity gmt_create/gmt_modified),Redis 键模式对照 TokenService:44)
 - [ ] T030 [US3] `specs/006-character-access-token-api/spec.md` 的 L-10 条目:标注「已由 007 实现(SecurityBaselineValidator)」
@@ -182,8 +187,9 @@ description: "Task list for 007-jwt-key-rotation"
     - ✅ 变异 ④(`SecurityBaselineValidator` fail-closed 改 fail-open:`length==0 || "test".equals(...)`)→ `SecurityBaselineValidatorTest.noProfile_failClosedAsProduction` FAIL(`Expected IllegalStateException to be thrown, but nothing was thrown`)
     - ✅ 变异 ⑤(L2 `applyFixedDelay()` 改抛 503)→ `RefreshRateLimiterTest.l2_overThreshold_fixedDelayButNotHardReject` FAIL(`Unexpected exception thrown`)+ `l2_overThreshold_prometheusCounterIncrements` ERROR
   - **执行纪律留证**:①②③ 依赖 `@SpringBootTest`,首轮(10:00 前后)因 MySQL 测试库 `Connection timed out` 全部 context 加载失败,**已用未变异代码复跑确认属环境问题**,未据此下任何结论;10:29 数据库恢复后先跑未变异基线 3/3 GREEN 作对照,再逐项植入变异。还原后 6/6 GREEN
-- [ ] T033 人工核验清单(用户执行,留证):SC-011(生产 profile 口令均为环境变量)+ SC-016(生产 profile whiteUrlList 含 `POST:/auth/tokens` 或未定义)+ SC-006 在**生产 profile 实际配置**下验收 + SC-009(stat 权限)
-  - AC: 四项核验记录归档至 `docs/reviews/` 或 DEPLOYMENT.md
+- [x] T033 人工核验清单(用户执行,留证):SC-011(生产 profile 口令均为环境变量)+ SC-016(生产 profile whiteUrlList 含 `POST:/auth/tokens` 或未定义)+ SC-006 在**生产 profile 实际配置**下验收 + SC-009(stat 权限)
+  - AC: 四项核验记录归档至 `docs/reviews/` 或 DEPLOYMENT.md ✅(2026-08-12,用户回复「T028 T033核验通过」)
+  - ⚠️ **证据边界(据实记录,勿在评审中当作 AI 已验证)**:四项均涉及 `.gitignore` 内的生产配置与服务器文件系统,**AI 不可访问**(FR-002 职责边界)。此处记录的是**用户的核验结论**,AI 未见 `stat` 输出、profile 文本与生产环境 SC-006 响应。若后续排障发现与结论不符,应重新核验而非引用本行
 - [ ] T034 评审记录收尾:`docs/reviews/` 确认三轮评审 + 本轮 tasks 执行记录齐全(AI_WORKFLOW 要求评审归档)
   - AC: docs/INDEX.md(如有)或目录自洽
 
