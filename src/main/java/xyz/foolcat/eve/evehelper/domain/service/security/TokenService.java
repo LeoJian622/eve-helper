@@ -177,22 +177,20 @@ public class TokenService {
 
         log.info("刷新Access Token: userId={}, refreshToken={}", user.getId(), SensitiveDataMasker.maskToken(refreshToken));
 
-        // 撤销旧的Refresh Token(轮换机制)
-        revokeRefreshToken(refreshToken);
+        // 007 T042:撤销即 claim —— 必须在签发新 token 之前「抢占」旧 token。
+        // Redis DEL 本身原子,只有真正删掉的调用返回 true;并发双请求中另一个
+        // 必然拿到 false/null,据此拒绝。若沿用「不看返回值的 delete」,
+        // 双方都能走到 generateTokenPair,各得一套有效 token 对(轮换一次性失效)。
+        // fail-closed:null(Redis 异常等语义不明)一律按抢占失败处理。
+        Boolean claimed = cacheGateway.delete(key);
+        if (!Boolean.TRUE.equals(claimed)) {
+            log.warn("Refresh Token 抢占失败(已被并发请求用掉或恰好过期): userId={}, refreshToken={}",
+                    user.getId(), SensitiveDataMasker.maskToken(refreshToken));
+            throw new IllegalArgumentException("Refresh Token无效或已过期");
+        }
 
         // 生成新的Token对(包含新的Refresh Token)
         return generateTokenPair(user, authorities);
-    }
-
-    /**
-     * 撤销Refresh Token
-     *
-     * @param refreshToken Refresh Token
-     */
-    public void revokeRefreshToken(String refreshToken) {
-        String key = REFRESH_TOKEN_PREFIX + refreshToken;
-        cacheGateway.delete(key);
-        log.info("撤销Refresh Token: refreshToken={}", SensitiveDataMasker.maskToken(refreshToken));
     }
 
     /**

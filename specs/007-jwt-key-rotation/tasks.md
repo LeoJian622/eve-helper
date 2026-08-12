@@ -299,7 +299,15 @@ description: "Task list for 007-jwt-key-rotation"
   - **变异测试**:① 改回 `ApplicationRunner` → 反射锁失败 ✅;② 删除 `@PostConstruct` → **双重失败**,行为锁报「Expected Exception to be thrown, but nothing was thrown」精确指出校验根本没执行 ✅
   - **回归**:007 相关 40/40 全绿(14+3+23);全量 Failures 仍为既有 4 项(500/401,MySQL 不通),`启动基线校验失败` 出现 0 次
 - [ ] T041 [MEDIUM-4(security)]**审计能力边界补全**(`docs/DEPLOYMENT.md`):六表判断方法依赖 `gmt_create`/`gmt_modified`,而**有写权限的攻击者可伪造这两列** → 「未发现新增/篡改痕迹」对精心操作的写入型入侵亦是可能假阴性。补一句边界声明 + 步骤 8 增加「检查 binlog/慢日志保留期」
-- [ ] T042 [MEDIUM-3(java)]**TOCTOU 残留窗口**:T015 只消除一半 —— `TokenService:158` 的 `refreshAccessTokenWithUser` **又做了一次 `cacheGateway.get(key)`**,窗口平移到「第 1 次与第 3 次 get 间」且跨越两次 DB 往返,**被显著拉长**。并发双请求可各得一套 token 对。要么加 `GETDEL`/Lua 原语,要么在 `spec.md` 显式记录该残留窗口与接受理由(不得留在已勾选的 T015 之下)
+- [x] T042 [MEDIUM-3(java)]**TOCTOU 残留窗口**:T015 只消除一半 —— `TokenService:158` 的 `refreshAccessTokenWithUser` **又做了一次 `cacheGateway.get(key)`**,窗口平移到「第 1 次与第 3 次 get 间」且跨越两次 DB 往返,**被显著拉长**。并发双请求可各得一套 token 对。要么加 `GETDEL`/Lua 原语,要么在 `spec.md` 显式记录该残留窗口与接受理由(不得留在已勾选的 T015 之下)
+  - **RED 先复现可利用性**:新增 `TokenServiceConcurrentRefreshTest`(纯 Mockito,`RSAKeyGenerator` 现场生成密钥对,不依赖 keystore 与 DB)。mock 精确模拟 Redis 语义:key 未被删前 `get` 恒有值、`delete` 只有第一次返回 true。双线程同 token 并发刷新 → **「实际成功 2 个」**,漏洞确认可复现,轮换的「一次性」保证失效
+  - **不需要 Lua/GETDEL**:`RedisCacheGateway.delete` 直接返回 `redisTemplate.delete(key)`,即 Redis `DEL` 的原语结果 —— **DEL 本身就是原子的 compare-and-claim**,只有真正删掉的调用得 true。原实现的问题不是缺原语,而是 `revokeRefreshToken` **丢弃了这个返回值**
+  - **修复**:「撤销」改为**签发前的 claim**。`Boolean claimed = cacheGateway.delete(key)`,`!Boolean.TRUE.equals(claimed)` 即拒(**fail-closed**:`null` 语义不明按抢占失败处理)。抢不到的一方抛与既有失效路径**同一文案**的异常,不新增可区分信息
+  - **顺带清掉自己造成的死代码**:改造后 `revokeRefreshToken` 失去全部生产调用方(实测 grep 确认;我原以为登出在用它,**假设不成立**)。该方法签名 `void`、丢弃 delete 返回值,正是本任务修掉的反模式,**留着比删掉更危险** —— 下次要撤销 refresh token 的人直接调它就把漏洞重新引入。已删除
+  - **变异测试**:① 删除 claim 校验(`if (false)`)→ 失败 3 项,含「实际成功 2 个」✅;② `!Boolean.TRUE.equals` 改 `Boolean.FALSE.equals`(放行 null,破坏 fail-closed)→ **精确失败 1 项**,证明 null 分支被独立守住 ✅
+  - **回归**:007 相关 44/44 全绿;全量 580 用例(+4),Failures 仍为既有 4 项(500/401,MySQL 不通),无新增
+
+- [ ] T048 [T042 派生发现]**登出不撤销 refresh token**:`AuthApplicationService.logout` 只把 access token 的 jti 加入黑名单,**refresh token 仍留在 Redis 中有效** → 用户登出后,持旧 refresh token 者仍可换到全新 token 对,登出形同虚设(access token 15 分钟后失效,但 refresh 有 7 天)。**既存缺陷,非 007 引入**,T042 排查死代码时实测发现(原以为登出会调 `revokeRefreshToken`,实测不调)。修复需登出时定位并删除该用户的 refresh token —— 但当前 Redis 键为 `refresh_token:<uuid>`,**无 userId → token 的反向索引**,不能直接删,属设计变更,故单列任务而非并入 T042
 
 ### 登记但不在本 feature 修(超出 007 边界,须另开 spec)
 
