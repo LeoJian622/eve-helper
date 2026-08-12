@@ -1,5 +1,15 @@
 server:
   port: 9999
+  tomcat:
+    threads:
+      # 007 T036:显式声明容量上限,不再依赖 Boot 默认值(默认 200/8192)。
+      # 这两个值是「洪泛容忍度」的分母 —— 任何在工作线程上阻塞的逻辑(如曾被推翻的
+      # refresh 延迟整形)都会把它们变成全站可用性上限,故必须可见、可审、可调。
+      max: 200
+      min-spare: 10
+    # 超出线程数后的排队长度;队满即拒新连接(快速失败优于无界排队)
+    accept-count: 100
+    max-connections: 8192
 
 spring:
   datasource:

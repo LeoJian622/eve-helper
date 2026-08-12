@@ -89,7 +89,8 @@ description: "Task list for 007-jwt-key-rotation"
   - AC: 当前失败(现状是异常逃逸/400)= RED ✅(2026-08-12,3 例全 ERROR:`InvalidCookieException` 异常逃逸;诊断测试文件已随改写删除,git rm 已暂存)
 - [x] T009 [P] [US1] `src/test/java/.../web/RefreshTokenEndpointAccessTest.java`:带旧签名 token / ParseException 格式非法 token 请求 `POST /auth/tokens` → **到达 controller**(断言 controller 被调用,AC#1/#2);无 token → 到达 controller;refresh token 不存在 → 明确业务错误(400 + 「无效或已过期」)
   - AC: 当前失败(filter 拦截)= RED ✅(2026-08-12,3 例全失败:2 例 InvalidCookieException 逃逸 + 1 例 401 AUT00201「用户未登录」未达 controller;「到达 controller」判据 = 响应含仅由 AuthApplicationService:116 生成的「无效或已过期」消息)
-- [x] T010 [P] [US1] `src/test/java/.../domain/service/security/RefreshRateLimiterTest.java`:L2 超阈值 → 响应被**固定延迟**且仍返回业务错误(**断言非硬拒**);成功路径无延迟;Redis 故障 fail-open(不新增失败);L1 计数存在但**无任何锁定动作**
+- [x] T010 [P] [US1] `src/test/java/.../domain/service/security/RefreshRateLimiterTest.java`:L2 超阈值 → 响应被~~**固定延迟**~~且仍返回业务错误(**断言非硬拒**);成功路径无延迟;Redis 故障 fail-open(不新增失败);L1 计数存在但**无任何锁定动作**
+  - ⚠️ **「固定延迟」部分已于 T036 推翻**:该断言(`elapsed >= 100ms`)固化了 DoS 放大器设计,现已反转为「不得阻塞调用线程」。本条其余三项(非硬拒、fail-open、无锁定)仍有效
   - AC: 实现不存在 → RED ✅(2026-08-12,编译失败 `cannot find symbol: RefreshRateLimiterService`;T016 实现后 6/6 GREEN)
 - [x] T011 [P] [US1] 更新既有 `ResponseUtilsTest`:`TOKEN_ACCESS_EXPIRED` 断言从 400 改为 **401**;`Content-Type` 断言含 `charset=UTF-8`
   - AC: 当前失败(现落 default → 400)= RED ✅(2026-08-12,2 例失败:`expected 401 but was 400`、Content-Type 无 charset;T012 落地后 4/4 GREEN)
@@ -104,7 +105,8 @@ description: "Task list for 007-jwt-key-rotation"
   - AC: 启动后 `RbacAuthorizationManager` 白名单含该项(test profile 实测端点可达)✅(2026-08-12,同步 `application-test.yml` 与 `application-prod.yml.example`(序 0 已含)—— List 属性 profile 整体覆盖(HIGH-1/SC-016);⚠️ ali/aliw/prod 真实文件不入库,T033 人工核验)
 - [x] T015 [US1] `AuthApplicationService.refreshToken:114-119`:③ `hasKey` + ④ `get` 合并为单次 `get`(null 即无效),消除 TOCTOU;`:158` 撤销前权威校验保留(M-5)
   - AC: T009 仍 GREEN;`TokenServiceTest` 相关用例无新增失败 ✅(2026-08-12,合并后经 `getUserIdFromRefreshToken` 单次 get;`:158` 权威校验未动;调用方归零的 `isRefreshTokenValid` 已删,单测桩同步)
-- [x] T016 [US1] 实现 `RefreshRateLimiterService` `src/main/java/.../domain/service/security/RefreshRateLimiterService.java`:L1 键 `refresh:fail:{userId}`(TTL 60s,仅告警,**禁止锁定**);L2 键 `refresh:invalid:global`(固定窗口 INCR + 每次 INCR 重设 EXPIRE;超阈值 → Prometheus 计数器告警 + 失败路径固定延迟 100–300ms;Redis 异常 try-catch fail-open;成功路径零影响)。依赖 `CacheGateway` 端口,不直连 Redis(DDD 分层)
+- [x] T016 [US1] 实现 `RefreshRateLimiterService` `src/main/java/.../domain/service/security/RefreshRateLimiterService.java`:L1 键 `refresh:fail:{userId}`(TTL 60s,仅告警,**禁止锁定**);L2 键 `refresh:invalid:global`(固定窗口 INCR + 每次 INCR 重设 EXPIRE;超阈值 → Prometheus 计数器告警 + ~~失败路径固定延迟 100–300ms~~;Redis 异常 try-catch fail-open;成功路径零影响)。依赖 `CacheGateway` 端口,不直连 Redis(DDD 分层)
+  - ⚠️ **「固定延迟 100–300ms」已于 T036 移除**(DoS 放大器);「Prometheus 计数器告警」通路不存在,由 T037 处理
   - AC: T010 GREEN ✅(2026-08-12,6/6;阈值 L2_THRESHOLD=1000/60s 窗口集中定义于常量;延迟 100~300ms 区间随机防同步重试风暴;指标名 `eve.helper.refresh.invalid.flood`)
 - [x] T017 [US1] 接线:`AuthApplicationService.refreshToken` 失败路径(②/③ 阶段)调用 L2 计数 + 延迟;④ 之后失败调 L1 计数;成功路径不调用
   - AC: T010、T009 GREEN;阈值常量集中定义(不硬编码散落)✅(2026-08-12,②格式非法+③token无效 → L2;用户不存在 → L1(userId);成功路径零调用;阈值集中在 RefreshRateLimiterService 常量;单测增接线断言)
@@ -113,7 +115,7 @@ description: "Task list for 007-jwt-key-rotation"
 - [x] T019 [US1] US1 回归:全量 `./mvnw test` 与 T007 基准做**用例名集合 diff**;特别核对 `CharacterControllerTest.addCharacterAuth`(基线即 401,断言不得因本改动漂移)
   - AC: 无新增失败用例;4 个基线 Failures 名单不变 ✅(2026-08-12,**535/F4/E216/S2**:总数 = 附录 A 526 − 3(删除的诊断测试)+ 12(US1 新测试)算术吻合;Failures 4 例名单与基线完全一致,addCharacterAuth 仍 401 未漂移;Errors 216 = 218 − 2(删除的诊断测试错误,附录 A 已预言);顶层异常 204 EveHelperException + 9 FileNotFound + 2 EsiException + 1 BadSqlGrammar,无新类别;context 加载失败 0;旧 surefire 报告中的 2 个 InvalidCookieException 为删除前残留文件,非本轮产物)
 
-**Checkpoint**: US1 独立可验 —— 旧 token 得 401,refresh 端点可达,洪泛有延迟整形
+**Checkpoint**: US1 独立可验 —— 旧 token 得 401,refresh 端点可达,洪泛有观测计数(~~延迟整形~~ T036 已移除;告警导出待 T037)
 
 ---
 
@@ -189,6 +191,7 @@ description: "Task list for 007-jwt-key-rotation"
       - **结论**:该 `return` 与 `isCommitted` 守卫构成双保险(纵深防御),在当前架构下**无可观测的外部行为差异**,故无法用黑盒测试约束。保留二者(防御性冗余,后续若有 filter 在 controller 之后写响应的场景即成为必要),但**不虚构一个测试去假装覆盖它**
     - ✅ 变异 ④(`SecurityBaselineValidator` fail-closed 改 fail-open:`length==0 || "test".equals(...)`)→ `SecurityBaselineValidatorTest.noProfile_failClosedAsProduction` FAIL(`Expected IllegalStateException to be thrown, but nothing was thrown`)
     - ✅ 变异 ⑤(L2 `applyFixedDelay()` 改抛 503)→ `RefreshRateLimiterTest.l2_overThreshold_fixedDelayButNotHardReject` FAIL(`Unexpected exception thrown`)+ `l2_overThreshold_prometheusCounterIncrements` ERROR
+      - ⚠️ **该记录已过期(T036)**:`applyFixedDelay()` 与 `l2_overThreshold_fixedDelayButNotHardReject` 均已删除。等效的现行变异见 T036 记录(插回 `Thread.sleep` → `l2_overThreshold_doesNotBlockCallingThread` FAIL)
   - **执行纪律留证**:①②③ 依赖 `@SpringBootTest`,首轮(10:00 前后)因 MySQL 测试库 `Connection timed out` 全部 context 加载失败,**已用未变异代码复跑确认属环境问题**,未据此下任何结论;10:29 数据库恢复后先跑未变异基线 3/3 GREEN 作对照,再逐项植入变异。还原后 6/6 GREEN
 - [ ] T033 人工核验清单(用户执行,留证):SC-011(生产 profile 口令均为环境变量)+ SC-016(生产 profile whiteUrlList 含 `POST:/auth/tokens` 或未定义)+ SC-006 在**生产 profile 实际配置**下验收 + SC-009(stat 权限)
   - 🚨 **原结论已被推翻(2026-08-12,T034 评审)**:用户 2026-08-12 回复「T028 T033核验通过」,但 AI 在 T034 评审中实测发现**至少两项不成立**,故本任务回退为未完成。详见 `docs/reviews/2026-08-12-007-security-reviewer.md` CRITICAL-2 / HIGH-2
@@ -211,13 +214,26 @@ description: "Task list for 007-jwt-key-rotation"
 
 - [ ] T035 🚨 **[CRITICAL-1 + CRITICAL-2 + HIGH-2]生产 profile 三项修正**(用户执行,涉 gitignore 私有配置,AI 不代改):`application-{aliw,ali,prod}.yml` 各自 ①`security.keystore.location` 切到**新密钥**(现 aliw 指向的 `D:\IdeaProjects\eve-jwt.jks` 与已泄露密钥字节相同);②keystore/key 口令改 `${KEYSTORE_PASSWORD}` / `${KEY_PASSWORD}` 占位符;③`whiteUrlList` 补 `- POST:/auth/tokens`
   - AC: 每项留下**可核对的证据**(而非口头确认)—— location 指向的文件 md5 ≠ `1be3633d52ebcaa3cd9fd18e1045aa72`;`grep -c 'password.*\${' ` 输出;`grep -A5 whiteUrlList` 输出含 auth/tokens
+  - ④ **顺带自查(T036 M-2)**:确认三个 profile **未覆盖** `server.tomcat.threads.max` / `accept-count` / `max-connections`,或覆盖后的值是有意为之。`application.yml` 已显式声明这四项(即 Boot 默认值),但标量属性会被 profile **整体覆盖** —— 与 whiteUrlList 同型的陷阱
   - 依赖:本任务闭合后 T028 / T033 才能勾 `[x]`
-- [ ] T036 🚨 **[HIGH-1]移除请求线程上的 `Thread.sleep`**(`RefreshRateLimiterService:118-125`):当前实现是 DoS 放大器 —— `POST /auth/tokens` 已加白(未认证可达),超阈值后每个失败请求占住一个 Tomcat 工作线程 100~300ms,默认 200 线程下约 1000 req/s 即可拖垮**全站**;且清空 `refresh_token:*` 后全体客户端同时 refresh 失败会**自我触发**该路径
-  - 方案三选一:①仅保留计数器 + 告警(去掉延迟);②Servlet 异步延迟提交;③超阈值直接 429
-  - ⚠️ **TDD 注意**:`RefreshRateLimiterTest:96-112` 现把 `elapsed >= 100ms` 固化为期望行为,**该用例必须随方案改写**,否则会锁死错误设计。新增断言:「超阈值时不占用调用线程」
-  - AC: 新测试 RED → GREEN;全量回归无新增失败用例名;显式设定 `server.tomcat.threads.max` 与 `accept-count`
+- [x] T036 🚨 **[HIGH-1]移除请求线程上的 `Thread.sleep`**(`RefreshRateLimiterService:118-125`):当前实现是 DoS 放大器 —— `POST /auth/tokens` 已加白(未认证可达),超阈值后每个失败请求占住一个 Tomcat 工作线程 100~300ms,默认 200 线程下约 1000 req/s 即可拖垮**全站**;且清空 `refresh_token:*` 后全体客户端同时 refresh 失败会**自我触发**该路径
+  - **采用方案①(仅保留计数器 + 告警,去掉延迟)**。否决理由:②Servlet 异步延迟需把 `DeferredResult` 一路穿透 controller→application service,为价值可疑的整形动作付出架构复杂度(违 KISS/YAGNI);③429/硬拒在 plan §7 已否决且理由仍成立(L2 是**全局单键**,超阈值会拒绝所有用户,而 FR-015 轮换窗口恰好自我触发 → 与 SC-006 冲突)
+  - **先改规格后改代码**(AI_WORKFLOW §5.1):`plan.md` §3.3 表格 + 降级裁决段 + 配套约束表 + 多实例说明 + 测试矩阵 2 处 + 变异测试(新增第 6 条)共 7 处;`spec.md` SC-015 洪泛观测项。v3「锁定为固定延迟」裁决**已标记 v4 推翻,注明不得恢复**
+  - RED:`l2_overThreshold_doesNotBlockCallingThread`(断言方向由 `elapsed >= 100ms` **反转**为 `< 80ms`)+ 新增 `l2_noDelayConstantsRemain`(反射断言无 `*DELAY*` 常量残留,不依赖计时,防慢机误判) → 2 Failures,失败信息 `实际耗时 146ms` 恰落在 v3 的 100~300ms 区间,证明测到的是真实缺陷
+  - GREEN:删 `applyFixedDelay()` + `MIN_DELAY_MS`/`MAX_DELAY_MS` + `ThreadLocalRandom` import;`RefreshRateLimiterTest` 耗时 **1.275s → 0.087s**(延迟真实消失,非放宽断言蒙过);14/14 通过(含 `AuthApplicationServiceUnitTest`)
+  - ✅ **变异测试**:临时插回 `Thread.sleep(150L)` → `l2_overThreshold_doesNotBlockCallingThread` FAIL(`实际耗时 163ms`)。仅 1 项失败(用字面量而非常量),恰验证两条断言**互补**:计时断言抓行为,常量断言抓设计意图残留
+  - ✅ **回归**:`554/F4/E216/S2`,Failures 用例名与基线**逐项一致**(`AssertsControllerTest.syncAssets`、`BlueprintsControllerTest.{addBlueprintsList,getBlueprintsList}`、`CharacterControllerTest.addCharacterAuth`),**零新增失败用例名**;总数 553→554 因 1 个用例拆为 2 个
+  - ✅ **显式容量配置**:`application.yml` 增 `server.tomcat.threads.max=200` / `min-spare=10` / `accept-count=100` / `max-connections=8192` —— 把「洪泛容忍度的分母」从 Boot 隐含默认值变为可见可审项;经 `@SpringBootTest`(6/6)验证绑定无误
+  - 同步修正 `RefreshRateLimiterService` 类注释(新增「为何不做延迟整形」段,含成本不对称与自我触发的完整推理)与 `AuthApplicationService:115,127` 两处调用点注释
+  - ⚠️ **遗留**:超阈值仍只递增 `MeterRegistry` Counter,而告警通路实际不存在 → **由 T037 闭合**(本任务不越界处理)
 - [ ] T037 🚨 **[HIGH-1(java)+ MEDIUM-4]告警通路名实一致**:`RefreshRateLimiterService` 注册 Counter 到 `MeterRegistry` 并声称「Prometheus 抓取触发告警」,但 `pom.xml` **无 `micrometer-registry-prometheus`**、全部 yml **无 `management:` 配置** → 指标写入 `SimpleMeterRegistry`,永不被抓取;L1 计数亦只写不读
+  - 🔍 **T036 期间新查明的补充证据(诊断更彻底)**:
+    - `grep -rln 'io.prometheus' src/main/java` = **0** → pom 里三个 `io.prometheus` 依赖(`prometheus-metrics-core` / `-instrumentation-jvm` / `-exporter-httpserver`)**在业务代码中零引用,是死依赖**。问题不只是「缺 micrometer 桥接」,而是这套 Prometheus 依赖从未接线(无 `PrometheusRegistry`、无 `HTTPServer` 启动、无 `JvmMetrics` 注册)
+    - `grep -rn '@Bean.*MeterRegistry\|SimpleMeterRegistry' src/main/java` = **0** → 无自定义 bean,`MeterRegistry` 由 actuator 自动配置兜底
+    - 全仓 `MeterRegistry` 唯一消费者就是 `RefreshRateLimiterService:70`
+    - ⇒ 方案②(改结构化日志)可**顺带清理三个死依赖**,比方案①更贴合技术栈冻结原则
   - 方案二选一:①补 registry 依赖 + `management.endpoints.web.exposure.include`(⚠️ 技术栈冻结,新增依赖需确认是否属既有 `spring-boot-starter-actuator` 生态内,否则走宪法修订);②不引依赖 → 改为结构化 WARN 日志 + 日志告警规则,**同步修正**类注释、`plan.md` §3.3 表述、`RefreshRateLimiterTest.l2_overThreshold_prometheusCounterIncrements` 的立论
+  - 📌 **一并裁决(T036 评审 L-2)**:若选方案①保留 `MeterRegistry`,应评估是否抽 `domain.port.metrics.MetricsGateway` 端口(与 `CacheGateway`/`EsiGateway` 一致);若选方案②则 `MeterRegistry` 整体移除,该问题自然消失
   - AC: 代码/注释/plan/测试对告警能力的描述与实际一致(当前**描述不实**是 BLOCK 主因之一)
 - [ ] T038 🚨 **[HIGH-3]基线校验改正向白名单**(`SecurityBaselineValidator`):`checkAccessTokenEndpoint` 用 `Boolean.parseBoolean(null)` = false → 生产 profile 该键根本不存在 → **恒放行**,却照打「基线校验通过(4/4)」,是虚假保证。同类:`checkWebLogLevel` 只查 `logging.level.web`,`root: debug` 可绕过
   - 改法:3 项 boolean/枚举基线从「查到违规值才拒」改为「**必须显式配置为安全值**」(与该类 `isTestProfile` 自身的正向白名单思路一致);日志级别校验扩展到 `root` / `org.springframework.web` / `org.springframework.security`

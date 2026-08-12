@@ -240,12 +240,16 @@ public class WhiteUrlMatcher {
 | 层 | 机制 | 键空间 | 作用(诚实表述,round3 §2.3/2.5) |
 |----|------|--------|------|
 | **L1 按用户异常观测计数器** | 仅在 ④ 之后、⑤/⑥ 失败时计数(如用户恰被删除的竞态)。键 `refresh:fail:{userId}`,**TTL 60s**,触发动作**仅告警** | 有界(真实用户数),攻击者无法主动构造(round3 §2.2) | **定位是观测,不是防护** —— 持被盗 token 的攻击者走成功路径,只计失败的 L1 一次都不计数(M-2)。**禁止任何锁定动作**:按 userId 锁定 = 复制 `LoginRateLimiterService` 的定向锁死 DoS,本 plan 自己刚谴责过 |
-| **L2 无效 token 洪泛的检测 + 速率整形(全局单键)** | **单一固定键** `refresh:invalid:global` 计数「②/③ 阶段失败」总次数,**固定窗口**(`INCR`+`EXPIRE`)。超阈值时**仅告警 + 固定延迟(100–300ms,仅失败路径)** | **常量 1 个键** —— 无放大 | **真价值是检测 + 速率整形,为运维响应争取时间**;结构性抗洪泛来自失败路径廉价(③ 即止、不触 DB/不触 token 生成/不触 RBAC Redis 读)。**不做硬性拦截** |
+| **L2 无效 token 洪泛的检测(全局单键)** | **单一固定键** `refresh:invalid:global` 计数「②/③ 阶段失败」总次数,**固定窗口**(`INCR`+`EXPIRE`)。超阈值时**仅告警,不施加任何时延、不拒绝** | **常量 1 个键** —— 无放大 | **真价值是检测,为运维响应争取时间**;结构性抗洪泛来自失败路径廉价(③ 即止、不触 DB/不触 token 生成/不触 RBAC Redis 读)。**既不硬拒也不整形** |
 
-**L2 降级形式已裁决:固定延迟,否决 503(HIGH-2,round3 §2.4)**:
+**L2 降级形式最终裁决:纯观测告警。否决 503,且【v4 推翻 v3】否决固定延迟(实现阶段 security-reviewer HIGH-1,T036)**:
 
 - ~~返回 503~~ **删除此选项**。选项 B 下轮换瞬间**全体**合法客户端的 refresh 都在 ③ 失败,L2 必然触发;503 会把合法请求挡在 controller 外 —— 恰是 SC-006 验收的时刻。503 = 换状态码的硬拒 = 第二轮已否决的自伤总闸从后门请回
-- **锁定为固定延迟(100–300ms,仅施加于 ②/③ 失败路径,永不施加于成功路径)**。延迟不破坏可达性(客户端拿到延迟后的 `400 + "Refresh Token无效或已过期"`,照样跳登录页);持有效 token 的正常 refresh 不受影响
+- ~~固定延迟(100–300ms)~~ **【v4 推翻,不得恢复】**。v3 判它"抬高攻击成本"**方向判反了** —— `Thread.sleep` 跑在 Tomcat 工作线程上,而 `POST:/auth/tokens` 已加白(未认证可达):
+  - **成本不对称在攻击者一侧**。洪泛用并发连接,每请求延迟不降低其吞吐;我方每个超阈值请求白占一个工作线程 100–300ms。默认 200 线程 ⇒ 约 **1000 req/s 拖垮全站**(含所有已认证业务端点),无延迟时需 ~200,000 req/s。**延迟把局部端点压力放大成全站可用性故障**
+  - **会自我触发**。FR-015 清空 `refresh_token:*` 后全体在线客户端同时在 ③ 失败 → L2 必然超阈值 → 恰在轮换窗口给自己叠加线程耗尽风险(与 503 被否决的理由**同源**,v3 只否了 503 却漏了延迟)
+  - **整形价值本就可疑**:真正的抗洪泛来自失败路径 O(1) 廉价(随机 UUID 在 ③ 的 Redis 存在性校验即止),延迟并未增加这条路径上攻击者的边际成本
+- **锁定为:超阈值 → 递增告警计数器 + 结构化 WARN 日志,方法立即返回**。不 sleep、不拒绝、不改响应体。速率限制若日后确有需要,应在**入口层**(反代/网关/`server.tomcat.max-connections`)做,而非在业务线程内自我阻塞
 
 **L2 配套实现约束(须写入 tasks,round3 §2.4)**:
 
@@ -255,14 +259,14 @@ public class WhiteUrlMatcher {
 | 过期竞态 | **每次 INCR 后都重设 EXPIRE**,杜绝「INCR 与 EXPIRE 之间崩溃 → 键永不过期 → 永久降级」 |
 | Redis 故障 | **fail-open**(try-catch 跳过 L2):Redis 不可用时 ③ 本身就会失败,refresh 整体不可用,L2 不应新增失败面 |
 | 告警 | 接入 **Prometheus**(pom 已有 metrics 依赖),而非仅日志 |
-| 阈值定标 | 窗口内阈值 ≥ 预估轮换尖峰(在线用户数 × 每客户端 refresh 重试次数),使「L2 触发 ≈ 异常流量」,轮换本身不误触发;若阈值低于尖峰,也仅允许延迟型降级 |
+| 阈值定标 | 窗口内阈值 ≥ 预估轮换尖峰(在线用户数 × 每客户端 refresh 重试次数),使「L2 触发 ≈ 异常流量」,轮换本身不误触发;**阈值仅决定何时告警,不触发任何降级动作**(v4:延迟已否决) |
 | 实现范本 | 复用 `LoginRateLimiterService:39-49` 已验证的 `increment`+首次 `expire` 模式;**但其「按 username 计数 + 锁 30 分钟」的模式禁止照搬**(可定向锁死任意已知用户) |
 
 **为何 L2 用单键而非按 token 值**:计数器是**一个固定键**,攻击者无论换多少随机 UUID 都只 `INCR` 同一个键 → **无键空间放大**(评审驳回方案 B 的核心理由被规避),且 token 明文不进键空间。
 
 **为何 L2 不硬拒**:评审对「全局硬限流 = 自伤总闸」的判断成立 —— 轮换瞬间全体客户端同时 refresh,硬拒会让合法用户无法恢复会话。故 L2 **仅告警/降级**,与评审建议 2 一致。
 
-> ✅ **多实例说明(第三轮评审已确认)**:L2 计数器在多实例下经 Redis 全局共享(真全局视图),延迟在各实例本地执行、无协调成本;Redis 故障按上表 fail-open。
+> ✅ **多实例说明(第三轮评审已确认)**:L2 计数器在多实例下经 Redis 全局共享(真全局视图),告警在各实例本地发出、无协调成本;Redis 故障按上表 fail-open。
 
 ---
 
@@ -291,7 +295,7 @@ public class WhiteUrlMatcher {
 | `src/test/.../SecurityBaselineValidatorTest.java` | 各违规组合 → 拒绝启动;非生产 profile → 跳过;**生产 + `classpath:test-only.jks` → 拒启**(round3 §3.1) |
 | `src/test/.../KeyStoreKeyFactoryTest.java` | 异常分类、别名错误、RSA 位数断言、错误信息不含口令;**PKCS12 与 JKS 双格式 fixture**(M-4) |
 | `src/test/.../RefreshTokenEndpointAccessTest.java` | 无 token / 失效 token 时可达 controller |
-| `src/test/.../RefreshRateLimiterTest.java` | L2 超阈值 → 告警+固定延迟(非硬拒);成功路径不延迟;Redis 故障 fail-open;L1 无锁定动作 |
+| `src/test/.../RefreshRateLimiterTest.java` | L2 超阈值 → **仅告警,不阻塞调用线程**(v4);成功路径不受影响;Redis 故障 fail-open;L1 无锁定动作 |
 
 ### 修改
 
@@ -398,7 +402,7 @@ case TOKEN_ACCESS_EXPIRED:          // ← 新增,现落 default → 400
 | **401 链路** | `JwtAuthFailureResponseTest`(由诊断测试改写) | 验签失败 → **HTTP 401** 且 body code `AUT00210`;过期 token → 401;黑名单 token → 401;**响应体不含 token 片段** |
 | **白名单放行** | `WhiteUrlMatcherContractTest` + `RefreshTokenEndpointAccessTest` | `WhiteUrlMatcher` 与 `RbacAuthorizationManager` 对同一组输入判定一致(防语义漂移,AC#4);带旧/非法 token 请求白名单端点 → **到达 controller**(AC#1/#2);带旧 token 请求非白名单端点 → 401(AC#3) |
 | **refresh 可达** | `RefreshTokenEndpointAccessTest` | 无 token → 到达 controller(非 401 `AUT00201`);失效 token → 到达 controller;refresh token 不存在 → 明确业务错误;同一 refresh token 反复调用 → 第二次起因撤销而业务错误(L-10,非限流) |
-| **限流** | `RefreshRateLimiterTest` | L2 超阈值 → **告警 + 固定延迟**(断言响应被延迟,非硬拒);L2 失败路径不施加于成功路径;Redis 故障 fail-open;L1 **无锁定动作** |
+| **限流** | `RefreshRateLimiterTest` | L2 超阈值 → **仅告警计数器递增,且不占用调用线程**(v4:断言超阈值路径耗时与低于阈值同量级);L2 不施加于成功路径;Redis 故障 fail-open;L1 **无锁定动作** |
 | **KeyStoreKeyFactory** | `KeyStoreKeyFactoryTest` | 别名不存在 → 错误信息含「别名」而非「Cannot load keys」;口令错 → 错误信息**不含口令**;文件不存在 → 明确路径;RSA <2048 → 拒绝;**能加载 PKCS12 与 JKS 两种物理格式**(M-4:现 `test-only.jks` 实为 PKCS12,靠 DualFormat 兼容被 `getInstance("jks")` 加载,重写不得破坏) |
 | **启动校验** | `SecurityBaselineValidatorTest` | 4 项各自违规 → 拒绝;profile 缺失/未知 → **按生产校验(fail-closed)**;`test` profile → 允许 classpath;**生产 profile + `classpath:test-only.jks` → 拒绝启动**(SC-005 具体用例,round3 §3.1) |
 | **回归** | 既有 59 个 `@SpringBootTest` | 换 `test-only.jks` 后仍能签发/验签;**同环境逐用例 diff**(见下,不用固定 Errors 阈值) |
@@ -410,7 +414,8 @@ case TOKEN_ACCESS_EXPIRED:          // ← 新增,现落 default → 400
 - filter 的白名单放行分支删掉 → `RefreshTokenEndpointAccessTest` 应失败(请求被 401 挡住)
 - filter 的 `return` 删掉 → 应有测试捕获(请求继续走到 controller)
 - 基线校验的 fail-closed 改为 fail-open(未知 profile 放行)→ 应有测试失败
-- L2 降级改为硬拒(503)→ 限流测试应失败(断言的是延迟非拒绝)
+- L2 降级改为硬拒(503)→ 限流测试应失败(断言的是「仅告警、不拒绝」)
+- L2 恢复 `Thread.sleep` 延迟 → `l2_overThreshold_doesNotBlockCallingThread` 应失败(v4:该断言专为防止 HIGH-1 回归而设)
 
 **基线(2026-08-11 21:47 实测)**:`509 tests / Failures 4 / Errors 219 / Skipped 2`。`Failed to load ApplicationContext` 计数 0,keystore 相关错误 0。现存 Errors 根因全为外部依赖(MySQL 通信 4、Socket 3、超时 2、SQL 语法 2、SSL 1 等),与本 feature 无关。
 

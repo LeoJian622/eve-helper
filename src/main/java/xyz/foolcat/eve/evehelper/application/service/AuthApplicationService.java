@@ -112,7 +112,7 @@ public class AuthApplicationService {
         }
         if (!UUID_PATTERN.matcher(refreshToken).matches()) {
             log.warn("Refresh Token格式错误: token={}", SensitiveDataMasker.maskToken(refreshToken));
-            // 007 T017:格式非法属洪泛主向量(此阶段拿不到 userId)→ L2 观测 + 延迟整形
+            // 007 T017:格式非法属洪泛主向量(此阶段拿不到 userId)→ L2 观测告警(T036:不施加时延)
             refreshRateLimiterService.observeInvalidRefresh();
             throw new EveHelperException("Refresh Token格式错误");
         }
@@ -124,7 +124,7 @@ public class AuthApplicationService {
             userId = tokenService.getUserIdFromRefreshToken(refreshToken);
         } catch (IllegalArgumentException e) {
             log.warn("Refresh Token无效: refreshToken={}", SensitiveDataMasker.maskToken(refreshToken));
-            // 007 T017:随机 UUID 洪泛在此被挡(解析不出 userId)→ L2 观测 + 延迟整形
+            // 007 T017:随机 UUID 洪泛在此被挡(解析不出 userId)→ L2 观测告警(T036:不施加时延)
             refreshRateLimiterService.observeInvalidRefresh();
             throw new EveHelperException("Refresh Token无效或已过期");
         }
