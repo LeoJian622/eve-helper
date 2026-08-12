@@ -39,6 +39,7 @@ class SecurityBaselineValidatorTest {
 
     private static final String LOG_IMPL = "mybatis-plus.configuration.log-impl";
     private static final String WEB_LOG_LEVEL = "logging.level.web";
+    private static final String ROOT_LOG_LEVEL = "logging.level.root";
     private static final String ENDPOINT_ENABLED = "eve.helper.debug.access-token-endpoint.enabled";
     private static final String KEYSTORE_LOCATION = "security.keystore.location";
 
@@ -51,8 +52,38 @@ class SecurityBaselineValidatorTest {
         env.setActiveProfiles("prod");
         env.setProperty(LOG_IMPL, SLF4J_IMPL);
         env.setProperty(WEB_LOG_LEVEL, "info");
+        env.setProperty(ROOT_LOG_LEVEL, "info");
         env.setProperty(ENDPOINT_ENABLED, "false");
         env.setProperty(KEYSTORE_LOCATION, "/etc/eve-helper/eve-jwt.jks");
+        return env;
+    }
+
+    /**
+     * 构造缺少指定键的生产配置。
+     *
+     * <p>{@link MockEnvironment} 无删除键的 API,故「键缺失」用例必须从空环境正向构造,
+     * 不能从 {@link #validProdEnv()} 移除 —— 这是 T038 正向白名单用例的前提。</p>
+     *
+     * @param omittedKey 要省略的配置键
+     */
+    private static MockEnvironment prodEnvWithout(String omittedKey) {
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles("prod");
+        if (!LOG_IMPL.equals(omittedKey)) {
+            env.setProperty(LOG_IMPL, SLF4J_IMPL);
+        }
+        if (!WEB_LOG_LEVEL.equals(omittedKey)) {
+            env.setProperty(WEB_LOG_LEVEL, "info");
+        }
+        if (!ROOT_LOG_LEVEL.equals(omittedKey)) {
+            env.setProperty(ROOT_LOG_LEVEL, "info");
+        }
+        if (!ENDPOINT_ENABLED.equals(omittedKey)) {
+            env.setProperty(ENDPOINT_ENABLED, "false");
+        }
+        if (!KEYSTORE_LOCATION.equals(omittedKey)) {
+            env.setProperty(KEYSTORE_LOCATION, "/etc/eve-helper/eve-jwt.jks");
+        }
         return env;
     }
 
@@ -179,5 +210,112 @@ class SecurityBaselineValidatorTest {
     void prodProfile_allValid_passes() {
         assertDoesNotThrow(() -> new SecurityBaselineValidator(validProdEnv()).validate(),
                 "全合规生产配置不应被拒绝");
+    }
+
+    // ==================================================================
+    // T038:正向白名单 —— 键缺失即拒(修正 HIGH-3「恒放行却报通过」的虚假保证)
+    // ==================================================================
+
+    @Test
+    @DisplayName("T038:生产 + access-token-endpoint 键缺失 → 拒绝启动(Boolean.parseBoolean(null)=false 不得视为合规)")
+    void prodProfile_endpointKeyMissing_rejectsStartup() {
+        assertRejects(prodEnvWithout(ENDPOINT_ENABLED), "access-token-endpoint");
+    }
+
+    @Test
+    @DisplayName("T038:生产 + log-impl 键缺失 → 拒绝启动(null≠StdOutImpl 不得视为合规)")
+    void prodProfile_logImplKeyMissing_rejectsStartup() {
+        assertRejects(prodEnvWithout(LOG_IMPL), "log-impl");
+    }
+
+    @Test
+    @DisplayName("T038:生产 + logging.level.root 键缺失 → 拒绝启动(未声明的根级别不得视为安全)")
+    void prodProfile_rootLogLevelKeyMissing_rejectsStartup() {
+        assertRejects(prodEnvWithout(ROOT_LOG_LEVEL), "root");
+    }
+
+    @Test
+    @DisplayName("T038:生产 + access-token-endpoint=yes(非法值)→ 拒绝启动(只接受 false,不接受任意非 true 串)")
+    void prodProfile_endpointNonBooleanValue_rejectsStartup() {
+        MockEnvironment env = validProdEnv();
+        env.setProperty(ENDPOINT_ENABLED, "yes");
+        assertRejects(env, "access-token-endpoint");
+    }
+
+    // ==================================================================
+    // T038:日志级别绕过路径 —— 三条均可从 logging.level.web 之外泄露凭证
+    // ==================================================================
+
+    @Test
+    @DisplayName("T038:生产 + logging.level.root=debug → 拒绝启动(web=info 亦不得放行)")
+    void prodProfile_rootDebugLog_rejectsStartup() {
+        MockEnvironment env = validProdEnv();
+        env.setProperty(ROOT_LOG_LEVEL, "debug");
+        assertRejects(env, "debug");
+    }
+
+    @Test
+    @DisplayName("T038:生产 + logging.level.reactor.netty=debug → 拒绝启动(ESI 请求头含 Bearer token)")
+    void prodProfile_reactorNettyDebugLog_rejectsStartup() {
+        MockEnvironment env = validProdEnv();
+        env.setProperty("logging.level.reactor.netty", "debug");
+        assertRejects(env, "reactor.netty");
+    }
+
+    @Test
+    @DisplayName("T038:生产 + mapper 包 debug → 拒绝启动(配合 Slf4jImpl 即打 SQL 绑定参数,refresh_token 明文)")
+    void prodProfile_mapperPackageDebugLog_rejectsStartup() {
+        MockEnvironment env = validProdEnv();
+        env.setProperty("logging.level.xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper", "debug");
+        assertRejects(env, "mapper");
+    }
+
+    @Test
+    @DisplayName("T038:生产 + 任意 logger trace → 拒绝启动(trace 与 debug 同等对待)")
+    void prodProfile_arbitraryLoggerTrace_rejectsStartup() {
+        MockEnvironment env = validProdEnv();
+        env.setProperty("logging.level.org.springframework.security", "trace");
+        assertRejects(env, "org.springframework.security");
+    }
+
+    @Test
+    @DisplayName("T038:生产 + 多个 logger 为 info/warn/error → 放行(仅 debug/trace 危险)")
+    void prodProfile_multipleSafeLogLevels_passes() {
+        MockEnvironment env = validProdEnv();
+        env.setProperty("logging.level.org.springframework.security", "warn");
+        env.setProperty("logging.level.reactor.netty", "error");
+        env.setProperty("logging.level.xyz.foolcat.eve.evehelper", "info");
+
+        assertDoesNotThrow(() -> new SecurityBaselineValidator(env).validate(),
+                "info/warn/error 不泄露凭证,不应拒启");
+    }
+
+    @Test
+    @DisplayName("T038:test profile + root=debug → 放行(测试环境豁免,便于本地排查)")
+    void testProfile_rootDebugLog_allowed() {
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles("test");
+        env.setProperty(LOG_IMPL, STDOUT_IMPL);
+        env.setProperty(ROOT_LOG_LEVEL, "debug");
+        env.setProperty(KEYSTORE_LOCATION, "classpath:test-only.jks");
+
+        assertDoesNotThrow(() -> new SecurityBaselineValidator(env).validate(),
+                "test profile 豁免全部生产基线");
+    }
+
+    // ==================================================================
+    // T038:入库 application.yml 的真实键必须能通过校验(防「改完生产起不来」)
+    // ==================================================================
+
+    @Test
+    @DisplayName("T038:模拟入库 application.yml 的实际日志配置 → 必须放行(否则生产直接拒启)")
+    void prodProfile_actualCommittedLoggingConfig_passes() {
+        MockEnvironment env = validProdEnv();
+        // 复刻 application.yml logging.level 的真实键(bolingcavalry 死配置已随 T038 删除)
+        env.setProperty(ROOT_LOG_LEVEL, "info");
+        env.setProperty(WEB_LOG_LEVEL, "info");
+
+        assertDoesNotThrow(() -> new SecurityBaselineValidator(env).validate(),
+                "入库配置必须能通过新校验 —— 否则 T038 会让生产无法启动");
     }
 }

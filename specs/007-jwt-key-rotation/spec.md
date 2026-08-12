@@ -312,6 +312,43 @@ RBAC 的 url→role 映射来自三表 JOIN(`SysPermissionMapper.xml:201-211`:`s
 006 的 L-10(启动时安全基线 fail-fast 断言)与本 feature 的 FR-008 是同一处代码。建议合并实现:一个 `ApplicationRunner` 同时校验
 `log-impl` / `logging.level.web` / `access-token-endpoint.enabled` / `KEYSTORE_LOCATION` 四项。
 
+### 8.1 校验语义:正向白名单(T038 修正 HIGH-3)
+
+**初版实现是「黑名单」语义**,与 fail-closed 的名义不符:
+
+| 键 | 初版判据 | 键缺失时的实际行为 |
+|----|----------|-------------------|
+| `access-token-endpoint.enabled` | `Boolean.parseBoolean(v)` 为 true 则拒 | `parseBoolean(null)` = false → **恒放行** |
+| `log-impl` | 等于 `StdOutImpl` 则拒 | null ≠ StdOutImpl → **恒放行** |
+| `logging.level.web` | 是 debug/trace 则拒 | null → **恒放行**,且 `root: debug` 完全绕过 |
+
+三项都是「没发现危险值」而非「确认了安全值」,却统一打印「基线校验通过(4/4)」——**这是虚假保证**。
+
+**T038 起改为正向白名单**:键必须显式存在且取值属于安全集合,缺失即拒启。
+
+**日志基线扩展**(初版只查 `logging.level.web`,存在三条真实绕过路径):
+
+| 绕过路径 | 泄露物 | 初版是否可见 |
+|----------|--------|-------------|
+| `logging.level.root: debug` | 所有未显式配置的 logger 一并降级 | ❌ |
+| `logging.level.reactor.netty: debug` | ESI 客户端请求头 → `Authorization: Bearer <ESI token>` | ❌ |
+| `logging.level.xyz.foolcat...mapper: debug` | 配合 Slf4jImpl 打 SQL 绑定参数 → `refresh_token` 明文 | ❌ |
+
+第三条尤其要紧:`log-impl` 基线防的就是 refresh_token 入日志,而调 mapper 包日志级别可从另一侧达到**完全相同**的效果。故日志基线改为**扫描全部 `logging.level.*` 键**,任一为 debug/trace 即拒,而非枚举固定几个 logger 名(枚举法无法穷尽)。
+
+> **危害等级说明**:入库的 `application.yml` 已给出 `enabled: ${ACCESS_TOKEN_ENDPOINT_ENABLED:false}`、`web: info`、`log-impl: Slf4jImpl`,故「键缺失」在真实启动中不会发生。HIGH-3 的实际危害是**校验器的保证不可信**(它宣称的强度远高于实际强度),而非当前存在敞口。日志绕过路径则是真实可用的。
+
+#### 8.1.1 连带修正:删除 `application.yml` 的脚手架残留日志配置
+
+`application.yml:106` 存在 `com.bolingcavalry.druidtwosource.mapper: debug`。**该包在本项目中不存在**(全树 grep 零命中;本项目包名为 `xyz.foolcat.eve.evehelper`),是脚手架抄写残留,当前不生效。
+
+**它必须随 T038 一并删除**,两个理由:
+
+1. **否则新校验会让生产直接拒启** —— 「扫描全部 `logging.level.*`,任一 debug/trace 即拒」会被这行绊倒。这是必然发生,不是概率风险。
+2. **它是一个上了膛的模板** —— 该行的意图就是「给 mapper 包开 debug」。若有人把包名改对成 `xyz.foolcat...mapper`,`refresh_token` 会明文进日志,而这正是 `log-impl` 基线要堵的洞。留着它等于留一份可直接照抄的泄露配方。
+
+故删除属于修复的必要组成,不是范围外夹带。
+
 ---
 
 **下一步**:

@@ -96,14 +96,15 @@ spring:
 # 日志配置
 logging:
   level:
+    # 007 T038:root 必须显式声明 —— SecurityBaselineValidator 对缺失该键 fail-closed 拒启
     root: info
-    # 不可设为 debug:AbstractHttpMessageConverter 在 DEBUG 下会打印响应体片段,
-    # 使 ESI accessToken 的 "Bearer eyJ..." 开头落入日志(006 feature FR-014)
+    # ⚠️ 本节任何 logger 都不可设为 debug/trace(007 T038 起启动期硬校验,违反即拒启):
+    #   - web         → AbstractHttpMessageConverter 在 DEBUG 下打印响应体片段,ESI accessToken
+    #                   的 "Bearer eyJ..." 落入日志(006 FR-014)
+    #   - reactor.netty → ESI 客户端请求头落盘,含 Authorization: Bearer <token>
+    #   - ...persistence.mapper → 配合 Slf4jImpl 打 SQL 绑定参数,refresh_token 明文入日志
+    #                   (与 log-impl 基线等效,是同一泄露的另一侧)
     web:  info
-    com:
-      bolingcavalry:
-        druidtwosource:
-          mapper: debug
 #  file:
 #    path: src\main\resource\log\
 mybatis-plus:
