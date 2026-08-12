@@ -290,7 +290,14 @@ description: "Task list for 007-jwt-key-rotation"
     - 校验器**只保证 keystore 路径是文件系统绝对路径,不保证该文件里的密钥不是已泄露的那一把**。把 `location` 指向旧 `eve-jwt.jks`(md5 `1be3633d52ebcaa3cd9fd18e1045aa72`)可通过全部 4 项基线 —— 这正是 CRITICAL-1 的原始成因,该路径**依然敞开**
     - 因此「生产是否用了正确密钥」**只能靠人工留证**(T035 的 md5 比对),无法由机器在启动期拦住。同型误判本 feature 已发生过一次(见 `docs/reviews/2026-08-12-007-java-reviewer.md`)
     - 若日后再次发生密钥误配,排查时应首先想到此处**无自动门禁**
-- [ ] T040 [MEDIUM-2(security)/LOW-6(java)]**fail-closed 时机前移**:`ApplicationRunner` 在 web 容器已监听端口**之后**才执行,拒启前存在可服务请求的窗口。改为 `EnvironmentPostProcessor` / `ApplicationContextInitializer` / `@PostConstruct`(与 `KeyPairConfig` fail-fast 同阶段)
+- [x] T040 [MEDIUM-2(security)/LOW-6(java)]**fail-closed 时机前移**:`ApplicationRunner` 在 web 容器已监听端口**之后**才执行,拒启前存在可服务请求的窗口。改为 `EnvironmentPostProcessor` / `ApplicationContextInitializer` / `@PostConstruct`(与 `KeyPairConfig` fail-fast 同阶段)
+  - **前提先实测(本 feature 已有 3 次评审前提不成立的记录)**:新增 `BaselineTimingDiagnosticTest`,构造最小 servlet 应用(仅 Tomcat 工厂,不引自动配置/数据源,规避本机 MySQL 不通),在 `ApplicationRunner#run` 内向本进程端口发起 TCP 连接 → **连接成功(端口 62579 已 accept)**。**评审前提成立,窗口真实存在**
+  - **一次测量污染,已修正**:第一版 `@PostConstruct` 探针主动调 `ctx.getWebServer()`,**触发 WebServer 提前创建**,Tomcat 日志变为 `started on ports 8080 (http), 60249 (http)` —— 多出的默认 8080 连接器恰好可连(本机常见占用)造成假阳性 accept=true。**观测行为改变了被观测系统**。改为纯被动记录 `WebServerInitializedEvent`,并加「Runner 观测端口必须等于事件报告端口」的防污染断言;复跑单端口一致
+  - **选定 `@PostConstruct`**:实测该阶段 web 容器**未就绪**,与 `KeyPairConfig` fail-fast 同阶段。校验器只依赖 `Environment`(容器刷新前即完整可用),不需要任何 Runner 语义,故无需上 `EnvironmentPostProcessor`(那还得注册 `spring.factories`,项目当前无此文件)
+  - **实现**:`implements ApplicationRunner` → `@PostConstruct void onInit()`;时机理由与实测证据写入类 Javadoc,防后人「顺手」改回
+  - **双锁防回归**:① 反射锁 —— 断言不得再 `implements ApplicationRunner/CommandLineRunner` 且必须存在 `@PostConstruct` 方法;② **行为锁** —— 构造违规基线的真实上下文,断言拒启时 `webServerInitialized == false`,即**端口从未对外 accept**(证明窗口被消除而非平移)
+  - **变异测试**:① 改回 `ApplicationRunner` → 反射锁失败 ✅;② 删除 `@PostConstruct` → **双重失败**,行为锁报「Expected Exception to be thrown, but nothing was thrown」精确指出校验根本没执行 ✅
+  - **回归**:007 相关 40/40 全绿(14+3+23);全量 Failures 仍为既有 4 项(500/401,MySQL 不通),`启动基线校验失败` 出现 0 次
 - [ ] T041 [MEDIUM-4(security)]**审计能力边界补全**(`docs/DEPLOYMENT.md`):六表判断方法依赖 `gmt_create`/`gmt_modified`,而**有写权限的攻击者可伪造这两列** → 「未发现新增/篡改痕迹」对精心操作的写入型入侵亦是可能假阴性。补一句边界声明 + 步骤 8 增加「检查 binlog/慢日志保留期」
 - [ ] T042 [MEDIUM-3(java)]**TOCTOU 残留窗口**:T015 只消除一半 —— `TokenService:158` 的 `refreshAccessTokenWithUser` **又做了一次 `cacheGateway.get(key)`**,窗口平移到「第 1 次与第 3 次 get 间」且跨越两次 DB 往返,**被显著拉长**。并发双请求可各得一套 token 对。要么加 `GETDEL`/Lua 原语,要么在 `spec.md` 显式记录该残留窗口与接受理由(不得留在已勾选的 T015 之下)
 

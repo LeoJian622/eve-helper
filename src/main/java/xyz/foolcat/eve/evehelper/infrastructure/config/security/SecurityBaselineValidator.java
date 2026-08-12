@@ -1,8 +1,7 @@
 package xyz.foolcat.eve.evehelper.infrastructure.config.security;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.Environment;
@@ -55,12 +54,21 @@ import java.util.Map;
  * 只能靠部署时人工比对指纹(见 {@code docs/DEPLOYMENT.md} 轮换章节),
  * <b>本类不提供该保证</b>。修改本类时勿把「基线校验通过」误读为「密钥正确」。</p>
  *
+ * <p><b>⚠️ 执行时机:{@code @PostConstruct},不得改回 {@code ApplicationRunner}</b>(T040)。
+ * 初版实现 {@code implements ApplicationRunner},而 Runner 回调发生在 web 容器
+ * <b>已监听并 accept 连接之后</b> —— 从端口可服务到本校验器抛异常终止之间存在
+ * 一个<b>真实的暴露窗口</b>,基线违规的实例在该窗口内可正常应答请求。
+ * 这一点经实测确认(见 {@code BaselineTimingDiagnosticTest}):Runner 内向本进程
+ * 端口发起 TCP 连接<b>成功</b>;而 {@code @PostConstruct} 阶段 web 容器<b>尚未就绪</b>。
+ * 故改到 Bean 初始化期,与 {@link KeyPairConfig} fail-fast 同阶段 ——
+ * 校验器只依赖 {@link Environment}(容器刷新前即完整可用),不需要任何 Runner 语义。</p>
+ *
  * @author Leojan
  * date 2026-08-12
  */
 @Slf4j
 @Component
-public class SecurityBaselineValidator implements ApplicationRunner {
+public class SecurityBaselineValidator {
 
     static final String LOG_IMPL_KEY = "mybatis-plus.configuration.log-impl";
     /** T038:取代原 {@code logging.level.web} 单点检查 —— 现全扫该前缀下所有 logger */
@@ -77,8 +85,8 @@ public class SecurityBaselineValidator implements ApplicationRunner {
         this.environment = environment;
     }
 
-    @Override
-    public void run(ApplicationArguments args) {
+    @PostConstruct
+    void onInit() {
         validate();
     }
 
