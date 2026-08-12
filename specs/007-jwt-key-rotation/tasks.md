@@ -172,6 +172,14 @@ description: "Task list for 007-jwt-key-rotation"
   - AC: 无新增失败用例名 ✅(2026-08-12,US2 后全量 **553/F4/E216/S2**:总数 = T019 535 + 18(US2 新测试)算术吻合;Failures 仍为基线 3 类 4 例;Errors 216 = 204 EveHelperException + 9 FileNotFound + 2 EsiException + 1 BadSqlGrammar(surefire 目录未 clean,2 个 InvalidCookieException 为已删除诊断测试的残留报告文件,非本轮产物);context 加载失败 0;target/classes 仅 eve-jwt.jks(待 T028)与 test-only.jks(设计内)两个已知资源,无意外残留)
 - [ ] T032 [P] 变异测试五项(plan §6):删 `ResponseUtils` 新 case → 401 断言失败;删 filter 白名单放行分支 → T009 失败;删 filter `return` → 有测试捕获;fail-closed 改 fail-open → T021 失败;L2 改硬拒(503)→ T010 失败
   - AC: 五项变异全部被既有测试捕获,记录结果
+  - **进度(2026-08-12):3/5 已验证被捕获,2 项因环境阻塞待补**
+    - ✅ 变异 1(`ResponseUtils` 删 `case TOKEN_ACCESS_EXPIRED`)→ `ResponseUtilsTest.writeErrorInfo_tokenAccessExpired_maps401` FAIL(`expected: <401> but was: <400>`),已还原
+    - ⏸️ 变异 2(filter 删白名单放行分支)→ **未能验证**:`RefreshTokenEndpointAccessTest` 3 例全部 `Failed to load ApplicationContext`,根因 `java.net.ConnectException: Connection timed out`(MySQL 测试库不可达)。**已用未变异代码复跑确认同样失败** → 属环境问题,非变异效果;变异已还原
+    - ⏸️ 变异 3(filter 删 `return`)→ 同上环境阻塞,未执行
+    - ✅ 变异 4(`SecurityBaselineValidator` fail-closed 改 fail-open:`length==0 || "test".equals(...)`)→ `SecurityBaselineValidatorTest.noProfile_failClosedAsProduction` FAIL(`Expected IllegalStateException to be thrown, but nothing was thrown`),已还原
+    - ✅ 变异 5(L2 `applyFixedDelay()` 改抛 503)→ `RefreshRateLimiterTest.l2_overThreshold_fixedDelayButNotHardReject` FAIL(`Unexpected exception thrown`)+ `l2_overThreshold_prometheusCounterIncrements` ERROR,已还原
+    - 还原核验:`git diff --stat src/main/java` 空;`WhiteUrlMatcherContractTest` 17/17 GREEN
+    - **待办**:MySQL 测试库恢复后补跑变异 2/3(依赖 `@SpringBootTest` 上下文)
 - [ ] T033 人工核验清单(用户执行,留证):SC-011(生产 profile 口令均为环境变量)+ SC-016(生产 profile whiteUrlList 含 `POST:/auth/tokens` 或未定义)+ SC-006 在**生产 profile 实际配置**下验收 + SC-009(stat 权限)
   - AC: 四项核验记录归档至 `docs/reviews/` 或 DEPLOYMENT.md
 - [ ] T034 评审记录收尾:`docs/reviews/` 确认三轮评审 + 本轮 tasks 执行记录齐全(AI_WORKFLOW 要求评审归档)
