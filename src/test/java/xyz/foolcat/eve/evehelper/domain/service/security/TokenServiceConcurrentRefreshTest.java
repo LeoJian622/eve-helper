@@ -73,7 +73,8 @@ class TokenServiceConcurrentRefreshTest {
         props.setSubject("eve-helper-test");
 
         KeyPair keyPair = new RSAKeyGenerator(2048).generate().toKeyPair();
-        tokenService = new TokenService(keyPair, props, cacheGateway);
+        // 007 T049:TokenService 新增 TokenBlacklistService 依赖
+        tokenService = new TokenService(keyPair, props, cacheGateway, new TokenBlacklistService(cacheGateway));
 
         doNothing().when(cacheGateway).set(anyString(), any(), anyLong(), any(TimeUnit.class));
     }

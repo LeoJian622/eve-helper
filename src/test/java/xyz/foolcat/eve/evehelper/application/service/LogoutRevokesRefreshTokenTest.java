@@ -108,7 +108,8 @@ class LogoutRevokesRefreshTokenTest {
         props.setSubject("eve-helper-test");
 
         keyPair = new RSAKeyGenerator(2048).generate().toKeyPair();
-        tokenService = new TokenService(keyPair, props, cache);
+        // 007 T049:TokenService 新增 TokenBlacklistService 依赖(轮换时拉黑旧 access jti)
+        tokenService = new TokenService(keyPair, props, cache, new TokenBlacklistService(cache));
 
         user = new SysUser();
         user.setId(USER_ID);

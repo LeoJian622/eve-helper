@@ -101,6 +101,12 @@ public class AuthApplicationService {
         // 但会打 [SECURITY_ALERT:LOGOUT_REVOKE_MISS] 以便发现绕过。
         tokenService.revokeRefreshTokenBySession(parsed.sessionId());
 
+        // 007 T049-A:无条件设置 session_revoked:<sid> tombstone(仅当 sid 非空)。
+        // 不置于 revokeRefreshTokenBySession 内部 -- 该方法 5 条 early-return(索引驱逐等)会跳过它,
+        // 而那恰是 fail-open 路径(评审 HIGH-1)。tombstone 让并发刷新在 claim 后、generate 前
+        // check 到会话已登出而拒绝,闭合 T048 的并发缺口。markSessionRevoked 内部对 null/空 sid no-op。
+        tokenService.markSessionRevoked(parsed.sessionId());
+
         tokenBlacklistService.addToBlacklist(jti, expirationTime);
         log.info("用户登出成功: userId={}", parsed.userIdClaim());
 

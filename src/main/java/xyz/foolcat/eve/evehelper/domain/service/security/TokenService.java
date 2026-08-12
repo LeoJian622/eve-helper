@@ -40,6 +40,8 @@ public class TokenService {
     private final KeyPair keyPair;
     private final JwtTokenProperties jwtTokenProperties;
     private final CacheGateway cacheGateway;
+    /** 007 T049-B:轮换时拉黑旧 access token 的 jti */
+    private final TokenBlacklistService tokenBlacklistService;
 
     private static final String REFRESH_TOKEN_PREFIX = "refresh_token:";
 
@@ -69,6 +71,27 @@ public class TokenService {
      * 故不会随会话累积。值为 sid(不透明句柄),<b>不含</b>任何凭证。</p>
      */
     private static final String REFRESH_OWNER_PREFIX = "refresh_owner:";
+
+    /**
+     * 会话级失效标记:{@code session_revoked:<sid>}(007 T049-A)。
+     *
+     * <p>登出时设置,刷新在 claim 旧 refresh token 后、generate 新 token 前校验 -- 闭合
+     * T048 的并发缺口(刷新 claim 旧 token -> 登出跑完 -> 刷新 generate 新 token)。
+     * TTL = refresh TTL:短于 refresh TTL 则 refresh token 超活 tombstone -> fail-open。</p>
+     *
+     * <p><b>不可复用</b>:登出 set,轮换从不 clear。与 {@link #SESSION_INDEX_PREFIX} 不同 --
+     * 后者被轮换重写,不能作「会话已登出」的信号。</p>
+     */
+    private static final String SESSION_REVOKED_PREFIX = "session_revoked:";
+
+    /**
+     * 当前 access token 的 jti 索引:{@code session_access_jti:<sid> -> <jti>}(007 T049-B)。
+     *
+     * <p>刷新端点在白名单、请求<b>不带</b> access token,故轮换拿不到旧 jti。本键在
+     * {@code generateAccessToken} 时写入,轮换时读出旧 jti 拉黑,使「轮换后旧 access 残活
+     * access TTL」降到 0。TTL = access TTL:与 access token 同寿,过期即无需拉黑。</p>
+     */
+    private static final String SESSION_ACCESS_JTI_PREFIX = "session_access_jti:";
 
 
 
@@ -135,10 +158,13 @@ public class TokenService {
         long expirationTime = jwtTokenProperties.getAccessTokenExpirationTime() * 1000;
         List<String> safeAuthorities = (authorities == null) ? List.of() : authorities;
 
+        // 007 T049-B:捕获 jti,写入 session_access_jti:<sid> 供轮换时拉黑旧 access token
+        String jti = UUID.randomUUID().toString();
+
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject(jwtTokenProperties.getSubject())
                 .issuer(jwtTokenProperties.getIssuer())
-                .jwtID(UUID.randomUUID().toString())
+                .jwtID(jti)
                 .claim(SecurityConstant.USER_ID_KEY, user.getId())
                 .claim(SecurityConstant.USER_NAME_KEY, user.getUsername())
                 .claim(SecurityConstant.JWT_AUTHORITIES_KEY, safeAuthorities)
@@ -153,6 +179,10 @@ public class TokenService {
 
         JWSSigner signer = new RSASSASigner(keyPair.getPrivate());
         signedJWT.sign(signer);
+
+        // 007 T049-B:记录当前 access jti,TTL = access TTL(与 access token 同寿,过期即无需拉黑)
+        cacheGateway.set(SESSION_ACCESS_JTI_PREFIX + sessionId, jti,
+                jwtTokenProperties.getAccessTokenExpirationTime(), TimeUnit.SECONDS);
 
         return signedJWT.serialize();
     }
@@ -246,6 +276,62 @@ public class TokenService {
         return revokeRefreshTokenBySession(sessionId);
     }
 
+    /**
+     * 标记会话已登出,设置 {@code session_revoked:<sid>} tombstone(007 T049-A)。
+     *
+     * <p><b>必须在 {@code AuthApplicationService.logout} 中、{@link #revokeRefreshTokenBySession}
+     * 返回之后无条件调用</b>(评审 HIGH-1)。不得置于 {@code revokeRefreshTokenBySession} 内部 --
+     * 该方法 5 条 early-return(索引驱逐/sid 空/token 已不在缓存等)会跳过 tombstone 设置,
+     * 而那恰是攻击者可利用的 fail-open 路径。</p>
+     *
+     * <p>TTL = refresh TTL:短于 refresh TTL 则 refresh token 超活 tombstone -> fail-open。
+     * null/空 sid(pre-T048 遗留)时 no-op。</p>
+     *
+     * @param sessionId access token 的 {@code sid} 声明
+     */
+    public void markSessionRevoked(String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            return;
+        }
+        long refreshTtl = jwtTokenProperties.getRefreshTokenExpirationTime();
+        cacheGateway.set(SESSION_REVOKED_PREFIX + sessionId, "1", refreshTtl, TimeUnit.SECONDS);
+    }
+
+    /**
+     * 校验会话是否已登出(007 T049-A,刷新路径调用)。
+     *
+     * <p>tombstone absent 是<b>正常刷新的常态</b>(用户未登出时不存在),故 null 视为"未登出"(fail-open)。
+     * <b>不可告警</b>(评审 MEDIUM-3):无法区分"正常未登出"与"被驱逐"。null/空 sid 视为未登出(pre-T048 遗留)。</p>
+     */
+    private boolean isSessionRevoked(String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            return false;
+        }
+        return cacheGateway.get(SESSION_REVOKED_PREFIX + sessionId) != null;
+    }
+
+    /**
+     * 拉黑会话上一个 access token 的 jti(007 T049-B,轮换路径调用)。
+     *
+     * <p>读 {@code session_access_jti:<sid>}(旧 jti)并拉黑,把"轮换后旧 access 残活 access TTL"降到 0。
+     * {@link #generateAccessToken} 随后重写该键为新 jti。null(键被驱逐或 pre-T049 滚动部署)时跳过并打
+     * {@code [SECURITY_ALERT:ROTATE_BLACKLIST_MISS]}(评审 MEDIUM-2:使旧 access 残活可观测)。</p>
+     */
+    private void blacklistPreviousAccessJti(String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            return;
+        }
+        Object oldJtiObj = cacheGateway.get(SESSION_ACCESS_JTI_PREFIX + sessionId);
+        if (oldJtiObj == null) {
+            log.warn("[SECURITY_ALERT:ROTATE_BLACKLIST_MISS] 会话 access jti 索引缺失,"
+                    + "旧 access token 未被拉黑(pre-T049 滚动部署或键被驱逐): sid={}",
+                    SensitiveDataMasker.maskToken(sessionId));
+            return;
+        }
+        long accessTtl = jwtTokenProperties.getAccessTokenExpirationTime();
+        tokenBlacklistService.addToBlacklist(oldJtiObj.toString(), accessTtl);
+    }
+
 
 
     /**
@@ -327,6 +413,18 @@ public class TokenService {
             log.warn("Refresh Token 无会话归属(改造前签发?),轮换时新建会话: refreshToken={}",
                     SensitiveDataMasker.maskToken(refreshToken));
         }
+
+        // 007 T049-A:会话已登出则拒绝刷新。检查在 claim 之后、generate 之前 --
+        // 闭合 T048 的并发缺口(刷新 claim 旧 token -> 登出 set tombstone -> 刷新 check -> 拒绝)。
+        // 抛与既有失效同一文案,不新增可区分信息(防原因枚举)。
+        if (isSessionRevoked(sessionId)) {
+            log.warn("会话已登出,刷新被拒绝(tombstone 命中): sid={}",
+                    SensitiveDataMasker.maskToken(sessionId));
+            throw new IllegalArgumentException("Refresh Token无效或已过期");
+        }
+
+        // 007 T049-B:轮换拉黑旧 access token 的 jti(generateAccessToken 随后重写为新 jti)
+        blacklistPreviousAccessJti(sessionId);
 
         // 生成新的Token对(包含新的Refresh Token),并重写会话索引
         return generateTokenPair(user, authorities, sessionId);

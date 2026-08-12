@@ -318,8 +318,17 @@ description: "Task list for 007-jwt-key-rotation"
   - **变异测试 3/3 精确捕获**:①轮换不继承 sid → 失败 3 项(含 CRITICAL 场景锁);②索引 TTL 改绑 access TTL → 精确失败 1 项;③`Boolean` 拆箱 → 精确失败 1 项并复现 NPE
   - **回归**:12/12 连续三次全绿(并发用例);全量 592 用例(+12),Failures 仍为既有 4 项(500/401,MySQL 不通),无新增,`启动基线校验失败` 计数 0
 
-- [ ] T049 [T048 派生发现]**刷新不校验会话是否已登出**:`refreshToken` 只看 refresh token 在不在 Redis,**不查所属会话是否已登出**;且轮换路径**从不拉黑旧 access token**(`addToBlacklist` 全项目仅登出一处调用点,已 grep 确认)。后果:登出与刷新并发时,若刷新在登出撤销**之后**才完成,它会凭空产生一个用户不知情的存活 refresh token(T048 的 sid 锚点无法覆盖 —— 撤销发生时该 token 尚未存在)。窗口为亚毫秒级、需精确交错,但**旧 access token 在其剩余 TTL 内始终可用**这一点使其可被反复尝试。修复需引入会话级失效标记(如 `session_revoked:<sid>`,刷新前校验)并在轮换时拉黑旧 access token —— 属设计变更,故单列
-  - 关联(评审 HIGH,同批修):`docs/DEPLOYMENT.md:827` 建议 `maxmemory-policy allkeys-lru`(已核实存在)。驱逐 `refresh_token:*` 是 fail-safe(凭证失效),但驱逐 `refresh_session:*` 索引是 **fail-open**(撤销静默失效)—— 方向不对称,使「索引缺失」由罕见变为常规可发生。应改用 `volatile-lru` 并明确 auth 键不可驱逐,或为 auth 键单独实例
+- [x] T049 [T048 派生发现]**刷新不校验会话是否已登出**:`refreshToken` 只看 refresh token 在不在 Redis,**不查所属会话是否已登出**;且轮换路径**从不拉黑旧 access token**(`addToBlacklist` 全项目仅登出一处调用点,已 grep 确认)。后果:登出与刷新并发时,若刷新在登出撤销**之后**才完成,它会凭空产生一个用户不知情的存活 refresh token(T048 的 sid 锚点无法覆盖 —— 撤销发生时该 token 尚未存在)。窗口为亚毫秒级、需精确交错,但**旧 access token 在其剩余 TTL 内始终可用**这一点使其可被反复尝试。修复需引入会话级失效标记(如 `session_revoked:<sid>`,刷新前校验)并在轮换时拉黑旧 access token —— 属设计变更,故单列
+  - ✅ **已完成(2026-08-12,A+B 一起做,用户确认)**。先改规格后改代码:`plan.md` §10 补会话撤销设计(T048+T049 合并)。跑 `ecc:security-reviewer` 设计评审 → **BLOCK(3 HIGH)**,全部接受并修正设计后再实现(见下)
+  - **RED 先证可利用**:`SessionRevocationT049Test`(真实 `TokenService` + 内存假 `CacheGateway`,复用 T048 模式)。竞态用例用 `RaceCacheGateway` 在 **`delete(refresh_owner:<uuid>)`** 时同步触发登出 —— 精确复现「刷新继承 sid 后、check tombstone 前」与登出交错(若挂在更早的 claim-delete,登出会删掉 refresh_owner 致刷新新建 sid 绕过 tombstone,正是 HIGH-2 机制)。实现前这些用例引用的 4 参 `TokenService` 构造与新方法尚不存在(编译失败 = RED,与 T004/T010 同型)
+  - **评审 3 HIGH 与修法**:① **HIGH-1 tombstone 写入位置**:`revokeRefreshTokenBySession` 有 5 条 early-return,内置 tombstone 会被跳过 → 改为在 `logout` 中、revoke 返回后**无条件** `markSessionRevoked(sid)`;② **HIGH-2 `refresh_owner` 驱逐 = tombstone 绕过**(轮换新建 sid,原 tombstone 查不到)→ 记入边界,根治需独立实例;③ **HIGH-3 `addToBlacklist` 签名**:轮换路径无旧 access 的 exp → 新增 `addToBlacklist(jti, long ttlSeconds)` 重载,TTL 用固定 access TTL(黑名单多活几秒无害)
+  - **实现**:Concern A — 登出 set `session_revoked:<sid>`(TTL=refresh TTL);刷新在 claim 旧 refresh token 后、generate 前 check,命中抛与既有失效同一文案异常。Concern B — `generateAccessToken` 写 `session_access_jti:<sid> -> <jti>`(TTL=access TTL);轮换 generate 前 read 旧 jti 拉黑,null 时打 `[SECURITY_ALERT:ROTATE_BLACKLIST_MISS]` 并降级跳过
+  - **3 MEDIUM 修正**:MEDIUM-1 **volatile-lru 无效**(所有 auth 键都带 TTL,与 allkeys-lru 对它们行为一致)→ 只能独立实例/不设 maxmemory,已同步 DEPLOYMENT.md;MEDIUM-2 补 `ROTATE_BLACKLIST_MISS` 告警;MEDIUM-3 删除「tombstone absent + SECURITY_ALERT」误导表述(refresh 侧 absent 是正常态,不可告警)
+  - **变异测试 3/3 精确捕获**:①禁用 tombstone check → 失败 2 项(恰为 tombstone 校验的两用例,含竞态锁);②移除 logout 的 `markSessionRevoked` → 失败 4 项(含 HIGH-1 锁 `logout_tombstoneSetEvenWhenRevokeReturnsFalse`);③禁用 `blacklistPreviousAccessJti` → 精确失败 1 项(`rotation_blacklistsOldAccessTokenJti`)
+  - **回归**:602 用例(592 基线 + 10),Failures 4 例与基线逐名一致,零新增;Errors 216 均为 MySQL/ESI 环境噪声
+  - ⚠️ **残留窗口(接受 + 文档)**:刷新 check tombstone(缺)-> 挂起 -> 登出 set tombstone -> 刷新 generate。评审确认**不可主动拉长**(claim 与 check 间无 I/O 暂停点)。全闭合需 Lua 但 JWT 签名不能进 Lua
+  - ⚠️ **能力边界(部署侧,非代码)**:`allkeys-lru` 下驱逐 `session_revoked`/`refresh_session`/`refresh_owner` 索引是 fail-open(refresh 侧不可观测)。须按 DEPLOYMENT.md 为 auth 键独立实例或容量充足
+  - 关联(评审 HIGH,同批修):`docs/DEPLOYMENT.md:827` `maxmemory-policy allkeys-lru` 已核实存在。已按评审 MEDIUM-1 修正为「独立实例/不设 maxmemory」(volatile-lru 无效)
 
 
 

@@ -462,3 +462,57 @@ case TOKEN_ACCESS_EXPIRED:          // ← 新增,现落 default → 400
 ---
 
 **下一步**: 本 v3 已按第三轮评审放行条件(HIGH-1/2/3 + M-3)完成文本修订。**评审明确:无需第四轮全量评审,由评审人抽查修订 diff 即可放行 `/speckit-tasks`。** M-2/M-4/M-5 与 LOW 项已映射为本文件与 tasks.md 的任务。
+
+---
+
+## 10. 会话撤销设计(T048 + T049,实现期派生)
+
+> T042 死代码审计发现:登出只拉黑 access token jti,**从不撤销 refresh token**(7 天 TTL),登出形同虚设。T048 修复并派生 T049。两任务共享 sid 锚点与 Redis 键族,设计合并记录。
+
+### 10.1 Redis 键族(会话维度)
+
+| 键 | 值 | TTL | 写入点 | 来源/用途 |
+|----|----|-----|--------|-----------|
+| `refresh_token:<uuid>` | userId | refresh TTL | generateRefreshToken | 既有。refresh 凭证本体 |
+| `refresh_session:<sid>` | `<uuid>` | refresh TTL | generateTokenPair | T048 正向索引:登出由 sid 定位当前 refresh token |
+| `refresh_owner:<uuid>` | `<sid>` | refresh TTL | generateTokenPair | T048 反向指针:轮换(白名单端点,请求无 access token)由 refresh token 反查 sid 继承 |
+| `session_revoked:<sid>` | `"1"` | refresh TTL | logout | **T049-A** 会话级失效标记:刷新前校验,闭合"登出后刷新复活会话" |
+| `session_access_jti:<sid>` | `<jti>` | access TTL | generateAccessToken | **T049-B** 当前 access 的 jti:轮换时拉黑旧 access token |
+
+所有键 TTL 与所保护凭证同寿,不得长于凭证。`sid` 轮换不变,登录生成、轮换经反向指针原样继承。
+
+### 10.2 T048 - 登出撤销 refresh token(已实现,commit `fc03461`)
+
+- **锚点用 `sid` 而非 `jti`**:jti 每次轮换都变、轮换不拉黑旧 access、`POST /auth/tokens` 在白名单 -> 攻击者一个未认证请求即可让 jti 索引永久错位,受害者登出撤不到当前凭证却返回 204
+- **顺序「先撤销后拉黑」**:反序则撤销失败时 access 已拉黑 -> 重试登出被 filter 401 -> 永久登不出
+- **索引缺失 fail-open** + `[SECURITY_ALERT:LOGOUT_REVOKE_MISS]`:fail-closed 会永久锁死索引缺失用户退出
+- **`Boolean.TRUE.equals`** 防 `delete` 返回 null 拆箱 NPE(NPE 发生在拉黑前 -> 整个登出 500)
+
+### 10.3 T049 - 刷新校验会话失效 + 轮换拉黑旧 access(本任务,A+B)
+
+**Concern A - `session_revoked:<sid>` tombstone**:
+- 登出在 `AuthApplicationService.logout` 中、`revokeRefreshTokenBySession` 返回**之后**无条件 set tombstone(仅当 `parsed.sessionId()` 非空,TTL = refresh TTL)。**不得**置于 `revokeRefreshTokenBySession` 内部 -- 该方法有 5 条 early-return(索引驱逐/sid 空/token 已不在缓存/递归等),内置 tombstone 会在这些路径被跳过,而它们恰是攻击者可利用的 fail-open 路径(评审 HIGH-1)
+- 刷新 `refreshAccessTokenWithUser` 在 claim 旧 refresh token **之后**、generate **之前** check tombstone;存在则抛与既有失效同一文案异常(不新增可区分信息)
+- **闭合的交错**:刷新 claim 旧 token -> 登出跑完(删索引 + set tombstone)-> 刷新 check tombstone -> 拒绝
+- **残留窗口(接受 + 文档)**:刷新 check tombstone(缺)-> 挂起 -> 登出 set tombstone -> 刷新 generate。亚毫秒级、需精确交错,新 access 最多活 15min。**评审确认不可主动拉长**(claim 与 check 间无 I/O 暂停点;claim 原子性保证只有一个 refresh 进入 check-generate 区间;tombstone 设置后所有后续 refresh 被阻断)。残留窗口内可能产生不止一个 access token,但均在 ~15min 内过期,总暴露 ~15min 非 15min×N。全闭合需 Lua,但 JWT 签名不能进 Lua,无法真正原子
+
+**Concern B - 轮换拉黑旧 access jti**:
+- `generateAccessToken` 写 `session_access_jti:<sid> -> <jti>`(TTL = access TTL)
+- `refreshAccessTokenWithUser` generate 前 read 旧 jti,存在则拉黑;**null(键被驱逐或 pre-T049 滚动部署)时跳过拉黑并打 `[SECURITY_ALERT:ROTATE_BLACKLIST_MISS]`**(评审 MEDIUM-2:使旧 access 残活可观测)
+- **`addToBlacklist` 签名(评审 HIGH-3)**:既有 `addToBlacklist(String jti, Date expirationTime)` 的 TTL 从 exp 计算,但轮换路径只有 jti、无旧 access 的 exp。新增 `addToBlacklist(String jti, long ttlSeconds)` 重载,黑名单 TTL 用固定 access TTL(900s)。可能比旧 token 实际剩余寿命长(旧 token 或已快过期)-- 无害的不对称(黑名单只是 marker,多活几秒不影响安全),须显式接受
+- 登出已从请求解析 jti 拉黑(用真实 exp),不依赖此键;两路径独立,`addToBlacklist` 用 SETNX 幂等,无竞态(评审确认)
+
+### 10.4 边界条件
+
+1. **Tombstone TTL ≥ refresh TTL**(否则 refresh token 超活 tombstone -> fail-open)。取 = refresh TTL
+2. **检查时机**:claim 后、generate 前。早于 claim 则登出可夹在 check/claim 间;晚于 generate 则无效
+3. **Tombstone 不可复用**:登出 set,轮换从不 clear。session index 被 rotation 重写,不能作 tombstone 信号
+4. **`allkeys-lru` 驱逐有三条 fail-open 路径**(评审 HIGH-2 + MEDIUM-1):① 驱逐 `refresh_token:*` = fail-safe(凭证失效);② 驱逐 `refresh_session:*` / `session_revoked:*` = fail-open(撤销标记丢失);③ **驱逐 `refresh_owner:*` = 更严重的 fail-open**:轮换新建 sid,tombstone 查不到(不仅标记丢失,sid 本身变了,原 tombstone 完全无用)。**`volatile-lru` 无效** -- 所有 auth 键都带 TTL,volatile-lru 与 allkeys-lru 对它们行为一致。唯一有效方案:auth 键独立 Redis 实例或不设 maxmemory。`docs/DEPLOYMENT.md:827` 据此修正(T049 关联项)
+5. **Redis null**(异常):tombstone get 返回 null 视为"未登出"(fail-open)。**不可告警**(评审 MEDIUM-3):tombstone absent 是每次正常刷新的常态(用户未登出时 tombstone 不存在),无法区分"正常未登出"与"被驱逐"。与 T048 的 `LOGOUT_REVOKE_MISS` 不同(后者在 logout 侧,索引缺失=异常);refresh 侧 tombstone 驱逐不可观测,依赖部署侧消除 allkeys-lru
+6. **滚动部署**:pre-T049 token 有 sid(T048 已加)但无 `session_access_jti` 键 -> B 跳过(旧 access 已在过期);pre-T048 无 sid -> T048 fallback
+
+### 10.5 不做(超出 T049 边界)
+
+- **Lua 原子化 claim+check+generate**:JWT 签名不能进 Redis Lua,无法真正原子;残留窗口靠 TTL 兜底 + 文档声明,不引入半原子方案(半原子比显式窗口更危险:让人误以为已闭合)
+- **access token 单活语义**:Concern B 实现"轮换拉黑旧 jti",**best-effort 单活** -- 依赖 `session_access_jti` 键未被驱逐;驱逐时旧 access 残活最长 access TTL(评审 LOW-1)。无需额外语义
+- **启动期校验 Redis maxmemory-policy**(评审 MEDIUM-2,非阻塞):需启动时 `CONFIG GET maxmemory-policy` 查询 Redis,属新能力(当前 `SecurityBaselineValidator` 只读 `Environment`),且多实例下难判定 auth 键是否与业务键共用。T049 仅文档化能力边界 + `[SECURITY_ALERT:ROTATE_BLACKLIST_MISS]` 日志,启动校验留作后续

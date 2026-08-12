@@ -54,6 +54,34 @@ public class TokenBlacklistService {
     }
 
     /**
+     * 将token加入黑名单(指定 TTL,007 T049-B)。
+     *
+     * <p>轮换路径只有 jti、无旧 access token 的 {@code exp}(刷新端点在白名单、请求不带 access token),
+     * 故无法用 {@link #addToBlacklist(String, Date)}(其 TTL 从 exp 计算)。本重载用固定 TTL(取 access TTL),
+     * 可能比旧 token 实际剩余寿命长 -- 无害的不对称(黑名单只是 marker,多活几秒不影响安全,评审 HIGH-3)。</p>
+     *
+     * @param jti        JWT ID
+     * @param ttlSeconds 黑名单存活秒数(取 access token TTL)
+     * @return true-成功加入, false-已存在或 ttl 非正
+     */
+    public boolean addToBlacklist(String jti, long ttlSeconds) {
+        if (ttlSeconds <= 0) {
+            log.warn("TTL 非正,无需加入黑名单: jti={}", jti);
+            return false;
+        }
+        String key = SecurityConstant.TOKEN_BLACKLIST_PREFIX + jti;
+        Boolean success = cacheGateway.setIfAbsent(key, "revoked", ttlSeconds, TimeUnit.SECONDS);
+        if (Boolean.TRUE.equals(success)) {
+            log.info("Token已加入黑名单(轮换拉黑旧 access): jti={}, ttl={}s",
+                    SensitiveDataMasker.maskToken(jti), ttlSeconds);
+            return true;
+        } else {
+            log.warn("Token已在黑名单中: jti={}", jti);
+            return false;
+        }
+    }
+
+    /**
      * 检查token是否在黑名单中
      * 此方法使用Redis的hasKey命令,是原子操作
      *
