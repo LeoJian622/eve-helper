@@ -318,4 +318,38 @@ class SecurityBaselineValidatorTest {
         assertDoesNotThrow(() -> new SecurityBaselineValidator(env).validate(),
                 "入库配置必须能通过新校验 —— 否则 T038 会让生产无法启动");
     }
+
+    /**
+     * T047:以 {@code application-prod.yml.example} 的实际键值构造环境,断言放行。
+     *
+     * <p><b>为何需要这个测试</b>:2026-08-12 起三个真实 profile 已从工程移除,
+     * 该模板成为生产配置的<b>唯一指引</b>。若模板本身通不过校验,照抄的人会
+     * 直接撞上「拒启」,而拒启信息只说哪个键违规、不会说「你的模板是错的」。
+     *
+     * <p>本测试是模板与校验器之间的<b>契约</b>:任何一侧改动导致二者不一致,
+     * 这里就会失败。修改校验规则时若本用例变红,应先问「模板是否也该改」,
+     * 而不是放宽断言。</p>
+     *
+     * <p><b>局限(诚实声明)</b>:这是<b>手抄</b>模板键值,不是解析该 yml 文件 ——
+     * 模板若新增一个 debug logger,本测试不会自动发现。要真正闭合需加载文件本身,
+     * 但 {@code .example} 后缀不被 Spring 识别,须自行解析,成本高于收益。
+     * 故在此明确记录该缺口,而不是假装已覆盖。</p>
+     */
+    @Test
+    @DisplayName("T047:application-prod.yml.example 的键值 → 必须放行(防模板照抄即拒启)")
+    void prodTemplate_asWritten_passesBaseline() {
+        MockEnvironment env = new MockEnvironment();
+        env.setActiveProfiles("prod");
+        // 以下逐项对应模板实际内容(2026-08-12 核对)
+        env.setProperty(LOG_IMPL, SLF4J_IMPL);            // log-impl: ...Slf4jImpl
+        env.setProperty(ROOT_LOG_LEVEL, "info");          // logging.level.root: info
+        env.setProperty(WEB_LOG_LEVEL, "info");           // logging.level.web: info
+        env.setProperty(ENDPOINT_ENABLED, "false");       // enabled: ${ACCESS_TOKEN_ENDPOINT_ENABLED:false}
+        // location: ${KEYSTORE_LOCATION} —— 无默认值(T047 有意去除),
+        // 部署时由环境变量提供绝对路径;此处以典型部署值代入
+        env.setProperty(KEYSTORE_LOCATION, "/etc/eve-helper/eve-jwt.jks");
+
+        assertDoesNotThrow(() -> new SecurityBaselineValidator(env).validate(),
+                "模板照抄必须能启动 —— 若本用例失败,先确认模板是否需要同步更新");
+    }
 }

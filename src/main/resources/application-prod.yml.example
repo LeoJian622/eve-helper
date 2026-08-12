@@ -1,22 +1,33 @@
 # ============================================================================
-# 生产 profile 配置模板(006 C1 纵深防御)
+# 生产 profile 配置模板(006 C1 纵深防御 + 007 T038 基线加严)
 #
 # 用法:复制为 application-prod.yml 后填入实际值。
 #   cp src/main/resources/application-prod.yml.example src/main/resources/application-prod.yml
 #
-# 为什么需要这个模板:
-#   .gitignore 忽略 application-*.yml,故 prod/ali/aliw 的配置不入库。
-#   这意味着「安全基线是否被应用」无法靠版本控制保证 —— 任何人 clone 仓库后
-#   手写 application-prod.yml,都可能漏掉下面标注 🔒 的三项,而不会有任何报警。
-#   本模板提供一个安全的起点。
+# ⚠️ 首先考虑:你真的需要这个文件吗?
+#   2026-08-12 起 application-{ali,aliw,prod}.yml 已从工程中移除 ——
+#   生产直接继承 application.yml 的安全形态(口令全为占位符、whiteUrlList 含
+#   POST:/auth/tokens、log-impl 为 Slf4jImpl、root/web 均 info),差异化靠环境变量。
+#   **没有 profile 副本 = 没有配置分叉 = 不会出现「以为改了其实没生效」**。
+#   仅当确有无法用环境变量表达的差异(如连接池尺寸)时才创建本文件,
+#   且只写差异项,不要整体复制 application.yml。
 #
 # ⚠️ profile 配置优先级高于 application.yml。
 #    application.yml 里的安全值不是兜底 —— 此处一旦写错即生效。
+#    List 属性(whiteUrlList)是**整体替换**而非合并 —— 写了就必须写全。
 #
-# 🔒 标记的三项为安全基线,生产环境不得更改:
-#    1. mybatis-plus.configuration.log-impl = Slf4jImpl
-#    2. logging.level.web = info
-#    3. eve.helper.debug.access-token-endpoint.enabled = false
+# 🔒 标记项为安全基线,由 SecurityBaselineValidator 在启动期强制(违反即拒启)。
+#    T038 起为**正向白名单**语义 —— 键缺失不再视为合规:
+#    1. mybatis-plus.configuration.log-impl 必须显式 = Slf4jImpl
+#    2. logging.level.root 必须显式声明,且**全部** logging.level.* 均非 debug/trace
+#       (不限于 web —— reactor.netty 会打 ESI 请求头的 Bearer token,
+#        mapper 包 debug 配合 Slf4jImpl 会打 SQL 参数使 refresh_token 明文入日志)
+#    3. eve.helper.debug.access-token-endpoint.enabled 必须显式 = 字面 false
+#       (yes/1/on 等均被拒)
+#    4. security.keystore.location 必须是文件系统绝对路径(classpath/裸文件名拒启)
+#
+#    ⚠️ 校验器**不检查密钥身份** —— 只验路径语法。指向已泄露的旧密钥同样放行
+#    (T039 密钥身份门禁已否决)。故部署后必须人工比对指纹,见 DEPLOYMENT.md。
 # ============================================================================
 
 server:
@@ -111,14 +122,15 @@ spring:
 # 日志配置
 logging:
   level:
+    # 🔒 安全基线:必须显式声明(T038 起缺失即拒启)
     root: info
-    # 🔒 安全基线:不得为 debug/trace。
+    # 🔒 安全基线:本节任何 logger 都不得为 debug/trace。
     # web=debug 会打印请求/响应体,accessToken 随之落盘(006 FR-014)。
+    # 同类风险(T038 实测,均由「全扫 logging.level.*」覆盖):
+    #   reactor.netty          → ESI 请求头落盘,含 Authorization: Bearer <token>
+    #   ...persistence.mapper  → 配合 Slf4jImpl 打 SQL 绑定参数,refresh_token 明文
+    #   druid.sql.Statement    → 见下方 druid filters 注释,同样绕过 log-impl 保护
     web: info
-    com:
-      bolingcavalry:
-        druidtwosource:
-          mapper: info
 mybatis-plus:
   configuration:
     # 驼峰下划线转换
@@ -136,9 +148,15 @@ jwt-token:
 #   ① location 必须是绝对路径(classpath/裸文件名被 SecurityBaselineValidator 拒启);
 #   ② 密钥文件部署到 /etc/eve-helper/(权限 600、目录 700,SC-009),永不入库;
 #   ③ 口令只走环境变量,本模板不得出现真实口令(安全红线)。
+#
+# 🔒 location 有意**不给默认值**(T047)。曾写作
+#    `${KEYSTORE_LOCATION:/etc/eve-helper/eve-jwt.jks}` —— 忘设环境变量时会静默
+#    fallback 到 `eve-jwt.jks`,而那正是**已泄露旧密钥**的文件名。而校验器只验
+#    路径语法、不验密钥身份(T039 已否决),不会拦住这种误指。
+#    缺失环境变量 → 启动失败,优于静默加载可疑密钥。
 security:
   keystore:
-    location: ${KEYSTORE_LOCATION:/etc/eve-helper/eve-jwt.jks}
+    location: ${KEYSTORE_LOCATION}
     password: ${KEYSTORE_PASSWORD}
     alias: ${KEYSTORE_ALIAS:eve-jwt}
     key-password: ${KEY_PASSWORD}

@@ -167,6 +167,11 @@ description: "Task list for 007-jwt-key-rotation"
   - **回归**:全量 `./mvnw test` = **553/F4/E216/S2**,与 T031 基线逐位一致;Failures 仍为同 4 例(`AssertsControllerTest.syncAssets`、`BlueprintsControllerTest.addBlueprintsList`、`BlueprintsControllerTest.getBlueprintsList`、`CharacterControllerTest.addCharacterAuth`),**零新增失败用例名**
   - ⚠️ **git 历史仍含旧私钥**(FR-014 有意不改写历史,禁止强推共享分支):旧密钥的失效依赖**生产完成轮换**,而非本次删除。**当前轮换未完成 → 该项是活跃威胁,不是残余风险**
   - **闭合条件**:`application-aliw.yml`(及 ali/prod)的 `location` 切到新密钥 + SC-014 现场验证(旧私钥新签 token → 401、新旧 modulus 不同)通过后,方可勾 `[x]`
+  - 🔶 **前一半已满足,后一半不可及(2026-08-12,保持 `[~]`)**:
+    - ✅ **配置侧**:三个 profile 已由用户从工程中移除(T035),泄露密钥的误指路径消失;md5 `612ee34c…` 证实新密钥在位
+    - ❌ **SC-014 现场验证未做**:需要运行态应用 —— 用旧私钥现签一个 token 打到线上,断言 401。AI 无法执行(无部署环境访问权)
+    - **为何不因前一半满足就勾 `[x]`**:本任务的目标是「旧 token 一律失效」,而配置正确只是**必要条件**。若 keystore 里恰好还含旧密钥的别名、或部署环境残留旧 profile,旧 token 仍可能通过验签。这正是本 feature 已犯过一次的错 —— 据「配置看起来对了」推断「效果达成」
+    - **可由你在部署后闭合**:线上执行「带旧密钥签发的 token 请求任一非白名单端点 → 应得 401 + `AUT00210`」,贴结果即可勾 `[x]`
 - [x] T029 [US3] `docs/DEPLOYMENT.md` 轮换章节:轮换步骤(keytool 命令用占位符口令)+ 六表审计清单(SQL + 判断方法,结论留空由用户填)+ 公告模板(Q5)+ `refresh_token:*` 清空前后计数记录项(SC-008)+ **新生产密钥指纹 ≠ test-only.jks 指纹 `FD:9F:19:27:61:...:CA:0F:B4` 核对项**(L-5)+ 「旧密钥已泄露」声明(SC-007);全文不得含真实口令
   - AC: 对照 SC-007/008/013 逐项可勾选;无口令明文 ✅(2026-08-12:新增「🔑 JWT 签名密钥轮换(007)」章节 = 事件声明(SC-007/FR-013)+ 公告模板(Q5)+ 9 步轮换流程(生成→部署 SC-009→指纹核对 L-5→配置切换 fail-closed 警示→FR-022 禁滚动重启→SC-014/SC-006 验证→`refresh_token:{jti}` 清空前后计数 SC-008→六表审计 SQL+判断方法+能力边界声明→SC-013 强制措辞归档)+ 轮换记录表;同步修正既有部署章节(.env 加 KEYSTORE_LOCATION/ALIAS、keystore 部署改 /etc/eve-helper/ 权限 700/600);grep 自查全文无真实口令,仅 `<STORE_PASS>` 类占位符;六表列名逐一对照 PO 实证(sys_user/sys_user_role/sys_permission/sys_role_permission/sys_role/eve_account + BaseEntity gmt_create/gmt_modified),Redis 键模式对照 TokenService:44)
 - [x] T030 [US3] `specs/006-character-access-token-api/spec.md` 的 L-10 条目:标注「已由 007 实现(SecurityBaselineValidator)」
@@ -193,12 +198,18 @@ description: "Task list for 007-jwt-key-rotation"
     - ✅ 变异 ⑤(L2 `applyFixedDelay()` 改抛 503)→ `RefreshRateLimiterTest.l2_overThreshold_fixedDelayButNotHardReject` FAIL(`Unexpected exception thrown`)+ `l2_overThreshold_prometheusCounterIncrements` ERROR
       - ⚠️ **该记录已过期(T036)**:`applyFixedDelay()` 与 `l2_overThreshold_fixedDelayButNotHardReject` 均已删除。等效的现行变异见 T036 记录(插回 `Thread.sleep` → `l2_overThreshold_doesNotBlockCallingThread` FAIL)
   - **执行纪律留证**:①②③ 依赖 `@SpringBootTest`,首轮(10:00 前后)因 MySQL 测试库 `Connection timed out` 全部 context 加载失败,**已用未变异代码复跑确认属环境问题**,未据此下任何结论;10:29 数据库恢复后先跑未变异基线 3/3 GREEN 作对照,再逐项植入变异。还原后 6/6 GREEN
-- [ ] T033 人工核验清单(用户执行,留证):SC-011(生产 profile 口令均为环境变量)+ SC-016(生产 profile whiteUrlList 含 `POST:/auth/tokens` 或未定义)+ SC-006 在**生产 profile 实际配置**下验收 + SC-009(stat 权限)
+- [~] T033 人工核验清单(用户执行,留证):SC-011(生产 profile 口令均为环境变量)+ SC-016(生产 profile whiteUrlList 含 `POST:/auth/tokens` 或未定义)+ SC-006 在**生产 profile 实际配置**下验收 + SC-009(stat 权限)
   - 🚨 **原结论已被推翻(2026-08-12,T034 评审)**:用户 2026-08-12 回复「T028 T033核验通过」,但 AI 在 T034 评审中实测发现**至少两项不成立**,故本任务回退为未完成。详见 `docs/reviews/2026-08-12-007-security-reviewer.md` CRITICAL-2 / HIGH-2
   - ❌ **SC-011 不成立**:`application-aliw.yml:160,162` 的 keystore 口令与 key 口令是**字面量明文**,非 `${KEYSTORE_PASSWORD}` / `${KEY_PASSWORD}` 占位符(同文件 DB/Redis 口令亦为字面量)。加固只落在 `application-prod.yml.example`,未落在生效配置
   - ❌ **SC-016 不成立**:`application-aliw.yml:142-144` 的 `whiteUrlList` 只有 `- POST:/user`,**无 `POST:/auth/tokens`**。List 属性 profile 整体覆盖 → refresh 端点在该 profile 恒不可达(正是 T014 注释与 `DEPLOYMENT.md` 都警告过的失效模式)。`application-{ali,prod}.yml` 同型问题由评审 agent 报告,**AI 未亲自核验**(读凭证文件被安全策略正确拦截),须用户自查
   - ⚠️ **SC-006 / SC-009 仍未获独立验证**:两项涉及服务器文件系统与生产运行态,AI 不可访问(FR-002 职责边界)。鉴于 SC-011/SC-016 已被推翻,**原「核验通过」的整体可信度需重新建立** —— 建议逐项重新核验并留下可核对的证据(命令输出/截图),而非仅口头确认
   - **教训(写入流程改进)**:AI 不可验证的核验项,不应仅凭一句「核验通过」就标记完成。后续同类门禁须要求**可核对的证据形式**(如 `grep -c '\${' <file>` 的输出、`stat` 原文、实际 HTTP 响应),否则 spec 的验收标准形同虚设
+  - 🔶 **四项中两项已由 T035 的方案变更满足,两项仍不可及(2026-08-12)**:
+    - ✅ **SC-011(生产口令均为环境变量)**:三个 profile 已删 → 口令只能来自 `application.yml`,其中全部为 `${...}` 占位符。**这项现在是结构性保证,不再依赖人工核验** —— 没有副本可以写明文
+    - ✅ **SC-016(whiteUrlList 含 `POST:/auth/tokens`)**:同理,List 整体覆盖的风险随副本消失
+    - ❌ **SC-009(keystore 文件权限 600 / 目录 700)**:需服务器文件系统访问,AI 不可及
+    - ❌ **SC-006(轮换后合法客户端可正常 refresh)**:需运行态验证,AI 不可及
+    - **判读要点**:SC-011/SC-016 的满足方式从「人工检查三个文件」变成了「不存在可出错的文件」—— 后者强度更高。这是删除 profile 副本带来的**结构性收益**,值得记录:**消除分叉源比检查分叉更可靠**
 - [x] T034 评审记录收尾:`docs/reviews/` 确认三轮评审 + 本轮 tasks 执行记录齐全(AI_WORKFLOW 要求评审归档)
   - AC: docs/INDEX.md(如有)或目录自洽 ✅(2026-08-12,`docs/reviews/` 现含 007 五份记录:三轮设计评审(`…design-review.md` / `-round2` / `-round3`)+ 实现阶段两份(`2026-08-12-007-java-reviewer.md` / `2026-08-12-007-security-reviewer.md`),命名符合 README 规范)
   - 🚨 **实现阶段评审结论:双 BLOCK**。两个 reviewer 独立收敛到同一批阻塞项:
@@ -212,7 +223,7 @@ description: "Task list for 007-jwt-key-rotation"
 
 **Purpose**: 关闭实现阶段两份评审的全部 CRITICAL 与 HIGH。**未完成前 007 不得合并**
 
-- [~] T035 🚨 **[CRITICAL-1 + CRITICAL-2 + HIGH-2]生产 profile 三项修正**(用户执行,涉 gitignore 私有配置,AI 不代改):`application-{aliw,ali,prod}.yml` 各自 ①`security.keystore.location` 切到**新密钥**(现 aliw 指向的 `D:\IdeaProjects\eve-jwt.jks` 与已泄露密钥字节相同);②keystore/key 口令改 `${KEYSTORE_PASSWORD}` / `${KEY_PASSWORD}` 占位符;③`whiteUrlList` 补 `- POST:/auth/tokens`
+- [x] T035 🚨 **[CRITICAL-1 + CRITICAL-2 + HIGH-2]生产 profile 三项修正**(用户执行,涉 gitignore 私有配置,AI 不代改):`application-{aliw,ali,prod}.yml` 各自 ①`security.keystore.location` 切到**新密钥**(现 aliw 指向的 `D:\IdeaProjects\eve-jwt.jks` 与已泄露密钥字节相同);②keystore/key 口令改 `${KEYSTORE_PASSWORD}` / `${KEY_PASSWORD}` 占位符;③`whiteUrlList` 补 `- POST:/auth/tokens`
   - AC: 每项留下**可核对的证据**(而非口头确认)—— location 指向的文件 md5 ≠ `1be3633d52ebcaa3cd9fd18e1045aa72`;`grep -c 'password.*\${' ` 输出;`grep -A5 whiteUrlList` 输出含 auth/tokens
   - ④ **顺带自查(T036 M-2)**:确认三个 profile **未覆盖** `server.tomcat.threads.max` / `accept-count` / `max-connections`,或覆盖后的值是有意为之。`application.yml` 已显式声明这四项(即 Boot 默认值),但标量属性会被 profile **整体覆盖** —— 与 whiteUrlList 同型的陷阱
   - 依赖:本任务闭合后 T028 / T033 才能勾 `[x]`
@@ -220,6 +231,18 @@ description: "Task list for 007-jwt-key-rotation"
   - ⚠️ **本 feature 有同型前科**:密钥轮换曾据「核验通过」的口头结论判定完成,实测却发现生产仍在用泄露密钥(见记忆 `unverifiable-gate-needs-evidence`)。故此处不因声明而勾 `[x]`
   - 🆕 **T038 新增第 ⑤ 项自查(必须在部署前执行,否则应用拒启)**:新校验要求「全部 `logging.level.*` 均非 debug/trace」且「`logging.level.root` 必须显式声明」。三个 profile 若含任何 debug logger(如 `reactor.netty`、mapper 包),**启动即被拒**。自检命令见 `docs/DEPLOYMENT.md`「启动安全基线:4 项硬门禁」节
   - 关闭条件:粘贴四项 grep/md5 输出(可脱敏路径,保留 md5 与命中行数)即可勾 `[x]`
+  - 🔄 **方案变更(用户 2026-08-12):「已经从工程中移除 application-ali aliw prod 配置文件」** —— 不再逐个修三个 profile,而是**把它们从工程中删除**。已实测确认:`src/main/resources/` 下仅剩 `application.yml`(入库)与 `application-test.yml`(不入库);`git ls-files` 确认三者均未被跟踪
+    - ✅ **这比逐项修改更彻底**:CRITICAL-1/CRITICAL-2/HIGH-2 三项的共同根因是「profile 副本与 `application.yml` 分叉,且分叉不可见」。删除副本 → 生产直接继承 `application.yml` 的安全形态(口令全为 `${...}` 占位符、`whiteUrlList` 含 `POST:/auth/tokens`、`log-impl` 为 Slf4jImpl、`root`/`web` 均 info),**分叉源本身消失**
+    - ✅ **md5 证据已提供**:`612ee34cedff607245ace2a39ccfbc4b`,与新密钥一致,**≠ 泄露旧密钥** `1be3633d52ebcaa3cd9fd18e1045aa72`
+    - ⚠️ **但风险转移到了 `application-prod.yml.example`** —— 它现在是生产配置的**唯一指引**,下次部署照抄即可重新引入被删掉的问题。故 T035 的关闭前提由「修三个 profile」改为「**修正模板**」,见新增 T047
+    - ⚠️ **未验证项(AI 不可及)**:实际部署环境是否仍存在旧的 `application-{ali,aliw,prod}.yml`(删的是工程内文件,服务器上的副本 AI 无从得知);`KEYSTORE_LOCATION` 等环境变量是否已在部署环境设置 —— 无这些变量时 `application.yml` 的 `${KEYSTORE_LOCATION}` 无默认值会**启动失败**(fail-fast,属期望行为)
+  - ✅ **关闭(2026-08-12)**。三项 CRITICAL/HIGH 均以「删除 profile 副本」这一更彻底的方式消除,而非逐项修补:
+    - **CRITICAL-1(生产加载泄露私钥)**:副本删除后 `location` 由 `application.yml` 的 `${KEYSTORE_LOCATION}` 提供;用户提供 md5 `612ee34cedff607245ace2a39ccfbc4b` = 新密钥,**≠** 泄露旧密钥 `1be3633d52ebcaa3cd9fd18e1045aa72`
+    - **CRITICAL-2(口令明文)**:`application.yml` 全部口令均为 `${...}` 占位符,无副本可覆盖
+    - **HIGH-2(加白静默失效)**:`whiteUrlList` 含 `POST:/auth/tokens`,List 整体覆盖的风险随副本消失
+    - ④⑤ 两项自查(tomcat 参数覆盖、debug logger)**随副本删除自动满足** —— 无副本即无覆盖
+  - ⚠️ **风险已转移而非消失**:`application-prod.yml.example` 成为唯一指引,其缺陷会在下次部署被照抄。已由 **T047 修正并加契约测试**
+  - ⚠️ **仍需你在部署时确认(AI 不可及,非本任务阻塞)**:①部署环境的环境变量已设(`KEYSTORE_LOCATION` 等,缺失会 fail-fast 拒启,属期望行为);②服务器上若有旧的 `application-{ali,aliw,prod}.yml` 残留,需一并清理 —— 工程内删除不影响已部署副本
 - [x] T036 🚨 **[HIGH-1]移除请求线程上的 `Thread.sleep`**(`RefreshRateLimiterService:118-125`):当前实现是 DoS 放大器 —— `POST /auth/tokens` 已加白(未认证可达),超阈值后每个失败请求占住一个 Tomcat 工作线程 100~300ms,默认 200 线程下约 1000 req/s 即可拖垮**全站**;且清空 `refresh_token:*` 后全体客户端同时 refresh 失败会**自我触发**该路径
   - **采用方案①(仅保留计数器 + 告警,去掉延迟)**。否决理由:②Servlet 异步延迟需把 `DeferredResult` 一路穿透 controller→application service,为价值可疑的整形动作付出架构复杂度(违 KISS/YAGNI);③429/硬拒在 plan §7 已否决且理由仍成立(L2 是**全局单键**,超阈值会拒绝所有用户,而 FR-015 轮换窗口恰好自我触发 → 与 SC-006 冲突)
   - **先改规格后改代码**(AI_WORKFLOW §5.1):`plan.md` §3.3 表格 + 降级裁决段 + 配套约束表 + 多实例说明 + 测试矩阵 2 处 + 变异测试(新增第 6 条)共 7 处;`spec.md` SC-015 洪泛观测项。v3「锁定为固定延迟」裁决**已标记 v4 推翻,注明不得恢复**
@@ -289,6 +312,24 @@ description: "Task list for 007-jwt-key-rotation"
   - 变异测试 3 项全部精确命中:①两标记设为相同 → `l1_alertMarkerDistinctFromL2` 失败;②`>` 改 `>=` → `l1_atThreshold_noAlert` 失败;③日志去掉 userId → `l1_overThreshold_emitsTargetedAlert` 失败
   - 回归 `clean test`: **572/F4/E216/S2**,Failures 用例名与基线逐项一致,零新增
   - `docs/DEPLOYMENT.md` 告警标记表补第二行 + 新增「两者响应动作不同」处置对照表
+
+- [x] T047 🚨 **[T035 方案变更衍生]`application-prod.yml.example` 修正** —— 三个真实 profile 已删除后,本模板成为生产配置的**唯一指引**,其缺陷会在下次部署时**重新引入刚被消除的问题**
+  - **① `location` 默认值指向泄露密钥的文件名(最要紧)**:`location: ${KEYSTORE_LOCATION:/etc/eve-helper/eve-jwt.jks}` —— 忘设环境变量时静默 fallback 到 `eve-jwt.jks`,而那正是已泄露密钥的文件名。**T039(密钥身份门禁)已被用户否决 → 校验器不会拦**(路径语法合法即放行)。改法:去掉默认值改为 `${KEYSTORE_LOCATION}`,与 `application.yml` 一致 —— 缺失即启动失败优于静默指向可疑文件
+  - **② `bolingcavalry` 死配置残留**:模板 `:118-121` 仍有 `com.bolingcavalry.druidtwosource.mapper: info`。该包全树零命中(本项目包名 `xyz.foolcat.eve.evehelper`)。当前值是 `info` 故不触发拒启,但它是「给 mapper 包开 debug」的可照抄模板 —— 改对包名 + 调 debug 即泄露 `refresh_token`。`application.yml` 的同源配置已随 T038 删除,模板须同步
+  - **③ 注释与 T038 新校验不一致**:模板称「🔒 三项基线」,实际现为 4 项且语义更严 —— `logging.level.root` **必须显式声明**、**全部** `logging.level.*` 均不得 debug/trace(不限 `web`)、`enabled` 只接受**字面 false**(`yes`/`1`/`on` 均拒)。照旧注释理解会漏掉新要求
+  - **④ 缺 ali/aliw 模板**:实测仅有 `application-prod.yml.example`,而被删除的是三个 profile。若 ali/aliw 仍在使用,需各自模板或在文档说明「三环境共用 prod 模板 + 环境变量差异化」
+  - AC: 逐项修正后,用模板复制出的配置跑一次 `SecurityBaselineValidator`(可加一个以模板真实键值构造 `MockEnvironment` 的测试),断言**放行** —— 防「模板照抄即拒启」
+  - 依赖:T035 的关闭以本任务完成为前提(风险已从真实 profile 转移至模板)
+  - ✅ **已完成(2026-08-12)**。四项逐一修正:
+    - ① `location: ${KEYSTORE_LOCATION:/etc/eve-helper/eve-jwt.jks}` → **`${KEYSTORE_LOCATION}`(去默认值)**,并在注释写明「曾指向已泄露密钥文件名 + 校验器不验密钥身份(T039 已否决)→ 缺失即启动失败优于静默加载可疑密钥」
+    - ② 删除 `com.bolingcavalry.druidtwosource.mapper`(与 `application.yml` 的 T038 删除同源),并把三条同型泄露路径(`reactor.netty` / `...persistence.mapper` / `druid.sql.Statement`)写进注释
+    - ③ 文件头「🔒 三项基线」→ **4 项**,补上 T038 的正向白名单语义(root 必须显式声明、全部 logger 非 debug/trace、`enabled` 只接受字面 false)
+    - ④ 补「**你真的需要这个文件吗**」引导段:说明三个 profile 已移除、生产直接继承 `application.yml` 的安全形态、差异化靠环境变量、若必须建则**只写差异项不要整体复制**。ali/aliw 不再单独出模板 —— 三环境共用本模板 + 环境变量差异化,与「删除 profile 副本」的方向一致
+  - 新增 `prodTemplate_asWritten_passesBaseline`(模板↔校验器**契约测试**):以模板真实键值构造环境断言放行。23/23 通过
+  - ✅ **变异测试**:在该用例中插入 `logging.level.com.bolingcavalry...mapper=debug`(模拟模板残留 debug logger)→ 精确失败,报错指明违规键名
+  - ⚠️ **契约测试的局限已写进 Javadoc(不假装已覆盖)**:它是**手抄**模板键值而非解析该 yml —— 模板若新增 debug logger 本测试不会自动发现。真正闭合需解析文件,但 `.example` 后缀 Spring 不识别,须自行解析,成本高于收益
+  - 回归 `clean test`: **573 tests / Failures 4**,Failures 用例名与基线**逐项一致**;007 相关 5 个测试类 **65/65 全绿**;全量输出中 `启动基线校验失败` 命中 **0 次**(证明基线校验未参与任何失败)
+  - 📌 **诊断记录(避免重犯)**:本轮首次判读误把 Errors 段当 Failures,一度以为新增 250+ 失败。实为 grep 未按段边界切分。Errors 216→271 的波动源于该次 MySQL 连接超时范围更大;`BlueprintsApplicationServiceUnitTest` 等纯 Mockito 单元测试的「用户未授权」错误经 `git stash` 在**未改动代码上复跑同样失败**,与本次改动无关。方法已存入记忆 `regression-diff-must-separate-failures-errors`
 
 ---
 
