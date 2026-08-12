@@ -258,7 +258,7 @@ public class WhiteUrlMatcher {
 | 窗口 | **固定窗口**(`INCR`+`EXPIRE`),非滑动窗口 —— 滑动需 ZSET ≥3 条命令/请求,在洪泛路径上反而加重 Redis 负载 |
 | 过期竞态 | **每次 INCR 后都重设 EXPIRE**,杜绝「INCR 与 EXPIRE 之间崩溃 → 键永不过期 → 永久降级」 |
 | Redis 故障 | **fail-open**(try-catch 跳过 L2):Redis 不可用时 ③ 本身就会失败,refresh 整体不可用,L2 不应新增失败面 |
-| 告警 | 接入 **Prometheus**(pom 已有 metrics 依赖),而非仅日志 |
+| 告警 | **结构化 WARN 日志 + 稳定告警标记 `[SECURITY_ALERT:REFRESH_FLOOD]`**(供 grep/Loki 规则匹配)。~~接入 Prometheus~~ **【v4 推翻,T037】**:pom 里三个 `io.prometheus` 依赖在 `src/main/java` **零引用**(无 `PrometheusRegistry`、无 exporter 启动)、全部 profile 无 `management:` 配置 ⇒ 指标落进 `SimpleMeterRegistry` 永不被抓取。「pom 已有 metrics 依赖」是**误判**——有依赖 ≠ 有通路。三个死依赖已于 T037 从 pom 删除,日志是本项目现存唯一可运维的告警通路 |
 | 阈值定标 | 窗口内阈值 ≥ 预估轮换尖峰(在线用户数 × 每客户端 refresh 重试次数),使「L2 触发 ≈ 异常流量」,轮换本身不误触发;**阈值仅决定何时告警,不触发任何降级动作**(v4:延迟已否决) |
 | 实现范本 | 复用 `LoginRateLimiterService:39-49` 已验证的 `increment`+首次 `expire` 模式;**但其「按 username 计数 + 锁 30 分钟」的模式禁止照搬**(可定向锁死任意已知用户) |
 
@@ -441,7 +441,7 @@ case TOKEN_ACCESS_EXPIRED:          // ← 新增,现落 default → 400
 
 | 条款 | 符合性 |
 |------|--------|
-| 第四条 技术栈冻结 | ✅ 无新依赖。`ApplicationRunner`/`FileSystemResource` 为 Boot 自带;限流复用既有 Redis 模式;告警复用既有 Prometheus metrics |
+| 第四条 技术栈冻结 | ✅ 无新依赖。`ApplicationRunner`/`FileSystemResource` 为 Boot 自带;限流复用既有 Redis 模式;告警走 slf4j 结构化日志(Boot 自带)。**T037 另删除三个零引用的 `io.prometheus` 死依赖** —— 删除零引用依赖不属"升级或替换核心依赖",对运行时行为零影响(编译 + 全量回归实证),且消除了「有依赖无通路」的名实不符;冻结表已同步(`CLAUDE.md`) |
 | 第五条 Spec-First | ✅ 规格已修订;本文件为阶段③ **v3**(序 0 后按实测重写) |
 | DDD 分层 | ⚠️ `RefreshRateLimiterService` 置于 `domain/service/security`(与既有 `LoginRateLimiterService` 同包)。它依赖 `CacheGateway` 端口,不直接依赖 Redis,符合分层 |
 | TDD | ✅ 序 0 后 `JwtFilterDiagnosticTest` 的失败即 RED 起点;白名单放行/限流各配契约测试 |

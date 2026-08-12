@@ -226,15 +226,21 @@ description: "Task list for 007-jwt-key-rotation"
   - ✅ **显式容量配置**:`application.yml` 增 `server.tomcat.threads.max=200` / `min-spare=10` / `accept-count=100` / `max-connections=8192` —— 把「洪泛容忍度的分母」从 Boot 隐含默认值变为可见可审项;经 `@SpringBootTest`(6/6)验证绑定无误
   - 同步修正 `RefreshRateLimiterService` 类注释(新增「为何不做延迟整形」段,含成本不对称与自我触发的完整推理)与 `AuthApplicationService:115,127` 两处调用点注释
   - ⚠️ **遗留**:超阈值仍只递增 `MeterRegistry` Counter,而告警通路实际不存在 → **由 T037 闭合**(本任务不越界处理)
-- [ ] T037 🚨 **[HIGH-1(java)+ MEDIUM-4]告警通路名实一致**:`RefreshRateLimiterService` 注册 Counter 到 `MeterRegistry` 并声称「Prometheus 抓取触发告警」,但 `pom.xml` **无 `micrometer-registry-prometheus`**、全部 yml **无 `management:` 配置** → 指标写入 `SimpleMeterRegistry`,永不被抓取;L1 计数亦只写不读
-  - 🔍 **T036 期间新查明的补充证据(诊断更彻底)**:
-    - `grep -rln 'io.prometheus' src/main/java` = **0** → pom 里三个 `io.prometheus` 依赖(`prometheus-metrics-core` / `-instrumentation-jvm` / `-exporter-httpserver`)**在业务代码中零引用,是死依赖**。问题不只是「缺 micrometer 桥接」,而是这套 Prometheus 依赖从未接线(无 `PrometheusRegistry`、无 `HTTPServer` 启动、无 `JvmMetrics` 注册)
-    - `grep -rn '@Bean.*MeterRegistry\|SimpleMeterRegistry' src/main/java` = **0** → 无自定义 bean,`MeterRegistry` 由 actuator 自动配置兜底
-    - 全仓 `MeterRegistry` 唯一消费者就是 `RefreshRateLimiterService:70`
-    - ⇒ 方案②(改结构化日志)可**顺带清理三个死依赖**,比方案①更贴合技术栈冻结原则
-  - 方案二选一:①补 registry 依赖 + `management.endpoints.web.exposure.include`(⚠️ 技术栈冻结,新增依赖需确认是否属既有 `spring-boot-starter-actuator` 生态内,否则走宪法修订);②不引依赖 → 改为结构化 WARN 日志 + 日志告警规则,**同步修正**类注释、`plan.md` §3.3 表述、`RefreshRateLimiterTest.l2_overThreshold_prometheusCounterIncrements` 的立论
-  - 📌 **一并裁决(T036 评审 L-2)**:若选方案①保留 `MeterRegistry`,应评估是否抽 `domain.port.metrics.MetricsGateway` 端口(与 `CacheGateway`/`EsiGateway` 一致);若选方案②则 `MeterRegistry` 整体移除,该问题自然消失
-  - AC: 代码/注释/plan/测试对告警能力的描述与实际一致(当前**描述不实**是 BLOCK 主因之一)
+- [x] T037 🚨 **[HIGH-1(java)+ MEDIUM-4]告警通路名实一致**:`RefreshRateLimiterService` 注册 Counter 到 `MeterRegistry` 并声称「Prometheus 抓取触发告警」,但 `pom.xml` **无 `micrometer-registry-prometheus`**、全部 yml **无 `management:` 配置** → 指标写入 `SimpleMeterRegistry`,永不被抓取;L1 计数亦只写不读
+  - 🔍 **诊断比原记录更严重**:`grep -rln 'io.prometheus' src/main/java` = **0** → pom 里三个 `io.prometheus` 依赖(`-core`/`-instrumentation-jvm`/`-exporter-httpserver`,均 1.0.0)**从未接线**(无 `PrometheusRegistry`、无 exporter 启动、无 `JvmMetrics` 注册),是**死依赖**;`grep '@Bean.*MeterRegistry\|SimpleMeterRegistry' src/main/java` = 0 → 由 actuator 自动配置兜底
+  - **采用方案②(不引依赖,改结构化日志)+ 用户指示彻底移除 Prometheus**。方案①否决:补 registry 依赖须走宪法修订,且本项目**根本没有任何 metrics 通路**(不只是缺桥接),建通路远超 T037 边界
+  - **实现**:新增 `public static final String ALERT_MARKER = "[SECURITY_ALERT:REFRESH_FLOOD]"`;超阈值打 `log.warn("{} refresh 无效请求洪泛: count={}, threshold={}, windowSeconds={}", ...)`;删 `Counter` 字段 + `MeterRegistry` 构造参数 + micrometer import → **构造器由 2 参降为 1 参**
+  - **删除死依赖**:`pom.xml` 移除三个 `io.prometheus`。`mvnw dependency:tree` 确认 classpath 中 **prometheus 与 micrometer 双双消失**(micrometer 原经其传递引入)—— 证明「只删依赖不改代码会直接编译失败」,二者必须同改。**保留 `spring-boot-starter-actuator`**(提供 `/actuator/health`,与本问题无关)
+  - **文档去误导**:`docs/DEPLOYMENT.md` 删除约 150 行从未可用的 Prometheus/Grafana 运维指南(`/actuator/prometheus` 端点不存在、`jvm_memory_used_bytes` 等指标名一个都不会出现、`alerts.yml` 规则永不触发),改写为「健康检查 / 日志监控(唯一可用通路,含 grep+cron 与 Loki 两种告警配置 + 告警标记表 + 需关注的日志模式表)/ 容量基线」;`management:` 配置示例的 `include` 由 `health,info,metrics,prometheus` 改为 `health,info`
+  - **冻结表同步**:`CLAUDE.md` 删除「Prometheus metrics 1.0.0」行。⚠️ **须你复核**:宪法第四条禁的是"升级或替换",而这是**删除零引用死依赖**,对运行时行为零影响(已实证),我判定不属修订范畴 —— 若你认为仍需走修订程序请驳回
+  - RED:构造器签名不匹配(`:78`)+ `ALERT_MARKER` 找不到符号(`:173/174/194`)→ 编译失败(与 T010 同型的 RED)
+  - GREEN:9/9(`RefreshRateLimiterTest`);`AuthApplicationServiceUnitTest` 7/7 不受影响(mock 该服务)
+  - ✅ **变异测试 ×2**:①日志去掉 `ALERT_MARKER` → `l2_overThreshold_emitsStructuredWarnForAlerting` FAIL(报出实际日志文本);②插回 `MeterRegistry` 字段 → `noUnreachableMetricsDependency` FAIL。两条断言各守一个方向
+  - ✅ **回归**(`clean test` 全新编译):`556/F4/E216/S2`,Failures 用例名与基线**逐项一致**,**零新增**;用例 553→556(T036 +1,T037 +2)
+  - 新增用例:`l2_overThreshold_emitsStructuredWarnForAlerting`(断言日志含标记+count+threshold)、`l2_belowThreshold_noAlert`(防告警疲劳)、`noUnreachableMetricsDependency`(防名实不符回退);删除立论不成立的 `l2_overThreshold_prometheusCounterIncrements`
+  - 同步 `plan.md` §3.3 告警约束行 + 合宪性检查表第四条
+  - 📌 **顺带闭合 T036 评审 L-2**:`MeterRegistry` 整体移除,domain 层的分层气味自然消失(无需抽 `MetricsGateway` 端口)
+  - ⚠️ **遗留**:L1(`refresh:fail:{userId}`)仍只写不读、无告警标记 —— 定向刷失败无法触发告警。**未修**:L1 的定位是「观测,非防护」(plan §3.3 明确 L1 看不到主攻击向量),加告警需先定义「什么算定向攻击」的阈值,属新需求。已登记为 T046
 - [ ] T038 🚨 **[HIGH-3]基线校验改正向白名单**(`SecurityBaselineValidator`):`checkAccessTokenEndpoint` 用 `Boolean.parseBoolean(null)` = false → 生产 profile 该键根本不存在 → **恒放行**,却照打「基线校验通过(4/4)」,是虚假保证。同类:`checkWebLogLevel` 只查 `logging.level.web`,`root: debug` 可绕过
   - 改法:3 项 boolean/枚举基线从「查到违规值才拒」改为「**必须显式配置为安全值**」(与该类 `isTestProfile` 自身的正向白名单思路一致);日志级别校验扩展到 `root` / `org.springframework.web` / `org.springframework.security`
   - AC: 补「键缺失 → 拒启」与「root:debug → 拒启」用例,RED → GREEN
@@ -252,6 +258,10 @@ description: "Task list for 007-jwt-key-rotation"
 - [ ] T043 [MEDIUM-5(security)]登录端点**用户名枚举**:`SecurityConfig:75` 的 `setHideUserNotFoundExceptions(false)` + `AuthenticationFailureServletHandler:66` 使「用户账号不存在」与「用户名或密码错误,剩余尝试次数: N」可区分 → 可枚举有效账号并探知锁定状态。**既存缺陷,非 007 引入**,与 007「统一 AUT00210 防原因区分」是同类问题的相反做法
 - [ ] T044 [MEDIUM-6(security)]`MODE_INHERITABLETHREADLOCAL` + 线程池 → **认证上下文跨用户泄漏**:请求线程提交任务时 `Authentication` 被继承给池化线程,而池化线程无人 `clearContext()`。**既存缺陷**
 - [ ] T045 LOW 项汇总(两份评审共 12 条,择机 polish):`writeTokenInfo` 通配 ACAO + `no-cache` 应改 `no-store`(LOW-1s);refresh DTO 缺 `@Size` + `maskToken` 可 CRLF 注入日志(LOW-2s);孤立 `public.key`(LOW-3s);`redis-cli -a` 改 `REDISCLI_AUTH`(LOW-4s);`KeyStoreKeyFactory` 死代码重载/全限定名/自重抛/硬编码位数文案(LOW-1~4j);`ResponseUtils` 两方法编码不一致(LOW-5j);登录失败回显原始 message(LOW-7j)
+- [ ] T046 [T037 遗留]**L1 告警缺口**:`refresh:fail:{userId}` 计数只写不读、无 `ALERT_MARKER` → 针对单一账号的定向刷失败**无法触发任何告警**,L1 当前是纯哑计数器
+  - **未在 T037 修的理由**:L1 定位是「观测,非防护」(plan §3.3:随机 UUID 洪泛在 userId 解析前就被挡,L1 看不到主攻击向量);加告警需先定义「多少次/多长窗口算定向攻击」的阈值,以及为何该阈值不会被正常用户的 token 过期误触发 —— 这是**新需求**,不是 T037 的名实一致修正
+  - 若不修,应在 `spec.md` 显式记录「L1 仅为事后取证提供 Redis 计数,不产生实时告警」,避免下一个读者再次误以为有告警能力
+  - AC: 要么加阈值 + 告警标记 + 测试,要么在规格中写明能力边界。**二者必居其一,不得留空**
 
 ---
 

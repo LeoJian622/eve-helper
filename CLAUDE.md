@@ -30,7 +30,6 @@ EVE Helper 是一个基于 Java Spring Boot 的应用程序,用于 EVE Online �
 | Hutool | 5.8.44 | 工具库 |
 | SpringDoc OpenAPI | 2.8.16 | API 文档 |
 | Nimbus JOSE JWT | 10.0.2 | JWT 处理 |
-| Prometheus metrics | 1.0.0 | 指标暴露 |
 
 ## 构建和开发命令
 

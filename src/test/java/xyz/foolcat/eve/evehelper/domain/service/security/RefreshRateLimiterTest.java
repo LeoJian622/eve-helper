@@ -1,15 +1,20 @@
 package xyz.foolcat.eve.evehelper.domain.service.security;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -33,9 +38,11 @@ import static org.mockito.Mockito.when;
  *       仅计数告警,<b>禁止任何锁定动作</b>(随机 UUID 洪泛在 userId 解析前就被挡,
  *       L1 看不到主攻击向量,锁定只会误伤)</li>
  *   <li><b>L2 全局单键观测</b>(键 {@code refresh:invalid:global},固定窗口):
- *       超阈值 → 告警计数器递增,<b>但不在请求线程上施加任何时延</b>(T036 推翻 v3 的
- *       「固定延迟 100~300ms」——`Thread.sleep` 占住 Tomcat 工作线程,而该端点未认证
- *       可达,反成 DoS 放大器);<b>断言非硬拒</b>(不抛异常、不返回拒绝标志 —— 503 方案
+ *       超阈值 → <b>结构化 WARN 日志告警</b>(T037:原「Prometheus 计数器」通路
+ *       实际不存在,详见 {@code RefreshRateLimiterService} 类注释),
+ *       <b>但不在请求线程上施加任何时延</b>(T036 推翻 v3 的「固定延迟 100~300ms」
+ *       ——`Thread.sleep` 占住 Tomcat 工作线程,而该端点未认证可达,反成 DoS 放大器);
+ *       <b>断言非硬拒</b>(不抛异常、不返回拒绝标志 —— 503 方案
  *       已因与轮换窗口 SC-006 冲突被否决,见 plan §7)</li>
  *   <li><b>成功路径零影响</b>:本服务仅由失败路径调用(T017 接线保证),
  *       且任何路径都不阻塞调用线程</li>
@@ -59,14 +66,29 @@ class RefreshRateLimiterTest {
     @Mock
     private CacheGateway cacheGateway;
 
-    private SimpleMeterRegistry meterRegistry;
-
     private RefreshRateLimiterService refreshRateLimiterService;
+
+    /** 捕获被测类日志的 appender —— 告警通路即日志,故须能断言日志内容 */
+    private ListAppender<ILoggingEvent> listAppender;
+
+    private List<ILoggingEvent> logEvents;
 
     @BeforeEach
     void setUp() {
-        meterRegistry = new SimpleMeterRegistry();
-        refreshRateLimiterService = new RefreshRateLimiterService(cacheGateway, meterRegistry);
+        refreshRateLimiterService = new RefreshRateLimiterService(cacheGateway);
+
+        Logger logger = (Logger) LoggerFactory.getLogger(RefreshRateLimiterService.class);
+        listAppender = new ListAppender<>();
+        listAppender.start();
+        logger.addAppender(listAppender);
+        logEvents = listAppender.list;
+    }
+
+    @AfterEach
+    void tearDown() {
+        Logger logger = (Logger) LoggerFactory.getLogger(RefreshRateLimiterService.class);
+        logger.detachAppender(listAppender);
+        listAppender.stop();
     }
 
     // ------------------------------------------------------------------
@@ -127,19 +149,66 @@ class RefreshRateLimiterTest {
     }
 
     @Test
-    @DisplayName("L2 超阈值:Prometheus 计数器递增(告警通路)")
-    void l2_overThreshold_prometheusCounterIncrements() {
+    @DisplayName("L2 超阈值:发出可被日志告警规则匹配的结构化 WARN(T037 告警通路)")
+    void l2_overThreshold_emitsStructuredWarnForAlerting() {
         // Arrange
         long overThreshold = RefreshRateLimiterService.L2_THRESHOLD + 1L;
         when(cacheGateway.increment(RefreshRateLimiterService.L2_GLOBAL_KEY)).thenReturn(overThreshold);
         lenient().when(cacheGateway.expire(anyString(), anyLong(), any(TimeUnit.class))).thenReturn(true);
-        double before = sumAllCounters();
 
         // Act
         refreshRateLimiterService.observeInvalidRefresh();
 
-        // Assert:至少一个计数器递增(名称由实现定,行为契约是「有告警信号」)
-        assertTrue(sumAllCounters() > before, "超阈值应触发 Prometheus 计数器告警");
+        // Assert:告警通路的操作性定义 —— 日志中必须出现稳定可 grep 的告警标记。
+        // T037:原断言「Prometheus 计数器递增」立论不成立 —— 全仓无
+        // micrometer-registry-prometheus、无 management: 配置、pom 的三个 io.prometheus
+        // 依赖在 src/main/java 零引用 ⇒ Counter 落进 SimpleMeterRegistry 永不被抓取。
+        // 改为断言日志,因为日志是本项目**实际存在**的唯一可运维告警通路。
+        List<ILoggingEvent> warns = logEvents.stream()
+                .filter(e -> e.getLevel() == Level.WARN)
+                .toList();
+        assertFalse(warns.isEmpty(), "超阈值必须发出 WARN 级日志");
+
+        String formatted = warns.get(warns.size() - 1).getFormattedMessage();
+        assertTrue(formatted.contains(RefreshRateLimiterService.ALERT_MARKER),
+                "告警日志须含稳定标记 " + RefreshRateLimiterService.ALERT_MARKER
+                        + "(供 alerts 规则 grep),实际: " + formatted);
+        assertTrue(formatted.contains(String.valueOf(overThreshold)),
+                "告警日志须含实际计数值以便定量判断,实际: " + formatted);
+        assertTrue(formatted.contains(String.valueOf(RefreshRateLimiterService.L2_THRESHOLD)),
+                "告警日志须含阈值以便判断超出幅度,实际: " + formatted);
+    }
+
+    @Test
+    @DisplayName("L2 低于阈值:不发告警(避免告警疲劳)")
+    void l2_belowThreshold_noAlert() {
+        // Arrange
+        when(cacheGateway.increment(RefreshRateLimiterService.L2_GLOBAL_KEY)).thenReturn(1L);
+        lenient().when(cacheGateway.expire(anyString(), anyLong(), any(TimeUnit.class))).thenReturn(true);
+
+        // Act
+        refreshRateLimiterService.observeInvalidRefresh();
+
+        // Assert:未超阈值不得出现告警标记 —— 否则告警规则会被正常流量刷爆
+        boolean anyAlert = logEvents.stream()
+                .anyMatch(e -> e.getFormattedMessage().contains(RefreshRateLimiterService.ALERT_MARKER));
+        assertFalse(anyAlert, "低于阈值不应发出告警标记");
+    }
+
+    @Test
+    @DisplayName("告警通路名实一致:不得残留 MeterRegistry 依赖(T037 防名实不符回退)")
+    void noUnreachableMetricsDependency() {
+        // Assert:项目无 micrometer-registry-prometheus、无 management: 配置,
+        // MeterRegistry 只会被 actuator 兜底成 SimpleMeterRegistry(仅内存,永不导出)。
+        // 保留它 = 代码声称有告警能力而实际没有,这正是 T037 判 BLOCK 的主因。
+        // 若日后真建成 Prometheus 抓取通路,应删除本用例并同步 DEPLOYMENT.md。
+        boolean hasMeterRegistry = java.util.Arrays
+                .stream(RefreshRateLimiterService.class.getDeclaredFields())
+                .anyMatch(f -> f.getType().getName().contains("micrometer"));
+
+        assertFalse(hasMeterRegistry,
+                "无可达的 metrics 导出通路时不得持有 MeterRegistry(名实不符);"
+                        + "告警走结构化日志,见 DEPLOYMENT.md「日志告警」节");
     }
 
     @Test
@@ -187,13 +256,5 @@ class RefreshRateLimiterTest {
         // Act & Assert
         assertDoesNotThrow(() -> refreshRateLimiterService.recordUserFailure(42),
                 "L1 是观测计数,Redis 故障不得影响业务");
-    }
-
-    /** 汇总 registry 中全部计数器当前值(不固化指标名,只断言「有告警信号」) */
-    private double sumAllCounters() {
-        return meterRegistry.getMeters().stream()
-                .filter(m -> m instanceof Counter)
-                .mapToDouble(m -> ((Counter) m).count())
-                .sum();
     }
 }

@@ -1,7 +1,5 @@
 package xyz.foolcat.eve.evehelper.domain.service.security;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
@@ -19,9 +17,20 @@ import java.util.concurrent.TimeUnit;
  *   <li><b>L1 按 userId 观测</b>(键 {@code refresh:fail:{userId}},TTL 60s):
  *       仅计数 + 告警,<b>禁止任何锁定动作</b> —— 捕捉「针对单一账号的定向刷失败」</li>
  *   <li><b>L2 全局单键观测</b>(键 {@code refresh:invalid:global},固定窗口 60s):
- *       捕捉随机 UUID 洪泛。超阈值 → 告警计数器 + WARN 日志,<b>仅此而已</b>。
- *       <b>绝不硬拒</b>:503 方案会误伤密钥轮换窗口的合法 refresh(SC-006),已否决</li>
+ *       捕捉随机 UUID 洪泛。超阈值 → 打一条含 {@link #ALERT_MARKER} 的结构化 WARN 日志,
+ *       <b>仅此而已</b>。<b>绝不硬拒</b>:503 方案会误伤密钥轮换窗口的合法 refresh
+ *       (SC-006),已否决</li>
  * </ul>
+ *
+ * <p><b>为何告警走日志而非 Prometheus(T037 修正名实不符)</b>:v3 声称
+ * 「Counter 由 Prometheus 抓取触发告警」,实测该通路<b>完全不存在</b> ——
+ * 全仓无 {@code micrometer-registry-prometheus}、无 {@code management:} 配置、
+ * pom 中三个 {@code io.prometheus} 依赖在 {@code src/main/java} <b>零引用</b>
+ * (无 {@code PrometheusRegistry}、无 exporter 启动)。故 {@code MeterRegistry}
+ * 只会被 actuator 兜底成 {@code SimpleMeterRegistry}:仅内存、<b>永不被抓取</b>。
+ * 持有它等于代码声称有告警能力而实际没有。技术栈已冻结(宪法第四条),新增
+ * registry 依赖须走修订程序,而<b>日志是本项目现存唯一可运维的告警通路</b>,
+ * 故改为结构化 WARN + 日志告警规则(见 {@code docs/DEPLOYMENT.md}「日志告警」)。</p>
  *
  * <p><b>为何不做延迟整形(T036 推翻 v3 裁决)</b>:v3 曾在超阈值时施加 100~300ms
  * {@code Thread.sleep}「抬高攻击成本」,方向判反了 —— sleep 占住的是 Tomcat 工作线程,
@@ -62,17 +71,18 @@ public class RefreshRateLimiterService {
      */
     public static final long L2_THRESHOLD = 1000L;
 
+    /**
+     * 告警日志稳定标记。
+     *
+     * <p>日志告警规则(Loki/ELK/grep)按此串匹配,故<b>不得随意修改</b> ——
+     * 改动等于让既有告警规则静默失效。测试对该常量有断言(T037)。</p>
+     */
+    public static final String ALERT_MARKER = "[SECURITY_ALERT:REFRESH_FLOOD]";
+
     private final CacheGateway cacheGateway;
 
-    /** 洪泛告警计数器(超阈值时递增,由 Prometheus 抓取触发告警) */
-    private final Counter floodAlertCounter;
-
-    public RefreshRateLimiterService(CacheGateway cacheGateway, MeterRegistry meterRegistry) {
+    public RefreshRateLimiterService(CacheGateway cacheGateway) {
         this.cacheGateway = cacheGateway;
-        this.floodAlertCounter = Counter
-                .builder("eve.helper.refresh.invalid.flood")
-                .description("refresh 无效请求洪泛告警计数(007 CRITICAL-2 L2 超阈值次数)")
-                .register(meterRegistry);
     }
 
     /**
@@ -109,8 +119,8 @@ public class RefreshRateLimiterService {
         }
 
         if (count != null && count > L2_THRESHOLD) {
-            floodAlertCounter.increment();
-            log.warn("refresh 无效请求洪泛告警: count={}, threshold={}", count, L2_THRESHOLD);
+            log.warn("{} refresh 无效请求洪泛: count={}, threshold={}, windowSeconds={}",
+                    ALERT_MARKER, count, L2_THRESHOLD, OBSERVE_WINDOW_SECONDS);
         }
     }
 }

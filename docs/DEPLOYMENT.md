@@ -394,150 +394,139 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
-  metrics:
-    export:
-      prometheus:
-        enabled: true
+        # 仅暴露健康检查与构建信息。**不含 metrics/prometheus** ——
+        # 007 T037 已移除三个零引用的 io.prometheus 死依赖,项目无 metrics 导出通路。
+        # 如需指标监控须新增 micrometer-registry-prometheus,涉技术栈冻结(宪法第四条)
+        include: health,info
 ```
 
 ## 📊 监控告警
 
-### 1. Prometheus监控
+> **现状(2026-08-12,007 T037)**:本项目**没有 metrics 导出通路**。原 `pom.xml` 中三个
+> `io.prometheus` 依赖(`prometheus-metrics-core` / `-instrumentation-jvm` /
+> `-exporter-httpserver`,均 1.0.0)在 `src/main/java` **零引用** —— 从未创建
+> `PrometheusRegistry`、从未启动 exporter、从未注册 `JvmMetrics`,且全部 profile
+> 均无 `management:` 配置。**它们是死依赖,已于 T037 删除。**
+>
+> 原本此处有 Prometheus 安装、Grafana 面板、`jvm_memory_used_bytes` 等指标名、
+> `alerts.yml` 规则等约 150 行运维指南 —— 那些内容**在本项目从未可用**
+> (`/actuator/prometheus` 端点不存在,指标名一个都不会出现,告警规则永不触发),
+> 属于误导性文档,已一并删除。
+>
+> **如需指标监控**:须新增 `micrometer-registry-prometheus` 依赖 —— 技术栈已冻结
+> (宪法第四条),**须走宪法修订程序并另开 spec**,不得直接添加。
 
-#### 安装Prometheus
+### 1. 健康检查
+
+`spring-boot-starter-actuator` 保留,提供健康检查与构建信息:
 
 ```bash
-# 下载Prometheus
-wget https://github.com/prometheus/prometheus/releases/download/v2.40.0/prometheus-2.40.0.linux-amd64.tar.gz
-tar xvfz prometheus-2.40.0.linux-amd64.tar.gz
-cd prometheus-2.40.0.linux-amd64
+# 应用健康状态(含数据源、Redis 连通性)
+curl http://localhost:9999/actuator/health
 
-# 配置Prometheus
-vim prometheus.yml
+# 构建信息
+curl http://localhost:9999/actuator/info
 ```
 
-添加EVE Helper监控目标:
+生产环境的 `management.endpoints.web.exposure.include` 应仅含 `health,info`
+(见上方「应用配置」)。**不要**暴露 `env` / `beans` / `configprops` —— 它们会
+泄露配置细节(数据源 URL、Bean 结构)。
+
+> ⚠️ `/actuator/health` 默认不需认证时会暴露组件状态。若该端点在白名单中,
+> 建议设 `management.endpoint.health.show-details: never`,仅返回 UP/DOWN。
+
+### 2. 日志监控(当前唯一可用的告警通路)
+
+日志是本项目**现存唯一**可运维的告警来源。日志位置见「应用配置」的
+`logging.file.path`(示例为 `/opt/eve-helper/logs`)。
+
+#### 安全告警标记
+
+应用会在检测到安全异常时输出**稳定的可 grep 标记**,用于日志告警规则匹配:
+
+| 标记 | 含义 | 来源 |
+|------|------|------|
+| `[SECURITY_ALERT:REFRESH_FLOOD]` | refresh 端点无效请求洪泛(60s 窗口内超过 1000 次) | `RefreshRateLimiterService`(007 T016/T037) |
+
+> ⚠️ **标记字符串不得随意修改** —— 改动等于让既有告警规则静默失效。
+> 该常量有测试断言保护(`RefreshRateLimiterTest`,T037)。
+
+#### 告警配置示例
+
+**方式一:grep + cron(最简,无额外组件)**
+
+```bash
+# /opt/eve-helper/scripts/check-security-alerts.sh
+#!/bin/bash
+LOG_DIR=/opt/eve-helper/logs
+WINDOW_MIN=5
+
+# 近 5 分钟内出现安全告警标记则通知
+if find "$LOG_DIR" -name '*.log' -mmin -${WINDOW_MIN} -exec \
+     grep -l 'SECURITY_ALERT' {} + >/dev/null 2>&1; then
+    MSG=$(find "$LOG_DIR" -name '*.log' -mmin -${WINDOW_MIN} -exec \
+            grep -h 'SECURITY_ALERT' {} + | tail -20)
+    # 替换为实际通知渠道(邮件/钉钉/企业微信 webhook)
+    echo "$MSG" | mail -s "[EVE Helper] 安全告警" ops@example.com
+fi
+```
+
+```cron
+*/5 * * * * /opt/eve-helper/scripts/check-security-alerts.sh
+```
+
+**方式二:Loki + Promtail(如已有日志基础设施)**
 
 ```yaml
-scrape_configs:
-  - job_name: 'eve-helper'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets: ['localhost:9999']
-```
-
-启动Prometheus:
-
-```bash
-./prometheus --config.file=prometheus.yml
-```
-
-### 2. Grafana可视化
-
-#### 安装Grafana
-
-```bash
-# Ubuntu/Debian
-sudo apt-get install -y software-properties-common
-sudo add-apt-repository "deb https://packages.grafana.com/oss/deb stable main"
-wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
-sudo apt-get update
-sudo apt-get install grafana
-
-# 启动Grafana
-sudo systemctl start grafana-server
-sudo systemctl enable grafana-server
-```
-
-访问 http://localhost:3000 (默认用户名/密码: admin/admin)
-
-#### 配置数据源
-
-1. 添加Prometheus数据源
-2. 导入Spring Boot Dashboard (ID: 4701)
-3. 配置告警规则
-
-### 3. 关键指标监控
-
-#### JVM指标
-- **堆内存使用率**: `jvm_memory_used_bytes / jvm_memory_max_bytes`
-- **GC频率**: `rate(jvm_gc_pause_seconds_count[5m])`
-- **GC耗时**: `jvm_gc_pause_seconds_sum`
-
-#### 应用指标
-- **请求QPS**: `rate(http_server_requests_seconds_count[1m])`
-- **响应时间**: `http_server_requests_seconds_sum / http_server_requests_seconds_count`
-- **错误率**: `rate(http_server_requests_seconds_count{status=~"5.."}[5m])`
-
-#### 数据库指标
-- **连接池**: 项目使用 **Druid**(非 HikariCP);活跃/最大连接经 Druid StatView 或 `/actuator/metrics/druid.*` 监控
-- **慢查询**: Druid `slow-sql-millis` 阈值(5000ms,见 `application.yml`)+ MySQL 慢查询日志
-
-#### Redis指标
-- **连接数**: `redis_connected_clients`
-- **内存使用**: `redis_memory_used_bytes`
-- **命令执行**: `rate(redis_commands_processed_total[1m])`
-
-### 4. 告警规则
-
-创建告警规则文件 `alerts.yml`:
-
-```yaml
+# Loki 告警规则
 groups:
-  - name: eve-helper-alerts
-    interval: 30s
+  - name: eve-helper-security
     rules:
-      # 应用健康检查
-      - alert: ApplicationDown
-        expr: up{job="eve-helper"} == 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: "EVE Helper应用宕机"
-          description: "应用已经宕机超过1分钟"
-
-      # 内存使用率告警
-      - alert: HighMemoryUsage
-        expr: (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) > 0.9
-        for: 5m
+      - alert: RefreshTokenFlood
+        expr: |
+          count_over_time({job="eve-helper"} |= "[SECURITY_ALERT:REFRESH_FLOOD]" [5m]) > 0
+        for: 0m
         labels:
           severity: warning
         annotations:
-          summary: "内存使用率过高"
-          description: "堆内存使用率超过90%"
-
-      # 响应时间告警
-      - alert: HighResponseTime
-        expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[5m])) > 1
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "响应时间过长"
-          description: "95分位响应时间超过1秒"
-
-      # 错误率告警
-      - alert: HighErrorRate
-        expr: rate(http_server_requests_seconds_count{status=~"5.."}[5m]) > 0.05
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: "错误率过高"
-          description: "5xx错误率超过5%"
-
-      # 数据库连接池告警 (Druid;指标名以实际暴露为准)
-      - alert: DatabaseConnectionPoolExhausted
-        expr: (druid_connections_active / druid_connections_max) > 0.9
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "数据库连接池即将耗尽"
-          description: "Druid 连接池使用率超过90%"
+          summary: "refresh 端点检测到无效请求洪泛"
+          description: "60s 窗口内无效 refresh 超过阈值,可能是 token 猜测攻击。检查来源 IP 分布并考虑入口层限流。"
 ```
+
+#### 需要人工关注的日志模式
+
+| grep 模式 | 含义 | 处置 |
+|-----------|------|------|
+| `SECURITY_ALERT` | 见上表 | 按标记类型处置 |
+| `启动基线校验失败` | 安全基线不满足,应用已拒绝启动 | 检查 keystore 路径、日志级别、调试端点配置 |
+| `OutOfMemoryError` | 内存溢出 | 见「常见问题处理」 |
+| `Connection pool exhausted` | Druid 连接池耗尽 | 见「常见问题处理」 |
+| `Redis connection timeout` | Redis 不可达 | 见「常见问题处理」 |
+| `ERROR.*EsiException` | ESI 接口异常 | 检查 ESI 服务状态与 token 有效性 |
+
+### 3. 容量基线
+
+以下为 `application.yml` 显式声明的容量参数(007 T036 起显式化,值即 Boot 默认):
+
+| 参数 | 值 | 含义 |
+|------|-----|------|
+| `server.tomcat.threads.max` | 200 | 工作线程上限 —— **洪泛容忍度的分母** |
+| `server.tomcat.threads.min-spare` | 10 | 常驻空闲线程 |
+| `server.tomcat.accept-count` | 100 | 线程满后的排队长度,队满即拒新连接 |
+| `server.tomcat.max-connections` | 8192 | 最大并发连接 |
+
+> ⚠️ **不要在业务线程内做阻塞式限流**(如 `Thread.sleep` 延迟整形)。
+> 那会把工作线程数变成全站可用性上限 —— 007 T036 已因此推翻一版设计,
+> 详见 `RefreshRateLimiterService` 类注释。速率限制应在**入口层**
+> (反向代理 / 网关 / `max-connections`)实施。
+
+#### 数据库与缓存
+
+- **连接池**: 项目使用 **Druid**(非 HikariCP)。活跃/最大连接经 **Druid StatView 页面**监控
+  (`/druid/index.html`,生产须加认证或关闭)
+- **慢查询**: Druid `slow-sql-millis` 阈值(5000ms,见 `application.yml`)+ MySQL 慢查询日志
+- **Redis**: 用 `redis-cli info` 查看连接数与内存;认证请用 `REDISCLI_AUTH` 环境变量而非 `-a`
+  参数(避免口令进入进程列表与 shell 历史)
 
 ## 🔥 常见问题处理
 
