@@ -307,7 +307,21 @@ description: "Task list for 007-jwt-key-rotation"
   - **变异测试**:① 删除 claim 校验(`if (false)`)→ 失败 3 项,含「实际成功 2 个」✅;② `!Boolean.TRUE.equals` 改 `Boolean.FALSE.equals`(放行 null,破坏 fail-closed)→ **精确失败 1 项**,证明 null 分支被独立守住 ✅
   - **回归**:007 相关 44/44 全绿;全量 580 用例(+4),Failures 仍为既有 4 项(500/401,MySQL 不通),无新增
 
-- [ ] T048 [T042 派生发现]**登出不撤销 refresh token**:`AuthApplicationService.logout` 只把 access token 的 jti 加入黑名单,**refresh token 仍留在 Redis 中有效** → 用户登出后,持旧 refresh token 者仍可换到全新 token 对,登出形同虚设(access token 15 分钟后失效,但 refresh 有 7 天)。**既存缺陷,非 007 引入**,T042 排查死代码时实测发现(原以为登出会调 `revokeRefreshToken`,实测不调)。修复需登出时定位并删除该用户的 refresh token —— 但当前 Redis 键为 `refresh_token:<uuid>`,**无 userId → token 的反向索引**,不能直接删,属设计变更,故单列任务而非并入 T042
+- [x] T048 [T042 派生发现]**登出不撤销 refresh token**:`AuthApplicationService.logout` 只把 access token 的 jti 加入黑名单,**refresh token 仍留在 Redis 中有效** → 用户登出后,持旧 refresh token 者仍可换到全新 token 对,登出形同虚设(access token 15 分钟后失效,但 refresh 有 7 天)。**既存缺陷,非 007 引入**,T042 排查死代码时实测发现(原以为登出会调 `revokeRefreshToken`,实测不调)
+  - **先 RED 证明可利用**:`LogoutRevokesRefreshTokenTest` 用真实 `TokenService` + 内存假 `CacheGateway`(不 mock TokenService —— 漏洞恰在于「压根没有这样一个方法」,mock 断言无从下手)。初版 5 例 4 红,其中 `logout_thenRefresh_isRejected` 报 **「Expected java.lang.Exception to be thrown, but nothing was thrown」** —— 登出后再刷新**确实成功**换到新 token 对,直接可利用性证据
+  - **设计评审 BLOCK,抓到我低估的 CRITICAL**:初版设计以 `jti` 作索引锚点(`refresh_index:<jti>`)。但 jti 每次轮换都变、轮换**不**拉黑旧 access token、且 `POST /auth/tokens` 在白名单 → 攻击者持被盗 refresh token 发**一个未认证请求**即可让索引永久错位,此后受害者每次登出都撤不到当前凭证**却照样返回 204 成功**。即控制项在其唯一存在理由(凭证已泄露)下失效。我原把它列为「残留边界①」只打算写注释,评审指出它可**主动、零成本、静默触发**
+  - **我的测试清单里有一条方向反了**:原写「轮换后旧 jti 撤不到新 token(边界锁)」—— 把漏洞当成期望值在上锁。已翻转为 `rotateThenLogout_revokesCurrentRefreshToken`
+  - **实现(按评审最小修正)**:锚点改为轮换不变的会话标识 `sid`(`SecurityConstant.SESSION_ID_KEY`),登录生成、轮换**原样继承**;正向索引 `refresh_session:<sid> -> <uuid>`,**TTL = refresh TTL 604800s**(不绑 access TTL:否则安全正确性被耦合到授权配置,登出一旦改为接受过期 token,索引先行消失且无测试报警);新增反向指针 `refresh_owner:<uuid> -> <sid>` —— 刷新端点在白名单、请求**不带** access token,轮换只能由此反查 sid;与 refresh token 同生共死,值为不透明句柄不含凭证
+  - **顺序「先撤销后拉黑」不可颠倒**:若先拉黑成功而撤销失败,重试登出时 access token 已在黑名单 → filter 直接 401 → **再也无法登出**,refresh token 留存 7 天;反序则重试幂等
+  - **不 fail-closed**(索引缺失只 warn + 完成拉黑):fail-closed 会让索引确定性缺失的用户**永久登不出**,而拉黑本身已生效。按评审接入既有 `[SECURITY_ALERT:LOGOUT_REVOKE_MISS]` 标记使绕过可观测;`delete` 返回 `Boolean` 一律用 `Boolean.TRUE.equals`(拆箱 NPE 会发生在拉黑**之前**,导致整个登出 500 且 access 也没拉黑)
+  - **并发交错实测推翻我自己的修法**:先按「compare-and-delete + 递归撤销」修,仍稳定失败 3/3。加日志读真实顺序,发现是 ①刷新抢占删旧 token → ②登出读旧索引删不到 → ③刷新**这才**生成新 token。②<③ 下「撤销一个尚未出生的 token」物理上不可能 —— **是我的断言不可满足,不是实现漏了**。已改为钉住可满足的不变量,并把真实缺口显式登记为 T049(而非静默放过)
+  - **变异测试 3/3 精确捕获**:①轮换不继承 sid → 失败 3 项(含 CRITICAL 场景锁);②索引 TTL 改绑 access TTL → 精确失败 1 项;③`Boolean` 拆箱 → 精确失败 1 项并复现 NPE
+  - **回归**:12/12 连续三次全绿(并发用例);全量 592 用例(+12),Failures 仍为既有 4 项(500/401,MySQL 不通),无新增,`启动基线校验失败` 计数 0
+
+- [ ] T049 [T048 派生发现]**刷新不校验会话是否已登出**:`refreshToken` 只看 refresh token 在不在 Redis,**不查所属会话是否已登出**;且轮换路径**从不拉黑旧 access token**(`addToBlacklist` 全项目仅登出一处调用点,已 grep 确认)。后果:登出与刷新并发时,若刷新在登出撤销**之后**才完成,它会凭空产生一个用户不知情的存活 refresh token(T048 的 sid 锚点无法覆盖 —— 撤销发生时该 token 尚未存在)。窗口为亚毫秒级、需精确交错,但**旧 access token 在其剩余 TTL 内始终可用**这一点使其可被反复尝试。修复需引入会话级失效标记(如 `session_revoked:<sid>`,刷新前校验)并在轮换时拉黑旧 access token —— 属设计变更,故单列
+  - 关联(评审 HIGH,同批修):`docs/DEPLOYMENT.md:827` 建议 `maxmemory-policy allkeys-lru`(已核实存在)。驱逐 `refresh_token:*` 是 fail-safe(凭证失效),但驱逐 `refresh_session:*` 索引是 **fail-open**(撤销静默失效)—— 方向不对称,使「索引缺失」由罕见变为常规可发生。应改用 `volatile-lru` 并明确 auth 键不可驱逐,或为 auth 键单独实例
+
+
 
 ### 登记但不在本 feature 修(超出 007 边界,须另开 spec)
 

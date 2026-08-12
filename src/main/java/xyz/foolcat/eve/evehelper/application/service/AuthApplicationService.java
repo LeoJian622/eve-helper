@@ -94,8 +94,16 @@ public class AuthApplicationService {
             throw new EveHelperException("Token缺少过期时间");
         }
 
+        // 007 T048:先撤销 refresh token,再拉黑 access token —— 顺序不可颠倒。
+        // 若先拉黑成功而撤销失败,用户重试登出时 access token 已在黑名单 → filter 直接 401
+        // → 再也无法登出,refresh token 留存 7 天。反序则重试幂等且安全。
+        // 撤销失败不阻断登出(见 revokeRefreshTokenBySession 的 fail-open 说明),
+        // 但会打 [SECURITY_ALERT:LOGOUT_REVOKE_MISS] 以便发现绕过。
+        tokenService.revokeRefreshTokenBySession(parsed.sessionId());
+
         tokenBlacklistService.addToBlacklist(jti, expirationTime);
         log.info("用户登出成功: userId={}", parsed.userIdClaim());
+
     }
 
     /**

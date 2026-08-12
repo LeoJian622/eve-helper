@@ -44,6 +44,35 @@ public class TokenService {
     private static final String REFRESH_TOKEN_PREFIX = "refresh_token:";
 
     /**
+     * 会话索引前缀:{@code refresh_session:<sid> -> <refresh token uuid>}(007 T048)。
+     *
+     * <p><b>为何锚点是 sid 而不是 jti</b>(设计评审 CRITICAL):jti 每次轮换都变,
+     * 且轮换<b>不</b>拉黑旧 access token,而 {@code POST /auth/tokens} 在白名单 ——
+     * 若以 jti 作锚点,攻击者持被盗 refresh token 发<b>一个未认证请求</b>即可让索引永久错位:
+     * 此后受害者每次登出都撤不到当前 refresh token,<b>却照样返回 204 成功</b>,
+     * 即控制项在它唯一的存在理由(凭证已泄露)下失效。sid 在轮换时原样继承,不存在此问题。</p>
+     *
+     * <p><b>TTL 与 refresh token 同寿(而非 access TTL)</b>:若绑定 access TTL,
+     * 安全正确性就被耦合到授权配置上 —— 一旦登出改为接受已过期 access token,
+     * 索引会先行消失且无任何测试报警;多实例时钟偏斜亦开同样窗口。</p>
+     */
+    private static final String SESSION_INDEX_PREFIX = "refresh_session:";
+
+    /**
+     * 反向指针:{@code refresh_owner:<refresh uuid> -> <sid>}(007 T048)。
+     *
+     * <p>刷新请求只携带 refresh token(端点在白名单,可能<b>没有</b> access token),
+     * 因此轮换时无法从请求中取得 sid。本键让轮换能由 refresh token 反查所属会话,
+     * 从而<b>继承</b>同一 sid 并重写正向索引。</p>
+     *
+     * <p>与 refresh token 同生共死:轮换时随旧 token 一并删除、随新 token 一并写入,
+     * 故不会随会话累积。值为 sid(不透明句柄),<b>不含</b>任何凭证。</p>
+     */
+    private static final String REFRESH_OWNER_PREFIX = "refresh_owner:";
+
+
+
+    /**
      * 生成Token对(Access Token + Refresh Token)
      *
      * @param user        用户信息
@@ -51,12 +80,36 @@ public class TokenService {
      * @return Token对(领域读模型)
      */
     public TokenResult generateTokenPair(SysUser user, List<String> authorities) {
+        // 007 T048:登录即开启新会话,生成新的 sid
+        return generateTokenPair(user, authorities, UUID.randomUUID().toString());
+    }
+
+    /**
+     * 生成Token对,并把会话标识绑定到指定 {@code sid}(007 T048)。
+     *
+     * <p>轮换时<b>必须</b>沿用旧 sid,使 {@code refresh_session:<sid>} 索引
+     * 指向轮换后的新 refresh token —— 否则登出无法撤销当前凭证。</p>
+     *
+     * @param user        用户信息
+     * @param authorities 权限列表(角色标识)
+     * @param sessionId   会话标识:登录时新建,轮换时继承
+     * @return Token对(领域读模型)
+     */
+    private TokenResult generateTokenPair(SysUser user, List<String> authorities, String sessionId) {
         try {
             // 生成Access Token
-            String accessToken = generateAccessToken(user, authorities);
+            String accessToken = generateAccessToken(user, authorities, sessionId);
 
             // 生成Refresh Token
             String refreshToken = generateRefreshToken(user);
+
+            // 007 T048:写入/重写会话索引,使登出能由 sid 定位到当前 refresh token。
+            // 与 refresh token 同 TTL —— 索引值即 refresh token 明文,不得比它活得更久。
+            long refreshTtl = jwtTokenProperties.getRefreshTokenExpirationTime();
+            cacheGateway.set(SESSION_INDEX_PREFIX + sessionId, refreshToken, refreshTtl, TimeUnit.SECONDS);
+            // 反向指针:供轮换时由 refresh token 反查 sid(刷新请求不带 access token)
+            cacheGateway.set(REFRESH_OWNER_PREFIX + refreshToken, sessionId, refreshTtl, TimeUnit.SECONDS);
+
 
             return new TokenResult(
                     SecurityConstant.JWT_PREFIX + accessToken,
@@ -75,9 +128,10 @@ public class TokenService {
      *
      * @param user        用户信息
      * @param authorities 权限列表(角色标识)
+     * @param sessionId   会话标识,写入 {@code sid} claim(007 T048)
      * @return JWT字符串
      */
-    private String generateAccessToken(SysUser user, List<String> authorities) throws JOSEException {
+    private String generateAccessToken(SysUser user, List<String> authorities, String sessionId) throws JOSEException {
         long expirationTime = jwtTokenProperties.getAccessTokenExpirationTime() * 1000;
         List<String> safeAuthorities = (authorities == null) ? List.of() : authorities;
 
@@ -88,8 +142,10 @@ public class TokenService {
                 .claim(SecurityConstant.USER_ID_KEY, user.getId())
                 .claim(SecurityConstant.USER_NAME_KEY, user.getUsername())
                 .claim(SecurityConstant.JWT_AUTHORITIES_KEY, safeAuthorities)
+                .claim(SecurityConstant.SESSION_ID_KEY, sessionId)
                 .expirationTime(new Date(System.currentTimeMillis() + expirationTime))
                 .build();
+
 
         SignedJWT signedJWT = new SignedJWT(
                 new JWSHeader.Builder(JWSAlgorithm.RS256).type(JOSEObjectType.JWT).build(),
@@ -120,6 +176,77 @@ public class TokenService {
 
         return refreshTokenId;
     }
+
+    /**
+     * 按会话标识撤销 refresh token(007 T048,登出路径)。
+     *
+     * <p>由 {@code sid} 经 {@code refresh_session:<sid>} 索引定位<b>当前</b>
+     * refresh token 并删除,随后清理索引自身(索引值是 refresh token 明文,
+     * 不得留悬垂键)。</p>
+     *
+     * <p><b>不 fail-closed</b>:索引缺失(滚动部署遗留 token、缓存驱逐、
+     * 会话已被轮换清理等)时只记录告警并返回 false,由调用方继续完成拉黑。
+     * 理由:登出端点要求持<b>未过期</b> access token,若在此抛异常,
+     * 客户端重试也无用(access token 已被拉黑)—— 只会把用户永久卡在「登不出」,
+     * 而拉黑本身已生效。可用性优先于此处的严格性。</p>
+     *
+     * @param sessionId access token 的 {@code sid} 声明,null/空表示无会话标识
+     * @return true 表示确实撤销了一个 refresh token
+     */
+    public boolean revokeRefreshTokenBySession(String sessionId) {
+        if (sessionId == null || sessionId.isEmpty()) {
+            // 滚动部署期间,改造前签发的 access token 没有 sid —— 降级为「仅拉黑」
+            log.warn("[SECURITY_ALERT:LOGOUT_REVOKE_MISS] access token 无 sid 声明,"
+                    + "无法撤销 refresh token(改造前签发的旧 token?)");
+            return false;
+        }
+
+        String indexKey = SESSION_INDEX_PREFIX + sessionId;
+        Object refreshTokenObj = cacheGateway.get(indexKey);
+        if (refreshTokenObj == null) {
+            log.warn("[SECURITY_ALERT:LOGOUT_REVOKE_MISS] 会话索引缺失,refresh token 未被撤销: sid={}",
+                    SensitiveDataMasker.maskToken(sessionId));
+            return false;
+        }
+
+        // delete 返回 Boolean(可为 null)。此处必须用 Boolean.TRUE.equals ——
+        // 拆箱进 boolean 会在 Redis 异常时 NPE,而该 NPE 发生在拉黑之前,
+        // 将导致整个登出 500 且 access token 也没拉黑
+        Boolean revoked = cacheGateway.delete(REFRESH_TOKEN_PREFIX + refreshTokenObj);
+        cacheGateway.delete(REFRESH_OWNER_PREFIX + refreshTokenObj);
+
+        if (Boolean.TRUE.equals(revoked)) {
+            cacheGateway.delete(indexKey);
+            log.info("登出撤销 Refresh Token: sid={}, refreshToken={}",
+                    SensitiveDataMasker.maskToken(sessionId),
+                    SensitiveDataMasker.maskToken(refreshTokenObj.toString()));
+            return true;
+        }
+
+        // 未删到:说明该 token 已被并发刷新抢占。此时索引很可能已被那次轮换
+        // 重写为「新」refresh token —— 若在此无条件删除索引,会把新 token 的
+        // 唯一锚点抹掉,用户登出后反而留下一个永远撤不到的存活凭证。
+        // 故重读索引:仅当它仍指向我们刚才读到的旧 token 时才删(compare-and-delete);
+        // 若已改指新 token,则递归撤销这一轮换结果 —— 递归深度由「每层都
+        // 消灭一个 refresh token」保证收敛(并发刷新次数有限)。
+        Object current = cacheGateway.get(indexKey);
+        if (current == null) {
+            log.warn("[SECURITY_ALERT:LOGOUT_REVOKE_MISS] 索引存在但 refresh token 已不在缓存中: sid={}",
+                    SensitiveDataMasker.maskToken(sessionId));
+            return false;
+        }
+        if (current.equals(refreshTokenObj)) {
+            cacheGateway.delete(indexKey);
+            log.warn("[SECURITY_ALERT:LOGOUT_REVOKE_MISS] 索引存在但 refresh token 已不在缓存中: sid={}",
+                    SensitiveDataMasker.maskToken(sessionId));
+            return false;
+        }
+        log.warn("登出与刷新并发:索引已被轮换重写,继续撤销轮换后的 token: sid={}",
+                SensitiveDataMasker.maskToken(sessionId));
+        return revokeRefreshTokenBySession(sessionId);
+    }
+
+
 
     /**
      * 从Refresh Token获取用户ID
@@ -189,9 +316,22 @@ public class TokenService {
             throw new IllegalArgumentException("Refresh Token无效或已过期");
         }
 
-        // 生成新的Token对(包含新的Refresh Token)
-        return generateTokenPair(user, authorities);
+        // 007 T048:继承会话标识 —— 轮换必须沿用同一 sid,使正向索引改指向新 refresh token。
+        // 否则登出只能撤销「轮换前」的 token,攻击者刷一次即可让受害者永久撤不到当前凭证。
+        // sid 缺失(滚动部署遗留 token)时新开一个会话,保证轮换本身仍可用。
+        String ownerKey = REFRESH_OWNER_PREFIX + refreshToken;
+        Object sessionIdObj = cacheGateway.get(ownerKey);
+        cacheGateway.delete(ownerKey);
+        String sessionId = (sessionIdObj == null) ? UUID.randomUUID().toString() : sessionIdObj.toString();
+        if (sessionIdObj == null) {
+            log.warn("Refresh Token 无会话归属(改造前签发?),轮换时新建会话: refreshToken={}",
+                    SensitiveDataMasker.maskToken(refreshToken));
+        }
+
+        // 生成新的Token对(包含新的Refresh Token),并重写会话索引
+        return generateTokenPair(user, authorities, sessionId);
     }
+
 
     /**
      * 解析 Access Token 并提取关键声明(jti / 过期时间 / 用户ID)。
@@ -207,7 +347,8 @@ public class TokenService {
         return new ParsedAccessToken(
                 claimsSet.getJWTID(),
                 claimsSet.getExpirationTime(),
-                claimsSet.getClaim(SecurityConstant.USER_ID_KEY));
+                claimsSet.getClaim(SecurityConstant.USER_ID_KEY),
+                claimsSet.getStringClaim(SecurityConstant.SESSION_ID_KEY));
     }
 
     /**
@@ -216,7 +357,9 @@ public class TokenService {
      * @param jti            Token 唯一标识
      * @param expirationTime 过期时间
      * @param userIdClaim    用户ID声明
+     * @param sessionId      会话标识({@code sid});改造前签发的 token 为 null(007 T048)
      */
-    public record ParsedAccessToken(String jti, Date expirationTime, Object userIdClaim) {
+    public record ParsedAccessToken(String jti, Date expirationTime, Object userIdClaim, String sessionId) {
     }
 }
+
