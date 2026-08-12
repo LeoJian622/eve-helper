@@ -212,10 +212,14 @@ description: "Task list for 007-jwt-key-rotation"
 
 **Purpose**: 关闭实现阶段两份评审的全部 CRITICAL 与 HIGH。**未完成前 007 不得合并**
 
-- [ ] T035 🚨 **[CRITICAL-1 + CRITICAL-2 + HIGH-2]生产 profile 三项修正**(用户执行,涉 gitignore 私有配置,AI 不代改):`application-{aliw,ali,prod}.yml` 各自 ①`security.keystore.location` 切到**新密钥**(现 aliw 指向的 `D:\IdeaProjects\eve-jwt.jks` 与已泄露密钥字节相同);②keystore/key 口令改 `${KEYSTORE_PASSWORD}` / `${KEY_PASSWORD}` 占位符;③`whiteUrlList` 补 `- POST:/auth/tokens`
+- [~] T035 🚨 **[CRITICAL-1 + CRITICAL-2 + HIGH-2]生产 profile 三项修正**(用户执行,涉 gitignore 私有配置,AI 不代改):`application-{aliw,ali,prod}.yml` 各自 ①`security.keystore.location` 切到**新密钥**(现 aliw 指向的 `D:\IdeaProjects\eve-jwt.jks` 与已泄露密钥字节相同);②keystore/key 口令改 `${KEYSTORE_PASSWORD}` / `${KEY_PASSWORD}` 占位符;③`whiteUrlList` 补 `- POST:/auth/tokens`
   - AC: 每项留下**可核对的证据**(而非口头确认)—— location 指向的文件 md5 ≠ `1be3633d52ebcaa3cd9fd18e1045aa72`;`grep -c 'password.*\${' ` 输出;`grep -A5 whiteUrlList` 输出含 auth/tokens
   - ④ **顺带自查(T036 M-2)**:确认三个 profile **未覆盖** `server.tomcat.threads.max` / `accept-count` / `max-connections`,或覆盖后的值是有意为之。`application.yml` 已显式声明这四项(即 Boot 默认值),但标量属性会被 profile **整体覆盖** —— 与 whiteUrlList 同型的陷阱
   - 依赖:本任务闭合后 T028 / T033 才能勾 `[x]`
+  - 🔶 **用户 2026-08-12 声明「我已执行」,但 AI 无法核验 —— 故标 `[~]` 而非 `[x]`**。这些文件 gitignore 且含真实凭证,读取尝试已被权限门禁拒绝两次(判定为 Credential Exploration,边界正确,不再尝试)。**AC 明确要求「可核对的证据而非口头确认」,该证据尚未提供**
+  - ⚠️ **本 feature 有同型前科**:密钥轮换曾据「核验通过」的口头结论判定完成,实测却发现生产仍在用泄露密钥(见记忆 `unverifiable-gate-needs-evidence`)。故此处不因声明而勾 `[x]`
+  - 🆕 **T038 新增第 ⑤ 项自查(必须在部署前执行,否则应用拒启)**:新校验要求「全部 `logging.level.*` 均非 debug/trace」且「`logging.level.root` 必须显式声明」。三个 profile 若含任何 debug logger(如 `reactor.netty`、mapper 包),**启动即被拒**。自检命令见 `docs/DEPLOYMENT.md`「启动安全基线:4 项硬门禁」节
+  - 关闭条件:粘贴四项 grep/md5 输出(可脱敏路径,保留 md5 与命中行数)即可勾 `[x]`
 - [x] T036 🚨 **[HIGH-1]移除请求线程上的 `Thread.sleep`**(`RefreshRateLimiterService:118-125`):当前实现是 DoS 放大器 —— `POST /auth/tokens` 已加白(未认证可达),超阈值后每个失败请求占住一个 Tomcat 工作线程 100~300ms,默认 200 线程下约 1000 req/s 即可拖垮**全站**;且清空 `refresh_token:*` 后全体客户端同时 refresh 失败会**自我触发**该路径
   - **采用方案①(仅保留计数器 + 告警,去掉延迟)**。否决理由:②Servlet 异步延迟需把 `DeferredResult` 一路穿透 controller→application service,为价值可疑的整形动作付出架构复杂度(违 KISS/YAGNI);③429/硬拒在 plan §7 已否决且理由仍成立(L2 是**全局单键**,超阈值会拒绝所有用户,而 FR-015 轮换窗口恰好自我触发 → 与 SC-006 冲突)
   - **先改规格后改代码**(AI_WORKFLOW §5.1):`plan.md` §3.3 表格 + 降级裁决段 + 配套约束表 + 多实例说明 + 测试矩阵 2 处 + 变异测试(新增第 6 条)共 7 处;`spec.md` SC-015 洪泛观测项。v3「锁定为固定延迟」裁决**已标记 v4 推翻,注明不得恢复**
@@ -241,9 +245,18 @@ description: "Task list for 007-jwt-key-rotation"
   - 同步 `plan.md` §3.3 告警约束行 + 合宪性检查表第四条
   - 📌 **顺带闭合 T036 评审 L-2**:`MeterRegistry` 整体移除,domain 层的分层气味自然消失(无需抽 `MetricsGateway` 端口)
   - ⚠️ **遗留**:L1(`refresh:fail:{userId}`)仍只写不读、无告警标记 —— 定向刷失败无法触发告警。**未修**:L1 的定位是「观测,非防护」(plan §3.3 明确 L1 看不到主攻击向量),加告警需先定义「什么算定向攻击」的阈值,属新需求。已登记为 T046
-- [ ] T038 🚨 **[HIGH-3]基线校验改正向白名单**(`SecurityBaselineValidator`):`checkAccessTokenEndpoint` 用 `Boolean.parseBoolean(null)` = false → 生产 profile 该键根本不存在 → **恒放行**,却照打「基线校验通过(4/4)」,是虚假保证。同类:`checkWebLogLevel` 只查 `logging.level.web`,`root: debug` 可绕过
+- [x] T038 🚨 **[HIGH-3]基线校验改正向白名单**(`SecurityBaselineValidator`):`checkAccessTokenEndpoint` 用 `Boolean.parseBoolean(null)` = false → 生产 profile 该键根本不存在 → **恒放行**,却照打「基线校验通过(4/4)」,是虚假保证。同类:`checkWebLogLevel` 只查 `logging.level.web`,`root: debug` 可绕过
   - 改法:3 项 boolean/枚举基线从「查到违规值才拒」改为「**必须显式配置为安全值**」(与该类 `isTestProfile` 自身的正向白名单思路一致);日志级别校验扩展到 `root` / `org.springframework.web` / `org.springframework.security`
   - AC: 补「键缺失 → 拒启」与「root:debug → 拒启」用例,RED → GREEN
+  - ✅ **已完成(2026-08-12)**。spec-first:先补 `spec.md` §8.1(校验语义)与 §8.1.1(连带删除死配置),再改代码
+  - **危害等级修正(实测)**:入库 `application.yml` 已给出 `enabled: ${ACCESS_TOKEN_ENDPOINT_ENABLED:false}`、`web: info`、`log-impl: Slf4jImpl`,故「键缺失」在真实启动中**不会发生**。HIGH-3 的实际危害是**校验器保证不可信**(宣称强度 > 实际强度),不是当前敞口。**日志绕过路径则是真实可用的**
+  - **日志基线改为全扫而非枚举**:AC 原写「扩展到 root / org.springframework.web / org.springframework.security」,实现时改为 `Binder` 枚举**全部** `logging.level.*`。原因:枚举法无法穷尽 —— 实测发现两条 AC 未列出的路径同样致命,`reactor.netty: debug` 使 ESI 请求头(`Authorization: Bearer`)落盘,`...persistence.mapper: debug` 配合 Slf4jImpl 打 SQL 绑定参数使 `refresh_token` 明文入日志(**与 log-impl 基线等效,是同一泄露的另一侧**)
+  - **连带删除 `application.yml:103-106` 的 `com.bolingcavalry.druidtwosource.mapper: debug`**:该包全树 grep **零命中**(本项目包名 `xyz.foolcat.eve.evehelper`),是脚手架残留。**不删则新校验会让生产必然拒启**;且它是「给 mapper 包开 debug」的可直接照抄模板,若有人把包名改对即造成 refresh_token 泄露。删除属修复必要组成(理由记于 spec §8.1.1)
+  - **消除一个死分支**:变异测试发现 `checkLogImpl` 的 `hasText` 分支存活变异 —— 因 `!SLF4J_IMPL.equalsIgnoreCase(null)` 已覆盖 null,该分支是死代码。冗余分支会让人误以为有两层保护,已合并为单一检查
+  - RED: 22 用例中 **8 个新用例全失败、原 14 个全通过**,失败原因统一为「应拒未拒」 → GREEN: **22/22**
+  - 变异测试 3 项全部精确命中:①`!"false".equals` 退回 `Boolean.parseBoolean` → 2 用例失败;②全扫退回只查 web/root → 3 条绕过路径用例失败;③log-impl 退回黑名单 → 1 用例失败
+  - 回归 `clean test`: **567/F4/E216/S2**,4 个 Failures 用例名与基线**逐项一致,零新增**
+  - `docs/DEPLOYMENT.md` 补「启动安全基线 4 项硬门禁」表 + 各 profile 自检命令(**升级后首次部署前须执行**,否则可能因遗留 debug logger 拒启)
 
 ### 建议同期完成(MEDIUM,使 fail-closed 名副其实)
 
@@ -258,10 +271,19 @@ description: "Task list for 007-jwt-key-rotation"
 - [ ] T043 [MEDIUM-5(security)]登录端点**用户名枚举**:`SecurityConfig:75` 的 `setHideUserNotFoundExceptions(false)` + `AuthenticationFailureServletHandler:66` 使「用户账号不存在」与「用户名或密码错误,剩余尝试次数: N」可区分 → 可枚举有效账号并探知锁定状态。**既存缺陷,非 007 引入**,与 007「统一 AUT00210 防原因区分」是同类问题的相反做法
 - [ ] T044 [MEDIUM-6(security)]`MODE_INHERITABLETHREADLOCAL` + 线程池 → **认证上下文跨用户泄漏**:请求线程提交任务时 `Authentication` 被继承给池化线程,而池化线程无人 `clearContext()`。**既存缺陷**
 - [ ] T045 LOW 项汇总(两份评审共 12 条,择机 polish):`writeTokenInfo` 通配 ACAO + `no-cache` 应改 `no-store`(LOW-1s);refresh DTO 缺 `@Size` + `maskToken` 可 CRLF 注入日志(LOW-2s);孤立 `public.key`(LOW-3s);`redis-cli -a` 改 `REDISCLI_AUTH`(LOW-4s);`KeyStoreKeyFactory` 死代码重载/全限定名/自重抛/硬编码位数文案(LOW-1~4j);`ResponseUtils` 两方法编码不一致(LOW-5j);登录失败回显原始 message(LOW-7j)
-- [ ] T046 [T037 遗留]**L1 告警缺口**:`refresh:fail:{userId}` 计数只写不读、无 `ALERT_MARKER` → 针对单一账号的定向刷失败**无法触发任何告警**,L1 当前是纯哑计数器
+- [x] T046 [T037 遗留]**L1 告警缺口**:`refresh:fail:{userId}` 计数只写不读、无 `ALERT_MARKER` → 针对单一账号的定向刷失败**无法触发任何告警**,L1 当前是纯哑计数器
   - **未在 T037 修的理由**:L1 定位是「观测,非防护」(plan §3.3:随机 UUID 洪泛在 userId 解析前就被挡,L1 看不到主攻击向量);加告警需先定义「多少次/多长窗口算定向攻击」的阈值,以及为何该阈值不会被正常用户的 token 过期误触发 —— 这是**新需求**,不是 T037 的名实一致修正
   - 若不修,应在 `spec.md` 显式记录「L1 仅为事后取证提供 Redis 计数,不产生实时告警」,避免下一个读者再次误以为有告警能力
   - AC: 要么加阈值 + 告警标记 + 测试,要么在规格中写明能力边界。**二者必居其一,不得留空**
+  - ✅ **已完成(2026-08-12,选 AC 前者)**。阈值由用户决策:「**1分钟10次算攻击**」→ `L1_THRESHOLD = 10L`,窗口沿用既有 `OBSERVE_WINDOW_SECONDS = 60L`(恰好即「1 分钟」,无需新增常量)
+  - **标记有意与 L2 分开**:新增 `ALERT_MARKER_TARGETED = "[SECURITY_ALERT:REFRESH_TARGETED]"`。两类事件运维响应动作不同 —— 洪泛(L2)→ 入口层限流;定向刷单账号(L1)→ 查该账号凭证是否外泄。**有专门断言强制二者不得相同**
+  - **告警含 userId**:否则运维拿到告警也无法定位被攻击账号。有断言保护(变异测试③验证)
+  - **告警未演化为锁定**:`verifyNoMoreInteractions` 断言超阈值时仍只有 increment + expire 两次网关操作 —— 按 userId 锁定就是 plan §3.3 明令禁止的定向锁死 DoS
+  - **误报边界已记入代码注释**:轮换时单客户端只失败 1 次即转重新登录,不会触及 10 次;无退避重试循环的客户端会误报,但那是应修的客户端缺陷,告警正确
+  - RED: 编译失败(缺两个常量) → GREEN: **14/14**(原 9 + 新 5)
+  - 变异测试 3 项全部精确命中:①两标记设为相同 → `l1_alertMarkerDistinctFromL2` 失败;②`>` 改 `>=` → `l1_atThreshold_noAlert` 失败;③日志去掉 userId → `l1_overThreshold_emitsTargetedAlert` 失败
+  - 回归 `clean test`: **572/F4/E216/S2**,Failures 用例名与基线逐项一致,零新增
+  - `docs/DEPLOYMENT.md` 告警标记表补第二行 + 新增「两者响应动作不同」处置对照表
 
 ---
 

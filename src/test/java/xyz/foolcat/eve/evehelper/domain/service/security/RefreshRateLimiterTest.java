@@ -257,4 +257,91 @@ class RefreshRateLimiterTest {
         assertDoesNotThrow(() -> refreshRateLimiterService.recordUserFailure(42),
                 "L1 是观测计数,Redis 故障不得影响业务");
     }
+
+    // ==================================================================
+    // T046:L1 定向攻击告警(阈值 10 次/分钟,用户 2026-08-12 决策)
+    //
+    // 修正 T037 遗留:L1 此前只写不读 —— 计数器递增却无任何消费方,
+    // 针对单一账号的定向刷失败无法触发告警,是纯哑计数器。
+    // ==================================================================
+
+    @Test
+    @DisplayName("T046:L1 超 10 次/分钟 → 打含定向攻击标记的 WARN(含 userId 供运维定位)")
+    void l1_overThreshold_emitsTargetedAlert() {
+        // Arrange:第 11 次失败(阈值 10)
+        when(cacheGateway.increment("refresh:fail:42")).thenReturn(11L);
+        when(cacheGateway.expire(eq("refresh:fail:42"), eq(60L), eq(TimeUnit.SECONDS)))
+                .thenReturn(true);
+
+        // Act
+        refreshRateLimiterService.recordUserFailure(42);
+
+        // Assert
+        List<ILoggingEvent> warns = listAppender.list.stream()
+                .filter(e -> e.getLevel() == Level.WARN)
+                .toList();
+        assertFalse(warns.isEmpty(), "L1 超阈值必须打 WARN 告警,否则定向攻击无法察觉");
+
+        String msg = warns.get(0).getFormattedMessage();
+        assertTrue(msg.contains(RefreshRateLimiterService.ALERT_MARKER_TARGETED),
+                "告警须含定向攻击稳定标记(供 Loki/grep 规则匹配),实际: " + msg);
+        assertTrue(msg.contains("42"),
+                "告警须含 userId —— 否则运维无法定位被攻击账号,实际: " + msg);
+        assertTrue(msg.contains("11"),
+                "告警须含实际计数,实际: " + msg);
+    }
+
+    @Test
+    @DisplayName("T046:L1 恰好 10 次 → 不告警(阈值语义为「超过」,避免边界抖动误报)")
+    void l1_atThreshold_noAlert() {
+        // Arrange
+        when(cacheGateway.increment("refresh:fail:42")).thenReturn(10L);
+        when(cacheGateway.expire(eq("refresh:fail:42"), eq(60L), eq(TimeUnit.SECONDS)))
+                .thenReturn(true);
+
+        // Act
+        refreshRateLimiterService.recordUserFailure(42);
+
+        // Assert
+        boolean hasTargetedAlert = listAppender.list.stream()
+                .anyMatch(e -> e.getFormattedMessage()
+                        .contains(RefreshRateLimiterService.ALERT_MARKER_TARGETED));
+        assertFalse(hasTargetedAlert, "恰好达到阈值不应告警(阈值语义:严格大于)");
+    }
+
+    @Test
+    @DisplayName("T046:L1 告警标记与 L2 不同 —— 两类攻击须可分别配置告警规则")
+    void l1_alertMarkerDistinctFromL2() {
+        assertFalse(RefreshRateLimiterService.ALERT_MARKER_TARGETED
+                        .equals(RefreshRateLimiterService.ALERT_MARKER),
+                "定向攻击(L1)与洪泛(L2)是不同事件、响应动作不同(封账号 vs 入口限流),"
+                        + "共用标记会让运维无法区分");
+    }
+
+    @Test
+    @DisplayName("T046:L1 超阈值仍不锁定 —— 只多一条日志,不新增任何网关操作")
+    void l1_overThreshold_stillNeverLocks() {
+        // Arrange
+        when(cacheGateway.increment("refresh:fail:42")).thenReturn(999L);
+        when(cacheGateway.expire(eq("refresh:fail:42"), eq(60L), eq(TimeUnit.SECONDS)))
+                .thenReturn(true);
+
+        // Act
+        assertDoesNotThrow(() -> refreshRateLimiterService.recordUserFailure(42));
+
+        // Assert:告警不得演化成锁定 —— 按 userId 锁定 = 定向锁死 DoS(plan §3.3 明令禁止)
+        verify(cacheGateway).increment("refresh:fail:42");
+        verify(cacheGateway).expire("refresh:fail:42", 60L, TimeUnit.SECONDS);
+        verifyNoMoreInteractions(cacheGateway);
+    }
+
+    @Test
+    @DisplayName("T046:L1 阈值与窗口来自常量,不得散落硬编码")
+    void l1_thresholdIsNamedConstant() {
+        assertTrue(RefreshRateLimiterService.L1_THRESHOLD == 10L,
+                "L1 阈值应为用户决策的 10 次/分钟,实际: " + RefreshRateLimiterService.L1_THRESHOLD);
+        assertTrue(RefreshRateLimiterService.OBSERVE_WINDOW_SECONDS == 60L,
+                "「1 分钟」须由 OBSERVE_WINDOW_SECONDS=60 承载,实际: "
+                        + RefreshRateLimiterService.OBSERVE_WINDOW_SECONDS);
+    }
 }

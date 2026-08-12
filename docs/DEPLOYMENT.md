@@ -164,6 +164,35 @@ KEYSTORE_PASSWORD=your_keystore_password
 KEY_PASSWORD=your_key_password
 ```
 
+#### ⚠️ 启动安全基线:4 项硬门禁(007 T038 起为正向白名单)
+
+`SecurityBaselineValidator` 在启动期校验 4 项配置。**除 `test` profile 外**(含未设 profile),任一不满足即**拒绝启动**。
+
+T038 起语义由「黑名单」改为**正向白名单** —— **键缺失不再视为合规**:
+
+| 键 | 要求 | 缺失时 |
+|----|------|--------|
+| `mybatis-plus.configuration.log-impl` | 必须显式为 `org.apache.ibatis.logging.slf4j.Slf4jImpl` | **拒启** |
+| `logging.level.root` | 必须显式声明,且非 debug/trace | **拒启** |
+| **全部** `logging.level.*` | 任一为 debug/trace 即拒(不限于 `web`) | — |
+| `eve.helper.debug.access-token-endpoint.enabled` | 必须显式为字面 `false`(`yes`/`1`/`on` 均拒) | **拒启** |
+| `security.keystore.location` | 文件系统绝对路径,禁 `classpath:` 与裸文件名 | **拒启** |
+
+> **升级到 T038 后首次部署前,请确认各 profile 中没有任何 debug/trace 级别的 logger**。
+> 例如 `logging.level.reactor.netty: debug` 或 mapper 包 debug 都会导致拒启 ——
+> 这是有意的:前者使 ESI 请求头(含 `Authorization: Bearer`)落盘,
+> 后者配合 Slf4jImpl 会打 SQL 绑定参数,使 `refresh_token` 明文入日志。
+>
+> 自检命令(在各 profile 配置文件上执行):
+> ```bash
+> grep -nE "^\s+(root|[a-z.]+):\s*(debug|trace)\s*$" src/main/resources/application-{ali,aliw,prod}.yml
+> # 期望:无输出。有输出则该行必须改为 info 或更高,否则应用拒启
+> grep -nE "log-impl|access-token-endpoint" -A1 src/main/resources/application-{ali,aliw,prod}.yml
+> # 期望:log-impl 为 Slf4jImpl(或未覆盖,继承 application.yml);enabled 为 false
+> ```
+
+拒启时日志会明确指出违规的键与当前值,按提示修正即可。
+
 ### 5. 部署应用
 
 #### 复制部署包
@@ -447,9 +476,18 @@ curl http://localhost:9999/actuator/info
 | 标记 | 含义 | 来源 |
 |------|------|------|
 | `[SECURITY_ALERT:REFRESH_FLOOD]` | refresh 端点无效请求洪泛(60s 窗口内超过 1000 次) | `RefreshRateLimiterService`(007 T016/T037) |
+| `[SECURITY_ALERT:REFRESH_TARGETED]` | **单个账号** refresh 失败超 10 次/分钟(定向刷该账号,或客户端无退避重试) | `RefreshRateLimiterService`(007 T046) |
+
+**两者响应动作不同,故标记有意分开**:
+
+| 标记 | 排查方向 | 处置 |
+|------|----------|------|
+| `REFRESH_FLOOD` | 全局无效请求洪泛,与具体账号无关 | 入口层限流(反代/网关);**不要**在业务线程上加延迟(007 T036 已论证其为 DoS 放大器) |
+| `REFRESH_TARGETED` | 日志中的 `userId=` 即目标账号 | 查该账号是否凭证外泄 → 需要时清其 refresh token 并通知改密;若为客户端重试循环,修客户端 |
 
 > ⚠️ **标记字符串不得随意修改** —— 改动等于让既有告警规则静默失效。
-> 该常量有测试断言保护(`RefreshRateLimiterTest`,T037)。
+> 两个常量均有测试断言保护(`RefreshRateLimiterTest`,T037/T046),
+> 且有断言强制二者**不得相同**。
 
 #### 告警配置示例
 
