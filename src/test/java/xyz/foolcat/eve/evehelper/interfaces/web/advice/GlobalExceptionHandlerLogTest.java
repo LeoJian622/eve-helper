@@ -6,6 +6,7 @@ import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,5 +38,18 @@ class GlobalExceptionHandlerLogTest {
         assertTrue(log.contains("refreshToken"), "日志应含字段名");
         assertTrue(log.contains("长度不能超过64"), "日志应含约束消息摘要");
         assertFalse(log.toUpperCase().contains(" ERROR "), "该分支应为 warn 级别,而非 error");
+    }
+
+    @Test
+    void typeMismatchLogDoesNotContainRawInput(CapturedOutput output) {
+        // 008 T018(LOW-D):typeMismatch 分支 toString 回显原始输入(仅认证后可达),推广 R9 原则
+        MethodArgumentTypeMismatchException e = new MethodArgumentTypeMismatchException(
+                "attack-value", Integer.class, "id", null, null);
+
+        handler.processException(e);
+
+        String log = output.getAll();
+        assertFalse(log.contains("attack-value"), "日志不得含原始输入(typeMismatch toString 面)");
+        assertTrue(log.contains("id"), "日志应含参数名(非用户输入)");
     }
 }

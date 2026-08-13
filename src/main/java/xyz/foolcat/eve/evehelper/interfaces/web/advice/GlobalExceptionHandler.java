@@ -107,7 +107,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public <T> Result<T> processException(MethodArgumentTypeMismatchException e) {
-        log.error("方法参数类型不匹配异常: ", e);
+        // 008 T018(LOW-D):结构化摘要,不传异常对象(toString 会回显原始输入,同类 CWE-117)。
+        // 类型不匹配仅在认证后可达,暴露面低于 R9,随 R9 一并推广「不回显外部输入」原则。
+        log.warn("方法参数类型不匹配: name={}, requiredType={}, valueType={}",
+                e.getName(),
+                e.getRequiredType() == null ? null : e.getRequiredType().getSimpleName(),
+                e.getValue() == null ? null : e.getValue().getClass().getSimpleName());
         return Result.failed(ResultCode.PARAM_ERROR, "类型错误");
     }
 
