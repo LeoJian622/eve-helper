@@ -336,4 +336,23 @@ class UserApplicationServiceUnitTest {
 
         assertThrows(EveHelperException.class, () -> userApplicationService.register(user));
     }
+
+    @Test
+    @DisplayName("注册:新用户 deleted 必须为 false(未删除),不得默认已删除")
+    void register_setsDeletedFalse() {
+        UserDTO user = new UserDTO();
+        user.setUsername("alice");
+        user.setPassword("raw");
+        // SysUser.deleted 字段默认 true,userDto2SysUser 真实转换不会显式置 false,
+        // 若 register 不干预,新用户会被标记为"已删除"
+        SysUser sysUser = new SysUser();
+        sysUser.setUsername("alice");
+        sysUser.setPassword("raw");
+        when(userAssembler.userDto2SysUser(user)).thenReturn(sysUser);
+
+        userApplicationService.register(user);
+
+        verify(sysUserService).insert(sysUser);
+        assertEquals(Boolean.FALSE, sysUser.getDeleted(), "注册的新用户 deleted 必须是 false");
+    }
 }

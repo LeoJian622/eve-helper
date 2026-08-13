@@ -45,7 +45,7 @@ public class MiningDetailService  {
 
         Integer maxPage = esiApiService.queryCorporationMiningObserverMaxPage(eveAccount.getCorpId(), observerId, accessToken);
 
-        List<MiningDetail> miningDetails = Stream.iterate(1, i -> i++).limit(maxPage)
+        List<MiningDetail> miningDetails = Stream.iterate(1, i -> i + 1).limit(maxPage)
                 .map(i -> esiApiService.queryCorporationMiningObserver(eveAccount.getCorpId(), observerId, i, accessToken)
                         .collectList().block())
                 .sequential().filter(Objects::nonNull)

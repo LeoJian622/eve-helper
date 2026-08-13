@@ -8,6 +8,12 @@ import xyz.foolcat.eve.evehelper.domain.repository.system.SysMenuRepository;
 import java.util.List;
 
 /**
+ * SysMenuRepository 空实现(死代码 stub)。
+ *
+ * <p>TODO(缺陷修复决议保留):{@link SysMenuService} 无任何上游调用,整条 SysMenu 持久化链
+ * 从未被生产代码触发,故本实现所有方法返回空/0/false。按 YAGNI 不实现真实逻辑;
+ * 若未来需要菜单持久化,应先在 controller 接入调用方再补齐,而非先行实现。
+ *
  * @author yongj
  * date 2025-07-10 15:11
  */

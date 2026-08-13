@@ -52,11 +52,13 @@ public class MarketGroupsRepositoryImpl implements MarketGroupsRepository {
 
     @Override
     public int insert(MarketGroups record) {
+        // TODO(缺陷修复决议保留):无活跃调用方(活跃路径走 selectChildren/selectGroupTree),死 stub 暂不实现
         return 0;
     }
 
     @Override
     public MarketGroups selectById(Integer marketGroupId) {
+        // TODO(缺陷修复决议保留):无活跃调用方,死 stub 暂不实现
         return null;
     }
 }

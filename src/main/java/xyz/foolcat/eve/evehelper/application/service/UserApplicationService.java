@@ -92,6 +92,9 @@ public class UserApplicationService {
             throw new EveHelperException(ResultCode.PARAM_ERROR);
         }
         sysUser.setPassword(passwordEncoder.encode(sysUser.getPassword()));
+        // SysUser.deleted 字段默认 true(将新用户标记为"已删除"),注册必须显式置 false,
+        // 否则新用户可以注册却无法登录/被逻辑删除过滤
+        sysUser.setDeleted(false);
         sysUserService.insert(sysUser);
     }
 

@@ -50,7 +50,13 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
 
     @Override
     public void saveOrUpdateBatch(List<WalletJournal> walletJournals) {
-
+        if (walletJournals == null || walletJournals.isEmpty()) {
+            return;
+        }
+        // 每条记录走 insertOrUpdateSelective(其 SQL 为 insert ... on duplicate key update,
+        // 幂等 upsert):WalletJournalService 同步 ESI 钱包日志时经此落库,空实现会导致日志被静默丢弃
+        walletJournals.forEach(walletJournal ->
+                walletJournalMapper.insertOrUpdateSelective(walletJournalPoConverter.domain2Po(walletJournal)));
     }
 
     /**

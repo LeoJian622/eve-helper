@@ -36,6 +36,9 @@ public class BlueprintsService {
      * @throws ParseException
      */
     public void saveAndUpdateBlueprints(Integer cid, Boolean isCor) throws ParseException {
+        // TODO(缺陷修复决议保留):本方法为未完成功能桩,无生产调用方(BlueprintsController 仅提供查询列表,
+        // 无同步入口),且 EsiGateway 缺实际蓝图分页查询方法。完整实现需新增底层查询 + 落库 + controller 入口,
+        // 属特性开发,不在缺陷修复范围。若需启用,应作为独立 feature 走特性轨。
         /**
          * 获取游戏人物信息及授权
          */

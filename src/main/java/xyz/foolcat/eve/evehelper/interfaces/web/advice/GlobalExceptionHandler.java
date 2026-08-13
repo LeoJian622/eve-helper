@@ -25,7 +25,6 @@ import xyz.foolcat.eve.evehelper.shared.result.Result;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 import jakarta.servlet.http.HttpServletResponse;
 
-import java.rmi.ServerException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -120,7 +119,7 @@ public class GlobalExceptionHandler {
      * ServletException
      */
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    @ExceptionHandler(ServerException.class)
+    @ExceptionHandler(ServletException.class)
     public <T> Result<T> processException(ServletException e) {
         log.error("服务器异常: ", e);
         return Result.failed(e.getMessage());
