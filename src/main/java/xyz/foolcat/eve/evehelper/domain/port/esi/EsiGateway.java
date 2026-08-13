@@ -10,6 +10,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.MiningDetail;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 
 import java.text.ParseException;
@@ -36,6 +37,19 @@ public interface EsiGateway {
      * @throws ParseException JWT 解析失败
      */
     String getAccessToken(Integer code, Integer userId) throws ParseException;
+
+    /**
+     * 获取 ESI 授权 accessToken 及其剩余有效期。
+     * <p>
+     * 与 {@link #getAccessToken} 共用归属校验与并发锁,额外返回过期信息。
+     * 缓存键构造封装在实现方,调用方不得自行拼装。
+     *
+     * @param characterId 角色 ID
+     * @param userId      当前用户 ID
+     * @return 含 accessToken、characterId 与剩余有效秒数的读模型
+     * @throws ParseException JWT 解析失败
+     */
+    CharacterAccessTokenResult getAccessTokenWithExpiry(Integer characterId, Integer userId) throws ParseException;
 
     /**
      * 通过认证码换取 accessToken。

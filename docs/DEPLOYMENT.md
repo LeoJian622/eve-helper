@@ -9,6 +9,7 @@
 - [监控告警](#监控告警)
 - [常见问题处理](#常见问题处理)
 - [回滚流程](#回滚流程)
+- [JWT 签名密钥轮换(007)](#jwt-签名密钥轮换007)
 - [性能优化](#性能优化)
 
 ## 🚀 部署流程
@@ -155,10 +156,42 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_PASSWORD=your_redis_password
 
-# JWT密钥库配置
+# JWT密钥库配置(007:生产密钥必须文件系统外置,详见「JWT 签名密钥轮换」章节)
+# location 必须是绝对路径;classpath/裸文件名会被 SecurityBaselineValidator 拒绝启动
+KEYSTORE_LOCATION=/etc/eve-helper/eve-jwt.jks
+KEYSTORE_ALIAS=eve-jwt
 KEYSTORE_PASSWORD=your_keystore_password
 KEY_PASSWORD=your_key_password
 ```
+
+#### ⚠️ 启动安全基线:4 项硬门禁(007 T038 起为正向白名单)
+
+`SecurityBaselineValidator` 在启动期校验 4 项配置。**除 `test` profile 外**(含未设 profile),任一不满足即**拒绝启动**。
+
+T038 起语义由「黑名单」改为**正向白名单** —— **键缺失不再视为合规**:
+
+| 键 | 要求 | 缺失时 |
+|----|------|--------|
+| `mybatis-plus.configuration.log-impl` | 必须显式为 `org.apache.ibatis.logging.slf4j.Slf4jImpl` | **拒启** |
+| `logging.level.root` | 必须显式声明,且非 debug/trace | **拒启** |
+| **全部** `logging.level.*` | 任一为 debug/trace 即拒(不限于 `web`) | — |
+| `eve.helper.debug.access-token-endpoint.enabled` | 必须显式为字面 `false`(`yes`/`1`/`on` 均拒) | **拒启** |
+| `security.keystore.location` | 文件系统绝对路径,禁 `classpath:` 与裸文件名 | **拒启** |
+
+> **升级到 T038 后首次部署前,请确认各 profile 中没有任何 debug/trace 级别的 logger**。
+> 例如 `logging.level.reactor.netty: debug` 或 mapper 包 debug 都会导致拒启 ——
+> 这是有意的:前者使 ESI 请求头(含 `Authorization: Bearer`)落盘,
+> 后者配合 Slf4jImpl 会打 SQL 绑定参数,使 `refresh_token` 明文入日志。
+>
+> 自检命令(在各 profile 配置文件上执行):
+> ```bash
+> grep -nE "^\s+(root|[a-z.]+):\s*(debug|trace)\s*$" src/main/resources/application-{ali,aliw,prod}.yml
+> # 期望:无输出。有输出则该行必须改为 info 或更高,否则应用拒启
+> grep -nE "log-impl|access-token-endpoint" -A1 src/main/resources/application-{ali,aliw,prod}.yml
+> # 期望:log-impl 为 Slf4jImpl(或未覆盖,继承 application.yml);enabled 为 false
+> ```
+
+拒启时日志会明确指出违规的键与当前值,按提示修正即可。
 
 ### 5. 部署应用
 
@@ -168,11 +201,15 @@ KEY_PASSWORD=your_key_password
 # 复制JAR文件
 sudo cp eve-helper-0.0.2-SNAPSHOT.jar /opt/eve-helper/
 
-# 复制密钥库文件
-sudo cp eve-jwt.jks /opt/eve-helper/config/
+# 部署密钥库文件(007:统一放 /etc/eve-helper/,不放应用目录;详见「JWT 签名密钥轮换」章节)
+sudo mkdir -p /etc/eve-helper
+sudo cp eve-jwt.jks /etc/eve-helper/eve-jwt.jks
 
-# 设置权限
+# 设置权限(SC-009:目录 700 / 文件 600 / 属主为服务账号)
 sudo chown -R eve-app:eve-app /opt/eve-helper
+sudo chown -R eve-app:eve-app /etc/eve-helper
+sudo chmod 700 /etc/eve-helper
+sudo chmod 600 /etc/eve-helper/eve-jwt.jks
 sudo chmod 600 /opt/eve-helper/config/.env
 ```
 
@@ -386,150 +423,148 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
-  metrics:
-    export:
-      prometheus:
-        enabled: true
+        # 仅暴露健康检查与构建信息。**不含 metrics/prometheus** ——
+        # 007 T037 已移除三个零引用的 io.prometheus 死依赖,项目无 metrics 导出通路。
+        # 如需指标监控须新增 micrometer-registry-prometheus,涉技术栈冻结(宪法第四条)
+        include: health,info
 ```
 
 ## 📊 监控告警
 
-### 1. Prometheus监控
+> **现状(2026-08-12,007 T037)**:本项目**没有 metrics 导出通路**。原 `pom.xml` 中三个
+> `io.prometheus` 依赖(`prometheus-metrics-core` / `-instrumentation-jvm` /
+> `-exporter-httpserver`,均 1.0.0)在 `src/main/java` **零引用** —— 从未创建
+> `PrometheusRegistry`、从未启动 exporter、从未注册 `JvmMetrics`,且全部 profile
+> 均无 `management:` 配置。**它们是死依赖,已于 T037 删除。**
+>
+> 原本此处有 Prometheus 安装、Grafana 面板、`jvm_memory_used_bytes` 等指标名、
+> `alerts.yml` 规则等约 150 行运维指南 —— 那些内容**在本项目从未可用**
+> (`/actuator/prometheus` 端点不存在,指标名一个都不会出现,告警规则永不触发),
+> 属于误导性文档,已一并删除。
+>
+> **如需指标监控**:须新增 `micrometer-registry-prometheus` 依赖 —— 技术栈已冻结
+> (宪法第四条),**须走宪法修订程序并另开 spec**,不得直接添加。
 
-#### 安装Prometheus
+### 1. 健康检查
+
+`spring-boot-starter-actuator` 保留,提供健康检查与构建信息:
 
 ```bash
-# 下载Prometheus
-wget https://github.com/prometheus/prometheus/releases/download/v2.40.0/prometheus-2.40.0.linux-amd64.tar.gz
-tar xvfz prometheus-2.40.0.linux-amd64.tar.gz
-cd prometheus-2.40.0.linux-amd64
+# 应用健康状态(含数据源、Redis 连通性)
+curl http://localhost:9999/actuator/health
 
-# 配置Prometheus
-vim prometheus.yml
+# 构建信息
+curl http://localhost:9999/actuator/info
 ```
 
-添加EVE Helper监控目标:
+生产环境的 `management.endpoints.web.exposure.include` 应仅含 `health,info`
+(见上方「应用配置」)。**不要**暴露 `env` / `beans` / `configprops` —— 它们会
+泄露配置细节(数据源 URL、Bean 结构)。
+
+> ⚠️ `/actuator/health` 默认不需认证时会暴露组件状态。若该端点在白名单中,
+> 建议设 `management.endpoint.health.show-details: never`,仅返回 UP/DOWN。
+
+### 2. 日志监控(当前唯一可用的告警通路)
+
+日志是本项目**现存唯一**可运维的告警来源。日志位置见「应用配置」的
+`logging.file.path`(示例为 `/opt/eve-helper/logs`)。
+
+#### 安全告警标记
+
+应用会在检测到安全异常时输出**稳定的可 grep 标记**,用于日志告警规则匹配:
+
+| 标记 | 含义 | 来源 |
+|------|------|------|
+| `[SECURITY_ALERT:REFRESH_FLOOD]` | refresh 端点无效请求洪泛(60s 窗口内超过 1000 次) | `RefreshRateLimiterService`(007 T016/T037) |
+| `[SECURITY_ALERT:REFRESH_TARGETED]` | **单个账号** refresh 失败超 10 次/分钟(定向刷该账号,或客户端无退避重试) | `RefreshRateLimiterService`(007 T046) |
+
+**两者响应动作不同,故标记有意分开**:
+
+| 标记 | 排查方向 | 处置 |
+|------|----------|------|
+| `REFRESH_FLOOD` | 全局无效请求洪泛,与具体账号无关 | 入口层限流(反代/网关);**不要**在业务线程上加延迟(007 T036 已论证其为 DoS 放大器) |
+| `REFRESH_TARGETED` | 日志中的 `userId=` 即目标账号 | 查该账号是否凭证外泄 → 需要时清其 refresh token 并通知改密;若为客户端重试循环,修客户端 |
+
+> ⚠️ **标记字符串不得随意修改** —— 改动等于让既有告警规则静默失效。
+> 两个常量均有测试断言保护(`RefreshRateLimiterTest`,T037/T046),
+> 且有断言强制二者**不得相同**。
+
+#### 告警配置示例
+
+**方式一:grep + cron(最简,无额外组件)**
+
+```bash
+# /opt/eve-helper/scripts/check-security-alerts.sh
+#!/bin/bash
+LOG_DIR=/opt/eve-helper/logs
+WINDOW_MIN=5
+
+# 近 5 分钟内出现安全告警标记则通知
+if find "$LOG_DIR" -name '*.log' -mmin -${WINDOW_MIN} -exec \
+     grep -l 'SECURITY_ALERT' {} + >/dev/null 2>&1; then
+    MSG=$(find "$LOG_DIR" -name '*.log' -mmin -${WINDOW_MIN} -exec \
+            grep -h 'SECURITY_ALERT' {} + | tail -20)
+    # 替换为实际通知渠道(邮件/钉钉/企业微信 webhook)
+    echo "$MSG" | mail -s "[EVE Helper] 安全告警" ops@example.com
+fi
+```
+
+```cron
+*/5 * * * * /opt/eve-helper/scripts/check-security-alerts.sh
+```
+
+**方式二:Loki + Promtail(如已有日志基础设施)**
 
 ```yaml
-scrape_configs:
-  - job_name: 'eve-helper'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets: ['localhost:9999']
-```
-
-启动Prometheus:
-
-```bash
-./prometheus --config.file=prometheus.yml
-```
-
-### 2. Grafana可视化
-
-#### 安装Grafana
-
-```bash
-# Ubuntu/Debian
-sudo apt-get install -y software-properties-common
-sudo add-apt-repository "deb https://packages.grafana.com/oss/deb stable main"
-wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
-sudo apt-get update
-sudo apt-get install grafana
-
-# 启动Grafana
-sudo systemctl start grafana-server
-sudo systemctl enable grafana-server
-```
-
-访问 http://localhost:3000 (默认用户名/密码: admin/admin)
-
-#### 配置数据源
-
-1. 添加Prometheus数据源
-2. 导入Spring Boot Dashboard (ID: 4701)
-3. 配置告警规则
-
-### 3. 关键指标监控
-
-#### JVM指标
-- **堆内存使用率**: `jvm_memory_used_bytes / jvm_memory_max_bytes`
-- **GC频率**: `rate(jvm_gc_pause_seconds_count[5m])`
-- **GC耗时**: `jvm_gc_pause_seconds_sum`
-
-#### 应用指标
-- **请求QPS**: `rate(http_server_requests_seconds_count[1m])`
-- **响应时间**: `http_server_requests_seconds_sum / http_server_requests_seconds_count`
-- **错误率**: `rate(http_server_requests_seconds_count{status=~"5.."}[5m])`
-
-#### 数据库指标
-- **连接池**: 项目使用 **Druid**(非 HikariCP);活跃/最大连接经 Druid StatView 或 `/actuator/metrics/druid.*` 监控
-- **慢查询**: Druid `slow-sql-millis` 阈值(5000ms,见 `application.yml`)+ MySQL 慢查询日志
-
-#### Redis指标
-- **连接数**: `redis_connected_clients`
-- **内存使用**: `redis_memory_used_bytes`
-- **命令执行**: `rate(redis_commands_processed_total[1m])`
-
-### 4. 告警规则
-
-创建告警规则文件 `alerts.yml`:
-
-```yaml
+# Loki 告警规则
 groups:
-  - name: eve-helper-alerts
-    interval: 30s
+  - name: eve-helper-security
     rules:
-      # 应用健康检查
-      - alert: ApplicationDown
-        expr: up{job="eve-helper"} == 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: "EVE Helper应用宕机"
-          description: "应用已经宕机超过1分钟"
-
-      # 内存使用率告警
-      - alert: HighMemoryUsage
-        expr: (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}) > 0.9
-        for: 5m
+      - alert: RefreshTokenFlood
+        expr: |
+          count_over_time({job="eve-helper"} |= "[SECURITY_ALERT:REFRESH_FLOOD]" [5m]) > 0
+        for: 0m
         labels:
           severity: warning
         annotations:
-          summary: "内存使用率过高"
-          description: "堆内存使用率超过90%"
-
-      # 响应时间告警
-      - alert: HighResponseTime
-        expr: histogram_quantile(0.95, rate(http_server_requests_seconds_bucket[5m])) > 1
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "响应时间过长"
-          description: "95分位响应时间超过1秒"
-
-      # 错误率告警
-      - alert: HighErrorRate
-        expr: rate(http_server_requests_seconds_count{status=~"5.."}[5m]) > 0.05
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: "错误率过高"
-          description: "5xx错误率超过5%"
-
-      # 数据库连接池告警 (Druid;指标名以实际暴露为准)
-      - alert: DatabaseConnectionPoolExhausted
-        expr: (druid_connections_active / druid_connections_max) > 0.9
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "数据库连接池即将耗尽"
-          description: "Druid 连接池使用率超过90%"
+          summary: "refresh 端点检测到无效请求洪泛"
+          description: "60s 窗口内无效 refresh 超过阈值,可能是 token 猜测攻击。检查来源 IP 分布并考虑入口层限流。"
 ```
+
+#### 需要人工关注的日志模式
+
+| grep 模式 | 含义 | 处置 |
+|-----------|------|------|
+| `SECURITY_ALERT` | 见上表 | 按标记类型处置 |
+| `启动基线校验失败` | 安全基线不满足,应用已拒绝启动 | 检查 keystore 路径、日志级别、调试端点配置 |
+| `OutOfMemoryError` | 内存溢出 | 见「常见问题处理」 |
+| `Connection pool exhausted` | Druid 连接池耗尽 | 见「常见问题处理」 |
+| `Redis connection timeout` | Redis 不可达 | 见「常见问题处理」 |
+| `ERROR.*EsiException` | ESI 接口异常 | 检查 ESI 服务状态与 token 有效性 |
+
+### 3. 容量基线
+
+以下为 `application.yml` 显式声明的容量参数(007 T036 起显式化,值即 Boot 默认):
+
+| 参数 | 值 | 含义 |
+|------|-----|------|
+| `server.tomcat.threads.max` | 200 | 工作线程上限 —— **洪泛容忍度的分母** |
+| `server.tomcat.threads.min-spare` | 10 | 常驻空闲线程 |
+| `server.tomcat.accept-count` | 100 | 线程满后的排队长度,队满即拒新连接 |
+| `server.tomcat.max-connections` | 8192 | 最大并发连接 |
+
+> ⚠️ **不要在业务线程内做阻塞式限流**(如 `Thread.sleep` 延迟整形)。
+> 那会把工作线程数变成全站可用性上限 —— 007 T036 已因此推翻一版设计,
+> 详见 `RefreshRateLimiterService` 类注释。速率限制应在**入口层**
+> (反向代理 / 网关 / `max-connections`)实施。
+
+#### 数据库与缓存
+
+- **连接池**: 项目使用 **Druid**(非 HikariCP)。活跃/最大连接经 **Druid StatView 页面**监控
+  (`/druid/index.html`,生产须加认证或关闭)
+- **慢查询**: Druid `slow-sql-millis` 阈值(5000ms,见 `application.yml`)+ MySQL 慢查询日志
+- **Redis**: 用 `redis-cli info` 查看连接数与内存;认证请用 `REDISCLI_AUTH` 环境变量而非 `-a`
+  参数(避免口令进入进程列表与 shell 历史)
 
 ## 🔥 常见问题处理
 
@@ -555,7 +590,7 @@ sudo netstat -tlnp | grep 9999
 mysql -h ${DB_HOST} -P ${DB_PORT} -u ${DB_SYSTEM_USERNAME} -p
 
 # 5. 测试Redis连接
-redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} -a ${REDIS_PASSWORD} ping
+REDISCLI_AUTH=${REDIS_PASSWORD} redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} ping
 ```
 
 #### 解决方法
@@ -650,10 +685,10 @@ spring:
 
 ```bash
 # 1. 测试Redis连接
-redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} -a ${REDIS_PASSWORD} ping
+REDISCLI_AUTH=${REDIS_PASSWORD} redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} ping
 
 # 2. 查看Redis状态
-redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} -a ${REDIS_PASSWORD} info
+REDISCLI_AUTH=${REDIS_PASSWORD} redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} info
 
 # 3. 检查网络延迟
 ping ${REDIS_HOST}
@@ -795,6 +830,8 @@ appendonly yes  # 启用AOF持久化
 appendfsync everysec
 ```
 
+> ⚠️ **auth 键驱逐风险(007 T049,评审 MEDIUM-1)**:上述 `maxmemory-policy allkeys-lru`(**以及 `volatile-lru`**)会驱逐带 TTL 的键。eve-helper 的 auth 键 —— `refresh_token:*`、`refresh_session:*`、`refresh_owner:*`、`session_revoked:*`、`session_access_jti:*`、token 黑名单 —— **全部带 TTL**。驱逐 `refresh_token:*` 是 fail-safe(凭证失效),但驱逐 `refresh_session:*` / `session_revoked:*` / `refresh_owner:*` 索引是 **fail-open**(登出撤销静默失效、tombstone 被绕过),方向不对称。**`volatile-lru` 无效**:所有 auth 键都带 TTL,与 allkeys-lru 对它们行为一致。建议:**auth 键独立 Redis 实例**(或不设 maxmemory / 容量充足),不与业务缓存混用。
+
 ### 4. 应用层优化
 
 - 启用HTTP压缩
@@ -802,6 +839,226 @@ appendfsync everysec
 - 实现缓存策略
 - 异步处理耗时操作
 - 使用CDN加速静态资源
+
+## 🔑 JWT 签名密钥轮换(007)
+
+> **适用事件**:`src/main/resources/eve-jwt.jks`(旧生产 RSA 签名密钥)自提交 `5d139d8「增加token认证」` 起长期处于版本控制中,须视为已泄露。
+> 本章节既是该事件的执行清单,也是今后例行轮换的模板。**全文严禁出现真实口令** —— 所有命令中的口令均为占位符。
+
+### 事件声明(SC-007 / FR-013)
+
+- **旧签名密钥已泄露**:旧私钥(`eve-jwt.jks`,别名 `eve-jwt`)长期存在于 git 历史,且当时生产 profile 配置伴随明文弱 keystore 口令,**必须视为已被攻击者获取**。
+- **旧密钥不得再用于任何环境**(包括测试环境);其签发的任何 token 均不可信。
+- 不改写 git 历史(FR-014:禁止强推共享分支)——轮换后旧私钥不再验证任何 token,历史中的副本失去价值。
+- 轮换日期:`____`(执行人填写,必填)
+
+### 轮换前公告(Q5,必须提前发布)
+
+本次轮换会清空全部 refresh token,**所有用户将被登出**,必须提前公告。模板:
+
+```text
+【维护公告】EVE Helper 计划于 <日期> <时间段> 进行安全升级(签名密钥轮换)。
+期间服务将重启,可能出现短暂不可用(约 <时长>);
+升级完成后所有登录状态将被重置,请在升级后重新登录。
+给您带来不便,敬请谅解。
+```
+
+公告发布记录:时间 `____` / 渠道 `____`
+
+### 轮换步骤
+
+> 建议低峰期执行(FR-011)。执行人为人类用户(口令由用户单独生成与保管,FR-002:不经 AI、不入文档、不入库)。
+
+#### 步骤 1:新密钥对(生成 / 核验)
+
+```bash
+# 生成新 RSA 密钥对(若新密钥已生成,跳过本步,直接做步骤 3 指纹核对)
+keytool -genkeypair \
+  -alias eve-jwt \
+  -keyalg RSA -keysize 2048 \
+  -validity 3650 \
+  -keystore eve-helper.jks \
+  -storepass '<STORE_PASS>' \
+  -keypass '<KEY_PASS>' \
+  -dname "CN=eve-helper, OU=Ops, O=EveHelper, C=CN"
+```
+
+- 密钥长度必须 ≥ 2048 位:`KeyStoreKeyFactory` 启动时硬校验,弱密钥直接拒绝启动。
+- `<STORE_PASS>` / `<KEY_PASS>` 由执行人自行生成,仅记录在秘密管理渠道(不得出现在本文档、仓库或 AI 对话中)。
+- keystore 文件**严禁进入 git**:直接在目标服务器生成,或离线传输。
+
+#### 步骤 2:部署到服务器固定路径(SC-009)
+
+```bash
+sudo mkdir -p /etc/eve-helper
+sudo cp <新keystore路径> /etc/eve-helper/eve-jwt.jks
+sudo chown -R eve-app:eve-app /etc/eve-helper
+sudo chmod 700 /etc/eve-helper
+sudo chmod 600 /etc/eve-helper/eve-jwt.jks
+
+# 留证(SC-009):以下命令输出粘贴到「轮换记录」
+stat /etc/eve-helper /etc/eve-helper/eve-jwt.jks
+```
+
+#### 步骤 3:指纹核对(L-5)
+
+```bash
+keytool -list -v -keystore /etc/eve-helper/eve-jwt.jks -storepass '<STORE_PASS>'
+```
+
+- [ ] 新生产密钥指纹 **≠** `test-only.jks` 指纹 `FD:9F:19:27:61:...:CA:0F:B4` —— 防止把入库的测试 keystore 误部署为生产密钥
+- [ ] 新密钥指纹(SHA-256)已记录:`____`
+
+#### 步骤 4:配置切换
+
+1. 部署环境变量文件(参考 `.env.example`)添加:
+   ```bash
+   KEYSTORE_LOCATION=/etc/eve-helper/eve-jwt.jks
+   KEYSTORE_ALIAS=eve-jwt
+   KEYSTORE_PASSWORD=<经秘密管理渠道配置>
+   KEY_PASSWORD=<经秘密管理渠道配置>
+   ```
+2. 生产 profile(如 `application-aliw.yml`)的 `security.keystore.location` 改为 `/etc/eve-helper/eve-jwt.jks`:
+   - ⚠️ **必须是文件系统绝对路径**:`classpath:` 前缀或裸文件名在生产 profile 下会被 `SecurityBaselineValidator` 拒绝启动(fail-closed,SC-005),防止静默回退到旧 keystore。
+   - ⚠️ profile 若自定义 `eve.helper.whiteUrlList`,必须包含 `POST:/auth/tokens`(List 属性整体覆盖 application.yml,漏掉则 refresh 端点加白静默失效,SC-016)。
+
+#### 步骤 5:重启(FR-022,禁止滚动重启)
+
+- **单实例**:`sudo systemctl restart eve-helper`
+- **多实例**:必须**停机窗口**或**全部实例同时重启**,**禁止滚动重启** —— 滚动期间新旧密钥并存会造成随机认证失败;且 `TokenService` 在生成新 token 前先删除旧 refresh token,客户端重试循环会消耗掉 refresh token。
+- 重启后验证:
+  - `curl http://localhost:9999/actuator/health` 正常
+  - 启动日志无 keystore 加载失败(口令/别名/路径错误会直接拒绝启动,不会带病运行)
+  - 构建产物检查(SC-003):`mvn clean package` 后 `unzip -l target/*.jar | grep '\.jks'` 仅含 `test-only.jks`(入库测试密钥,设计内),不含生产 keystore
+
+#### 步骤 6:轮换验证(SC-014 / SC-006)
+
+**SC-014 是唯一能证明「密钥对确实换掉」的验证**(仅验证「已存在的旧 token 失效」在别名/口令变更但密钥未变时会误判通过):
+
+1. 用旧私钥**现场签发一个全新的(未过期)token**,调用任一受保护 API → 断言返回 **401**。
+2. 断言新公钥 modulus 与旧公钥 modulus **不同**(`keytool -list -v` 输出比对)。
+3. **SC-006**:用旧 refresh token `POST /auth/tokens` → 返回 HTTP 400 与明确业务错误(「Refresh Token无效或已过期」),而非异常逃逸或 403。
+
+#### 步骤 7:清空 Redis `refresh_token:*`(SC-008)
+
+```bash
+# ① 必填:记录清空前数量
+redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" \
+  --scan --pattern 'refresh_token:*' | wc -l
+# 清空前数量: ____
+
+# ② 清空(分批 DEL)
+redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" \
+  --scan --pattern 'refresh_token:*' \
+  | xargs -r -n 200 redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" DEL
+
+# ③ 必填:验证清空后数量为 0
+redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" \
+  --scan --pattern 'refresh_token:*' | wc -l
+# 清空后数量: ____ (必须为 0)
+```
+
+- 键模式来自 `TokenService`(`refresh_token:{jti}` → userId);清空后全体用户 refresh 失败、被迫重新登录(Q1 决策选项 B)。
+- ESI accessToken 缓存(约 19 分钟 TTL)自然过期即可,无需手动清理。
+
+#### 步骤 8:六表审计(FR-021 / SC-013)
+
+**为什么是六张表**:RBAC 的 url→role 映射来自 `sys_permission` / `sys_role_permission` / `sys_role` 三表 JOIN;伪造 ROOT token 提权**不必碰 `sys_permission`** —— 只在 `sys_role_permission` 插一行即可。
+
+**能力边界(执行前必读)**:表审计只能发现**新增/篡改**痕迹;对**读取型外泄**(`sys_user` 的 BCrypt 口令哈希、`eve_account.refresh_token` 明文存储的 ESI 长期凭证)**完全失明,亦无补偿控制**。若怀疑 ESI 凭证已被读走,唯一处置是让受影响角色重新走 ESI 授权。此外,本节时间判断依赖 `gmt_create`/`gmt_modified`,而**有数据库写权限的攻击者可事后伪造这两列**——对精心操作的写入型入侵,「未发现新增/篡改痕迹」亦是可能假阴性;须以第 7 项的 binlog 保留期核查作为旁证(007 T041)。
+
+时间锚点:提交 `5d139d8`(「增加token认证」)是最早可能入侵时间,重点看其后创建/变更的行。
+
+**1. `sys_user`** —— 全表比对预期账号清单
+```sql
+SELECT id, username, nickname, `status`, deleted, gmt_create, gmt_modified
+FROM eve_helper.sys_user ORDER BY id;
+```
+判断方法:是否存在预期清单之外的账号(重点 `5d139d8` 之后创建);`status` / `deleted` 有无异常值。
+结论(执行人填):____
+
+**2. `sys_user_role`** —— 是否有非预期 ROOT/管理员绑定
+```sql
+SELECT ur.id, ur.user_id, u.username, ur.role_id, r.`name` AS role_name
+FROM eve_helper.sys_user_role ur
+  LEFT JOIN eve_helper.sys_user u ON ur.user_id = u.id
+  LEFT JOIN eve_helper.sys_role r ON ur.role_id = r.id
+ORDER BY ur.id;
+```
+判断方法:预期清单外的用户是否绑定了特权角色。
+结论(执行人填):____
+
+**3. `sys_permission`** —— 权限定义有无新增/篡改
+```sql
+SELECT id, `name`, url_perm, btn_perm, gmt_create, gmt_modified
+FROM eve_helper.sys_permission ORDER BY id;
+```
+判断方法:有无新增/变更的 `url_perm`(格式 `METHOD:PATH`)。
+结论(执行人填):____
+
+**4. `sys_role_permission`** —— 提权的**最易被漏掉路径**
+```sql
+SELECT rp.id, rp.role_id, r.`name` AS role_name, rp.permission_id, p.url_perm
+FROM eve_helper.sys_role_permission rp
+  LEFT JOIN eve_helper.sys_role r ON rp.role_id = r.id
+  LEFT JOIN eve_helper.sys_permission p ON rp.permission_id = p.id
+ORDER BY rp.id;
+```
+判断方法:普通角色是否新增了不该有的权限关联。
+结论(执行人填):____
+
+**5. `sys_role`** —— 有无新增角色或篡改
+```sql
+SELECT id, `name`, code, `status`, gmt_create, gmt_modified
+FROM eve_helper.sys_role ORDER BY id;
+```
+判断方法:有无未知角色,`code` / `status` 有无异常变更。
+结论(执行人填):____
+
+**6. `eve_account`** —— 有无非预期角色绑定
+```sql
+SELECT character_id, character_name, user_id, `type`, gmt_create, gmt_modified
+FROM eve_helper.eve_account ORDER BY character_id;
+```
+判断方法:有无预期清单外的游戏角色 / 用户绑定。⚠️ `refresh_token` 列刻意不在查询列中 —— 其是否被读走审计不可见(见能力边界)。
+结论(执行人填):____
+
+**7. binlog / 慢日志保留期核查(时间列可伪造的补偿证据,007 T041)** —— 上述六表的时间列可被写权限攻击者伪造,binlog 是独立于表数据的可信写入记录;慢日志可佐证入侵窗口内的异常重查询。
+```sql
+SHOW VARIABLES LIKE 'log_bin';
+SHOW VARIABLES LIKE 'binlog_expire_logs_seconds';
+SHOW BINARY LOGS;
+SHOW VARIABLES LIKE 'slow_query_log';
+```
+判断方法:binlog 是否开启、保留期(`binlog_expire_logs_seconds` / 现存最早 binlog 时间)是否**覆盖时间锚点 `5d139d8`**。若覆盖:用 `mysqlbinlog` 过滤该窗口内对六表的写语句,与上面 1~6 的审计结论交叉核对,不一致处以 binlog 为准;若未覆盖(binlog 已轮转清理):本步结论只能表述为「仅凭表内时间列,不能排除伪造」,并如实记入归档。
+结论(执行人填):____
+
+**升级路径**:任何一张表发现非预期账号/角色/权限映射 → **立即暂停轮换收尾,升级为入侵响应**:强制全体改密 + 吊销全部会话 + ESI 重新授权。
+
+#### 步骤 9:记录归档
+
+审计总结论**只能表述为**(SC-013 强制措辞):
+
+> 已审计 6 表并完成 binlog 保留期核查(结论见步骤 8 第 7 项),未发现**新增/篡改**痕迹;时间列可被伪造、读取型外泄(口令哈希、ESI 凭证)无法检测。
+
+**严禁**表述为「确认未被入侵」—— 审计对读取型外泄失明、时间列可被伪造(binlog 未覆盖入侵窗口时尤甚),该表述会构成虚假的安全结论。
+
+归档位置:下方「轮换记录」+ `docs/reviews/`。
+
+### 轮换记录(每次执行填写)
+
+| 项 | 记录 |
+|----|------|
+| 轮换日期 / 执行人 | ____ |
+| 公告发布时间 / 渠道 | ____ |
+| 新密钥 SHA-256 指纹 | ____ |
+| 指纹 ≠ test-only.jks(`FD:9F:19:27:61:...:CA:0F:B4`)核对 | ☐ |
+| SC-009 stat 留证(目录 700 / 文件 600 / 属主服务账号) | ____ |
+| SC-014 旧密钥新签 token 被拒验证 | ☐ |
+| SC-006 旧 refresh token 明确业务错误验证 | ☐ |
+| `refresh_token:*` 清空前数量 | ____ |
+| `refresh_token:*` 清空后数量(= 0) | ____ |
+| 审计总结论(强制措辞,含步骤 8 第 7 项 binlog 核查结论) | ____ |
 
 ## 📚 相关文档
 
@@ -817,5 +1074,5 @@ appendfsync everysec
 
 ---
 
-**最后更新**: 2026-08-07
+**最后更新**: 2026-08-12(新增 007 JWT 签名密钥轮换章节)
 **维护者**: EVE Helper Ops Team

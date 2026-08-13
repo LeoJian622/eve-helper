@@ -1,0 +1,190 @@
+# ============================================================================
+# 生产 profile 配置模板(006 C1 纵深防御 + 007 T038 基线加严)
+#
+# 用法:复制为 application-prod.yml 后填入实际值。
+#   cp src/main/resources/application-prod.yml.example src/main/resources/application-prod.yml
+#
+# ⚠️ 首先考虑:你真的需要这个文件吗?
+#   2026-08-12 起 application-{ali,aliw,prod}.yml 已从工程中移除 ——
+#   生产直接继承 application.yml 的安全形态(口令全为占位符、whiteUrlList 含
+#   POST:/auth/tokens、log-impl 为 Slf4jImpl、root/web 均 info),差异化靠环境变量。
+#   **没有 profile 副本 = 没有配置分叉 = 不会出现「以为改了其实没生效」**。
+#   仅当确有无法用环境变量表达的差异(如连接池尺寸)时才创建本文件,
+#   且只写差异项,不要整体复制 application.yml。
+#
+# ⚠️ profile 配置优先级高于 application.yml。
+#    application.yml 里的安全值不是兜底 —— 此处一旦写错即生效。
+#    List 属性(whiteUrlList)是**整体替换**而非合并 —— 写了就必须写全。
+#
+# 🔒 标记项为安全基线,由 SecurityBaselineValidator 在启动期强制(违反即拒启)。
+#    T038 起为**正向白名单**语义 —— 键缺失不再视为合规:
+#    1. mybatis-plus.configuration.log-impl 必须显式 = Slf4jImpl
+#    2. logging.level.root 必须显式声明,且**全部** logging.level.* 均非 debug/trace
+#       (不限于 web —— reactor.netty 会打 ESI 请求头的 Bearer token,
+#        mapper 包 debug 配合 Slf4jImpl 会打 SQL 参数使 refresh_token 明文入日志)
+#    3. eve.helper.debug.access-token-endpoint.enabled 必须显式 = 字面 false
+#       (yes/1/on 等均被拒)
+#    4. security.keystore.location 必须是文件系统绝对路径(classpath/裸文件名拒启)
+#
+#    ⚠️ 校验器**不检查密钥身份** —— 只验路径语法。指向已泄露的旧密钥同样放行
+#    (T039 密钥身份门禁已否决)。故部署后必须人工比对指纹,见 DEPLOYMENT.md。
+# ============================================================================
+
+server:
+  port: 9999
+
+spring:
+  datasource:
+    druid:
+      system:
+        username: ${DB_USERNAME:root}
+        # 🔑 禁止硬编码:改用环境变量注入
+        password: ${DB_PASSWORD}
+        url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/eve_helper?serverTimezone=UTC&useUnicode=true&characterEncoding=utf8
+        driverClassName: com.mysql.cj.jdbc.Driver
+        #初始化连接池的连接数量 大小，最小，最大
+        initial-size: 5
+        min-idle: 5
+        max-active: 20
+        #配置获取连接等待超时的时间
+        max-wait: 60000
+        #配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒
+        time-between-eviction-runs-millis: 60000
+        # 配置一个连接在池中最小生存的时间，单位是毫秒
+        min-evictable-idle-time-millis: 30000
+        # 配置一个连接在池中最大生存的时间，单位是毫秒
+        max-evictable-idle-time-millis: 300000
+        validation-query: SELECT 1 FROM user
+        test-while-idle: true
+        test-on-borrow: true
+        test-on-return: false
+        # 是否缓存preparedStatement，也就是PSCache  官方建议MySQL下建议关闭   个人建议如果想用SQL防火墙 建议打开
+        pool-prepared-statements: true
+        max-pool-prepared-statement-per-connection-size: 20
+        # 配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
+        # 注意:slf4j filter 会经 logger `druid.sql.Statement` 输出 SQL 参数。
+        # root=info 下不打印;若为排查临时打开 druid.sql 的 debug,
+        # refresh_token 会经此通道泄露 —— 该路径不受 log-impl 保护(006 复审第 4 点)。
+        filters: stat,wall,slf4j
+        filter:
+          stat:
+            merge-sql: true
+            slow-sql-millis: 5000
+      eve:
+        username: ${EVE_DB_USERNAME:root}
+        # 🔑 禁止硬编码:改用环境变量注入
+        password: ${EVE_DB_PASSWORD}
+        url: jdbc:mysql://${EVE_DB_HOST:127.0.0.1}:${EVE_DB_PORT:3306}/eve?useUnicode=true&characterEncoding=utf8
+        driverClassName: com.mysql.cj.jdbc.Driver
+        #初始化连接池的连接数量 大小，最小，最大
+        initial-size: 5
+        min-idle: 5
+        max-active: 20
+        #配置获取连接等待超时的时间
+        max-wait: 60000
+        #配置间隔多久才进行一次检测，检测需要关闭的空闲连接，单位是毫秒
+        time-between-eviction-runs-millis: 60000
+        # 配置一个连接在池中最小生存的时间，单位是毫秒
+        min-evictable-idle-time-millis: 30000
+        # 配置一个连接在池中最大生存的时间，单位是毫秒
+        max-evictable-idle-time-millis: 300000
+        validation-query: SELECT 1 FROM user
+        test-while-idle: true
+        test-on-borrow: true
+        test-on-return: false
+        # 是否缓存preparedStatement，也就是PSCache  官方建议MySQL下建议关闭   个人建议如果想用SQL防火墙 建议打开
+        pool-prepared-statements: true
+        max-pool-prepared-statement-per-connection-size: 20
+        # 配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
+        filters: stat,wall,slf4j
+        filter:
+          stat:
+            merge-sql: true
+            slow-sql-millis: 5000
+      #3.基础监控配置
+      # 生产环境保持 false:Druid 监控页会暴露 SQL 与连接信息
+      web-stat-filter:
+        enabled: false
+      stat-view-servlet:
+        enabled: false
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      # 🔑 生产环境 Redis 必须设密码:缓存中含明文 accessToken(TTL 19 分钟)
+      password: ${REDIS_PASSWORD}
+  cache:
+    redis:
+      time-to-live: 3000s
+# 日志配置
+logging:
+  level:
+    # 🔒 安全基线:必须显式声明(T038 起缺失即拒启)
+    root: info
+    # 🔒 安全基线:本节任何 logger 都不得为 debug/trace。
+    # web=debug 会打印请求/响应体,accessToken 随之落盘(006 FR-014)。
+    # 同类风险(T038 实测,均由「全扫 logging.level.*」覆盖):
+    #   reactor.netty          → ESI 请求头落盘,含 Authorization: Bearer <token>
+    #   ...persistence.mapper  → 配合 Slf4jImpl 打 SQL 绑定参数,refresh_token 明文
+    #   druid.sql.Statement    → 见下方 druid filters 注释,同样绕过 log-impl 保护
+    web: info
+mybatis-plus:
+  configuration:
+    # 驼峰下划线转换
+    map-underscore-to-camel-case: true
+    # 🔒 安全基线:生产环境必须为 Slf4jImpl,绝不可用 StdOutImpl。
+    # StdOutImpl.isDebugEnabled() 硬编码返回 true(字节码 iconst_1; ireturn),
+    # 无法通过任何日志级别关闭,会把 refresh_token 明文打进 stdout(006 FR-014)。
+    # Slf4jImpl 则委托 slf4j 级别判断,root=info 下不输出 SQL 参数。
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+jwt-token:
+  issuer: eve-helper.xyz
+  subject: eve-helper
+  expirationTime: 7200
+# 007(US2):生产 keystore 必须文件系统外置加载 ——
+#   ① location 必须是绝对路径(classpath/裸文件名被 SecurityBaselineValidator 拒启);
+#   ② 密钥文件部署到 /etc/eve-helper/(权限 600、目录 700,SC-009),永不入库;
+#   ③ 口令只走环境变量,本模板不得出现真实口令(安全红线)。
+#
+# 🔒 location 有意**不给默认值**(T047)。曾写作
+#    `${KEYSTORE_LOCATION:/etc/eve-helper/eve-jwt.jks}` —— 忘设环境变量时会静默
+#    fallback 到 `eve-jwt.jks`,而那正是**已泄露旧密钥**的文件名。而校验器只验
+#    路径语法、不验密钥身份(T039 已否决),不会拦住这种误指。
+#    缺失环境变量 → 启动失败,优于静默加载可疑密钥。
+security:
+  keystore:
+    location: ${KEYSTORE_LOCATION}
+    password: ${KEYSTORE_PASSWORD}
+    alias: ${KEYSTORE_ALIAS:eve-jwt}
+    key-password: ${KEY_PASSWORD}
+eve:
+  helper:
+    whiteUrlList:
+      - POST:/user
+      # 007:refresh 端点须在无有效 access token 时可达(否则旧 token 客户端陷入 401 死循环)。
+      # ⚠️ whiteUrlList 是 List 属性,profile 文件整体覆盖 application.yml ——
+      # 任何自带 whiteUrlList 的生产 profile 都必须同步本行,否则加白在生产静默失效(SC-011 同型风险)。
+      - POST:/auth/tokens
+    debug:
+      access-token-endpoint:
+        # 🔒 安全基线:生产环境必须为 false。
+        # 该端点按角色 ID 返回 ESI accessToken,仅供内部调试/运维排查。
+        # 开启后即使有 JWT + RBAC + 归属校验三重门禁,仍扩大凭证暴露面(006 FR-017)。
+        enabled: ${ACCESS_TOKEN_ENDPOINT_ENABLED:false}
+# springdoc-openapi项目配置
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  # 注意:必须是单元素 map(group/paths-to-match/packages-to-scan 同属一个 `-`)。
+  # 写成三个 `-` 会让 springdoc 收到 3 个配置项、后两个 group 为 null,启动即失败。
+  group-configs:
+    - group: 'eve-helper-api'
+      paths-to-match: '/**'
+      packages-to-scan: xyz.foolcat.eve.evehelper

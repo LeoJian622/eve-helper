@@ -22,6 +22,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.WebSocket;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
+import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 
 import java.text.ParseException;
 import java.time.OffsetDateTime;
@@ -68,11 +69,14 @@ public class MiningTask {
         log.info("noticeExtraction");
         // 定时任务无安全上下文，显式声明系统身份（authorize 为请求路径专用，会拒绝）
         EveAccount eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, TaskConstant.CHARACTER_ID);
-        String accessToken = null;
+        String accessToken;
         try {
             accessToken = esiApiService.getAccessToken(TaskConstant.CHARACTER_ID, eveAccount.getUserId());
-        } catch (ParseException e) {
-            log.error("【卫星矿通知】AccessToken异常{}", e.getMessage());
+        } catch (ParseException | EveHelperException e) {
+            // 除 ParseException 外还须捕获 EveHelperException:刷新锁争用会抛 EsiException,
+            // 未捕获会逃出 @Scheduled 方法。两个卫星矿任务在周一 19:00 同时触发同一角色,必然争用。
+            log.error("【卫星矿通知】AccessToken 获取失败,跳过本次通知: characterId={}", TaskConstant.CHARACTER_ID, e);
+            return;
         }
         String messages = requestMiningExtractable(eveAccount.getCorpId(), 1,accessToken);
         if (StrUtil.isNotEmpty(messages)) {
@@ -92,11 +96,13 @@ public class MiningTask {
         Integer characterId = 2112818290;
         // 定时任务无安全上下文，显式声明系统身份（authorize 为请求路径专用，会拒绝）
         EveAccount eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, characterId);
-        String accessToken = null;
+        String accessToken;
         try {
             accessToken = esiApiService.getAccessToken(characterId, eveAccount.getUserId());
-        } catch (ParseException e) {
-            log.error("【卫星矿通知】AccessToken异常{}", e.getMessage());
+        } catch (ParseException | EveHelperException e) {
+            // 同上:刷新锁争用抛 EsiException,须一并捕获,否则逃出 @Scheduled 方法
+            log.error("【卫星矿通知】AccessToken 获取失败,跳过本次通知: characterId={}", characterId, e);
+            return;
         }
         String messages = requestMiningExtractable(eveAccount.getCorpId(), 7,accessToken);
         if (StrUtil.isNotEmpty(messages)) {

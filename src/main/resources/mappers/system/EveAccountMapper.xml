@@ -316,7 +316,8 @@
   </select>
 
   <select id="queryAccountList" resultMap="BaseResultMap">
-    select character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, refresh_token
+    select character_id, character_name, corp_id, corp_name, alliance_id, alliance_name, refresh_token,
+           user_id
     from eve_account
     where user_id = #{userId,jdbcType=INTEGER}
     </select>

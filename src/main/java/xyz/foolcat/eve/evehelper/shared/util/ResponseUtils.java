@@ -1,8 +1,6 @@
 package xyz.foolcat.eve.evehelper.shared.util;
 
 import cn.hutool.json.JSONUtil;
-import com.nimbusds.jwt.SignedJWT;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
@@ -11,8 +9,6 @@ import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author Leojan
@@ -25,6 +21,10 @@ public class ResponseUtils {
         switch (resultCode) {
             case ACCESS_UNAUTHORIZED:
             case TOKEN_INVALID_OR_EXPIRED:
+            // 007 T012(FR-016):TOKEN过期/验签失败/被撤销统一 401,由
+            // JwtAuthorizationTokenFilter 直写。统一返回 AUT00210 是防信息泄露的
+            // 有意决策(LOW-2),勿当 bug「修复」为按原因区分的状态码
+            case TOKEN_ACCESS_EXPIRED:
                 response.setStatus(HttpStatus.UNAUTHORIZED.value());
                 break;
             case TOKEN_ACCESS_FORBIDDEN:
@@ -34,21 +34,12 @@ public class ResponseUtils {
                 response.setStatus(HttpStatus.BAD_REQUEST.value());
                 break;
         }
+        // 008 R7:setContentType + setCharacterEncoding 组合,与全仓响应写出风格一致(避免字符串拼接 charset)
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Cache-Control", "no-cache");
         String body = JSONUtil.toJsonStr(Result.failed(resultCode));
-        response.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
-        return response;
-    }
-
-    public static HttpServletResponse writeTokenInfo(HttpServletResponse response, SignedJWT signedJwt) throws IOException {
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-        response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
-        Map<String,String> tokenObejct = new HashMap<>(2);
-        tokenObejct.put("access_token",signedJwt.serialize());
-        String body = JSONUtil.toJsonStr(Result.success(tokenObejct));
         response.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
         return response;
     }

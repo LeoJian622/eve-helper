@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import xyz.foolcat.eve.evehelper.application.dto.request.RefreshTokenRequest;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.domain.model.vo.TokenResult;
+import xyz.foolcat.eve.evehelper.domain.service.security.RefreshRateLimiterService;
 import xyz.foolcat.eve.evehelper.domain.service.security.TokenBlacklistService;
 import xyz.foolcat.eve.evehelper.domain.service.security.TokenService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysRoleService;
@@ -47,12 +48,16 @@ class AuthApplicationServiceUnitTest {
     @Mock
     SysRoleService sysRoleService;
 
+    @Mock
+    RefreshRateLimiterService refreshRateLimiterService;
+
     private AuthApplicationService authApplicationService;
 
     @BeforeEach
     void setUp() {
         authApplicationService = new AuthApplicationService(
-                tokenBlacklistService, tokenService, sysUserService, sysRoleService);
+                tokenBlacklistService, tokenService, sysUserService, sysRoleService,
+                refreshRateLimiterService);
     }
 
     @Test
@@ -105,11 +110,16 @@ class AuthApplicationServiceUnitTest {
     @Test
     @DisplayName("刷新:Refresh Token 无效 -> 抛异常")
     void refreshToken_invalid_throws() {
+        // 007 T015 后:存在性校验与取 userId 合并为单次 get,无效即抛 IllegalArgumentException
         RefreshTokenRequest request = new RefreshTokenRequest();
         request.setRefreshToken("123e4567-e89b-12d3-a456-426614174000");
-        when(tokenService.isRefreshTokenValid("123e4567-e89b-12d3-a456-426614174000")).thenReturn(false);
+        when(tokenService.getUserIdFromRefreshToken("123e4567-e89b-12d3-a456-426614174000"))
+                .thenThrow(new IllegalArgumentException("Refresh Token无效或已过期"));
 
         assertThrows(EveHelperException.class, () -> authApplicationService.refreshToken(request));
+
+        // 007 T017 接线断言:无效 token 失败路径触发 L2 观测(非硬拒,业务错误照常抛出)
+        verify(refreshRateLimiterService).observeInvalidRefresh();
     }
 
     @Test
@@ -117,7 +127,6 @@ class AuthApplicationServiceUnitTest {
     void refreshToken_valid_returnsTokenPair() {
         RefreshTokenRequest request = new RefreshTokenRequest();
         request.setRefreshToken("123e4567-e89b-12d3-a456-426614174000");
-        when(tokenService.isRefreshTokenValid("123e4567-e89b-12d3-a456-426614174000")).thenReturn(true);
         when(tokenService.getUserIdFromRefreshToken("123e4567-e89b-12d3-a456-426614174000")).thenReturn(1);
         SysUser user = new SysUser();
         when(sysUserService.loadUserById(1)).thenReturn(user);

@@ -37,7 +37,11 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
 
     final RedisTemplate<String, Object> redisTemplate;
 
-    final EveHelperSecurityConfig eveHelperSecurityConfig;
+    /**
+     * 白名单判定单一事实来源(007 T006,CRITICAL-1):
+     * JwtAuthorizationTokenFilter 与本管理器共同消费,防语义漂移
+     */
+    final WhiteUrlMatcher whiteUrlMatcher;
 
     final PathMatcher pathMatcher = new AntPathMatcher();
 
@@ -53,6 +57,9 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
 
         HttpServletRequest request = requestAuthorizationContext.getRequest();
         String method = request.getMethod();
+        // OPTIONS 预检短路。注意:该短路【有意】不并入 WhiteUrlMatcher ——
+        // CORS 预检不带 Authorization 头,走 JwtAuthorizationTokenFilter 的
+        // 「非 JWT 不处理」分支,过滤器侧无需对应短路(plan v3 §3.2、round3 §1.3)。
         if (SecurityConstant.OPTIONS.equalsIgnoreCase(method)) {
             return new AuthorizationDecision(true);
         }
@@ -62,17 +69,10 @@ public class RbacAuthorizationManager implements AuthorizationManager<RequestAut
         String restfulPath = method + ":" + path;
 
         /**
-         * 白名单路径
+         * 白名单路径(007 T006:委托 WhiteUrlMatcher 单一事实来源,
+         * 与 JwtAuthorizationTokenFilter 的白名单放行语义保持完全一致)
          */
-        boolean isWhiteList = eveHelperSecurityConfig.getWhiteUrlList().stream()
-                .anyMatch(white -> {
-                    if (restfulPath.equals(white)) {
-                        return true;
-                    }
-                    return false;
-                });
-
-        if (isWhiteList) {
+        if (whiteUrlMatcher.isWhiteListed(request)) {
             return new AuthorizationDecision(true);
         }
 

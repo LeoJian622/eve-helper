@@ -29,7 +29,7 @@ public class SensitiveDataMasker {
 
         String prefix = token.substring(0, VISIBLE_LENGTH);
         String suffix = token.substring(token.length() - VISIBLE_LENGTH);
-        return prefix + MASK + suffix;
+        return stripControlCharacters(prefix + MASK + suffix);
     }
 
     /**
@@ -49,7 +49,7 @@ public class SensitiveDataMasker {
 
         String prefix = username.substring(0, 2);
         String suffix = username.substring(username.length() - 1);
-        return prefix + MASK + suffix;
+        return stripControlCharacters(prefix + MASK + suffix);
     }
 
     /**
@@ -70,6 +70,21 @@ public class SensitiveDataMasker {
 
         String prefix = email.substring(0, 1);
         String domain = email.substring(atIndex);
-        return prefix + "***" + domain;
+        return stripControlCharacters(prefix + "***" + domain);
+    }
+
+    /**
+     * 剔除输出中的全部控制字符({{@code \p{Cc}}} 类,含 CR/LF/ESC/NUL 等)。
+     * 防止将外部可控输入原样带入日志造成 CRLF 注入(CWE-117)。
+     * 剔除而非转义,不改变既有日志消费方对掩码格式的解析假设。
+     *
+     * @param value 待净化的字符串
+     * @return 剔除控制字符后的字符串
+     */
+    private static String stripControlCharacters(String value) {
+        if (value == null || value.isEmpty()) {
+            return value;
+        }
+        return value.replaceAll("\\p{Cc}", "");
     }
 }

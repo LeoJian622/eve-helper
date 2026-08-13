@@ -60,6 +60,15 @@ public interface SecurityConstant {
 
     String GRANT_TYPE_KEY = "grant_type";
 
+    /**
+     * 会话标识声明(007 T048)。
+     * <p>登录时生成一次,<b>refresh token 轮换时原样继承</b> —— 与每次轮换都变的
+     * {@code jti} 不同,它在整个会话生命周期内恒定,故可作为
+     * 「access token → 当前 refresh token」索引的稳定锚点,使登出能撤销
+     * <b>轮换之后</b>的 refresh token。
+     */
+    String SESSION_ID_KEY = "sid";
+
     String REFRESH_TOKEN = "refresh_token";
 
     /**

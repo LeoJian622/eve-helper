@@ -1,6 +1,7 @@
 package xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -26,6 +27,7 @@ import java.util.Set;
  * date 2023-08-02 9:07
  */
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class AuthorizeOAuth {
@@ -84,10 +86,21 @@ public class AuthorizeOAuth {
                 .uri(URI_ACCESS_TOKEN)
                 .bodyValue(parameters)
                 .retrieve()
+                // 上游原始错误文本(如 invalid_grant:Invalid refresh token. Token has been revoked.)
+                // 只进服务端日志,不进异常 message:否则经 GlobalExceptionHandler 原样下发给客户端,
+                // 既泄露 ESI 内部细节,又使「本人角色但 token 已废」与归属校验失败可被区分(006 FR-020)
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> {
+                            log.warn("ESI 认证失败(4xx): grantType={}, error={}, description={}",
+                                    grantType, res.getError(), res.getErrorDescription());
+                            return Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE));
+                        }))
                 .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                        response.bodyToMono(ErrorResponse.class).flatMap(res -> {
+                            log.error("ESI 服务异常(5xx): grantType={}, error={}, description={}",
+                                    grantType, res.getError(), res.getErrorDescription());
+                            return Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE));
+                        }))
                 .bodyToMono(AuthTokenResponse.class);
     }
 

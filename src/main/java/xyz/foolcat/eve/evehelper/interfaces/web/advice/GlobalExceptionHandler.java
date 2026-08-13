@@ -28,6 +28,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.rmi.ServerException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * 全局异常处理器
@@ -46,7 +47,13 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(BindException.class)
     public <T> Result<T> processException(BindException e) {
-        log.error("表单绑定异常: ", e);
+        // 008 R9:结构化摘要,不回显 rejected value、不打印异常对象本体(FieldError.toString()
+        // 含 rejected value,可被 10KB/CRLF 载荷伪造日志行;防 CWE-117)。级别 warn。
+        log.warn("表单绑定校验失败: object={}, errorCount={}, fields={}",
+                e.getObjectName(), e.getErrorCount(),
+                e.getFieldErrors().stream()
+                        .map(fe -> fe.getField() + "=" + fe.getDefaultMessage())
+                        .collect(Collectors.joining(", ")));
         JSONObject msg = new JSONObject();
         e.getAllErrors().forEach(error -> {
             if (error instanceof FieldError fieldError) {
@@ -100,7 +107,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public <T> Result<T> processException(MethodArgumentTypeMismatchException e) {
-        log.error("方法参数类型不匹配异常: ", e);
+        // 008 T018(LOW-D):结构化摘要,不传异常对象(toString 会回显原始输入,同类 CWE-117)。
+        // 类型不匹配仅在认证后可达,暴露面低于 R9,随 R9 一并推广「不回显外部输入」原则。
+        log.warn("方法参数类型不匹配: name={}, requiredType={}, valueType={}",
+                e.getName(),
+                e.getRequiredType() == null ? null : e.getRequiredType().getSimpleName(),
+                e.getValue() == null ? null : e.getValue().getClass().getSimpleName());
         return Result.failed(ResultCode.PARAM_ERROR, "类型错误");
     }
 

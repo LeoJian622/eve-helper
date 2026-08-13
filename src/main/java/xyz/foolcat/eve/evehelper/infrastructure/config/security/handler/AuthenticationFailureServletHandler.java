@@ -5,14 +5,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.*;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.web.authentication.rememberme.InvalidCookieException;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.domain.service.security.LoginRateLimiterService;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
+import xyz.foolcat.eve.evehelper.shared.util.SensitiveDataMasker;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,45 +38,29 @@ public class AuthenticationFailureServletHandler implements AuthenticationFailur
                                         AuthenticationException exception) throws IOException, ServletException {
 
         String username = request.getParameter("username");
-        log.warn("登录失败: username={}, reason={}", username, exception.getMessage());
+        String maskedUsername = SensitiveDataMasker.maskUsername(username);
 
-        // 记录失败次数
-        boolean isLocked = loginRateLimiterService.recordFailedAttempt(username);
-
-        // 构建响应消息
-        String message;
-        if (isLocked) {
-            long remainingTime = loginRateLimiterService.getLockRemainingTime(username);
-            message = "账户已锁定，请在%d分钟后重试".formatted(remainingTime / 60);
-        } else {
-            int remainingAttempts = loginRateLimiterService.getRemainingAttempts(username);
-            if (exception instanceof AccountExpiredException) {
-                message = "账号已过期";
-            } else if (exception instanceof UsernameNotFoundException) {
-                message = "用户名或密码错误";
-            } else if (exception instanceof BadCredentialsException) {
-                message = "用户名或密码错误，剩余尝试次数: %d".formatted(remainingAttempts);
-            } else if (exception instanceof CredentialsExpiredException) {
-                message = "密码已过期";
-            } else if (exception instanceof DisabledException) {
-                message = "账号不可用";
-            } else if (exception instanceof LockedException) {
-                message = "账户已被锁定";
-            } else if (exception instanceof InternalAuthenticationServiceException) {
-                message = "用户账号不存在";
-            } else if (exception instanceof InvalidCookieException) {
-                message = "登录已过期";
-            } else {
-                message = "登录失败: " + exception.getMessage();
-            }
+        // 限流副作用守护(评审 LOW-1):Redis 故障时降级为仅日志,恒写统一 401,不退化为 500
+        boolean isLocked = false;
+        int remainingAttempts = -1;
+        try {
+            isLocked = loginRateLimiterService.recordFailedAttempt(username);
+            remainingAttempts = loginRateLimiterService.getRemainingAttempts(username);
+        } catch (Exception e) {
+            log.warn("限流服务不可用,降级为统一响应: username={}", maskedUsername, e);
         }
 
-        // 返回JSON响应
+        // 对外单一措辞(SC-001 / FR-004 / FR-005):凭证类失败对外不可区分,细节仅服务端日志
+        // (maskUsername 已剔除控制字符,防 CRLF 注入;CWE-117)
+        log.warn("登录失败: username={}, reason={}, locked={}, remainingAttempts={}",
+                maskedUsername, exception.getClass().getSimpleName(), isLocked, remainingAttempts);
+
+        // 返回JSON响应:统一「用户名或密码错误」,不回显内部异常消息(LOW-7j)
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
 
-        Result result = Result.failed(message);
+        Result result = Result.failed("用户名或密码错误");
         response.getWriter().write(objectMapper.writeValueAsString(result));
     }
 }

@@ -30,7 +30,6 @@ EVE Helper 是一个基于 Java Spring Boot 的应用程序,用于 EVE Online �
 | Hutool | 5.8.44 | 工具库 |
 | SpringDoc OpenAPI | 2.8.16 | API 文档 |
 | Nimbus JOSE JWT | 10.0.2 | JWT 处理 |
-| Prometheus metrics | 1.0.0 | 指标暴露 |
 
 ## 构建和开发命令
 
@@ -117,3 +116,8 @@ mvn package -DskipTests
 - Redis 必须运行;两个 MySQL 数据库(eve 和 eve_helper)必须可访问
 - 中文注释和文档是有意的(目标受众)
 - 业务代码变更须走统一 Spec-First 流程(不分级、无例外);技术栈本身不可变更
+
+<!-- SPECKIT START -->
+当前 feature: `008-security-review-followup`(安全评审遗留修复)
+实现计划: [specs/008-security-review-followup/plan.md](specs/008-security-review-followup/plan.md)
+<!-- SPECKIT END -->

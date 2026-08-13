@@ -67,7 +67,7 @@ class EsiApiServiceUnitTest {
     private static final Integer USER_ID = 100;
     private static final Integer CID = 95465499;
     private static final String STATUS_KEY = "esi_auth_status:95465499";
-    private static final String LOCK_KEY = "esi_auth_status_lock:95465499";
+    private static final String LOCK_KEY = "esi_refresh_lock:95465499";
     private static final String ACCESS_TOKEN_KEY = "esi_access_token:" + USER_ID + ":" + CID;
 
     @BeforeEach

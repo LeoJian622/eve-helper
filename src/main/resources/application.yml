@@ -1,5 +1,15 @@
 server:
   port: 9999
+  tomcat:
+    threads:
+      # 007 T036:显式声明容量上限,不再依赖 Boot 默认值(默认 200/8192)。
+      # 这两个值是「洪泛容忍度」的分母 —— 任何在工作线程上阻塞的逻辑(如曾被推翻的
+      # refresh 延迟整形)都会把它们变成全站可用性上限,故必须可见、可审、可调。
+      max: 200
+      min-spare: 10
+    # 超出线程数后的排队长度;队满即拒新连接(快速失败优于无界排队)
+    accept-count: 100
+    max-connections: 8192
 
 spring:
   datasource:
@@ -86,20 +96,24 @@ spring:
 # 日志配置
 logging:
   level:
+    # 007 T038:root 必须显式声明 —— SecurityBaselineValidator 对缺失该键 fail-closed 拒启
     root: info
-    web:  debug
-    com:
-      bolingcavalry:
-        druidtwosource:
-          mapper: debug
+    # ⚠️ 本节任何 logger 都不可设为 debug/trace(007 T038 起启动期硬校验,违反即拒启):
+    #   - web         → AbstractHttpMessageConverter 在 DEBUG 下打印响应体片段,ESI accessToken
+    #                   的 "Bearer eyJ..." 落入日志(006 FR-014)
+    #   - reactor.netty → ESI 客户端请求头落盘,含 Authorization: Bearer <token>
+    #   - ...persistence.mapper → 配合 Slf4jImpl 打 SQL 绑定参数,refresh_token 明文入日志
+    #                   (与 log-impl 基线等效,是同一泄露的另一侧)
+    web:  info
 #  file:
 #    path: src\main\resource\log\
 mybatis-plus:
   configuration:
     # 驼峰下划线转换
     map-underscore-to-camel-case: true
-    # 这个配置会将执行的sql打印出来，在开发或测试的时候可以用
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 必须用 Slf4jImpl 而非 StdOutImpl:后者无条件打印全部 SQL 绑定参数,
+    # 会把 eve_account.refresh_token(ESI 长期凭证,明文存储)输出到 stdout(006 feature FR-014)
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 jwt-token:
   issuer: eve-helper.xyz
   subject: eve-helper
@@ -111,7 +125,8 @@ security:
   keystore:
     location: ${KEYSTORE_LOCATION}
     password: ${KEYSTORE_PASSWORD}
-    alias: ${KEYSTORE_ALIAS}
+    # 007 T026:别名给默认值 eve-jwt(生产新密钥沿用该别名,减少环境变量面)
+    alias: ${KEYSTORE_ALIAS:eve-jwt}
     key-password: ${KEY_PASSWORD}
 
 eve:
@@ -119,6 +134,16 @@ eve:
     whiteUrlList:
       #      - GET:/
       - POST:/user
+      # 007 T014:refresh 端点须在无有效 access token 时可达(否则旧 token 客户端陷入 401 死循环)。
+      # ⚠️ whiteUrlList 是 List 属性,profile 文件整体覆盖 application.yml ——
+      # 任何自带 whiteUrlList 的 profile(test/ali/aliw/prod)都必须同步本行,
+      # 否则加白在该 profile 静默失效(SC-016 同型风险)。
+      - POST:/auth/tokens
+    debug:
+      access-token-endpoint:
+        # 角色 ESI accessToken 查询端点开关。该端点交出可直接冒用的 bearer 凭证,
+        # 仅供内部调试/运维排查,生产必须保持 false;需要排查时临时开启并及时关闭。
+        enabled: ${ACCESS_TOKEN_ENDPOINT_ENABLED:false}
 
 onebot:
   websocket:

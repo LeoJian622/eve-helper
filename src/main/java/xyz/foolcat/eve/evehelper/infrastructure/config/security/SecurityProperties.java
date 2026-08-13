@@ -21,9 +21,11 @@ public class SecurityProperties {
     @Data
     public static class Keystore {
         /**
-         * 密钥库文件位置
+         * 密钥库文件位置。
+         * 007 T024(H4a):不再提供默认值 —— 旧默认 "eve-jwt.jks" 会在未配置时
+         * 静默加载已泄露的旧密钥;现缺失即由 KeyPairConfig fail-fast 拒启。
          */
-        private String location = "eve-jwt.jks";
+        private String location;
 
         /**
          * 密钥库密码(从环境变量加载)
