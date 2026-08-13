@@ -2,13 +2,13 @@ package xyz.foolcat.eve.evehelper.infrastructure.external.esi;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
@@ -55,27 +55,28 @@ import static org.mockito.Mockito.when;
  * @author Leojan
  * date 2026-08-11
  */
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("ESI AccessToken 获取单元测试 - 归属校验/锁/超时")
 class EsiApiServiceAccessTokenTest {
 
-    @Mock
+    @MockBean
     CacheGateway cacheGateway;
 
-    @Mock
+    @MockBean
     EveAccountService eveAccountService;
 
-    @Mock
+    @MockBean
     AuthorizeOAuth authorizeOAuth;
 
-    @Mock
+    @MockBean
     CharacterApi characterApi;
 
-    @Mock
+    @MockBean
     UniverseApi universeApi;
 
-    @InjectMocks
-    EsiApiService esiApiService;
+    @Autowired
+    private EsiApiService esiApiService;
 
     private static final Integer USER_ID = 100;
     private static final Integer OTHER_USER_ID = 200;

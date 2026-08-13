@@ -2,11 +2,11 @@ package xyz.foolcat.eve.evehelper.application.service;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.application.assembler.system.StructureAssembler;
 import xyz.foolcat.eve.evehelper.application.dto.request.StructureFuelQuery;
 import xyz.foolcat.eve.evehelper.application.dto.request.StructureQuery;
@@ -48,7 +48,8 @@ import static org.mockito.Mockito.when;
  *
  * @author Leojan
  */
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("建筑查询应用服务单元测试")
 class StructureQueryApplicationServiceTest {
 
@@ -56,17 +57,17 @@ class StructureQueryApplicationServiceTest {
     private static final long CORP_ID_NUM = 98000001L;
     private static final long STRUCTURE_ID = 100L;
 
-    @Mock
+    @MockBean
     StructureRepository structureRepository;
 
-    @Mock
+    @MockBean
     StructureAssembler structureAssembler;
 
-    @Mock
+    @MockBean
     AccessGuard accessGuard;
 
-    @InjectMocks
-    StructureQueryApplicationService service;
+    @Autowired
+    private StructureQueryApplicationService service;
 
     // ===== 参数校验 requireCorporationId(先于 IDOR,防越权探测)=====
 

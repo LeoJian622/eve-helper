@@ -1,17 +1,16 @@
 package xyz.foolcat.eve.evehelper.application.security;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
-import xyz.foolcat.eve.evehelper.domain.service.security.ResourceOwnershipPolicy;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
@@ -37,7 +36,8 @@ import static org.mockito.Mockito.when;
  * @author Leojan
  * date 2026-08-07
  */
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("访问控制守卫单元测试")
 class AccessGuardUnitTest {
 
@@ -47,15 +47,11 @@ class AccessGuardUnitTest {
 
     private static final Integer OWN_CORP_ID = 98000001;
 
-    @Mock
+    @MockBean
     EveAccountService eveAccountService;
 
+    @Autowired
     private AccessGuard accessGuard;
-
-    @BeforeEach
-    void setUp() {
-        accessGuard = new AccessGuard(new ResourceOwnershipPolicy(eveAccountService));
-    }
 
     @AfterEach
     void tearDown() {

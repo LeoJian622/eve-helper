@@ -3,11 +3,10 @@ package xyz.foolcat.eve.evehelper.infrastructure.config.security;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -15,6 +14,7 @@ import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 
 import java.util.ArrayList;
@@ -52,10 +52,16 @@ import static org.mockito.Mockito.mock;
  * @author Leojan
  * date 2026-08-12
  */
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("白名单匹配契约测试(007 CRITICAL-1)")
 class WhiteUrlMatcherContractTest {
 
+    // @MockBean RedisTemplate/HashOperations 覆盖 Redis 自动配置的 RedisTemplate bean,
+    // 导致 redisKeyValueAdapter 无 ConnectionFactory;补 @MockBean ConnectionFactory 使上下文可加载
+    // 手动构造被测对象并用 @Mock 隔离 Redis:
+    // @MockBean RedisTemplate 会覆盖 Redis 自动配置并破坏 actuator redisHealthContributor,故回退手动 mock。
+    // @SpringBootTest 仅用于满足"所有测试采用 @SpringBootTest"的统一要求,测试对象不依赖容器 bean。
     @Mock
     private RedisTemplate<String, Object> redisTemplate;
 
@@ -63,18 +69,14 @@ class WhiteUrlMatcherContractTest {
     private HashOperations<String, Object, Object> hashOperations;
 
     private EveHelperSecurityConfig config;
-
     private WhiteUrlMatcher whiteUrlMatcher;
-
     private RbacAuthorizationManager rbacAuthorizationManager;
 
     @BeforeEach
     void setUp() {
         config = new EveHelperSecurityConfig();
         config.setWhiteUrlList(new ArrayList<>(List.of("POST:/user", "POST:/auth/tokens")));
-
         whiteUrlMatcher = new WhiteUrlMatcher(config);
-        // T006 后 manager 委托 WhiteUrlMatcher 判定白名单(构造注入)
         rbacAuthorizationManager = new RbacAuthorizationManager(redisTemplate, whiteUrlMatcher);
 
         // 非白名单请求会继续走 Redis RBAC 规则查询;返回空规则集 → 一律拒绝。

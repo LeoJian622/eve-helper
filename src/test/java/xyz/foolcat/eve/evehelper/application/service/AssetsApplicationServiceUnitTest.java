@@ -4,20 +4,17 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.application.assembler.system.AssetsAssembler;
-import xyz.foolcat.eve.evehelper.application.security.AccessGuard;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.vo.AssetsVO;
-import xyz.foolcat.eve.evehelper.domain.service.security.ResourceOwnershipPolicy;
 import xyz.foolcat.eve.evehelper.domain.service.system.AssetsService;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
@@ -42,8 +39,8 @@ import static org.mockito.Mockito.when;
  * 资产应用服务单元测试。
  * 覆盖正常查询/同步用例，以及归属校验防御越权访问（IDOR）。
  */
-@ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
+@SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("资产应用服务单元测试")
 class AssetsApplicationServiceUnitTest {
 
@@ -62,22 +59,20 @@ class AssetsApplicationServiceUnitTest {
      */
     private static final String OWNED_CORP_ID = "98000001";
 
-    @Mock
+    @MockBean
     AssetsService assetsService;
 
-    @Mock
+    @MockBean
     AssetsAssembler assetsAssembler;
 
-    @Mock
+    @MockBean
     EveAccountService eveAccountService;
 
+    @Autowired
     private AssetsApplicationService assetsApplicationService;
 
     @BeforeEach
     void setUp() {
-        assetsApplicationService = new AssetsApplicationService(
-                assetsService, assetsAssembler,
-                new AccessGuard(new ResourceOwnershipPolicy(eveAccountService)));
         loginAs(CURRENT_USER_ID, "USER");
         EveAccount owned = new EveAccount();
         owned.setCharacterId(Integer.valueOf(OWNED_CHARACTER_ID));

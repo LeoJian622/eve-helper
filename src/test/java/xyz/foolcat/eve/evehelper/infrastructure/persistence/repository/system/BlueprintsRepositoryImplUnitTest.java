@@ -5,10 +5,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.domain.model.query.BlueprintsPageCriteria;
 import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsDTO;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.BlueprintsPoConverter;
@@ -27,21 +28,22 @@ import static org.mockito.Mockito.when;
  * 蓝图仓储实现单元测试。
  * 重点验证 CopyFilter 到数据库标志位的语义映射不被搞反。
  */
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("蓝图仓储实现单元测试")
 class BlueprintsRepositoryImplUnitTest {
 
-    @Mock
+    @MockBean
     BlueprintsMapper blueprintsMapper;
 
-    @Mock
+    @MockBean
     BlueprintsPoConverter blueprintsPoConverter;
 
+    @Autowired
     private BlueprintsRepositoryImpl repository;
 
     @BeforeEach
     void setUp() {
-        repository = new BlueprintsRepositoryImpl(blueprintsMapper, blueprintsPoConverter);
         when(blueprintsMapper.selectBlueprintsInvtypeUniverse(
                 any(), anyString(), any(), any(), any(), anyBoolean()))
                 .thenReturn(new Page<>(1, 20));

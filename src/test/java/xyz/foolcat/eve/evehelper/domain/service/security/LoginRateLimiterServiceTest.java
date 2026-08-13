@@ -1,14 +1,14 @@
 package xyz.foolcat.eve.evehelper.domain.service.security;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 
 
@@ -23,16 +23,18 @@ import static org.mockito.Mockito.*;
  * @author Leojan
  * date 2026-02-01
  */
-@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
+@SpringBootTest
+@ActiveProfiles("test")
+@ExtendWith(OutputCaptureExtension.class)
 @DisplayName("登录限流服务测试")
 class LoginRateLimiterServiceTest {
 
-    
 
-    @Mock
+
+    @MockBean
     private CacheGateway cacheGateway;
 
-    @InjectMocks
+    @Autowired
     private LoginRateLimiterService loginRateLimiterService;
 
     private static final String TEST_USERNAME = "testuser";

@@ -1,13 +1,12 @@
 package xyz.foolcat.eve.evehelper.domain.service.esi;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 
 import reactor.core.publisher.Mono;
@@ -37,42 +36,39 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * ESI 授权状态判定单元测试(Mockito,不依赖 Spring 上下文)。
+ * ESI 授权状态判定集成测试(@SpringBootTest,依赖注入用 @MockBean 保持 mock)。
  *
  * @author Leojan
  * date 2026-08-04
  */
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("ESI 授权状态判定单元测试")
 class EsiApiServiceUnitTest {
 
-    @Mock
+    @MockBean
     CacheGateway cacheGateway;
 
-    @Mock
+    @MockBean
     EveAccountService eveAccountService;
 
-    @Mock
+    @MockBean
     AuthorizeOAuth authorizeOAuth;
 
-    @Mock
+    @MockBean
     CharacterApi characterApi;
 
-    @Mock
+    @MockBean
     UniverseApi universeApi;
 
-    @InjectMocks
-    EsiApiService esiApiService;
+    @Autowired
+    private EsiApiService esiApiService;
 
     private static final Integer USER_ID = 100;
     private static final Integer CID = 95465499;
     private static final String STATUS_KEY = "esi_auth_status:95465499";
     private static final String LOCK_KEY = "esi_refresh_lock:95465499";
     private static final String ACCESS_TOKEN_KEY = "esi_access_token:" + USER_ID + ":" + CID;
-
-    @BeforeEach
-    void setUp() {
-    }
 
     private EveAccount account(String refreshToken) {
         EveAccount a = new EveAccount();

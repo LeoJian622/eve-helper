@@ -2,11 +2,11 @@ package xyz.foolcat.eve.evehelper.domain.service.esi;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
@@ -46,27 +46,28 @@ import static org.mockito.Mockito.when;
  * @author Leojan
  * date 2026-08-07
  */
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("ESI 授权状态判定单元测试 - 四态 + 缓存")
 class EsiApiServiceTest {
 
-    @Mock
+    @MockBean
     CacheGateway cacheGateway;
 
-    @Mock
+    @MockBean
     EveAccountService eveAccountService;
 
-    @Mock
+    @MockBean
     AuthorizeOAuth authorizeOAuth;
 
-    @Mock
+    @MockBean
     CharacterApi characterApi;
 
-    @Mock
+    @MockBean
     UniverseApi universeApi;
 
-    @InjectMocks
-    EsiApiService esiApiService;
+    @Autowired
+    private EsiApiService esiApiService;
 
     private static final Integer USER_ID = 100;
     private static final Integer CID = 95465499;

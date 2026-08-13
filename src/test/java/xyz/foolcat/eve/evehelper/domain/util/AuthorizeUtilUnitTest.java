@@ -1,15 +1,19 @@
 package xyz.foolcat.eve.evehelper.domain.util;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
@@ -37,12 +41,17 @@ import static org.mockito.Mockito.when;
  * @author Leojan
  * date 2026-08-07
  */
+@SpringBootTest
+@ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("权限工具单元测试")
 class AuthorizeUtilUnitTest {
 
     private static final Integer CHARACTER_ID = 2112818290;
 
+    // 手动构造 + @Mock 隔离:避免 @MockBean EveAccountService 被后台定时任务调用,
+    // 污染 verify never 断言(@SpringBootTest 加载上下文后定时任务会触发)
     @Mock
     EveAccountService eveAccountService;
 

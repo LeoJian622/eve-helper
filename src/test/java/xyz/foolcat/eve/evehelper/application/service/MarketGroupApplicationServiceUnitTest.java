@@ -1,11 +1,11 @@
 package xyz.foolcat.eve.evehelper.application.service;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.domain.service.system.MarketGroupsService;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MarketGroupsTreeVO;
 
@@ -17,19 +17,16 @@ import static org.mockito.Mockito.when;
 /**
  * 市场物品组应用服务单元测试。
  */
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("市场物品组应用服务单元测试")
 class MarketGroupApplicationServiceUnitTest {
 
-    @Mock
+    @MockBean
     MarketGroupsService marketGroupsService;
 
+    @Autowired
     private MarketGroupApplicationService marketGroupApplicationService;
-
-    @BeforeEach
-    void setUp() {
-        marketGroupApplicationService = new MarketGroupApplicationService(marketGroupsService);
-    }
 
     @Test
     @DisplayName("查询子分组 -> 返回领域服务结果")

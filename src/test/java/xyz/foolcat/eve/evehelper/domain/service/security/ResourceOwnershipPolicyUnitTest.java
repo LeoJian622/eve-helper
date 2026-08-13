@@ -3,11 +3,10 @@ package xyz.foolcat.eve.evehelper.domain.service.security;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 
@@ -20,8 +19,8 @@ import static org.mockito.Mockito.when;
 /**
  * 资源归属策略单元测试。
  */
-@ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
+@SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("资源归属策略单元测试")
 class ResourceOwnershipPolicyUnitTest {
 
@@ -31,14 +30,14 @@ class ResourceOwnershipPolicyUnitTest {
 
     private static final String CORP_ID = "98000001";
 
-    @Mock
+    @MockBean
     EveAccountService eveAccountService;
 
+    @Autowired
     private ResourceOwnershipPolicy policy;
 
     @BeforeEach
     void setUp() {
-        policy = new ResourceOwnershipPolicy(eveAccountService);
         EveAccount account = new EveAccount();
         account.setCharacterId(Integer.valueOf(CHARACTER_ID));
         account.setCorpId(Integer.valueOf(CORP_ID));

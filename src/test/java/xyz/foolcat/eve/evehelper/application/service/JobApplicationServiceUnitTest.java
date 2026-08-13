@@ -4,15 +4,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import xyz.foolcat.eve.evehelper.application.security.AccessGuard;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
-import xyz.foolcat.eve.evehelper.domain.service.security.ResourceOwnershipPolicy;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.service.system.IndustryJobService;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
@@ -38,7 +37,8 @@ import static org.mockito.Mockito.when;
  * 除编排逻辑外，重点验证归属校验（IDOR 防御）：该接口按用户可控的 id
  * 同步 ESI 数据，须先确认该人物/军团属于当前用户。
  */
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("工业制造应用服务单元测试")
 class JobApplicationServiceUnitTest {
 
@@ -50,20 +50,14 @@ class JobApplicationServiceUnitTest {
 
     private static final Integer OTHER_CHARACTER_ID = 90000001;
 
-    @Mock
+    @MockBean
     IndustryJobService industryJobService;
 
-    @Mock
+    @MockBean
     EveAccountService eveAccountService;
 
+    @Autowired
     private JobApplicationService jobApplicationService;
-
-    @BeforeEach
-    void setUp() {
-        // 使用真实 AccessGuard，保证守卫逻辑本身被覆盖而非被 mock 掉
-        AccessGuard accessGuard = new AccessGuard(new ResourceOwnershipPolicy(eveAccountService));
-        jobApplicationService = new JobApplicationService(industryJobService, accessGuard);
-    }
 
     @AfterEach
     void tearDown() {

@@ -1,25 +1,23 @@
 package xyz.foolcat.eve.evehelper.application.service;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.application.assembler.system.EveAccountAssembler;
 import xyz.foolcat.eve.evehelper.application.assembler.system.SysUserAssembler;
 import xyz.foolcat.eve.evehelper.application.dto.UserAccountDTO;
 import xyz.foolcat.eve.evehelper.application.dto.response.UserDTO;
-import xyz.foolcat.eve.evehelper.application.security.AccessGuard;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
-import xyz.foolcat.eve.evehelper.domain.service.security.ResourceOwnershipPolicy;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.SysUserDetails;
@@ -31,7 +29,6 @@ import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -43,48 +40,40 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * 用户应用服务-授权状态编排单元测试(Mockito,同步执行器保证确定性)。
+ * 用户应用服务-授权状态编排单元测试(@SpringBootTest + @MockBean)。
+ * queryAccountListWithAuthStatus 经 future.get() 阻塞等待每个角色状态判定,
+ * 因此真实异步执行器下断言仍具确定性。
  *
  * @author Leojan
  * date 2026-08-04
  */
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("用户应用服务-授权状态编排单元测试")
 class UserApplicationServiceUnitTest {
 
-    @Mock
+    @MockBean
     EveAccountService eveAccountService;
 
-    @Mock
+    @MockBean
     EsiGateway esiApiService;
 
-    @Mock
+    @MockBean
     EveAccountAssembler eveAccountAssembler;
 
-    @Mock
+    @MockBean
     SysUserService sysUserService;
 
-    @Mock
+    @MockBean
     SysUserAssembler userAssembler;
 
-    @Mock
+    // 用真实 PasswordEncoder(SecurityConfig 的 BCryptPasswordEncoder bean),
+    // 避免 @MockBean 覆盖同名 bean 导致 securityFilterChain 上下文加载失败
+    @Autowired
     PasswordEncoder passwordEncoder;
 
-    /**
-     * 同步执行器:任务在调用线程直接执行,保证测试确定性(并行逻辑仍走 CompletableFuture)。
-     */
-    private final Executor esiAuthStatusExecutor = Runnable::run;
-
+    @Autowired
     private UserApplicationService userApplicationService;
-
-    @BeforeEach
-    void setUp() {
-        // 使用真实 AccessGuard，保证守卫逻辑本身被测试覆盖而非被 mock 掉
-        AccessGuard accessGuard = new AccessGuard(new ResourceOwnershipPolicy(eveAccountService));
-        userApplicationService = new UserApplicationService(
-                eveAccountService, esiApiService, eveAccountAssembler,
-                sysUserService, userAssembler, passwordEncoder, esiAuthStatusExecutor, accessGuard);
-    }
 
     @AfterEach
     void tearDown() {
@@ -331,12 +320,12 @@ class UserApplicationServiceUnitTest {
         SysUser sysUser = new SysUser();
         sysUser.setPassword("raw");
         when(userAssembler.userDto2SysUser(user)).thenReturn(sysUser);
-        when(passwordEncoder.encode("raw")).thenReturn("encoded");
 
         userApplicationService.register(user);
 
         verify(sysUserService).insert(sysUser);
-        assertEquals("encoded", sysUser.getPassword());
+        // 真实 BCryptPasswordEncoder 编码,断言结果为 bcrypt 哈希而非原文
+        assertTrue(sysUser.getPassword().startsWith("$2a$"));
     }
 
     @Test

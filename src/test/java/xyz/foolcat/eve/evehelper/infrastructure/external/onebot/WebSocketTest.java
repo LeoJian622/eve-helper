@@ -11,7 +11,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.Environment;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.lang.reflect.Field;
 import java.util.Collection;
@@ -32,6 +34,8 @@ import static org.mockito.Mockito.when;
  *
  * @author Leojan
  */
+@SpringBootTest
+@ActiveProfiles("test")
 @ExtendWith(MockitoExtension.class)
 @DisplayName("WebSocket 入口鉴权测试 - fail-closed 共享密钥")
 class WebSocketTest {

@@ -1,12 +1,12 @@
 package xyz.foolcat.eve.evehelper.application.service;
 
 import jakarta.servlet.http.HttpServletRequest;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.application.dto.request.RefreshTokenRequest;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.domain.model.vo.TokenResult;
@@ -32,33 +32,28 @@ import static org.mockito.Mockito.when;
  *
  * @author Leojan
  */
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("认证应用服务单元测试")
 class AuthApplicationServiceUnitTest {
 
-    @Mock
+    @MockBean
     TokenBlacklistService tokenBlacklistService;
 
-    @Mock
+    @MockBean
     TokenService tokenService;
 
-    @Mock
+    @MockBean
     SysUserService sysUserService;
 
-    @Mock
+    @MockBean
     SysRoleService sysRoleService;
 
-    @Mock
+    @MockBean
     RefreshRateLimiterService refreshRateLimiterService;
 
+    @Autowired
     private AuthApplicationService authApplicationService;
-
-    @BeforeEach
-    void setUp() {
-        authApplicationService = new AuthApplicationService(
-                tokenBlacklistService, tokenService, sysUserService, sysRoleService,
-                refreshRateLimiterService);
-    }
 
     @Test
     @DisplayName("登出:缺少 Authorization 头 -> 抛异常")

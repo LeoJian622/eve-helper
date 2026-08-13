@@ -1,23 +1,20 @@
 package xyz.foolcat.eve.evehelper.application.service;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.application.assembler.system.EveAccountAssembler;
 import xyz.foolcat.eve.evehelper.application.assembler.system.SysUserAssembler;
 import xyz.foolcat.eve.evehelper.application.dto.UserAccountDTO;
-import xyz.foolcat.eve.evehelper.application.security.AccessGuard;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
-import xyz.foolcat.eve.evehelper.domain.service.security.ResourceOwnershipPolicy;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
@@ -25,7 +22,6 @@ import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -33,51 +29,39 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 
 /**
- * UserApplicationService.queryAccountListWithAuthStatus 单元测试(纯 Mockito)。
+ * UserApplicationService.queryAccountListWithAuthStatus 集成测试(@SpringBootTest + @MockBean)。
  * <p>
  * 覆盖多角色并行判定中的异常隔离与空列表降级,对应 003-esi-auth-status 任务 T012。
- * 使用同步执行器(Runnable::run)保证测试确定性,真实 AccessGuard 保证守卫逻辑被覆盖。
+ * 注入真实 bean,queryAccountListWithAuthStatus 经 future.get() 阻塞等待每个角色判定,
+ * 因此真实异步执行器下断言仍具确定性。
  *
  * @author Leojan
  * date 2026-08-07
  */
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("用户应用服务-授权状态编排单元测试 - 异常隔离与空列表")
 class UserApplicationServiceTest {
 
-    @Mock
+    @MockBean
     EveAccountService eveAccountService;
 
-    @Mock
+    @MockBean
     EsiGateway esiApiService;
 
-    @Mock
+    @MockBean
     EveAccountAssembler eveAccountAssembler;
 
-    @Mock
+    @MockBean
     SysUserService sysUserService;
 
-    @Mock
+    @MockBean
     SysUserAssembler userAssembler;
 
-    @Mock
-    PasswordEncoder passwordEncoder;
-
-    /**
-     * 同步执行器:任务在调用线程直接执行,保证测试确定性(并行逻辑仍走 CompletableFuture)。
-     */
-    private final Executor esiAuthStatusExecutor = Runnable::run;
-
+    // 不 @MockBean PasswordEncoder:覆盖 SecurityConfig.passwordEncoder 会破坏 securityFilterChain 上下文;
+    // 本类无 register 测试,不需 mock,真实 bean 由 @Autowired UserApplicationService 内部使用
+    @Autowired
     private UserApplicationService userApplicationService;
-
-    @BeforeEach
-    void setUp() {
-        // 使用真实 AccessGuard,保证守卫逻辑本身被测试覆盖而非被 mock 掉
-        AccessGuard accessGuard = new AccessGuard(new ResourceOwnershipPolicy(eveAccountService));
-        userApplicationService = new UserApplicationService(
-                eveAccountService, esiApiService, eveAccountAssembler,
-                sysUserService, userAssembler, passwordEncoder, esiAuthStatusExecutor, accessGuard);
-    }
 
     @AfterEach
     void tearDown() {

@@ -8,10 +8,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 
 import java.util.List;
@@ -56,16 +57,18 @@ import static org.mockito.Mockito.when;
  * @author Leojan
  * date 2026-08-12
  */
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("refresh 两层限流契约测试(007 CRITICAL-2)")
 class RefreshRateLimiterTest {
 
     /** 「不施加时延」路径的耗时上限:纯内存操作 + mock,80ms 已留足抖动余量 */
     private static final long NO_DELAY_MAX_MS = 80;
 
-    @Mock
+    @MockBean
     private CacheGateway cacheGateway;
 
+    @Autowired
     private RefreshRateLimiterService refreshRateLimiterService;
 
     /** 捕获被测类日志的 appender —— 告警通路即日志,故须能断言日志内容 */
@@ -75,8 +78,6 @@ class RefreshRateLimiterTest {
 
     @BeforeEach
     void setUp() {
-        refreshRateLimiterService = new RefreshRateLimiterService(cacheGateway);
-
         Logger logger = (Logger) LoggerFactory.getLogger(RefreshRateLimiterService.class);
         listAppender = new ListAppender<>();
         listAppender.start();

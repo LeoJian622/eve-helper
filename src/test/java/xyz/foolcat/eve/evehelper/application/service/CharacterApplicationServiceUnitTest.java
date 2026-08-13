@@ -1,11 +1,11 @@
 package xyz.foolcat.eve.evehelper.application.service;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
@@ -25,19 +25,16 @@ import static org.mockito.Mockito.when;
 /**
  * 角色应用服务单元测试。
  */
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@ActiveProfiles("test")
 @DisplayName("角色应用服务单元测试")
 class CharacterApplicationServiceUnitTest {
 
-    @Mock
+    @MockBean
     EsiGateway esiApiService;
 
+    @Autowired
     private CharacterApplicationService characterApplicationService;
-
-    @BeforeEach
-    void setUp() {
-        characterApplicationService = new CharacterApplicationService(esiApiService);
-    }
 
     @Test
     @DisplayName("授权成功 -> 调用 ESI getAccessToken")
