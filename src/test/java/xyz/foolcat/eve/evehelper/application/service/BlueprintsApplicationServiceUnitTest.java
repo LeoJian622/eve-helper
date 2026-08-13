@@ -23,6 +23,7 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.BlueprintsDTO;
 import xyz.foolcat.eve.evehelper.domain.repository.system.BlueprintsRepository;
 import xyz.foolcat.eve.evehelper.domain.service.security.ResourceOwnershipPolicy;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.infrastructure.config.security.SysUserDetails;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
@@ -88,13 +89,15 @@ class BlueprintsApplicationServiceUnitTest {
     }
 
     /**
-     * 模拟指定用户与角色登录（principal 为 SysUser，供部分内部调用路径使用）
+     * 模拟指定用户与角色登录（principal 为 SysUserDetails 适配器，
+     * 与 004 重构后 formLogin 生产路径一致，UserUtil 可经 AuthenticatedPrincipal 提取 userId）
      */
     private void loginAs(Integer userId, String role) {
         SysUser user = new SysUser();
         user.setId(userId);
+        SysUserDetails principal = new SysUserDetails(user, List.of(new SimpleGrantedAuthority(role)));
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(user, null,
+                new UsernamePasswordAuthenticationToken(principal, null,
                         List.of(new SimpleGrantedAuthority(role))));
     }
 

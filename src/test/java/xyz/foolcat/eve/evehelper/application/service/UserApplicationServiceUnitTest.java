@@ -22,6 +22,7 @@ import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.security.ResourceOwnershipPolicy;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
+import xyz.foolcat.eve.evehelper.infrastructure.config.security.SysUserDetails;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
@@ -115,14 +116,16 @@ class UserApplicationServiceUnitTest {
     }
 
     /**
-     * 模拟表单登录(formLogin)的认证:principal 是 SysUser 实体,
-     * 覆盖 UserUtil 的 SysUser 分支
+     * 模拟表单登录(formLogin)的认证:principal 是 SysUserDetails 适配器,
+     * 覆盖 UserUtil 的 AuthenticatedPrincipal 分支(004 重构后 formLogin 生产路径)
      */
     private void loginAsSysUser(Integer userId, String... roles) {
         SysUser user = new SysUser();
         user.setId(userId);
+        SysUserDetails principal =
+                new SysUserDetails(user, Arrays.stream(roles).map(SimpleGrantedAuthority::new).toList());
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(user, null,
+                new UsernamePasswordAuthenticationToken(principal, null,
                         Arrays.stream(roles).map(SimpleGrantedAuthority::new).toList()));
     }
 

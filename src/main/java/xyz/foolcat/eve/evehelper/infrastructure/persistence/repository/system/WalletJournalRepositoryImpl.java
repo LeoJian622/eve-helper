@@ -65,12 +65,13 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
      */
     @Override
     public List<Map<String, Object>> selectMapByDatetime(Date start, Date end, List<String> refType) {
+        // character / date 均为 MySQL 保留字，列名必须加反引号；
+        // 全部改用字符串列名而非 lambda 方法引用，避免 MyBatis-Plus 生成无反引号的 GROUP BY character 导致语法错误
         return walletJournalMapper.selectMaps(new QueryWrapper<WalletJournalPO>()
                 .select("`character` as name,sum(amount) as amount")
-                .lambda()
-                .and(item -> item.in(WalletJournalPO::getRefType, refType))
-                .between(WalletJournalPO::getDate, start, end)
-                .groupBy(WalletJournalPO::getCharacter));
+                .in("ref_type", refType)
+                .between("`date`", start, end)
+                .groupBy("`character`"));
 
     }
 } 

@@ -10,6 +10,8 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
 import xyz.foolcat.eve.evehelper.domain.repository.system.StructureRepository;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
+import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 
 import java.text.ParseException;
 import java.util.Collection;
@@ -103,8 +105,16 @@ public class StructureService {
 
         /*
           获取游戏人物信息及授权
+          请求路径有 SecurityContext 用 authorize(校验归属);
+          定时任务等无上下文路径用 authorizeInternal(显式系统身份),二者均 fail-closed。
          */
-        EveAccount eveAccount = authorizeUtil.authorize(cId);
+        EveAccount eveAccount;
+        Integer currentUserId = UserUtil.getUserId();
+        if (currentUserId != null && currentUserId > 0) {
+            eveAccount = authorizeUtil.authorize(cId);
+        } else {
+            eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, cId);
+        }
         String accessToken = esiApiService.getAccessToken(cId, eveAccount.getUserId());
 
         /*

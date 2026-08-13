@@ -12,6 +12,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 
 import java.util.List;
 import java.util.Objects;
@@ -36,7 +37,7 @@ class CorporationApiTest {
 
     @BeforeEach
     void initAccessToken() {
-        EveAccount entity = authorizeUtil.authorize( 2112818290);
+        EveAccount entity = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, 2112818290);
         Mono<AuthTokenResponse> authTokenResponseMono = authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, entity.getRefreshToken());
         at = at + Objects.requireNonNull(authTokenResponseMono.block()).getAccessToken();
         System.out.println("at = " + at);

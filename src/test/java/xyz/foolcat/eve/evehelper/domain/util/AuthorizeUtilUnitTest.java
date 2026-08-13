@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.infrastructure.config.security.SysUserDetails;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
@@ -130,12 +131,13 @@ class AuthorizeUtilUnitTest {
     }
 
     @Test
-    @DisplayName("表单登录主体（SysUser）-> 按其 id 查询")
+    @DisplayName("表单登录主体（SysUserDetails）-> 按其 id 查询")
     void sysUserPrincipal_queriesWithOwnUserId() {
         SysUser user = new SysUser();
         user.setId(9);
+        SysUserDetails principal = new SysUserDetails(user, List.of(new SimpleGrantedAuthority("USER")));
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken(user, null,
+                new UsernamePasswordAuthenticationToken(principal, null,
                         List.of(new SimpleGrantedAuthority("USER"))));
         EveAccount expected = new EveAccount();
         when(eveAccountService.getAccountOne(9, CHARACTER_ID)).thenReturn(expected);
