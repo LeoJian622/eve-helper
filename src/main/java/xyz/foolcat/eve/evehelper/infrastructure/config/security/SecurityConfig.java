@@ -64,6 +64,10 @@ public class SecurityConfig {
     AuthenticationManager authenticationManager() {
         DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider(sysUserDetailsService);
         // 是否隐藏用户不存在异常，默认:true-隐藏；false-抛出异常；
+        // 008 R2 有意偏离评为建议的 true:hide=true 时 DaoAuthenticationProvider 在 provider 层把
+        // UsernameNotFoundException 转 BadCredentialsException,FR-005 账号存在性日志不可实现。
+        // 保留 false(抛出 UsernameNotFoundException),由 AuthenticationFailureServletHandler 统一对外响应
+        // 「用户名或密码错误」+401,对外零区分度(SC-001),账号存在性仅服务端日志留痕。
         daoAuthenticationProvider.setHideUserNotFoundExceptions(false);
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder());
         return new ProviderManager(daoAuthenticationProvider);
