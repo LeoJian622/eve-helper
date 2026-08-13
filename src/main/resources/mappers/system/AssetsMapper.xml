@@ -288,7 +288,10 @@
 
   <delete id="removeByItemId">
     Delete from assets
-    where item_id in #{list}
+    where item_id in
+    <foreach collection="list" item="item" open="(" separator="," close=")">
+      #{item}
+    </foreach>
     </delete>
 
   <select id="findByOwnerId" resultType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.AssetsPO">

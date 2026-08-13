@@ -10,8 +10,6 @@ import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.context.ActiveProfiles;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
 
-import java.util.Set;
-
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -24,11 +22,11 @@ class AuthorizeOAuthTest {
 
     @Test
     void authorizeUrl() {
-//        String authorizeUrl = authorizeOAuth.authorizeUrl(SsoScopes.ALL);
-        String authorizeUrl = authorizeOAuth.authorizeUrl(Set.of("esi-clones.read_clones.v1",
-                "esi-location.read_location.v1",
-                "esi-location.read_online.v1",
-                "esi-location.read_ship_type.v1"));
+        String authorizeUrl = authorizeOAuth.authorizeUrl(SsoScopes.ALL);
+//        String authorizeUrl = authorizeOAuth.authorizeUrl(Set.of("esi-clones.read_clones.v1",
+//                "esi-location.read_location.v1",
+//                "esi-location.read_online.v1",
+//                "esi-location.read_ship_type.v1"));
         Assert.notNull(authorizeUrl);
         System.out.println("authorizeUrl = " + authorizeUrl);
     }
@@ -39,7 +37,7 @@ class AuthorizeOAuthTest {
     @Test
     @Disabled("需真实有效的一次性授权码，硬编码 code 已失效")
     void updateAccessTokenAuthorizationCode() {
-        AuthTokenResponse block = authorizeOAuth.updateAccessToken(GrantType.AUTHORIZATION_CODE, "cBhCan6IUEK97cmhWN5lJg").log().block();
+        AuthTokenResponse block = authorizeOAuth.updateAccessToken(GrantType.AUTHORIZATION_CODE, "3MnB2naFkk6wyRsaZgfODg").log().block();
         System.out.println("block = " + block);
     }
 

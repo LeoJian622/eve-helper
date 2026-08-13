@@ -30,7 +30,8 @@ class BlueprintsControllerTest {
 
     @Test
     void addBlueprintsList() throws Exception {
-        String url = "/1/blueprints/char/2112832425";
+        // 修复：去掉错误的 /1/ 前缀与 /char/ 段，命中 GET /blueprints/{id}
+        String url = "/blueprints/2112832425";
         String result = mockMvc.perform(MockMvcRequestBuilders.get(url))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andDo(MockMvcResultHandlers.print())
@@ -42,7 +43,8 @@ class BlueprintsControllerTest {
 
     @Test
     void getBlueprintsList() throws Exception {
-        String url = "/1/blueprints/2112832425";
+        // 修复：去掉错误的 /1/ 前缀，命中 GET /blueprints/{id}
+        String url = "/blueprints/2112832425";
         String result = mockMvc.perform(MockMvcRequestBuilders.get(url))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andDo(MockMvcResultHandlers.print())

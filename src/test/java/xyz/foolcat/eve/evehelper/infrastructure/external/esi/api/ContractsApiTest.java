@@ -1,6 +1,7 @@
 package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -56,6 +57,10 @@ class ContractsApiTest {
     }
 
     @Test
+    /**
+     * 字符合同出价接口：合同 ID 硬编码不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
+    @Disabled("硬编码 ESI 合同 ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void queryCharactersContractsBids() {
         List<ContractBidsResponse> contractBidsResponses = contractsApi.queryCharactersContractsBids(2112818290, "serenity", 54403173, at).collectList().block();
         System.out.println("contractBidsResponses = " + contractBidsResponses);
@@ -74,12 +79,20 @@ class ContractsApiTest {
     }
 
     @Test
+    /**
+     * 公共合同出价接口：合同 ID 硬编码不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
+    @Disabled("硬编码 ESI 合同 ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void queryPublicContractsBids() {
         List<ContractBidsResponse> contractBidsResponses = contractsApi.queryPublicContractsBids("serenity", 54544413).collectList().block();
         System.out.println("contractBidsResponses = " + contractBidsResponses);
     }
 
     @Test
+    /**
+     * 公共合同物品接口：合同 ID 硬编码不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
+    @Disabled("硬编码 ESI 合同 ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void queryPublicContractsItems() {
         List<ContractItemResponse> contractItemResponses = contractsApi.queryPublicContractsItems("serenity", 54544413).collectList().block();
         System.out.println("contractItemResponses = " + contractItemResponses);

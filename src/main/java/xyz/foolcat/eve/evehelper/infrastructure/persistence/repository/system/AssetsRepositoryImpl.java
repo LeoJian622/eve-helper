@@ -68,6 +68,10 @@ public class AssetsRepositoryImpl implements AssetsRepository {
 
     @Override
     public void removeBatchByIds(List<Long> itemIds) {
+        // 空列表时 foreach 展开为空导致 in 后无内容，触发 SQL 语法错误/Druid wall 拦截；空列表 = 无待删项，跳过
+        if (itemIds == null || itemIds.isEmpty()) {
+            return;
+        }
         assetsMapper.removeByItemId(itemIds);
     }
 

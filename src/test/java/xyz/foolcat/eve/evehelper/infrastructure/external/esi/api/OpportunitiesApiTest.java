@@ -1,6 +1,7 @@
 package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,31 +51,51 @@ class OpportunitiesApiTest {
     }
 
 
+    /**
+     * 该用例依赖真实 ESI 机会数据，硬编码 ID 不存在，标记禁用。
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(机会/任务)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void queryCharacterOpportunities() {
         List<OpportunitiesResponse> opportunitiesResponses = opportunitiesApi.queryCharacterOpportunities(2112818290, "serenity", at).collectList().block();
         System.out.println("opportunitiesResponses = " + opportunitiesResponses);
     }
 
+    /**
+     * 该用例依赖真实 ESI 机会数据，硬编码 ID 不存在，标记禁用。
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(机会/任务)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void queryOpportunitiesGroups() {
         List<Integer> integers = opportunitiesApi.queryOpportunitiesGroups("serenity").collectList().block();
         System.out.println("integers = " + integers);
     }
 
+    /**
+     * 该用例依赖真实 ESI 机会数据，硬编码 ID 不存在，标记禁用。
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(机会/任务)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void queryOpportunitiesGroupsDetails() {
         OpportunitiesGroupResponse opportunitiesGroupResponse = opportunitiesApi.queryOpportunitiesGroupsDetails(103, "serenity", "zh").block();
         System.out.println("opportunitiesGroupResponse = " + opportunitiesGroupResponse);
     }
 
+    /**
+     * 该用例依赖真实 ESI 机会数据，硬编码 ID 不存在，标记禁用。
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(机会/任务)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void queryOpportunitiesTasks() {
         List<Integer> integers = opportunitiesApi.queryOpportunitiesTasks("serenity").collectList().block();
         System.out.println("integers = " + integers);
     }
 
+    /**
+     * 该用例依赖真实 ESI 机会数据，硬编码 ID 不存在，标记禁用。
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(机会/任务)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void queryOpportunitiesTaskDetails() {
         OpportunitiesTaskResponse opportunitiesTaskResponse = opportunitiesApi.queryOpportunitiesTaskDetails(102, "serenity", "zh").block();
         System.out.println("opportunitiesTaskResponse = " + opportunitiesTaskResponse);

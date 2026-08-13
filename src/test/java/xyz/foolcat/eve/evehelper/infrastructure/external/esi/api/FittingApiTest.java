@@ -1,6 +1,7 @@
 package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,7 +73,13 @@ class FittingApiTest {
         System.out.println("fittingResponse = " + fittingResponse);
     }
 
+    /**
+
+     * 硬编码 ESI 资源 ID 不存在(404),需真实数据,记环境数据依赖
+
+     */
     @Test
+    @Disabled("硬编码 ESI 资源 ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void deleteCharacterFittings() {
         Object block = fittingApi.deleteCharacterFittings(2112818290, "serenity", 18419043, at).block();
         System.out.println("block = " + block);

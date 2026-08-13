@@ -1,6 +1,7 @@
 package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,7 +53,13 @@ class FactionWarfareApiTest {
         System.out.println("factionWarfareStatisticsResponse = " + factionWarfareStatisticsResponse);
     }
 
+    /**
+
+     * 硬编码 ESI 资源 ID 不存在(404),需真实数据,记环境数据依赖
+
+     */
     @Test
+    @Disabled("硬编码 ESI 资源 ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void queryCorporationFactionWarfareStats() {
         FactionWarfareStatisticsResponse factionWarfareStatisticsResponse = factionWarfareApi.queryCorporationFactionWarfareStats(656880659, "serenity", at).block();
         System.out.println("factionWarfareStatisticsResponse = " + factionWarfareStatisticsResponse);

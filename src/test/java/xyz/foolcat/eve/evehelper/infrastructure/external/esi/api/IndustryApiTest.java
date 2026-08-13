@@ -1,6 +1,7 @@
 package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -76,7 +77,13 @@ class IndustryApiTest {
         System.out.println("observerMiningLedgerResponses = " + observerMiningLedgerResponses);
     }
 
+    /**
+
+     * 硬编码 ESI 资源 ID 不存在(404),需真实数据,记环境数据依赖
+
+     */
     @Test
+    @Disabled("硬编码 ESI 资源 ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void queryCorporationIndustryJobs() {
         List<IndustryJobPlacedResponse> industryJobPlacedResponses = industryApi.queryCorporationIndustryJobs(98061457, "serenity", null, at).collectList().block();
         System.out.println("industryJobPlacedResponses = " + industryJobPlacedResponses);

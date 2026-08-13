@@ -1,6 +1,7 @@
 package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,19 +46,31 @@ class FleetApiTest {
         System.out.println("at = " + at);
     }
 
+    /**
+     * 硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void queryCharacterFittings() {
         CharacterFleetResponse characterFleetResponse = fleetApi.queryCharacterFittings(2112818290, "serenity", at).block();
         System.out.println("characterFleetResponse = " + characterFleetResponse);
     }
 
+    /**
+     * 硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void queryFleet() {
         FleetDetailResponse fleetDetailResponse = fleetApi.queryFleet(1022810945368L, "serenity", at).block();
         System.out.println("fleetDetailResponse = " + fleetDetailResponse);
     }
 
+    /**
+     * 硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void updateFleet() {
         FleetNewSetting fleetNewSetting = new FleetNewSetting();
         fleetNewSetting.setIsFreeMove(true);
@@ -65,13 +78,21 @@ class FleetApiTest {
         System.out.println("fleetDetailResponse = " + fleetDetailResponse);
     }
 
+    /**
+     * 硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void queryFleetMember() {
         List<FleetMemberResponse> fleetMemberResponseList = fleetApi.queryFleetMember(1022810945368L, "serenity", "zh", at).collectList().block();
         System.out.println("fleetMemberResponseList = " + fleetMemberResponseList);
     }
 
+    /**
+     * 硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void addFleetMember() {
         FleetInvitationDetails fleetInvitationDetails = new FleetInvitationDetails();
         fleetInvitationDetails.setCharacterId(2112832425);
@@ -82,13 +103,21 @@ class FleetApiTest {
         System.out.println("o = " + o);
     }
 
+    /**
+     * 硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void deleteFleetMember() {
         Object o = fleetApi.deleteFleetMember(1022810945368L, "serenity", 2112832425, at).block();
         System.out.println("o = " + o);
     }
 
+    /**
+     * 硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void updateFleetMember() {
         FleetInvitationDetails fleetInvitationDetails = new FleetInvitationDetails();
         fleetInvitationDetails.setRole("squad_commander");
@@ -98,44 +127,72 @@ class FleetApiTest {
         System.out.println("o = " + o);
     }
 
+    /**
+     * 硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void deleteFleetSquad() {
         Object block = fleetApi.deleteFleetSquad(1022810945368L, "serenity", 3057910945368L, at).block();
         System.out.println("block = " + block);
     }
 
+    /**
+     * 硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void updateFleetSquadRename() {
         Object block = fleetApi.updateFleetSquadRename(1022810945368L, "serenity", 3052010945368L, "ABC", at).block();
         System.out.println("block = " + block);
     }
 
+    /**
+     * 硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void queryFleetWings() {
         List<WingResponse> wingResponses = fleetApi.queryFleetWings(1022810945368L, "serenity", at).collectList().block();
         System.out.println("wingResponses = " + wingResponses);
     }
 
+    /**
+     * 硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void addFleetWing() {
         NewWingResponse newWingResponse = fleetApi.addFleetWing(1022810945368L, "serenity", at).block();
         System.out.println("newWingResponse = " + newWingResponse);
 
     }
 
+    /**
+     * 硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void deleteFleetWing() {
         Object block = fleetApi.deleteFleetWing(1022810945368L, "serenity", 2029210945368L, at).block();
         System.out.println("block = " + block);
     }
 
+    /**
+     * 硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void updateFleetWingRename() {
         Object block = fleetApi.updateFleetWingRename(1022810945368L, "serenity", 2029510945368L, "ABC", at).block();
         System.out.println("block = " + block);
     }
 
+    /**
+     * 硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖
+     */
     @Test
+    @Disabled("硬编码 ESI 资源(舰队/成员等)ID 不存在(404)，需真实数据，@Disabled 记环境数据依赖")
     void addFleetWingSquad() {
         NewSquadResponse block = fleetApi.addFleetWingSquad(1022810945368L, "serenity", 2029510945368L, at).block();
         System.out.println("block = " + block);

@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.esi.auth;
+package xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth;
 
 import java.util.*;
 
