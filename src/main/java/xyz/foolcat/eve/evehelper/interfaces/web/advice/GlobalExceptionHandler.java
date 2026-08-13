@@ -28,6 +28,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.rmi.ServerException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * 全局异常处理器
@@ -46,7 +47,13 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(BindException.class)
     public <T> Result<T> processException(BindException e) {
-        log.error("表单绑定异常: ", e);
+        // 008 R9:结构化摘要,不回显 rejected value、不打印异常对象本体(FieldError.toString()
+        // 含 rejected value,可被 10KB/CRLF 载荷伪造日志行;防 CWE-117)。级别 warn。
+        log.warn("表单绑定校验失败: object={}, errorCount={}, fields={}",
+                e.getObjectName(), e.getErrorCount(),
+                e.getFieldErrors().stream()
+                        .map(fe -> fe.getField() + "=" + fe.getDefaultMessage())
+                        .collect(Collectors.joining(", ")));
         JSONObject msg = new JSONObject();
         e.getAllErrors().forEach(error -> {
             if (error instanceof FieldError fieldError) {

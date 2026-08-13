@@ -1,8 +1,6 @@
 package xyz.foolcat.eve.evehelper.shared.util;
 
 import cn.hutool.json.JSONUtil;
-import com.nimbusds.jwt.SignedJWT;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
@@ -11,8 +9,6 @@ import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author Leojan
@@ -38,22 +34,12 @@ public class ResponseUtils {
                 response.setStatus(HttpStatus.BAD_REQUEST.value());
                 break;
         }
-        // 007 T012:声明 charset —— msg 为中文,不声明则客户端可能按默认编码解码乱码
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE + ";charset=UTF-8");
+        // 008 R7:setContentType + setCharacterEncoding 组合,与全仓响应写出风格一致(避免字符串拼接 charset)
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Cache-Control", "no-cache");
         String body = JSONUtil.toJsonStr(Result.failed(resultCode));
-        response.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
-        return response;
-    }
-
-    public static HttpServletResponse writeTokenInfo(HttpServletResponse response, SignedJWT signedJwt) throws IOException {
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-        response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache");
-        Map<String,String> tokenObejct = new HashMap<>(2);
-        tokenObejct.put("access_token",signedJwt.serialize());
-        String body = JSONUtil.toJsonStr(Result.success(tokenObejct));
         response.getOutputStream().write(body.getBytes(StandardCharsets.UTF_8));
         return response;
     }

@@ -7,6 +7,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 
 
@@ -21,7 +23,7 @@ import static org.mockito.Mockito.*;
  * @author Leojan
  * date 2026-02-01
  */
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 @DisplayName("登录限流服务测试")
 class LoginRateLimiterServiceTest {
 
@@ -324,5 +326,42 @@ class LoginRateLimiterServiceTest {
         when(cacheGateway.get(key)).thenReturn(null);
         assertFalse(loginRateLimiterService.isLocked(TEST_USERNAME));
         assertEquals(5, loginRateLimiterService.getRemainingAttempts(TEST_USERNAME));
+    }
+
+    // ---- 日志脱敏(008 T014 / R5 MEDIUM-2)----
+
+    @Test
+    @DisplayName("INCR 失败日志不含原文 username(maskUsername)")
+    void recordFailedAttempt_redisIncrNull_logsMaskedUsername(CapturedOutput output) {
+        when(cacheGateway.increment(anyString())).thenReturn(null);
+
+        assertFalse(loginRateLimiterService.recordFailedAttempt(TEST_USERNAME));
+
+        assertFalse(output.getAll().contains(TEST_USERNAME), "日志不得含原文 username");
+        assertTrue(output.getAll().contains("te****r"), "日志应含 maskUsername 后形式");
+    }
+
+    @Test
+    @DisplayName("锁定日志不含原文 username(maskUsername)")
+    void recordFailedAttempt_locked_logsMaskedUsername(CapturedOutput output) {
+        String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
+        when(cacheGateway.increment(key)).thenReturn(5L);
+
+        assertTrue(loginRateLimiterService.recordFailedAttempt(TEST_USERNAME));
+
+        assertFalse(output.getAll().contains(TEST_USERNAME), "日志不得含原文 username");
+        assertTrue(output.getAll().contains("te****r"), "锁定日志应含 maskUsername 后形式");
+    }
+
+    @Test
+    @DisplayName("清除记录日志不含原文 username(maskUsername)")
+    void clearAttempts_logsMaskedUsername(CapturedOutput output) {
+        String key = LOGIN_ATTEMPT_PREFIX + TEST_USERNAME;
+        when(cacheGateway.delete(key)).thenReturn(true);
+
+        loginRateLimiterService.clearAttempts(TEST_USERNAME);
+
+        assertFalse(output.getAll().contains(TEST_USERNAME), "日志不得含原文 username");
+        assertTrue(output.getAll().contains("te****r"), "清除日志应含 maskUsername 后形式");
     }
 }

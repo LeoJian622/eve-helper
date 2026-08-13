@@ -17,6 +17,7 @@ import org.springframework.core.io.Resource;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyStore;
@@ -60,10 +61,6 @@ public class KeyStoreKeyFactory {
         this.password = password;
     }
 
-    public KeyPair getKeyPair(String alias) {
-        return getKeyPair(alias, password);
-    }
-
     public KeyPair getKeyPair(String alias, char[] keyPassword) {
         KeyStore store = loadKeyStore();
         RSAPrivateCrtKey privateKey = extractRsaKey(store, alias, keyPassword);
@@ -71,7 +68,7 @@ public class KeyStoreKeyFactory {
         int bits = privateKey.getModulus().bitLength();
         if (bits < MIN_RSA_MODULUS_BITS) {
             throw new IllegalStateException(
-                    "keystore 密钥位数不足: RSA modulus 最低要求 2048 位,别名 "
+                    "keystore 密钥位数不足: RSA modulus 最低要求 " + MIN_RSA_MODULUS_BITS + " 位,别名 "
                             + alias + " 实际仅 " + bits + " 位,拒绝加载");
         }
 
@@ -112,16 +109,19 @@ public class KeyStoreKeyFactory {
      * 提取 RSA 私钥。异常分类:别名不存在 / 口令不匹配 / 非 RSA 密钥。
      */
     private RSAPrivateCrtKey extractRsaKey(KeyStore store, String alias, char[] keyPassword) {
-        final java.security.Key key;
         try {
             if (!store.containsAlias(alias)) {
                 throw new IllegalStateException(
                         "keystore 中不存在该别名: 请求别名 " + alias
                                 + " —— 请核对 security.keystore.alias 配置(KEYSTORE_ALIAS)");
             }
+        } catch (KeyStoreException e) {
+            throw new IllegalStateException("keystore 读取失败: 别名 " + alias, e);
+        }
+
+        final Key key;
+        try {
             key = store.getKey(alias, keyPassword);
-        } catch (IllegalStateException e) {
-            throw e;
         } catch (UnrecoverableKeyException e) {
             throw new IllegalStateException(
                     "keystore 条目口令不匹配: 别名 " + alias

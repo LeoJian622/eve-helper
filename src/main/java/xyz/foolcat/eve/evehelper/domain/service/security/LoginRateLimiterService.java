@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
+import xyz.foolcat.eve.evehelper.shared.util.SensitiveDataMasker;
 
 import java.util.concurrent.TimeUnit;
 
@@ -39,7 +40,7 @@ public class LoginRateLimiterService {
         Long attempts = cacheGateway.increment(key);
 
         if (attempts == null) {
-            log.error("Redis INCR操作失败: username={}", username);
+            log.error("Redis INCR操作失败: username={}", SensitiveDataMasker.maskUsername(username));
             return false;
         }
 
@@ -50,9 +51,9 @@ public class LoginRateLimiterService {
 
         boolean isLocked = attempts >= MAX_ATTEMPTS;
         if (isLocked) {
-            log.warn("账户已锁定: username={}, attempts={}", username, attempts);
+            log.warn("账户已锁定: username={}, attempts={}", SensitiveDataMasker.maskUsername(username), attempts);
         } else {
-            log.info("登录失败记录: username={}, attempts={}/{}", username, attempts, MAX_ATTEMPTS);
+            log.info("登录失败记录: username={}, attempts={}/{}", SensitiveDataMasker.maskUsername(username), attempts, MAX_ATTEMPTS);
         }
 
         return isLocked;
@@ -80,7 +81,7 @@ public class LoginRateLimiterService {
             try {
                 return Integer.parseInt(attemptsObj.toString());
             } catch (NumberFormatException e) {
-                log.warn("无法解析失败次数: username={}, value={}", username, attemptsObj);
+                log.warn("无法解析失败次数: username={}, value={}", SensitiveDataMasker.maskUsername(username), attemptsObj);
                 return 0;
             }
         }
@@ -116,7 +117,7 @@ public class LoginRateLimiterService {
     public void clearAttempts(String username) {
         String key = LOGIN_ATTEMPT_PREFIX + username;
         cacheGateway.delete(key);
-        log.info("清除登录失败记录: username={}", username);
+        log.info("清除登录失败记录: username={}", SensitiveDataMasker.maskUsername(username));
     }
 
     /**
