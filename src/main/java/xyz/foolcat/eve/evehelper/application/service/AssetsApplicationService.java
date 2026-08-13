@@ -38,6 +38,7 @@ public class AssetsApplicationService {
      * @param cid 人物或军团 ID
      */
     public void syncAssets(Integer cid) {
+        // 归属校验先于业务逻辑:cid 为用户可控入参,须先确认该人物/军团属于当前用户(防御 IDOR)
         accessGuard.requireOwnership(String.valueOf(cid), "资产同步");
         try {
             assetsService.saveAndUpdateAsserts(cid);
@@ -56,6 +57,7 @@ public class AssetsApplicationService {
      * @return 资产视图分页结果
      */
     public PageResult<AssetsVO> queryAssetsList(String cid, int current, int size) {
+        // 归属校验先于业务逻辑:cid 为用户可控入参,须先确认该人物/军团属于当前用户(防御 IDOR)
         accessGuard.requireOwnership(cid, "资产清单");
         IPage<Assets> page = new Page<>();
         page.setCurrent(current);

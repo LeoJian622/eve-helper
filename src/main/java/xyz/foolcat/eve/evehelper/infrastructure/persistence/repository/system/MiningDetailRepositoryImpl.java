@@ -53,5 +53,4 @@ public class MiningDetailRepositoryImpl implements MiningDetailRepository {
         }
         return miningDetailMapper.batchInsertOrUpdate(miningDetailPoConverter.domain2Po(miningDetails));
     }
-    // TODO: 实现 BaseRepository<MiningDetail, Long> 的方法
 }

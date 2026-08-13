@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import xyz.foolcat.eve.evehelper.application.service.AssetsApplicationService;
 import xyz.foolcat.eve.evehelper.domain.model.vo.AssetsVO;
@@ -18,7 +17,6 @@ import xyz.foolcat.eve.evehelper.shared.result.Result;
  */
 @Tag(name = "游戏资产")
 @RestController
-@Slf4j
 @RequestMapping("/assets")
 @RequiredArgsConstructor
 public class AssetsController {

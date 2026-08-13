@@ -20,7 +20,6 @@ import xyz.foolcat.eve.evehelper.domain.model.query.StructurePageCriteria;
 import xyz.foolcat.eve.evehelper.domain.model.vo.StructureDetailDTO;
 import xyz.foolcat.eve.evehelper.domain.model.vo.StructureServiceDTO;
 import xyz.foolcat.eve.evehelper.domain.model.vo.StructureSummaryDTO;
-import xyz.foolcat.eve.evehelper.domain.model.vo.StructureTimerDTO;
 import xyz.foolcat.eve.evehelper.domain.repository.system.StructureRepository;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;

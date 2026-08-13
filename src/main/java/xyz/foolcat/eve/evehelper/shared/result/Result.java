@@ -21,44 +21,24 @@ public class Result<T> implements Serializable {
 
     private String msg;
 
-    private Integer total;
-
     public static <T> Result<T> success() {
         return success(null);
     }
 
+    /**
+     * 成功响应。约定:当业务数据为 {@code Boolean.FALSE} 时,视为逻辑失败,
+     * 响应码翻转为 {@link ResultCode#SYSTEM_EXECUTION_ERROR}(而非 200)。
+     */
     public static <T> Result<T> success(T data) {
         ResultCode rce = ResultCode.SUCCESS;
         if (data instanceof Boolean && Boolean.FALSE.equals(data)) {
             rce = ResultCode.SYSTEM_EXECUTION_ERROR;
         }
-        return result(rce, data);
-    }
-
-
-    public static <T> Result<T> success(T data, Long total) {
-        Result<T> result = new Result<>();
-        result.setCode(ResultCode.SUCCESS.getCode());
-        result.setMsg(ResultCode.SUCCESS.getMsg());
-        result.setData(data);
-        result.setTotal(total.intValue());
-        return result;
-    }
-
-    public static <T> Result<T> failed() {
-        return result(ResultCode.SYSTEM_EXECUTION_ERROR.getCode(), ResultCode.SYSTEM_EXECUTION_ERROR.getMsg(), null);
+        return result(rce.getCode(), rce.getMsg(), data);
     }
 
     public static <T> Result<T> failed(String msg) {
         return result(ResultCode.SYSTEM_EXECUTION_ERROR.getCode(), msg, null);
-    }
-
-    public static <T> Result<T> judge(boolean status) {
-        if (status) {
-            return success();
-        } else {
-            return failed();
-        }
     }
 
     public static <T> Result<T> failed(IResultCode resultCode) {
@@ -67,10 +47,6 @@ public class Result<T> implements Serializable {
 
     public static <T> Result<T> failed(IResultCode resultCode, String msg) {
         return result(resultCode.getCode(), msg, null);
-    }
-
-    public static <T> Result<T> result(IResultCode resultCode, T data) {
-        return result(resultCode.getCode(), resultCode.getMsg(), data);
     }
 
     public static <T> Result<T> result(String code, String msg, T data) {

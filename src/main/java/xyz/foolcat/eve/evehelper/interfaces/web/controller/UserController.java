@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.web.bind.annotation.*;
 import xyz.foolcat.eve.evehelper.application.dto.UserAccountDTO;
@@ -21,7 +20,6 @@ import java.util.List;
 
 @Tag(name ="用户")
 @RestController
-@Slf4j
 @RequestMapping("/user")
 @RequiredArgsConstructor
 public class UserController {

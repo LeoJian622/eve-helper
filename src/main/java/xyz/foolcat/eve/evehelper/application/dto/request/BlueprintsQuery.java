@@ -1,6 +1,9 @@
 package xyz.foolcat.eve.evehelper.application.dto.request;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageQuery;
 

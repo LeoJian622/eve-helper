@@ -60,6 +60,10 @@ public class MiningDetailService  {
         MD5 md5 = new MD5();
 
         miningDetails.forEach(miningDetail -> {
+            // 用哈希生成主键原因：
+            // 将角色、矿石类型、建筑、采集时间四个业务维度拼接后取 MD5 前 16 位作为记录主键，
+            // 可得到确定性的稳定 id——同一笔采集数据无论重复同步多少次主键都不变，
+            // 配合 saveOrUpdateBatch 实现幂等写入，避免同一采集记录被重复插入（天然防重）。
             long key = miningDetail.getCharacterId() + miningDetail.getTypeId() + observerId + miningDetail.getLastUpdated().getTime();
             String md5Digest = md5.digestHex16(Long.toString(key), StandardCharsets.UTF_8);
             miningDetail.setId(md5Digest);

@@ -6,7 +6,6 @@ import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.eve.IndustryA
 
 @Mapper
 public interface IndustryActivityMaterialsMapper extends BaseMapper<IndustryActivityMaterialsPO> {
-    // 只保留基础 CRUD
 
     int insertSelective(IndustryActivityMaterialsPO industryActivityMaterialsPO);
 

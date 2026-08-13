@@ -1,7 +1,6 @@
 package xyz.foolcat.eve.evehelper.domain.repository.system;
 
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.InvTypes;
-import xyz.foolcat.eve.evehelper.domain.model.vo.InvTypesVO;
 
 import java.util.List;
 
@@ -18,8 +17,6 @@ public interface InvTypesRepository {
     public boolean insertOrUpdate(InvTypes record);
 
     int insertOrUpdateSelective(InvTypes record);
-
-    InvTypesVO selectByMarketGroupId(Long marketGroupId);
 
     List<InvTypes> selectTypeNameByIds(List<Integer> typeIds);
 

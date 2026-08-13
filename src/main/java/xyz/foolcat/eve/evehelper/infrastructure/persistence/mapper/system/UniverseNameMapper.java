@@ -20,5 +20,4 @@ public interface UniverseNameMapper extends BaseMapper<UniverseNamePO> {
     int insertOrUpdateSelective(UniverseNamePO universeNamePO);
 
     int batchInsertOrUpdate(List<UniverseNamePO> universeNamePOS);
-    // 只保留基础 CRUD
 }

@@ -3,7 +3,6 @@ package xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.InvTypesPO;
-import xyz.foolcat.eve.evehelper.domain.model.vo.InvTypesVO;
 
 import java.util.List;
 
@@ -20,8 +19,5 @@ public interface InvTypesMapper extends BaseMapper<InvTypesPO> {
 
     int insertOrUpdateSelective(InvTypesPO record);
 
-    InvTypesVO selcetByMarketGroupId(Long marketGroupID);
-
     List<InvTypesPO> selectTypeNameByIds(List<Integer> typeIds);
-    // 只保留基础 CRUD
 }

@@ -44,7 +44,6 @@ public class EveAccountRepositoryImpl implements EveAccountRepository {
     public int insertOrUpdateSelective(EveAccount record) {
         return eveAccountMapper.insertOrUpdateSelective(eveAccountPoConverter.domain2Po(record));
     }
-    // TODO: 实现 BaseRepository<EveAccount, Long> 的方法
 
     @Override
     public EveAccount getAccount(Integer userId, Integer cId) {

@@ -5,11 +5,12 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
+ * SpringDoc OpenAPI 配置：定义根级 OpenAPI 元信息（标题、版本、JWT Bearer 认证方案）。
+ *
  * @author Leojan
  * date 2021-12-06 17:02
  */

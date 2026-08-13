@@ -286,6 +286,7 @@
     owner_id = values(owner_id)
   </insert>
 
+  <!-- 同步删除:按 item_id 批量删除本地已不在 ESI 列表中的资产(已不再持有的物品) -->
   <delete id="removeByItemId">
     Delete from assets
     where item_id in

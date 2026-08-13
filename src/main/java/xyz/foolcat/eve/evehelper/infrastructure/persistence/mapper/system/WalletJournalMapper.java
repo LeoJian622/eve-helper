@@ -18,5 +18,4 @@ public interface WalletJournalMapper extends BaseMapper<WalletJournalPO> {
     int batchInsert(List<WalletJournalPO> walletJournalPOS);
 
     int insertOrUpdateSelective(WalletJournalPO walletJournalPO);
-    // 只保留基础 CRUD
 }

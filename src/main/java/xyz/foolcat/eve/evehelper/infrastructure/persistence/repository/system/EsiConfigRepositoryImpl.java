@@ -44,5 +44,4 @@ public class EsiConfigRepositoryImpl implements EsiConfigRepository {
     public int insertOrUpdateSelective(EsiConfig record) {
         return esiConfigMapper.insertOrUpdateSelective(esiConfigPoConverter.domain2Po(record));
     }
-    // TODO: 实现 BaseRepository<EsiConfig, Long> 的方法
 } 

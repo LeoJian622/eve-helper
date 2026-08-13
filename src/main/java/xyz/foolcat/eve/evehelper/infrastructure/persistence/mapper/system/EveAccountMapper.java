@@ -22,5 +22,4 @@ public interface EveAccountMapper extends BaseMapper<EveAccountPO> {
 
     List<EveAccountPO> queryAccountList(Integer userId);
 
-    // 只保留基础 CRUD
 }

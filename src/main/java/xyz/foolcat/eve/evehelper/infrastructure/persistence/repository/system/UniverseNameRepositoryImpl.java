@@ -61,5 +61,4 @@ public class UniverseNameRepositoryImpl implements UniverseNameRepository {
         return universeNamePoConverter.po2Domain(universeNameMapper.selectList(new QueryWrapper<UniverseNamePO>().lambda()
                 .in(UniverseNamePO::getId, items)));
     }
-    // TODO: 实现 BaseRepository<UniverseName, Long> 的方法
 }

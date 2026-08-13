@@ -3,7 +3,6 @@ package xyz.foolcat.eve.evehelper.interfaces.web.controller;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,7 +34,6 @@ import xyz.foolcat.eve.evehelper.shared.result.Result;
  * date 2026-08-11
  */
 @Hidden
-@Slf4j
 @Validated
 @RestController
 @RequestMapping("/character")

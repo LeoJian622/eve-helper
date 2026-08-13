@@ -20,5 +20,4 @@ public interface SysUserMapper extends BaseMapper<SysUserPO> {
     SysUserPO queryByUsername(String username);
 
     int insertOrUpdateSelective(SysUserPO sysUserPO);
-    // 只保留基础 CRUD
 }

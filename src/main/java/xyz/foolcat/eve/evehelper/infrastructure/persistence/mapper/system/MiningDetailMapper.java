@@ -17,5 +17,4 @@ public interface MiningDetailMapper extends BaseMapper<MiningDetailPO> {
     int insertOrUpdateSelective(MiningDetailPO record);
 
     int batchInsertOrUpdate(List<MiningDetailPO> miningDetailPOS);
-    // 只保留基础 CRUD
 }

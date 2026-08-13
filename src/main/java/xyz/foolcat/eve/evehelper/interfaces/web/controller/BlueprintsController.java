@@ -7,7 +7,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import xyz.foolcat.eve.evehelper.application.dto.request.BlueprintsQuery;
@@ -22,7 +21,6 @@ import xyz.foolcat.eve.evehelper.shared.result.Result;
  */
 @Tag(name ="蓝图数据")
 @RestController
-@Slf4j
 @Validated
 @RequestMapping("/blueprints")
 @RequiredArgsConstructor

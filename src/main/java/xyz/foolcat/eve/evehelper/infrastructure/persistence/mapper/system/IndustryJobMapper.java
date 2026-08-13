@@ -20,5 +20,4 @@ public interface IndustryJobMapper extends BaseMapper<IndustryJobPO> {
     int insertOrUpdateSelective(IndustryJobPO industryJobPO);
 
     int batchInsertOrUpdate(List<IndustryJobPO> industryJobPOS);
-    // 只保留基础 CRUD
 }

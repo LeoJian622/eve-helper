@@ -15,5 +15,4 @@ public interface SysRoleMenuMapper extends BaseMapper<SysRoleMenuPO> {
     int batchInsert(List<SysRoleMenuPO> sysRoleMenuPOs);
 
     int insertOrUpdateSelective(SysRoleMenuPO sysRoleMenuPO);
-    // 只保留基础 CRUD
 }

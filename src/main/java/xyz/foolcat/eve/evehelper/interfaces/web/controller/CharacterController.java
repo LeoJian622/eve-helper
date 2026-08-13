@@ -5,7 +5,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,7 +20,6 @@ import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
 
 @Tag(name ="人物")
 @RestController
-@Slf4j
 @RequestMapping("/character")
 @RequiredArgsConstructor
 public class CharacterController {

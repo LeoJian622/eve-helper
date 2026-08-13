@@ -1,5 +1,4 @@
 package xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system;
-
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -8,10 +7,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
-
 import java.io.Serializable;
 import java.util.List;
-
 /**
  * 权限表
  * @author Leojan
@@ -21,14 +18,12 @@ import java.util.List;
 @Data
 @TableName(value = "sys_permission")
 public class SysPermissionPO extends BaseEntity implements Serializable {
-
     /**
      * 主键
      */
     @TableId(value = "id", type = IdType.AUTO)
     @Schema(description = "主键")
     private Long id;
-
     /**
      * 权限名称
      */
@@ -38,40 +33,22 @@ public class SysPermissionPO extends BaseEntity implements Serializable {
     @TableField(exist = false)
     @Schema(name = "人物列表")
     private List<String> roles;
-
     /**
      * 菜单模块ID
      */
     @TableField(value = "menu_id")
     @Schema(description = "菜单模块ID")
     private Long menuId;
-
     /**
      * URL权限标识
      */
     @TableField(value = "url_perm")
     @Schema(description = "URL权限标识")
     private String urlPerm;
-
     /**
      * 按钮权限标识
      */
     @TableField(value = "btn_perm")
     @Schema(description = "按钮权限标识")
     private String btnPerm;
-
-    public static final String COL_ID = "id";
-
-    public static final String COL_NAME = "name";
-
-    public static final String COL_MENU_ID = "menu_id";
-
-    public static final String COL_URL_PERM = "url_perm";
-
-    public static final String COL_BTN_PERM = "btn_perm";
-
-    public static final String COL_GMT_CREATE = "gmt_create";
-
-    public static final String COL_GMT_MODIFIED = "gmt_modified";
-
 } 

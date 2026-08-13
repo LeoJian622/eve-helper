@@ -416,6 +416,7 @@
     and corporation_id = #{corporationId}
     </select>
 
+  <!-- 同步删除:按 structure_id 批量删除本地已不在 ESI 列表中的建筑(游戏内已消失/被移除的建筑) -->
   <delete id="removeBatchByIds">
       delete from structure where structure_id in
       <foreach item="item" index="index" collection="list" open="(" separator="," close=")">

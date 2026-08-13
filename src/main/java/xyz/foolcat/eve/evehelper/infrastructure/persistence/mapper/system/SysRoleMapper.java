@@ -20,5 +20,4 @@ public interface SysRoleMapper extends BaseMapper<SysRolePO> {
     int insertOrUpdateSelective(SysRolePO record);
 
     List<String> queryRolesByUserId(Integer id);
-    // 只保留基础 CRUD
 }

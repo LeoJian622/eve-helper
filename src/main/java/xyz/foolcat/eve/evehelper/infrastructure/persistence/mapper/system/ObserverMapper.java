@@ -17,5 +17,4 @@ public interface ObserverMapper extends BaseMapper<ObserverPO> {
     int batchInsert(List<ObserverPO> list);
 
     int insertOrUpdateSelective(ObserverPO record);
-    // 只保留基础 CRUD
 }

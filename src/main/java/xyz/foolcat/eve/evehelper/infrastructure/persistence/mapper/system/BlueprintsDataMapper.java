@@ -14,5 +14,4 @@ public interface BlueprintsDataMapper extends BaseMapper<BlueprintsDataPO> {
     int insertOrUpdateSelective(BlueprintsDataPO blueprintsDataPO);
 
     List<BlueprintCostDTO> calcluateCost(Integer typeId);
-    // 只保留基础 CRUD
 }

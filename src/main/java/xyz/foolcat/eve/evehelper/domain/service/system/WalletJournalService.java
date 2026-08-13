@@ -110,6 +110,10 @@ public class WalletJournalService {
         List<Map<String, Object>> sumList = walletJournalRepository.selectMapByDatetime(start,end,List.of("bounty_prizes","ess_escrow_transfer","corporate_reward_payout"));
         return sumList.stream().map(item -> {
             BigDecimal amount = new BigDecimal(item.get("amount").toString());
+            // 退税公式说明：
+            // 军团根据当前税率 nowTax 已从玩家收入中扣除的 EV 税（amount 为按当前税率扣除后的实发金额，
+            // 由于 EV 税按现税率计，amount / (nowTax * 1e8) 反推出未扣税前的税前基础金额）；
+            // 退税额 = 税前基础金额 × (1 - normalTax)，即把玩家应缴的正常军团税 normalTax 之外多扣的部分退还。
             BigDecimal multiply = amount.divide(new BigDecimal(nowTax).multiply(new BigDecimal("100000000")),0, RoundingMode.HALF_DOWN).multiply(BigDecimal.ONE.subtract(new BigDecimal(normalTax)));
             return new TaxReturnResult(item.get("name").toString(), multiply.doubleValue());
         }).sorted(Comparator.comparing(TaxReturnResult::amount).reversed()).collect(Collectors.toList());

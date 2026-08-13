@@ -1,6 +1,6 @@
 package xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth;
 
-import java.util.*;
+import java.util.Set;
 
 /**
  * @author Leojan

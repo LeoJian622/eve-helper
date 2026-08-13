@@ -11,7 +11,6 @@ import java.util.List;
  */
 @Mapper
 public interface SysPermissionMapper extends BaseMapper<SysPermissionPO> {
-    // 只保留基础 CRUD
 
     List<SysPermissionPO> listPermRoles();
 

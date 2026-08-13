@@ -14,5 +14,4 @@ public interface SysRolePermissionMapper extends BaseMapper<SysRolePermissionPO>
     int batchInsert(List<SysRolePermissionPO> sysRolePermissionPOS);
 
     int insertOrUpdateSelective(SysRolePermissionPO sysRolePermissionPO);
-    // 只保留基础 CRUD
 }

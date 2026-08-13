@@ -12,5 +12,4 @@ public interface BlueprintFormulaMapper extends BaseMapper<BlueprintFormulaPO> {
     int batchInsert(List<BlueprintFormulaPO> blueprintFormulaPOS);
 
     int insertOrUpdateSelective(BlueprintFormulaPO blueprintFormulaPO);
-    // 只保留基础 CRUD
 }

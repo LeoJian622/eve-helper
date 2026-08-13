@@ -112,24 +112,6 @@ public class WebSocket {
     }
 
     /**
-     * 此为广播消息
-     *
-     * @param message 消息
-     */
-    public void sendAllMessage(String message) {
-        log.debug("【WebSocket消息】广播消息：" + message);
-        for (Session session : SESSIONS) {
-            try {
-                if (session.isOpen()) {
-                    session.getAsyncRemote().sendText(message);
-                }
-            } catch (Exception e) {
-                log.error("【WebSocket消息】广播消息异常,{}", e.getMessage());
-            }
-        }
-    }
-
-    /**
      * 此为单点消息
      *
      * @param userId  用户编号
@@ -149,23 +131,4 @@ public class WebSocket {
         }
     }
 
-    /**
-     * 此为单点消息(多人)
-     *
-     * @param userIds 用户编号列表
-     * @param message 消息
-     */
-    public void sendMoreMessage(String[] userIds, String message) {
-        for (String userId : userIds) {
-            Session session = SESSION_POOL.get(userId);
-            if (session != null && session.isOpen()) {
-                try {
-                    log.debug("【WebSocket消息】单点消息：" + message);
-                    session.getAsyncRemote().sendText(message);
-                } catch (Exception e) {
-                    log.error("【WebSocket消息】消息异常,{}", e.getMessage());
-                }
-            }
-        }
     }
-}

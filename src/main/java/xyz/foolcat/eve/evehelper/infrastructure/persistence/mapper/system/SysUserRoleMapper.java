@@ -18,5 +18,4 @@ public interface SysUserRoleMapper extends BaseMapper<SysUserRolePO> {
     int batchInsert(List<SysUserRolePO> list);
 
     int insertOrUpdateSelective(SysUserRolePO record);
-    // 只保留基础 CRUD
 }

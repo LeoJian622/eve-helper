@@ -94,9 +94,7 @@ public class BotDispatcher {
         if (!(messageEvent.getUser_id() ==359635464) && !(messageEvent.getUser_id() ==610697865)){
             return BotUtil.generateMessage(messageEvent, "垫下：母鸡呀",false);
         }
-//暂时使用某人默认账号查询
-//        EveAccount eveAccount = eveAccountService.getOne(new QueryWrapper<EveAccount>().lambda().eq(EveAccount::getCharacterName, commandMatcher.group(2)));
-        // WebSocket 消息无安全上下文，显式声明系统身份（不可用 authorize，其为请求路径专用）
+// WebSocket 消息无安全上下文，显式声明系统身份（不可用 authorize，其为请求路径专用）
         EveAccount eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, 2112818290);
 
         List<Structure> structures = structureService.selectFuelExpiresList(24, eveAccount.getCorpId());

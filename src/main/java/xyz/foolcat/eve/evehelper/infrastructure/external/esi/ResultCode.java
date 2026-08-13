@@ -18,22 +18,12 @@ public enum ResultCode implements IResultCode, Serializable {
      * 成功
      */
     SUCCESS("200", "成功"),
-    /**
-     * 失败
-     */
-    COMMON_FAIL("500","失败"),
-
-    /**
-     * 系统代码
-     */
-    UNKNOWN_ERROR("UNKNOWN", "未知异常"),
 
     /**
      * ESI登录异常
      */
     ESI_AUTHORIZATION_FAILURE("ESI00400","ESI 未授权或授权过期，请重新授权"),
-    ESI_SERVER_FAILURE("ESI00500","ESI 服务器请求失败"),
-    ESI_AUTH_TOKEN_NULL("ESI00400", "ESI author Token为空");
+    ESI_SERVER_FAILURE("ESI00500","ESI 服务器请求失败");
 
     public String getCode() {
         return code;
@@ -63,6 +53,6 @@ public enum ResultCode implements IResultCode, Serializable {
             }
         }
         // 默认系统执行错误
-        return UNKNOWN_ERROR;
+        return ESI_SERVER_FAILURE;
     }
 }

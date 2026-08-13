@@ -40,5 +40,4 @@ public interface BlueprintsMapper extends BaseMapper<BlueprintsPO> {
 
     int insertOrUpdateSelective(BlueprintsPO record);
 
-    // 只保留基础 CRUD
 }

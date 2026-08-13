@@ -41,14 +41,4 @@ public class UserDTO {
      */
     @Schema(description = "用户邮箱")
     private String email;
-
-    public static final String COL_USERNAME = "username";
-
-    public static final String COL_NICKNAME = "nickname";
-
-    public static final String COL_GENDER = "gender";
-
-    public static final String COL_PASSWORD = "password";
-
-    public static final String COL_EMAIL = "email";
 }

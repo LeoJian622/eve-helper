@@ -25,5 +25,4 @@ public interface AssetsMapper extends BaseMapper<AssetsPO> {
     void removeByItemId(List<Long> itemIds);
 
     List<AssetsPO> findByOwnerId(Integer characterId);
-    // 只保留基础 CRUD
 }

@@ -28,7 +28,7 @@ public class BlueprintCostDTO implements Serializable {
     /**
      * 物品名
      */
-    @Schema(name="物品类型ID")
+    @Schema(name="物品名")
     private String typeName;
 
 

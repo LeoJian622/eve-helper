@@ -60,8 +60,9 @@ public class AuthorizeOAuth {
                 encode(AGENT) +
                 "&device_id=" +
                 encode(AGENT) +
+                // 晨曦(Serenity)OAuth 兼容:code_challenge 有意留空(不启用 PKCE)。
+                // 若启用 PKCE,晨曦授权服务器会拒绝「授权码换取 token」流程,故此处刻意不调用 getCodeChallenge()。
                 "&code_challenge=" +
-//                getCodeChallenge() +
                 "&code_challenge_method=" +
                 encode("S256");
     }

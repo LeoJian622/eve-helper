@@ -13,5 +13,4 @@ public interface InvuniquenamesMapper extends BaseMapper<InvUniqueNamesPO> {
     int batchInsert(List<InvUniqueNamesPO> collect);
 
     int insertOrUpdateSelective(InvUniqueNamesPO invUniqueNamesPO);
-    // 只保留基础 CRUD
 }

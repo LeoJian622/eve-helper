@@ -17,10 +17,6 @@ public enum ResultCode implements IResultCode, Serializable {
      * 成功
      */
     SUCCESS("200", "成功"),
-    /**
-     * 失败
-     */
-    COMMON_FAIL("500","失败"),
 
     /**
      * 系统代码
@@ -33,15 +29,8 @@ public enum ResultCode implements IResultCode, Serializable {
      */
     TOKEN_INVALID_OR_EXPIRED("AUT00201", "用户未登录"),
     TOKEN_ACCESS_FORBIDDEN("AUT00202", "TOKEN被禁用"),
-    USER_ACCOUNT_EXPIRED("AUT00203", "账号过期"),
-    USER_CREDENTIALS_ERROR("AUT00204", "密码错误"),
-    USER_USER_CREDENTIALS_EXPIRED("AUT00205", "密码过期"),
-    USER_ACCOUNT_DISABLE("AUT00206", "账号不可用"),
-    USER_ACCOUNT_LOCKED("AUT00207", "账户被锁定"),
     USER_ACCOUNT_NOT_EXIST("AUT00208", "账号不存在"),
-    USER_ACCOUNT_ALREADY_EXIST("AUT00209", "账号已存在"),
     TOKEN_ACCESS_EXPIRED("AUT00210", "TOKEN过期"),
-    TOKEN_VERIFY_FAILED("AUT00211", "非法TOKEN"),
 
     ACCESS_UNAUTHORIZED("AUT00301", "访问未授权"),
 

@@ -48,5 +48,4 @@ public class SysRoleRepositoryImpl implements SysRoleRepository {
     public List<String> queryRolesByUserId(Integer id) {
         return sysRoleMapper.queryRolesByUserId(id);
     }
-    // TODO: 实现 BaseRepository<SysRole, Long> 的方法
 }

@@ -19,5 +19,4 @@ public interface MarketGroupsMapper extends BaseMapper<MarketGroupsPO> {
     List<MarketGroupsTreeVO> selectChildren(Integer marketgroupid);
 
     List<MarketGroupsTreeVO> selectGroupTree();
-    // 只保留基础 CRUD
 }
