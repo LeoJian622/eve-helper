@@ -29,7 +29,10 @@ EVE Helper 项目文档中心。
 |------|------|----------|
 | [CLAUDE.md](../CLAUDE.md) | Claude Code 项目指南(架构/约束/流程速查) | 2026-08-09 |
 | [AGENTS.md](../AGENTS.md) | 跨 AI 工具入口指针 | 2026-08-09 |
-| [工程开发规则](./AI_WORKFLOW.md) | Spec-Kit + Superpowers + ECC 统一 Spec-First 流程 | 2026-08-09 |
+| [开发工作流（权威）](./workflow/DEVELOPMENT-WORKFLOW.md) | 三系统统一开发流程（强制，任务分轨 + 门禁） | 2026-08-13 |
+| [阶段详细步骤](./workflow/PHASE-DETAILS.md) | P0–P7 各阶段步骤、门禁与证据要求 | 2026-08-13 |
+| [工具分工矩阵](./workflow/TOOL-MAP.md) | Spec Kit / Superpowers / ECC 职责矩阵与裁决 | 2026-08-13 |
+| [项目现状与约定](./project/PROJECT-STATE.md) | 项目现状与 Spec Kit 约定 | 2026-08-13 |
 | [ECC 评审记录](./reviews/README.md) | 评审记录归档目录与模板 | 2026-08-09 |
 
 ## 🚀 快速导航
@@ -58,7 +61,7 @@ EVE Helper 项目文档中心。
 
 ### 测试人员
 
-- **测试流程**: [工程开发规则 - 标准开发流程](./AI_WORKFLOW.md#3-标准开发流程)
+- **测试流程**: [开发工作流（权威） - 特性轨阶段总览](./workflow/DEVELOPMENT-WORKFLOW.md#特性轨阶段总览)
 - **编写测试**: [开发指南 - 编写测试](./DEVELOPMENT.md#3-编写测试)
 - **测试命令**: [开发指南 - 测试命令](./DEVELOPMENT.md#测试命令)
 
@@ -78,7 +81,7 @@ EVE Helper 项目文档中心。
 #### 测试
 - [编写测试](./DEVELOPMENT.md#3-编写测试)
 - [测试命令](./DEVELOPMENT.md#测试命令)
-- [TDD 流程](./AI_WORKFLOW.md#3-标准开发流程)
+- [TDD 流程](./workflow/DEVELOPMENT-WORKFLOW.md#铁律)
 
 #### 部署运维
 - [部署流程](./DEPLOYMENT.md#部署流程)
@@ -95,7 +98,7 @@ EVE Helper 项目文档中心。
 #### 开发工程师
 - ✅ [开发指南](./DEVELOPMENT.md)
 - ✅ [环境变量配置](./ENVIRONMENT.md)
-- ✅ [工程开发规则](./AI_WORKFLOW.md)
+- ✅ [开发工作流（权威）](./workflow/DEVELOPMENT-WORKFLOW.md)
 
 #### 运维工程师
 - ✅ [部署运维手册](./DEPLOYMENT.md)
@@ -104,7 +107,7 @@ EVE Helper 项目文档中心。
 
 #### 测试工程师
 - ✅ [开发指南 - 编写测试](./DEVELOPMENT.md#3-编写测试)
-- ✅ [工程开发规则](./AI_WORKFLOW.md)
+- ✅ [开发工作流（权威）](./workflow/DEVELOPMENT-WORKFLOW.md)
 
 #### 项目经理
 - ✅ [Readme.md](../Readme.md)
@@ -153,10 +156,10 @@ EVE Helper 项目文档中心。
 
 ## 📊 文档统计
 
-- **docs/ 目录**: 5 个 Markdown(INDEX、AI_WORKFLOW、DEVELOPMENT、DEPLOYMENT、ENVIRONMENT)+ reviews/(ECC 评审记录)+ superpowers/(plans/specs)
+- **docs/ 目录**: INDEX、DEVELOPMENT、DEPLOYMENT、ENVIRONMENT + workflow/(DEVELOPMENT-WORKFLOW、PHASE-DETAILS、TOOL-MAP)+ project/(PROJECT-STATE)+ archive/(已废弃 AI_WORKFLOW、superpowers plans/specs、superpowers-sdd)+ reviews/(ECC 评审记录)
 - **分层架构 README**: 5 个(application/domain/infrastructure/interfaces/shared)
 - **根目录**: Readme.md、CLAUDE.md、AGENTS.md
-- **最近更新**: 2026-08-09
+- **最近更新**: 2026-08-13
 
 ## 🔗 外部资源
 
@@ -176,7 +179,7 @@ EVE Helper 项目文档中心。
 
 ---
 
-**最后更新**: 2026-08-09
+**最后更新**: 2026-08-13
 **维护者**: EVE Helper Documentation Team
 
-**文档版本**: v1.1.0
+**文档版本**: v1.2.0

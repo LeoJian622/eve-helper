@@ -1,0 +1,374 @@
+# Review package: a02fa60..HEAD
+
+## Commits
+3b32a83 chore: 清理过期文档与临时配置,迁移项目编码模式技能
+
+## Files changed
+ .../skills/eve-helper-patterns/SKILL.md            |   0
+ DDD_ARCHITECTURE_MIGRATION.md                      | 155 --------------------
+ DDD_MIGRATION_PLAN.md                              | 162 ---------------------
+ eve-helper230926120017005Config.json               |   1 -
+ eve-helpereveConfig.json                           |   1 -
+ eve-helpersystemConfig.json                        |   1 -
+ 6 files changed, 320 deletions(-)
+
+## Diff
+diff --git a/SKILL.md b/.claude/skills/eve-helper-patterns/SKILL.md
+similarity index 100%
+rename from SKILL.md
+rename to .claude/skills/eve-helper-patterns/SKILL.md
+diff --git a/DDD_ARCHITECTURE_MIGRATION.md b/DDD_ARCHITECTURE_MIGRATION.md
+deleted file mode 100644
+index b098fcd..0000000
+--- a/DDD_ARCHITECTURE_MIGRATION.md
++++ /dev/null
+@@ -1,155 +0,0 @@
+-# EVE Helper DDD架构迁移指南
+-
+-## 概述
+-
+-本指南将帮助您将现有的EVE Helper项目从传统的分层架构迁移到领域驱动设计(DDD)架构。
+-
+-## 当前架构分析
+-
+-当前项目采用传统的三层架构：
+-- Controller层：处理HTTP请求
+-- Service层：业务逻辑
+-- Mapper层：数据访问
+-
+-## 目标DDD架构
+-
+-```
+-src/main/java/xyz/foolcat/eve/evehelper/
+-├── domain/          # 领域层 - 核心业务逻辑
+-├── application/     # 应用层 - 用例协调
+-├── infrastructure/  # 基础设施层 - 技术实现
+-├── interfaces/      # 接口层 - 用户交互
+-└── shared/          # 共享层 - 通用组件
+-```
+-
+-## 迁移步骤
+-
+-### 第一步：创建新的目录结构
+-
+-1. 创建DDD分层目录
+-2. 在每个层下创建相应的子目录
+-3. 保持现有代码不变，逐步迁移
+-
+-### 第二步：领域层迁移
+-
+-#### 2.1 识别领域模型
+-- **实体(Entity)**: 有唯一标识的对象
+-  - User (用户)
+-  - Character (角色)
+-  - Blueprint (蓝图)
+-  - Asset (资产)
+-  - MarketOrder (市场订单)
+-
+-- **值对象(Value Object)**: 不可变的对象
+-  - Money (金额)
+-  - ISK (游戏货币)
+-  - ItemQuantity (物品数量)
+-  - Location (位置)
+-
+-- **聚合根(Aggregate Root)**: 管理聚合内实体的根实体
+-  - UserAggregate (用户聚合)
+-  - CharacterAggregate (角色聚合)
+-  - BlueprintAggregate (蓝图聚合)
+-
+-#### 2.2 迁移现有实体
+-```java
+-// 从 domain/eve/ 和 domain/system/ 迁移到 domain/model/entity/
+-```
+-
+-### 第三步：应用层迁移
+-
+-#### 3.1 创建应用服务
+-```java
+-// 将现有的service层业务逻辑迁移到application/service/
+-// 应用服务负责协调领域对象完成用例
+-```
+-
+-#### 3.2 创建DTO
+-```java
+-// 将现有的dto和vo迁移到application/dto/
+-// 按命令、查询、响应分类
+-```
+-
+-### 第四步：基础设施层迁移
+-
+-#### 4.1 持久化实现
+-```java
+-// 将mapper和数据库相关代码迁移到infrastructure/persistence/
+-```
+-
+-#### 4.2 外部服务集成
+-```java
+-// 将esi相关代码迁移到infrastructure/external/esi/
+-// 将onebot相关代码迁移到infrastructure/external/onebot/
+-```
+-
+-#### 4.3 配置迁移
+-```java
+-// 将config相关代码迁移到infrastructure/config/
+-```
+-
+-### 第五步：接口层迁移
+-
+-#### 5.1 Web接口
+-```java
+-// 将controller迁移到interfaces/web/controller/
+-// 将filter迁移到interfaces/web/filter/
+-```
+-
+-#### 5.2 WebSocket接口
+-```java
+-// 将onebot websocket相关代码迁移到interfaces/websocket/
+-```
+-
+-### 第六步：共享层迁移
+-
+-#### 6.1 通用组件
+-```java
+-// 将common、enums、exception等迁移到shared/
+-```
+-
+-## 具体迁移映射
+-
+-### 当前目录 → DDD目录
+-
+-| 当前目录 | DDD目录 | 说明 |
+-|---------|---------|------|
+-| `domain/eve/` | `domain/model/entity/` | EVE游戏相关实体 |
+-| `domain/system/` | `domain/model/entity/` | 系统相关实体 |
+-| `service/` | `application/service/` | 应用服务 |
+-| `service/esi/` | `infrastructure/external/esi/` | ESI外部服务 |
+-| `service/eve/` | `domain/service/` | 领域服务 |
+-| `service/system/` | `application/service/` | 应用服务 |
+-| `controller/` | `interfaces/web/controller/` | Web控制器 |
+-| `mapper/` | `infrastructure/persistence/mapper/` | 数据访问 |
+-| `dto/` | `application/dto/` | 数据传输对象 |
+-| `vo/` | `interfaces/vo/` | 视图对象 |
+-| `esi/` | `infrastructure/external/esi/` | ESI集成 |
+-| `onebot/` | `infrastructure/external/onebot/` | OneBot集成 |
+-| `config/` | `infrastructure/config/` | 配置类 |
+-| `common/` | `shared/` | 共享组件 |
+-| `enums/` | `shared/kernel/enums/` | 枚举定义 |
+-| `exception/` | `shared/kernel/exception/` | 异常定义 |
+-| `util/` | `shared/util/` | 工具类 |
+-
+-## 迁移优先级
+-
+-1. **高优先级**: 核心业务逻辑迁移到领域层
+-2. **中优先级**: 应用服务和DTO迁移
+-3. **低优先级**: 基础设施和接口层迁移
+-
+-## 注意事项
+-
+-1. 保持向后兼容性
+-2. 逐步迁移，不要一次性重构
+-3. 确保测试覆盖
+-4. 更新包名和导入语句
+-5. 维护依赖关系
+-
+-## 完成后的优势
+-
+-1. **清晰的业务边界**: 领域模型清晰表达业务概念
+-2. **更好的可维护性**: 分层明确，职责清晰
+-3. **更强的可扩展性**: 易于添加新功能
+-4. **更好的测试性**: 各层可以独立测试
+-5. **团队协作**: 不同角色可以专注于不同层 
+\ No newline at end of file
+diff --git a/DDD_MIGRATION_PLAN.md b/DDD_MIGRATION_PLAN.md
+deleted file mode 100644
+index 8b5301c..0000000
+--- a/DDD_MIGRATION_PLAN.md
++++ /dev/null
+@@ -1,162 +0,0 @@
+-# EVE Helper DDD架构迁移计划
+-
+-## 迁移概述
+-
+-本计划将按照DDD架构原则，将现有的EVE Helper项目从传统分层架构迁移到领域驱动设计架构。
+-
+-## 当前项目结构分析
+-
+-### 现有目录结构
+-```
+-src/main/java/xyz/foolcat/eve/evehelper/
+-├── domain/          # 已存在的领域层（部分）
+-├── application/     # 已存在的应用层（部分）
+-├── infrastructure/  # 已存在的基础设施层（部分）
+-├── interfaces/      # 已存在的接口层（部分）
+-├── shared/          # 已存在的共享层（部分）
+-├── vo/              # 视图对象（需要迁移）
+-├── util/            # 工具类（需要迁移）
+-├── task/            # 任务类（需要迁移）
+-├── onebot/          # OneBot集成（需要迁移）
+-├── exception/       # 异常类（需要迁移）
+-├── init/            # 初始化类（需要迁移）
+-├── esi/             # ESI集成（需要迁移）
+-├── enums/           # 枚举类（需要迁移）
+-├── converter/       # 转换器（需要迁移）
+-├── controller/      # 控制器（需要迁移）
+-├── config/          # 配置类（需要迁移）
+-├── service/         # 服务类（需要迁移）
+-├── dto/             # 数据传输对象（需要迁移）
+-├── common/          # 通用组件（需要迁移）
+-└── mapper/          # 数据访问层（需要迁移）
+-```
+-
+-## 迁移目标架构
+-
+-### 目标DDD目录结构
+-```
+-src/main/java/xyz/foolcat/eve/evehelper/
+-├── domain/                    # 领域层 - 核心业务逻辑
+-│   ├── model/
+-│   │   ├── entity/           # 实体（聚合根）
+-│   │   ├── valueobject/      # 值对象
+-│   │   └── aggregate/        # 聚合根
+-│   ├── repository/           # 仓储接口
+-│   ├── service/              # 领域服务
+-│   ├── event/                # 领域事件
+-│   └── specification/        # 规格模式
+-├── application/              # 应用层 - 用例协调
+-│   ├── service/              # 应用服务
+-│   ├── dto/
+-│   │   ├── command/          # 命令DTO
+-│   │   ├── query/            # 查询DTO
+-│   │   └── response/         # 响应DTO
+-│   ├── assembler/            # 组装器
+-│   ├── event/                # 应用事件
+-│   └── validator/            # 验证器
+-├── infrastructure/           # 基础设施层 - 技术实现
+-│   ├── persistence/          # 持久化实现
+-│   │   ├── mapper/           # MyBatis映射器
+-│   │   ├── repository/       # 仓储实现
+-│   │   └── entity/           # 数据库实体
+-│   ├── external/             # 外部服务集成
+-│   │   ├── esi/              # ESI服务
+-│   │   └── onebot/           # OneBot服务
+-│   ├── config/               # 配置类
+-│   ├── cache/                # 缓存实现
+-│   ├── message/              # 消息队列
+-│   ├── file/                 # 文件处理
+-│   └── util/                 # 工具类
+-├── interfaces/               # 接口层 - 用户交互
+-│   ├── web/                  # Web接口
+-│   │   ├── controller/       # 控制器
+-│   │   ├── filter/           # 过滤器
+-│   │   ├── advice/           # 异常处理
+-│   │   └── vo/               # 视图对象
+-│   ├── websocket/            # WebSocket接口
+-│   ├── cli/                  # 命令行接口
+-│   └── facade/               # 外观模式
+-└── shared/                   # 共享层 - 通用组件
+-    ├── kernel/               # 核心组件
+-    │   ├── base/             # 基础类
+-    │   ├── enums/            # 枚举定义
+-    │   ├── exception/        # 异常定义
+-    │   └── constants/        # 常量定义
+-    ├── result/               # 统一返回结果
+-    ├── security/             # 安全相关
+-    ├── validation/           # 验证组件
+-    └── util/                 # 通用工具类
+-```
+-
+-## 迁移步骤
+-
+-### 第一阶段：完善DDD目录结构
+-1. 创建缺失的目录结构
+-2. 移动现有文件到正确位置
+-3. 更新包名和导入语句
+-
+-### 第二阶段：领域层迁移
+-1. 迁移实体类到domain/model/entity/
+-2. 迁移值对象到domain/model/valueobject/
+-3. 创建聚合根
+-4. 迁移领域服务
+-5. 创建领域事件
+-
+-### 第三阶段：应用层迁移
+-1. 迁移应用服务
+-2. 重组DTO结构
+-3. 创建组装器
+-4. 添加验证器
+-
+-### 第四阶段：基础设施层迁移
+-1. 迁移持久化相关代码
+-2. 迁移外部服务集成
+-3. 迁移配置类
+-4. 创建缓存和消息队列实现
+-
+-### 第五阶段：接口层迁移
+-1. 迁移Web控制器
+-2. 迁移WebSocket接口
+-3. 迁移命令行接口
+-4. 优化异常处理
+-
+-### 第六阶段：共享层迁移
+-1. 迁移通用组件
+-2. 统一异常处理
+-3. 标准化返回结果
+-4. 完善工具类
+-
+-## 迁移优先级
+-
+-### 高优先级（核心业务）
+-- 用户管理相关代码
+-- 角色管理相关代码
+-- 蓝图管理相关代码
+-- 资产管理相关代码
+-
+-### 中优先级（应用服务）
+-- 应用服务层
+-- DTO和组装器
+-- 验证逻辑
+-
+-### 低优先级（基础设施）
+-- 外部服务集成
+-- 配置类
+-- 工具类
+-
+-## 注意事项
+-
+-1. **保持向后兼容**：确保迁移过程中系统仍能正常运行
+-2. **逐步迁移**：按模块逐步迁移，不要一次性重构
+-3. **测试覆盖**：确保每个迁移步骤都有充分的测试
+-4. **依赖管理**：正确处理包名变更和依赖关系
+-5. **文档更新**：及时更新相关文档和注释
+-
+-## 预期收益
+-
+-1. **清晰的业务边界**：领域模型清晰表达业务概念
+-2. **更好的可维护性**：分层明确，职责清晰
+-3. **更强的可扩展性**：易于添加新功能
+-4. **更好的测试性**：各层可以独立测试
+-5. **团队协作**：不同角色可以专注于不同层
+-6. **业务与技术分离**：业务逻辑与技术实现分离 
+\ No newline at end of file
+diff --git a/eve-helper230926120017005Config.json b/eve-helper230926120017005Config.json
+deleted file mode 100644
+index 762429d..0000000
+--- a/eve-helper230926120017005Config.json
++++ /dev/null
+@@ -1 +0,0 @@
+-{"methodNameForProjectList":[],"javaModelPackage":"xyz.foolcat.eve.evehelper.domain.system","javaMapperPackage":"xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper","xmlMapperPackage":"system","javaModelPath":"F:/eve-helper/src/main/java","javaMapperPath":"F:/eve-helper/src/main/java","xmlMapperPath":"F:/eve-helper/src/main/resources/mappers","supportIncludeWithBinds":false,"javaControllerPackage":"com.controller","serviceOgnlName":"","javaToCurdShouldGenerateSql":true,"useJakataAnnotation":false,"javaToCurdShouldGenerateMapperXml":true,"javaToCrudShouldGenerateServiceInterface":true,"javaToCrudShouldGenerateService":true,"javaToCurdShouldGenerateJavaMapper":true,"genComment":true,"modelAutoMerge":true,"useActualColumnNames":false,"tableGenerateConfigs":{"eve:industryBlueprints":{"javaModelName":"IndustryBlueprints","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":false,"methodNameList":[],"batchInsert":false},"eve_helper:observer":{"javaModelName":"Observer","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:blueprints":{"javaModelName":"Blueprints","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:inv_types":{"javaModelName":"InvTypes","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:sys_user":{"javaModelName":"SysUser","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"generatedKey":"id","moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":false,"methodNameList":[],"batchInsert":true},"eve:industryActivityProducts":{"javaModelName":"IndustryActivityProducts","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":false,"methodNameList":[],"batchInsert":false},"eve_helper:blueprints_data":{"javaModelName":"BlueprintsData","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve:marketGroups":{"sequenceColumn":"","javaModelName":"MarketGroups","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"generatedKey":"","sequenceId":"","moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":false,"methodNameList":[],"batchInsert":false},"eve:invTypes":{"javaModelName":"InvTypes","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":false,"methodNameList":[],"batchInsert":false},"eve_helper:sys_user_role":{"javaModelName":"SysUserRole","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:market_groups":{"javaModelName":"MarketGroups","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:sys_permission":{"sequenceColumn":"","javaModelName":"SysPermission","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"generatedKey":"id","sequenceId":"","moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":false,"methodNameList":[],"batchInsert":true},"eve_helper:blueprint_formula":{"javaModelName":"BlueprintFormula","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:eve_character":{"javaModelName":"EveCharacter","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"generatedKey":"id","moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:sys_role":{"javaModelName":"SysRole","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"generatedKey":"id","moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":false,"methodNameList":[],"batchInsert":true},"eve_helper:sys_menu":{"javaModelName":"SysMenu","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"generatedKey":"id","moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:mining_detail":{"javaModelName":"MiningDetail","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:assets":{"javaModelName":"Assets","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:corporation_wallet_journal":{"javaModelName":"CorporationWalletJournal","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:sys_role_permission":{"javaModelName":"SysRolePermission","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:universe_name":{"javaModelName":"UniverseName","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:industry_job":{"javaModelName":"IndustryJob","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:esi_config":{"javaModelName":"EsiConfig","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"generatedKey":"id","moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve:industryActivityMaterials":{"javaModelName":"IndustryActivityMaterials","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":false,"methodNameList":[],"batchInsert":false},"eve_helper:sys_role_menu":{"javaModelName":"SysRoleMenu","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:character_wallet_journal":{"javaModelName":"CharacterWalletJournal","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:market_order":{"javaModelName":"MarketOrder","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true},"eve_helper:text_id":{"sequenceColumn":"","javaModelName":"TextId","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"generatedKey":"","sequenceId":"","moduleName":"eve-helper","insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":false,"methodNameList":[],"batchInsert":true}},"mapperFilesFolderList":[],"generatedClassPathList":[],"mapperAnnotaion":true,"useLomBokOnModel":false,"modelAddToString":false,"modelAddEqualHashCode":false,"javaModelTrimString":false,"mybatisGeneratorMapperSuffix":"Mapper","mybatisXmlSuffix":"","lastDatabaseCrudChooseModuleName":"eve-helper","useExample":false,"jpaAnnotation":false,"useSwagger":false,"useSwagger3":false,"useOpenApi":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"batchInsert":true,"useCommonMapper":false,"commonMapperBaseClass":"tk.mybatis.mapper.common.Mapper","userMybatisPlus":true,"useMybatisPlus2":false,"mybatisPlusStaticField":false,"mybatisplusGenerateUpdateSelective":false,"addSerializeUid":true,"generateService":true,"addSchemaName":false,"removeIsPrefix":false,"regexString":"^is_","replacement":"","mybatisAnnotationSupport":true,"moduleNameToPackageAndPathMap":{"eve-helper":{"javaModelPacakge":"xyz.foolcat.eve.evehelper.domain.system","javaModelPath":"F:/eve-helper/src/main/java","javaMapperPackage":"xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper","javaMapperPath":"F:/eve-helper/src/main/java","xmlPackage":"system","xmlPath":"F:/eve-helper/src/main/resources/mappers","javaServicePackage":"xyz.foolcat.eve.evehelper.service.system","javaServicePath":"F:/eve-helper/src/main/java","javaServiceInterfacePath":"F:/eve-helper/src/main/java"}},"noJdbcType":false,"generateServiceInterface":false,"lombokAnnotation":"@Data","customizedLombokAnnotation":false,"customizedLombokValue":"@lombok.experimental.Accessors(chain \u003d true)\n@lombok.experimental.SuperBuilder","lombokDataAnnotation":true,"lombokGetterSetterAnnotation":false,"lombokBuilderAnnotation":false,"lombokAllArgConstructor":false,"lombokNoArgsConstructor":false,"p3CComment":true,"insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"checkBlobColumn":false,"javaxValidation":false,"javaMethodProfiles":{},"mybatisPlusIdType":"AUTO","useJavaMethod":false,"lastUsedJavaMethodProfileName":"","database":"UNSET","removeTablePreName":"","typeAliasPackages":"","baseClassSearchXml":false,"searchScope":"PROJECT","testcaseAdditionalConfiguration":"","supressSqlTagReferenceError":false,"testCasePlatForm":"Junit4","supportSqlSessionSelect":false,"sqlSessionQuatifiedName":"org.apache.ibatis.session.SqlSession","generateController":false,"controllerFolderPath":"","controllerTemplateString":"\n#* @vtlvariable name\u003d\"tableName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"entityPackageName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"entityClassName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"servicePackageName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"serviceClassName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"mapperPackageName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"mapperClassName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"info\" type\u003d\"com.ccnode.codegenerator.mybatisGenerator.MybatisGeneratorTableInfo\" *#\n\nimport $!{entityPackageName}.$!{entityClassName};\nimport $!{servicePackageName}.$!{serviceClassName};\nimport org.springframework.web.bind.annotation.*;\n\n#set($serviceFirstLower \u003d $!{serviceClassName.substring(0,1).toLowerCase()}+$!{serviceClassName.substring(1,$!{serviceClassName.length()})})\nimport javax.annotation.Resource;\n\n/**\n* $!{info.tableRemarks}($!{tableName})表控制层\n*\n* @author xxxxx\n*/\n@RestController\n@RequestMapping(\"$!{tableName}\")\npublic class $!{entityClassName}Controller {\n/**\n* 服务对象\n*/\n@Resource\nprivate $!{serviceClassName} $!{serviceFirstLower};\n\n/**\n* 通过主键查询单条数据\n*\n* @param id 主键\n* @return 单条数据\n*/\n@GetMapping(\"selectOne\")\npublic $!{entityClassName} selectOne(Integer id) {\nreturn $!{serviceFirstLower}.selectByPrimaryKey(id);\n}\n\n}","autoInjectPrefixAndSuffixForSqlTag":false}
+\ No newline at end of file
+diff --git a/eve-helpereveConfig.json b/eve-helpereveConfig.json
+deleted file mode 100644
+index 8f1c563..0000000
+--- a/eve-helpereveConfig.json
++++ /dev/null
+@@ -1 +0,0 @@
+-{"methodNameForProjectList":[],"javaModelPackage":"xyz.foolcat.eve.evehelper.domain.eve","notifyDialect":true,"javaMapperPackage":"xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper","xmlMapperPackage":"mappers.eve","fieldFill":false,"javaModelPath":"D:/IdeaProjects/eve-helper/src/main/java","javaMapperPath":"D:/IdeaProjects/eve-helper/src/main/java","xmlMapperPath":"D:/IdeaProjects/eve-helper/src/main/resources","supportIncludeWithBinds":false,"javaControllerPackage":"com.controller","serviceOgnlName":"","serviceInterfaceOgnlName":"","javaToCurdShouldGenerateSql":true,"useJakataAnnotation":false,"javaToCurdShouldGenerateMapperXml":true,"javaToCrudShouldGenerateServiceInterface":true,"javaToCrudShouldGenerateService":true,"javaToCurdShouldGenerateJavaMapper":true,"genComment":true,"modelAutoMerge":true,"xmlAutoMerge":true,"useActualColumnNames":false,"tableGenerateConfigs":{"eve:invuniquenames":{"sequenceColumn":"","javaModelName":"Invuniquenames","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"generatedKey":"","sequenceId":"","mybatisplusIdType":"AUTO","moduleName":"eve-helper","hasGenerated":false,"insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true,"deleteByPrimaryKeyIn":false,"updateBatchuseMultiQuery":false,"batchInsertSelectiveUseDefaultForNull":false},"eve_helper:eve_account":{"sequenceColumn":"","javaModelName":"EveAccount","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"generatedKey":"id","sequenceId":"","mybatisplusIdType":"AUTO","moduleName":"eve-helper","hasGenerated":false,"insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true,"deleteByPrimaryKeyIn":false,"updateBatchuseMultiQuery":false,"batchInsertSelectiveUseDefaultForNull":false},"eve_helper:structure":{"sequenceColumn":"","javaModelName":"Structure","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"generatedKey":"","sequenceId":"","hasGenerated":false,"insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":false,"updateBatchSelective":false,"insertOnDuplicateKey":false,"methodNameList":[],"batchInsert":false,"deleteByPrimaryKeyIn":false,"updateBatchuseMultiQuery":false,"batchInsertSelectiveUseDefaultForNull":false},"eve_helper:industry_job":{"sequenceColumn":"","javaModelName":"IndustryJob","columnOverrideList":[{"columnName":"start_date","javaType":"java.time.OffsetDateTime"},{"columnName":"end_date","javaType":"java.time.OffsetDateTime"},{"columnName":"pause_date","javaType":"java.time.OffsetDateTime"}],"ignoredColums":[],"useActualColumnName":false,"generatedKey":"","sequenceId":"","mybatisplusIdType":"AUTO","moduleName":"eve-helper","hasGenerated":false,"insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true,"deleteByPrimaryKeyIn":false,"updateBatchuseMultiQuery":false,"batchInsertSelectiveUseDefaultForNull":false}},"mapperFilesFolderList":[],"generatedClassPathList":[],"mapperAnnotaion":true,"useLomBokOnModel":false,"modelAddToString":false,"modelAddEqualHashCode":false,"javaModelTrimString":false,"mybatisGeneratorMapperSuffix":"Mapper","mybatisXmlSuffix":"","lastDatabaseCrudChooseModuleName":"eve-helper","useExample":false,"jpaAnnotation":false,"useSwagger":false,"useSwagger3":false,"useOpenApi":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"batchInsert":true,"deleteByPrimaryKeyIn":false,"updateBatchUseMultiQuery":false,"batchInsertSelectiveUseDefaultForNull":false,"useCommonMapper":false,"commonMapperBaseClass":"tk.mybatis.mapper.common.Mapper","userMybatisPlus":true,"useMybatisPlus2":false,"mybatisPlusStaticField":false,"mybatisplusGenerateUpdateSelective":false,"addSerializeUid":true,"generateService":true,"addSchemaName":false,"removeIsPrefix":false,"regexString":"^is_","replacement":"","mybatisAnnotationSupport":true,"moduleNameToPackageAndPathMap":{"eve-helper":{"javaModelPacakge":"xyz.foolcat.eve.evehelper.domain.eve","javaModelPath":"D:/IdeaProjects/eve-helper/src/main/java","javaMapperPackage":"xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper","javaMapperPath":"D:/IdeaProjects/eve-helper/src/main/java","xmlPackage":"mappers.eve","xmlPath":"D:/IdeaProjects/eve-helper/src/main/resources","javaServicePackage":"xyz.foolcat.eve.evehelper.service.eve","javaServicePath":"D:/IdeaProjects/eve-helper/src/main/java","javaServiceInterfacePath":"F:/eve-helper/src/main/java"}},"noJdbcType":false,"generateServiceInterface":false,"lombokAnnotation":"@Data","customizedLombokAnnotation":false,"customizedLombokValue":"@lombok.experimental.Accessors(chain \u003d true)\n@lombok.experimental.SuperBuilder","lombokDataAnnotation":true,"lombokGetterSetterAnnotation":false,"lombokBuilderAnnotation":false,"lombokAllArgConstructor":false,"lombokNoArgsConstructor":false,"p3CComment":true,"insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"checkBlobColumn":false,"javaxValidation":false,"javaMethodProfiles":{},"mybatisPlusIdType":"AUTO","useJavaMethod":false,"lastUsedJavaMethodProfileName":"","database":"UNSET","removeTablePreName":"","typeAliasPackages":"","baseClassSearchXml":false,"searchScope":"PROJECT","testcaseAdditionalConfiguration":"","supressSqlTagReferenceError":false,"testCasePlatForm":"Junit4","supportSqlSessionSelect":false,"sqlSessionQuatifiedName":"org.apache.ibatis.session.SqlSession","generateController":false,"controllerFolderPath":"","controllerTemplateString":"\n#* @vtlvariable name\u003d\"tableName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"entityPackageName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"entityClassName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"servicePackageName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"serviceInterfacePackage\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"serviceClassName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"serviceInterfaceClassName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"mapperPackageName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"mapperClassName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"controllerPackage\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"tableRemark\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"myDate\" type\u003d\"java.util.Date\" *#\n#* @vtlvariable name\u003d\"simpleDateFormat\" type\u003d\"java.text.SimpleDateFormat\" *#\npackage $!{controllerPackage};\nimport $!{entityPackageName}.$!{entityClassName};\n###set($realServiceName \u003d $!{serviceClassName}+\u0027Impl\u0027)\nimport $!{servicePackageName}.$!{serviceClassName};\nimport org.springframework.web.bind.annotation.*;\n\n#set($serviceFirstLower \u003d $!{serviceClassName.substring(0,1).toLowerCase()}+$!{serviceClassName.substring(1,$!{serviceClassName.length()})})\nimport org.springframework.beans.factory.annotation.Autowired;\n\n/**\n* $!{tableRemark}($!{tableName})表控制层\n*\n* @author xxxxx\n*/\n@RestController\n@RequestMapping(\"/$!{tableName}\")\npublic class $!{entityClassName}Controller {\n/**\n* 服务对象\n*/\n    @Autowired\n    private $!{serviceClassName} $!{serviceFirstLower};\n\n    /**\n    * 通过主键查询单条数据\n    *\n    * @param id 主键\n    * @return 单条数据\n    */\n    @GetMapping(\"selectOne\")\n    public $!{entityClassName} selectOne(Integer id) {\n    return $!{serviceFirstLower}.selectByPrimaryKey(id);\n    }\n\n}","autoInjectPrefixAndSuffixForSqlTag":false}
+\ No newline at end of file
+diff --git a/eve-helpersystemConfig.json b/eve-helpersystemConfig.json
+deleted file mode 100644
+index 8f1c563..0000000
+--- a/eve-helpersystemConfig.json
++++ /dev/null
+@@ -1 +0,0 @@
+-{"methodNameForProjectList":[],"javaModelPackage":"xyz.foolcat.eve.evehelper.domain.eve","notifyDialect":true,"javaMapperPackage":"xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper","xmlMapperPackage":"mappers.eve","fieldFill":false,"javaModelPath":"D:/IdeaProjects/eve-helper/src/main/java","javaMapperPath":"D:/IdeaProjects/eve-helper/src/main/java","xmlMapperPath":"D:/IdeaProjects/eve-helper/src/main/resources","supportIncludeWithBinds":false,"javaControllerPackage":"com.controller","serviceOgnlName":"","serviceInterfaceOgnlName":"","javaToCurdShouldGenerateSql":true,"useJakataAnnotation":false,"javaToCurdShouldGenerateMapperXml":true,"javaToCrudShouldGenerateServiceInterface":true,"javaToCrudShouldGenerateService":true,"javaToCurdShouldGenerateJavaMapper":true,"genComment":true,"modelAutoMerge":true,"xmlAutoMerge":true,"useActualColumnNames":false,"tableGenerateConfigs":{"eve:invuniquenames":{"sequenceColumn":"","javaModelName":"Invuniquenames","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"generatedKey":"","sequenceId":"","mybatisplusIdType":"AUTO","moduleName":"eve-helper","hasGenerated":false,"insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true,"deleteByPrimaryKeyIn":false,"updateBatchuseMultiQuery":false,"batchInsertSelectiveUseDefaultForNull":false},"eve_helper:eve_account":{"sequenceColumn":"","javaModelName":"EveAccount","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"generatedKey":"id","sequenceId":"","mybatisplusIdType":"AUTO","moduleName":"eve-helper","hasGenerated":false,"insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true,"deleteByPrimaryKeyIn":false,"updateBatchuseMultiQuery":false,"batchInsertSelectiveUseDefaultForNull":false},"eve_helper:structure":{"sequenceColumn":"","javaModelName":"Structure","columnOverrideList":[],"ignoredColums":[],"useActualColumnName":false,"generatedKey":"","sequenceId":"","hasGenerated":false,"insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":false,"updateBatchSelective":false,"insertOnDuplicateKey":false,"methodNameList":[],"batchInsert":false,"deleteByPrimaryKeyIn":false,"updateBatchuseMultiQuery":false,"batchInsertSelectiveUseDefaultForNull":false},"eve_helper:industry_job":{"sequenceColumn":"","javaModelName":"IndustryJob","columnOverrideList":[{"columnName":"start_date","javaType":"java.time.OffsetDateTime"},{"columnName":"end_date","javaType":"java.time.OffsetDateTime"},{"columnName":"pause_date","javaType":"java.time.OffsetDateTime"}],"ignoredColums":[],"useActualColumnName":false,"generatedKey":"","sequenceId":"","mybatisplusIdType":"AUTO","moduleName":"eve-helper","hasGenerated":false,"insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"updateBatch":true,"updateBatchSelective":false,"insertOnDuplicateKey":true,"methodNameList":[],"batchInsert":true,"deleteByPrimaryKeyIn":false,"updateBatchuseMultiQuery":false,"batchInsertSelectiveUseDefaultForNull":false}},"mapperFilesFolderList":[],"generatedClassPathList":[],"mapperAnnotaion":true,"useLomBokOnModel":false,"modelAddToString":false,"modelAddEqualHashCode":false,"javaModelTrimString":false,"mybatisGeneratorMapperSuffix":"Mapper","mybatisXmlSuffix":"","lastDatabaseCrudChooseModuleName":"eve-helper","useExample":false,"jpaAnnotation":false,"useSwagger":false,"useSwagger3":false,"useOpenApi":true,"updateBatch":true,"updateBatchSelective":true,"insertOnDuplicateKey":true,"batchInsert":true,"deleteByPrimaryKeyIn":false,"updateBatchUseMultiQuery":false,"batchInsertSelectiveUseDefaultForNull":false,"useCommonMapper":false,"commonMapperBaseClass":"tk.mybatis.mapper.common.Mapper","userMybatisPlus":true,"useMybatisPlus2":false,"mybatisPlusStaticField":false,"mybatisplusGenerateUpdateSelective":false,"addSerializeUid":true,"generateService":true,"addSchemaName":false,"removeIsPrefix":false,"regexString":"^is_","replacement":"","mybatisAnnotationSupport":true,"moduleNameToPackageAndPathMap":{"eve-helper":{"javaModelPacakge":"xyz.foolcat.eve.evehelper.domain.eve","javaModelPath":"D:/IdeaProjects/eve-helper/src/main/java","javaMapperPackage":"xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper","javaMapperPath":"D:/IdeaProjects/eve-helper/src/main/java","xmlPackage":"mappers.eve","xmlPath":"D:/IdeaProjects/eve-helper/src/main/resources","javaServicePackage":"xyz.foolcat.eve.evehelper.service.eve","javaServicePath":"D:/IdeaProjects/eve-helper/src/main/java","javaServiceInterfacePath":"F:/eve-helper/src/main/java"}},"noJdbcType":false,"generateServiceInterface":false,"lombokAnnotation":"@Data","customizedLombokAnnotation":false,"customizedLombokValue":"@lombok.experimental.Accessors(chain \u003d true)\n@lombok.experimental.SuperBuilder","lombokDataAnnotation":true,"lombokGetterSetterAnnotation":false,"lombokBuilderAnnotation":false,"lombokAllArgConstructor":false,"lombokNoArgsConstructor":false,"p3CComment":true,"insertMethodEnabled":true,"insertSelectiveMethodEnabled":true,"selectByPrimaryKeyEnabled":true,"deleteByPrimayKeyEnabled":true,"updateByPrimaykeyEnabled":true,"updateByPrimaryKeySelectiveEnabled":true,"checkBlobColumn":false,"javaxValidation":false,"javaMethodProfiles":{},"mybatisPlusIdType":"AUTO","useJavaMethod":false,"lastUsedJavaMethodProfileName":"","database":"UNSET","removeTablePreName":"","typeAliasPackages":"","baseClassSearchXml":false,"searchScope":"PROJECT","testcaseAdditionalConfiguration":"","supressSqlTagReferenceError":false,"testCasePlatForm":"Junit4","supportSqlSessionSelect":false,"sqlSessionQuatifiedName":"org.apache.ibatis.session.SqlSession","generateController":false,"controllerFolderPath":"","controllerTemplateString":"\n#* @vtlvariable name\u003d\"tableName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"entityPackageName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"entityClassName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"servicePackageName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"serviceInterfacePackage\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"serviceClassName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"serviceInterfaceClassName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"mapperPackageName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"mapperClassName\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"controllerPackage\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"tableRemark\" type\u003d\"java.lang.String\" *#\n#* @vtlvariable name\u003d\"myDate\" type\u003d\"java.util.Date\" *#\n#* @vtlvariable name\u003d\"simpleDateFormat\" type\u003d\"java.text.SimpleDateFormat\" *#\npackage $!{controllerPackage};\nimport $!{entityPackageName}.$!{entityClassName};\n###set($realServiceName \u003d $!{serviceClassName}+\u0027Impl\u0027)\nimport $!{servicePackageName}.$!{serviceClassName};\nimport org.springframework.web.bind.annotation.*;\n\n#set($serviceFirstLower \u003d $!{serviceClassName.substring(0,1).toLowerCase()}+$!{serviceClassName.substring(1,$!{serviceClassName.length()})})\nimport org.springframework.beans.factory.annotation.Autowired;\n\n/**\n* $!{tableRemark}($!{tableName})表控制层\n*\n* @author xxxxx\n*/\n@RestController\n@RequestMapping(\"/$!{tableName}\")\npublic class $!{entityClassName}Controller {\n/**\n* 服务对象\n*/\n    @Autowired\n    private $!{serviceClassName} $!{serviceFirstLower};\n\n    /**\n    * 通过主键查询单条数据\n    *\n    * @param id 主键\n    * @return 单条数据\n    */\n    @GetMapping(\"selectOne\")\n    public $!{entityClassName} selectOne(Integer id) {\n    return $!{serviceFirstLower}.selectByPrimaryKey(id);\n    }\n\n}","autoInjectPrefixAndSuffixForSqlTag":false}
+\ No newline at end of file

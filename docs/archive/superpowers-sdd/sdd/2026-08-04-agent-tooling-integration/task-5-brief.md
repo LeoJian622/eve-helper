@@ -1,7 +1,21 @@
+### Task 5: 重写 CLAUDE.md 并新建 AGENTS.md
+
+**Files:**
+- Modify: `CLAUDE.md`(整体重写)
+- Create: `AGENTS.md`
+
+**Interfaces:**
+- Consumes: Task 4 产出的 `docs/AI_WORKFLOW.md`(被 @导入)
+- Produces: agent 入口文档;Task 7 的 INDEX.md 引用它们
+
+- [ ] **Step 1: 用以下内容整体重写 `CLAUDE.md`(全文)**
+
+````markdown
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**开始任何开发任务前先阅读**: @docs/AI_WORKFLOW.md (分级开发流程与工具链规则)
 
 ## 项目概述
 
@@ -29,6 +43,7 @@ EVE Helper 是一个基于 Java Spring Boot 的应用程序,用于 EVE Online �
 | Hutool | 5.8.44 | 工具库 |
 | SpringDoc OpenAPI | 2.8.16 | API 文档 |
 | Nimbus JOSE JWT | 10.0.2 | JWT 处理 |
+| Prometheus metrics | 1.0.0 | 指标暴露 |
 
 ## 构建和开发命令
 
@@ -58,16 +73,14 @@ mvn package -DskipTests
 
 五层结构,依赖规则: `Interfaces → Application → Domain ← Infrastructure`。领域层是核心,不依赖任何其他层;基础设施层实现领域层定义的接口。
 
-- **domain/**: 实体(`model/entity/eve|system`)、领域读模型(`model/vo`,跨层共享的查询结果载体)、仓储接口(`repository/`)、出站端口(`port/esi` EsiGateway、`port/cache` CacheGateway)、领域服务(`service/esi|eve|system|security|thread`)、领域工具(`util/`)
-- **application/**: 应用服务、DTO(`dto/request|response`)、MapStruct 组装器(领域↔DTO,7 个)
-- **infrastructure/**: 持久化(PO + MyBatis mapper + 仓储实现)、映射转换器(`assembler/persistence` PO↔领域、`assembler/esi` ESI 响应↔领域,共 32 个)、外部集成(`external/esi` 30+ API 类,OAuth2 PKCE;`external/onebot`)、配置(多数据源、Spring Security/JWT/RBAC)、定时任务(`util/`)
-- **interfaces/**: REST 控制器(`web/controller`)、全局异常处理与 `@NoWrap` 标记(`web/advice`)
-- **shared/**: BaseEntity/PageResult/PageQuery(`kernel/base`)、配置属性(`kernel/config`)、枚举、EveHelperException、常量、Result<T>/ResultCode、工具类
+- **domain/**: 实体(`model/entity/eve|system`,均继承 `BaseEntity`)、仓储接口(`repository/`)、领域服务(`service/esi|eve|system|security|thread`)、Specification 模式
+- **application/**: 应用服务、CommandBus/QueryBus(泛型反射分发)、DTO、MapStruct 组装器(26+)、命令/查询处理器(CQRS)
+- **infrastructure/**: 持久化(PO + MyBatis mapper + 仓储实现)、外部集成(`external/esi` 30+ API 类,OAuth2 PKCE;`external/onebot`)、配置(多数据源、Spring Security/JWT/RBAC)
+- **interfaces/**: REST 控制器、过滤器、全局异常处理、VO
+- **shared/**: BaseEntity/PageResult、枚举、EveHelperException、常量、注解、Result<T>/ResultCode、工具类
 
 ### 添加新功能
-1. 从领域模型开始(实体/领域读模型) → 2. 领域层定义仓储接口(签名只用领域类型,禁止出现上层 DTO/VO) → 3. 应用服务协调用例 → 4. 基础设施层实现仓储 + `assembler/persistence` 做 PO↔领域转换 → 5. application 组装器做领域↔DTO → 6. 接口层控制器 → 7. MyBatis mapper XML
-
-> 跨层类型规则:被多层消费的查询结果放 `domain/model/vo`(领域读模型);仅接口层出参用 `application/dto/response`。domain 层不得 import application/infrastructure/interfaces 的任何类型。
+1. 从领域模型开始(实体/值对象/聚合) → 2. 领域层定义仓储接口 → 3. 应用服务协调用例 → 4. 基础设施层实现仓储 → 5. MapStruct 组装器 → 6. 接口层控制器 → 7. MyBatis mapper XML
 
 ### 关键技术细节
 - **多数据源**: `eve`(游戏静态数据,只读)与 `eve_helper`(运行时数据),独立 MyBatis Plus 配置
@@ -77,22 +90,15 @@ mvn package -DskipTests
 - **缓存**: Redis 主缓存,默认 TTL 3000 秒
 - **异步**: @EnableScheduling + AsyncConfiguration,市场订单线程池
 
-## 开发工作流法（强制，不得绕过）
+## 分级开发流程(速查)
 
-本仓库一切代码变更必须执行统一工作流，全文由下方 `@` 引入，随本文件自动生效：
+| 级别 | 适用场景 | 流程 |
+|------|----------|------|
+| **L1** | 中大型功能、跨层变更 | Spec-Kit: `/speckit-specify` → `/speckit-clarify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` |
+| **L2** | 小改动(单文件/局部逻辑) | Superpowers TDD: RED → GREEN → IMPROVE |
+| **L3** | 紧急修复 | `superpowers:systematic-debugging` → 最小修复 → 回归测试 |
 
-@docs/workflow/DEVELOPMENT-WORKFLOW.md
-
-核心约束（摘要，完整定义见引入文档）：
-
-1. **先分轨再动手**：特性轨（P0–P7）/ 缺陷轨 / 轻量轨，开工即声明；行为变更无轻量轨。
-2. **门禁不可跳**：G1 spec、G2 plan、G3 清单、G6 评审，均需工件证据 + 用户明确批准。
-3. **TDD 铁律**：没有先失败的测试就没有生产代码。
-4. **证据铁律**：任何"完成/通过"声明必须附当前轮次的验证命令输出。
-5. **单一事实源**：规格/计划/任务工件只存在于 `specs/<NNN>-<feature>/`。
-
-阶段详细步骤：进入任一阶段前 Read `docs/workflow/PHASE-DETAILS.md`；
-工具分工与冲突裁决：`docs/workflow/TOOL-MAP.md`。
+所有级别实现后强制评审: `ecc:java-reviewer` 必审;涉及认证/用户输入/外部 API/加密时追加 `ecc:security-reviewer`;构建失败用 `ecc:java-build-resolver`。详见 @docs/AI_WORKFLOW.md。
 
 ## 安全红线
 
@@ -104,20 +110,45 @@ mvn package -DskipTests
 ## 重要文件
 
 - `pom.xml`: Maven 依赖与构建配置(冻结技术栈的版本以此为准)
-- `src/main/resources/application.yml`: 公共配置(数据源/Druid 等,入库;未声明 `spring.profiles.active`,profile 由启动参数指定)
-- `src/main/resources/application-{ali,aliw,prod,test}.yml`: 环境配置(**均不入库**,已在 `.gitignore` 忽略;测试用 `@ActiveProfiles("test")` 走 `application-test.yml`)
+- `src/main/resources/application.yml`: profile 选择 (active: dev)
+- `src/main/resources/application-{dev,ali,aliw,pro}.yml`: 环境配置
 - `.env.example`: 环境变量模板
-- `.specify/memory/constitution.md`: 项目宪法(含技术栈冻结条款与统一 Spec-First 流程)
-- `docs/INDEX.md`: 文档索引;`docs/workflow/DEVELOPMENT-WORKFLOW.md`: 统一开发流程(强制);`docs/reviews/`: ECC 评审记录
+- `.specify/memory/constitution.md`: 项目宪法(含技术栈冻结条款)
+- `docs/INDEX.md`: 文档索引;`docs/AI_WORKFLOW.md`: AI 开发工作流
 
 ## 注意事项
 
 - MapStruct 组装器必须在编译期由注解处理器生成
 - Redis 必须运行;两个 MySQL 数据库(eve 和 eve_helper)必须可访问
 - 中文注释和文档是有意的(目标受众)
-- 业务代码变更须走统一 Spec-First 流程(不分级、无例外);技术栈本身不可变更
+- 业务代码变更须走分级开发流程;技术栈本身不可变更
+````
 
-<!-- SPECKIT START -->
-当前 feature: `008-security-review-followup`(安全评审遗留修复)
-实现计划: [specs/008-security-review-followup/plan.md](specs/008-security-review-followup/plan.md)
-<!-- SPECKIT END -->
+- [ ] **Step 2: 创建 `AGENTS.md`(单行指针)**
+
+```markdown
+# AGENTS.md
+
+Read and follow [CLAUDE.md](./CLAUDE.md) — this project's single source of truth for architecture, constraints (frozen tech stack), and the tiered development workflow.
+```
+
+- [ ] **Step 3: 验证 CLAUDE.md 版本与 pom.xml 一致**
+
+Run: `grep -E "3\.5\.14|3\.5\.15|1\.2\.24|1\.6\.3|5\.8\.44|2\.8\.16|9\.6\.0|10\.0\.2" CLAUDE.md | wc -l`
+Expected: ≥8(每个关键版本至少出现一次);且 `grep -c "2\.7\.18\|Java 11" CLAUDE.md` 输出 0
+
+- [ ] **Step 4: 路径限定提交**
+
+```bash
+git add docs/AI_WORKFLOW.md AGENTS.md
+git commit -m "docs: 重构 agent 文档体系
+
+- CLAUDE.md 修正技术栈至实际版本(Java 17 / Spring Boot 3.5.14),声明技术栈冻结
+- 新增 docs/AI_WORKFLOW.md: Spec-Kit + Superpowers + ECC 分级开发流程
+- 新增 AGENTS.md 跨工具入口指针
+
+Co-Authored-By: Claude <noreply@anthropic.com>" -- CLAUDE.md docs/AI_WORKFLOW.md AGENTS.md
+```
+
+---
+

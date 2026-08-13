@@ -1,6 +1,18 @@
-# 🏗️ 工程开发规则
+> ## ⚠️ 已归档（ARCHIVED）
+>
+> **本文档已废弃，不再作为项目权威。** 它描述的是旧的「标准开发流程（8 阶段）」。
+> 2026-08-13 起已由新工作流取代，新权威为：
+> - **主流程**：[`docs/workflow/DEVELOPMENT-WORKFLOW.md`](../workflow/DEVELOPMENT-WORKFLOW.md)
+> - **阶段细节**：[`docs/workflow/PHASE-DETAILS.md`](../workflow/PHASE-DETAILS.md)
+> - **工具分工**：[`docs/workflow/TOOL-MAP.md`](../workflow/TOOL-MAP.md)
+>
+> 本文件仅作历史留存，供追溯旧流程。请勿再引用其中的规则。
 
-本文档定义 Spec-Kit + Superpowers + ECC 三套工具链在 eve-helper 项目中的协作规则，由 `CLAUDE.md` 通过 `@docs/AI_WORKFLOW.md` 导入，对所有 AI agent 与人类开发者生效。规则与《项目宪法》(`.specify/memory/constitution.md`) 保持一致；两者冲突时以宪法为准。
+---
+
+# 🏗️ 工程开发规则（ARCHIVED）
+
+本文档（存档）定义 Spec-Kit + Superpowers + ECC 三套工具链在 eve-helper 项目中的协作规则，曾由 `CLAUDE.md` 通过 `@docs/AI_WORKFLOW.md` 导入。规则与《项目宪法》(`.specify/memory/constitution.md`) 保持一致；两者冲突时以宪法为准。
 
 ## 1. 核心原则
 - **规格驱动 (Spec-First)**：严禁在未明确 Spec 的情况下编写业务代码。**不按变更规模分级、紧急修复亦无豁免**——无论新增功能、局部改动还是线上故障，实现代码落地前必须已有 spec/plan/tasks，禁止事后补文档。

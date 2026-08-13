@@ -45,7 +45,7 @@ mvn test
 | [开发指南](docs/DEVELOPMENT.md) | 项目结构、DDD 分层、代码规范、Maven 命令 |
 | [环境变量配置](docs/ENVIRONMENT.md) | 配置项说明 |
 | [部署运维手册](docs/DEPLOYMENT.md) | 部署与运维 |
-| [工程开发规则](docs/AI_WORKFLOW.md) | Spec-Kit + Superpowers + ECC 统一 Spec-First 流程 |
+| [开发工作流（权威）](docs/workflow/DEVELOPMENT-WORKFLOW.md) | Spec Kit × Superpowers × ECC 统一开发流程（强制） |
 | [CLAUDE.md](CLAUDE.md) | AI 辅助开发的架构约束与流程速查 |
 | [AGENTS.md](AGENTS.md) | 跨 AI 工具入口指针 |
 
