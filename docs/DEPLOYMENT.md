@@ -590,7 +590,7 @@ sudo netstat -tlnp | grep 9999
 mysql -h ${DB_HOST} -P ${DB_PORT} -u ${DB_SYSTEM_USERNAME} -p
 
 # 5. 测试Redis连接
-redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} -a ${REDIS_PASSWORD} ping
+REDISCLI_AUTH=${REDIS_PASSWORD} redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} ping
 ```
 
 #### 解决方法
@@ -685,10 +685,10 @@ spring:
 
 ```bash
 # 1. 测试Redis连接
-redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} -a ${REDIS_PASSWORD} ping
+REDISCLI_AUTH=${REDIS_PASSWORD} redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} ping
 
 # 2. 查看Redis状态
-redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} -a ${REDIS_PASSWORD} info
+REDISCLI_AUTH=${REDIS_PASSWORD} redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} info
 
 # 3. 检查网络延迟
 ping ${REDIS_HOST}
@@ -943,17 +943,17 @@ keytool -list -v -keystore /etc/eve-helper/eve-jwt.jks -storepass '<STORE_PASS>'
 
 ```bash
 # ① 必填:记录清空前数量
-redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a '<REDIS_PASSWORD>' \
+redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" \
   --scan --pattern 'refresh_token:*' | wc -l
 # 清空前数量: ____
 
 # ② 清空(分批 DEL)
-redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a '<REDIS_PASSWORD>' \
+redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" \
   --scan --pattern 'refresh_token:*' \
-  | xargs -r -n 200 redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a '<REDIS_PASSWORD>' DEL
+  | xargs -r -n 200 redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" DEL
 
 # ③ 必填:验证清空后数量为 0
-redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a '<REDIS_PASSWORD>' \
+redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" \
   --scan --pattern 'refresh_token:*' | wc -l
 # 清空后数量: ____ (必须为 0)
 ```

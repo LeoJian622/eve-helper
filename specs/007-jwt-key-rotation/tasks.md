@@ -110,6 +110,8 @@ description: "Task list for 007-jwt-key-rotation"
   - AC: T010 GREEN ✅(2026-08-12,6/6;阈值 L2_THRESHOLD=1000/60s 窗口集中定义于常量;延迟 100~300ms 区间随机防同步重试风暴;指标名 `eve.helper.refresh.invalid.flood`)
 - [x] T017 [US1] 接线:`AuthApplicationService.refreshToken` 失败路径(②/③ 阶段)调用 L2 计数 + 延迟;④ 之后失败调 L1 计数;成功路径不调用
   - AC: T010、T009 GREEN;阈值常量集中定义(不硬编码散落)✅(2026-08-12,②格式非法+③token无效 → L2;用户不存在 → L1(userId);成功路径零调用;阈值集中在 RefreshRateLimiterService 常量;单测增接线断言)
+>
+> **008 T019 注记(2026-08-13,008 MEDIUM-3)**:008 在 `RefreshTokenRequest` DTO 边界加 `@Size(max=64)` + `@Pattern(UUID)`,该边界校验发生在 `AuthApplicationService.refreshToken` **之前**。故本任务的「② 格式非法 → L2」探针语义变化:非 UUID 垃圾串洪泛在 DTO 边界即被拒,**不再触达 `observeInvalidRefresh()`** → L2 全局单键计数器对该主向量(随机 UUID 洪泛)归零。008 后 L2 只覆盖「UUID 形状但无效」探针(③ token 无效)。`RefreshRateLimiterService` 代码未改(008 范围外);若需恢复对非 UUID 洪泛的 L2 观测,须在 DTO 边界前补检测(登记后续 polish)。
 - [x] T018 [US1] `AuthenticationFailureServletHandler.java:69-70`:清理 `InvalidCookieException` 死分支(filter 不再抛该异常)
   - AC: 编译通过;登录失败路径既有用例无新增失败 ✅(2026-08-12,分支与 import 已删,留注释说明删除原因)
 - [x] T019 [US1] US1 回归:全量 `./mvnw test` 与 T007 基准做**用例名集合 diff**;特别核对 `CharacterControllerTest.addCharacterAuth`(基线即 401,断言不得因本改动漂移)
