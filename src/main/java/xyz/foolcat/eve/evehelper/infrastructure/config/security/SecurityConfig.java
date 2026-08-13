@@ -11,7 +11,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -19,8 +18,6 @@ import xyz.foolcat.eve.evehelper.infrastructure.config.security.filter.JwtAuthor
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.handler.AccessDeniedServletHandler;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.handler.AuthenticationFailureServletHandler;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.handler.AuthenticationSuccessServletHandler;
-
-import jakarta.annotation.PostConstruct;
 
 /**
  * Spring Security配置
@@ -41,11 +38,6 @@ public class SecurityConfig {
     final AuthenticationServletEntryPoint authenticationServletEntryPoint;
     final JwtAuthorizationTokenFilter jwtAuthorizationTokenFilter;
     final SysUserDetailsService sysUserDetailsService;
-
-    @PostConstruct
-    void setStrategyName() {
-        SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
-    }
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {

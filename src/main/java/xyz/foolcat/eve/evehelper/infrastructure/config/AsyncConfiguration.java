@@ -32,6 +32,8 @@ public class AsyncConfiguration {
         executor.setThreadNamePrefix("esi-order-");
         // 缓冲队列满了之后的拒绝策略：由调用线程处理（一般是主线程）
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.DiscardPolicy());
+        // 任务身份快照传播:须在 initialize() 之前装配(008 US1 / research R1)
+        executor.setTaskDecorator(new SecurityContextTaskDecorator());
         executor.initialize();
         return executor;
     }
@@ -55,6 +57,8 @@ public class AsyncConfiguration {
         executor.setThreadNamePrefix("esi-auth-status-");
         // 队列满时由调用线程执行,避免任务丢弃
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        // 任务身份快照传播(CallerRunsPolicy 由装饰器同线程直通保障,008 US1 / research R1)
+        executor.setTaskDecorator(new SecurityContextTaskDecorator());
         executor.initialize();
         return executor;
     }
