@@ -830,7 +830,7 @@ appendonly yes  # 启用AOF持久化
 appendfsync everysec
 ```
 
-> ⚠️ **auth 键驱逐风险(007 T049,评审 MEDIUM-1)**:上述 `maxmemory-policy allkeys-lru`(**以及 `volatile-lru`**)会驱逐带 TTL 的键。eve-helper 的 auth 键 —— `refresh_token:*`、`refresh_session:*`、`refresh_owner:*`、`session_revoked:*`、`session_access_jti:*`、token 黑名单 —— **全部带 TTL**。驱逐 `refresh_token:*` 是 fail-safe(凭证失效),但驱逐 `refresh_session:*` / `session_revoked:*` / `refresh_owner:*` 索引是 **fail-open**(登出撤销静默失效、tombstone 被绕过),方向不对称。**`volatile-lru` 无效**:所有 auth 键都带 TTL,与 allkeys-lru 对它们行为一致。建议:**auth 键独立 Redis 实例**(或不设 maxmemory / 容量充足),不与业务缓存混用。
+> ⚠️ **auth 键驱逐风险(007 T049,评审 MEDIUM-1)**:上述 `maxmemory-policy allkeys-lru`(**以及 `volatile-lru`**)会驱逐带 TTL 的键。eve-helper 的 auth 键 —— `refresh_token:*`、`refresh_session:*`、`refresh_owner:*`、`session_revoked:*`、token 黑名单 —— **全部带 TTL**。驱逐 `refresh_token:*` 是 fail-safe(凭证失效),但驱逐 `refresh_session:*` / `session_revoked:*` / `refresh_owner:*` 索引是 **fail-open**(登出撤销静默失效、tombstone 被绕过),方向不对称。**`volatile-lru` 无效**:所有 auth 键都带 TTL,与 allkeys-lru 对它们行为一致。建议:**auth 键独立 Redis 实例**(或不设 maxmemory / 容量充足),不与业务缓存混用。
 
 ### 4. 应用层优化
 

@@ -37,8 +37,6 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -49,16 +47,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * 登出跑完 -> 刷新这才 generate 新 token」的交错下,刷新会凭空产生一个用户不知情的存活 refresh token。
  * T048 的 sid 锚点无法覆盖 -- 撤销发生时该 token 尚未存在。</p>
  *
- * <p><b>T049 修复(A+B,设计评审 BLOCK 后修正)</b>:</p>
+ * <p><b>T049 修复(A,设计评审 BLOCK 后修正;原 B 组件已按 008 决策移除)</b>:</p>
  * <ul>
  *   <li><b>A - 会话级失效标记</b>:登出 set {@code session_revoked:<sid>} tombstone(TTL=refresh TTL);
  *       刷新在 claim 旧 refresh token <b>之后</b>、generate <b>之前</b> check tombstone,存在则拒绝。
  *       <b>tombstone 在 logout 中无条件写入,不置于 revokeRefreshTokenBySession 内部</b> -- 该方法 5 条
  *       early-return(索引驱逐/sid 空/token 已不在缓存等)会跳过它,而那恰是攻击者可利用的 fail-open
  *       路径(评审 HIGH-1)。</li>
- *   <li><b>B - 轮换拉黑旧 access jti</b>:{@code generateAccessToken} 写 {@code session_access_jti:<sid> -> <jti>}
- *       (TTL=access TTL);轮换 generate 前 read 旧 jti 拉黑(新增 {@code addToBlacklist(jti, long ttlSeconds)}
- *       重载,评审 HIGH-3),把「轮换后旧 access 残活 15min」降到 0。</li>
+ *   <li><b>B - 轮换拉黑旧 access jti(已移除,008)</b>:不再写 {@code session_access_jti:<sid>} 键、
+ *       轮换时也不再拉黑旧 access token,旧 access 残活回 access TTL。</li>
  * </ul>
  *
  * <p><b>残留窗口(接受)</b>:刷新 check tombstone(缺)-> 挂起 -> 登出 set tombstone -> 刷新 generate。
@@ -81,7 +78,6 @@ class SessionRevocationT049Test {
     private static final String REFRESH_KEY_PREFIX = "refresh_token:";
     private static final String SESSION_INDEX_PREFIX = "refresh_session:";
     private static final String SESSION_REVOKED_PREFIX = "session_revoked:";
-    private static final String SESSION_ACCESS_JTI_PREFIX = "session_access_jti:";
     private static final Integer USER_ID = 43;
     private static final long REFRESH_TTL_SECONDS = 604800L;
     private static final long ACCESS_TTL_SECONDS = 900L;
@@ -119,7 +115,7 @@ class SessionRevocationT049Test {
     private void rebuildServices(InMemoryCacheGateway cacheGateway) {
         this.cache = cacheGateway;
         TokenBlacklistService blacklistService = new TokenBlacklistService(cacheGateway);
-        this.tokenService = new TokenService(keyPair, props, cacheGateway, blacklistService);
+        this.tokenService = new TokenService(keyPair, props, cacheGateway);
         this.authApplicationService = new AuthApplicationService(
                 blacklistService,
                 tokenService,
@@ -217,58 +213,6 @@ class SessionRevocationT049Test {
                 "无 sid 时不得设置 tombstone(没有 sid 作键)");
         assertTrue(cache.containsKey(SecurityConstant.TOKEN_BLACKLIST_PREFIX + jti),
                 "降级路径下仍必须完成拉黑");
-    }
-
-    // ── Concern B: 轮换拉黑旧 access jti ─────────────────────────────────────
-
-    @Test
-    @DisplayName("轮换后旧 access token 的 jti 必须被拉黑")
-    void rotation_blacklistsOldAccessTokenJti() throws Exception {
-        TokenResult issued = tokenService.generateTokenPair(user, List.of("ROLE_USER"));
-        stubUserLoad();
-        String oldJti = tokenService.parseAccessToken(stripBearer(issued.accessToken())).jti();
-
-        TokenResult rotated = authApplicationService.refreshToken(refreshRequest(issued.refreshToken()));
-
-        assertNotEquals(oldJti, tokenService.parseAccessToken(stripBearer(rotated.accessToken())).jti(),
-                "前置条件:轮换应产生新 access token(新 jti)");
-        assertTrue(cache.containsKey(SecurityConstant.TOKEN_BLACKLIST_PREFIX + oldJti),
-                "轮换后旧 access token 的 jti 必须被拉黑 -- 否则旧 access 在剩余 TTL 内仍可用(最多 15min)");
-    }
-
-    @Test
-    @DisplayName("登录后须写入 session_access_jti:<sid> -> <jti>")
-    void login_writesSessionAccessJti() throws Exception {
-        TokenResult issued = tokenService.generateTokenPair(user, List.of("ROLE_USER"));
-        String jti = tokenService.parseAccessToken(stripBearer(issued.accessToken())).jti();
-        String sid = sessionIdOf(issued.accessToken());
-
-        assertEquals(jti, cache.get(SESSION_ACCESS_JTI_PREFIX + sid),
-                "登录后须写入 session_access_jti:<sid> -> <jti>,供轮换时拉黑旧 access token");
-    }
-
-    @Test
-    @DisplayName("session_access_jti TTL 必须等于 access TTL")
-    void sessionAccessJti_ttlIsAccessTtl() {
-        tokenService.generateTokenPair(user, List.of("ROLE_USER"));
-        String sid = onlySessionIndexKey().substring(SESSION_INDEX_PREFIX.length());
-
-        assertEquals(ACCESS_TTL_SECONDS, cache.ttlOf(SESSION_ACCESS_JTI_PREFIX + sid),
-                "session_access_jti TTL 必须 = access TTL(900s)-- 与 access token 同寿,过期即无需拉黑");
-    }
-
-    @Test
-    @DisplayName("session_access_jti 缺失(滚动部署)-> 轮换不得抛异常,降级为跳过拉黑")
-    void rotation_withoutSessionAccessJti_degradesGracefully() {
-        TokenResult issued = tokenService.generateTokenPair(user, List.of("ROLE_USER"));
-        stubUserLoad();
-        // 模拟 pre-T049 滚动部署:session_access_jti 键不存在
-        cache.delete(SESSION_ACCESS_JTI_PREFIX + sessionIdOf(issued.accessToken()));
-
-        TokenResult rotated = assertDoesNotThrow(
-                () -> authApplicationService.refreshToken(refreshRequest(issued.refreshToken())),
-                "session_access_jti 缺失(pre-T049 滚动部署)时轮换不得抛异常 -- 降级为跳过拉黑 + SECURITY_ALERT");
-        assertNotNull(rotated.refreshToken(), "降级路径下轮换仍须返回新 token");
     }
 
     // ── helpers ─────────────────────────────────────────────────────────────

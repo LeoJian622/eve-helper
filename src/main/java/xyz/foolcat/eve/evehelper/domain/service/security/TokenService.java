@@ -40,8 +40,6 @@ public class TokenService {
     private final KeyPair keyPair;
     private final JwtTokenProperties jwtTokenProperties;
     private final CacheGateway cacheGateway;
-    /** 007 T049-B:轮换时拉黑旧 access token 的 jti */
-    private final TokenBlacklistService tokenBlacklistService;
 
     private static final String REFRESH_TOKEN_PREFIX = "refresh_token:";
 
@@ -83,15 +81,6 @@ public class TokenService {
      * 后者被轮换重写,不能作「会话已登出」的信号。</p>
      */
     private static final String SESSION_REVOKED_PREFIX = "session_revoked:";
-
-    /**
-     * 当前 access token 的 jti 索引:{@code session_access_jti:<sid> -> <jti>}(007 T049-B)。
-     *
-     * <p>刷新端点在白名单、请求<b>不带</b> access token,故轮换拿不到旧 jti。本键在
-     * {@code generateAccessToken} 时写入,轮换时读出旧 jti 拉黑,使「轮换后旧 access 残活
-     * access TTL」降到 0。TTL = access TTL:与 access token 同寿,过期即无需拉黑。</p>
-     */
-    private static final String SESSION_ACCESS_JTI_PREFIX = "session_access_jti:";
 
 
 
@@ -158,7 +147,6 @@ public class TokenService {
         long expirationTime = jwtTokenProperties.getAccessTokenExpirationTime() * 1000;
         List<String> safeAuthorities = (authorities == null) ? List.of() : authorities;
 
-        // 007 T049-B:捕获 jti,写入 session_access_jti:<sid> 供轮换时拉黑旧 access token
         String jti = UUID.randomUUID().toString();
 
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
@@ -179,10 +167,6 @@ public class TokenService {
 
         JWSSigner signer = new RSASSASigner(keyPair.getPrivate());
         signedJWT.sign(signer);
-
-        // 007 T049-B:记录当前 access jti,TTL = access TTL(与 access token 同寿,过期即无需拉黑)
-        cacheGateway.set(SESSION_ACCESS_JTI_PREFIX + sessionId, jti,
-                jwtTokenProperties.getAccessTokenExpirationTime(), TimeUnit.SECONDS);
 
         return signedJWT.serialize();
     }
@@ -311,30 +295,6 @@ public class TokenService {
     }
 
     /**
-     * 拉黑会话上一个 access token 的 jti(007 T049-B,轮换路径调用)。
-     *
-     * <p>读 {@code session_access_jti:<sid>}(旧 jti)并拉黑,把"轮换后旧 access 残活 access TTL"降到 0。
-     * {@link #generateAccessToken} 随后重写该键为新 jti。null(键被驱逐或 pre-T049 滚动部署)时跳过并打
-     * {@code [SECURITY_ALERT:ROTATE_BLACKLIST_MISS]}(评审 MEDIUM-2:使旧 access 残活可观测)。</p>
-     */
-    private void blacklistPreviousAccessJti(String sessionId) {
-        if (sessionId == null || sessionId.isEmpty()) {
-            return;
-        }
-        Object oldJtiObj = cacheGateway.get(SESSION_ACCESS_JTI_PREFIX + sessionId);
-        if (oldJtiObj == null) {
-            log.warn("[SECURITY_ALERT:ROTATE_BLACKLIST_MISS] 会话 access jti 索引缺失,"
-                    + "旧 access token 未被拉黑(pre-T049 滚动部署或键被驱逐): sid={}",
-                    SensitiveDataMasker.maskToken(sessionId));
-            return;
-        }
-        long accessTtl = jwtTokenProperties.getAccessTokenExpirationTime();
-        tokenBlacklistService.addToBlacklist(oldJtiObj.toString(), accessTtl);
-    }
-
-
-
-    /**
      * 从Refresh Token获取用户ID
      *
      * @param refreshToken Refresh Token
@@ -422,9 +382,6 @@ public class TokenService {
                     SensitiveDataMasker.maskToken(sessionId));
             throw new IllegalArgumentException("Refresh Token无效或已过期");
         }
-
-        // 007 T049-B:轮换拉黑旧 access token 的 jti(generateAccessToken 随后重写为新 jti)
-        blacklistPreviousAccessJti(sessionId);
 
         // 生成新的Token对(包含新的Refresh Token),并重写会话索引
         return generateTokenPair(user, authorities, sessionId);
