@@ -95,6 +95,14 @@ public class AssetsService {
                 .collect(Collectors.toList())
                 .stream().flatMap(asset -> Objects.requireNonNull(asset.block()).stream())
                 .collect(Collectors.toList());
+
+        /*
+         * 回填 ownerId(角色ID):EsiAssetsConverter 将 owner_id 置为 ignore,
+         * 需在此归因到所属角色,否则资产 owner_id=NULL,按角色聚合/归属鉴权/stale 删除均失效。
+         */
+        Long ownerId = eveAccount.getCharacterId() == null ? null : eveAccount.getCharacterId().longValue();
+        assets.forEach(a -> a.setOwnerId(ownerId));
+
         batchInsertOrUpdate(assets);
 
         /*

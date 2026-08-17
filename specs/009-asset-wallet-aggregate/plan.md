@@ -92,9 +92,11 @@ src/SQL/convert/009_wallet_journal_unique.sql             [A] UNIQUE(id, owner_i
 ### 决策 D1:资产 ownerId 回填(前提修复)
 `AssetsService.saveAndUpdateAsserts` 在 `batchInsertOrUpdate(assets)` 前,对每个资产 `a.setOwnerId((long) eveAccount.getCharacterId())`。理由:ESI 人物资产端点不带 owner,角色归属由调用上下文决定;回填后聚合/IDOR/stale 删除才有效。**并发注意**:聚合接口与同步接口可并行,聚合可能读到未回填的历史行——文档化(不锁库),运维建议同步后再聚合。
 
-### 决策 D2:钱包流水幂等(DDL 迁移)
-`wallet_journal` 加 `UNIQUE KEY uk_id_owner (id, owner_id)`。`insertOrUpdateSelective` 的 `ON DUPLICATE KEY UPDATE` 依此键生效。
-> 迁移风险:若线上已有重复行,建唯一键会失败——迁移脚本须先去重(`DELETE w FROM wallet_journal w JOIN wallet_journal w2 ON w.id=w2.id AND w.owner_id=w2.owner_id AND w.gmt_create>w2.gmt_create`),按 `(id,owner_id)` 组保留最早一条。
+### 决策 D2:钱包流水幂等(PRIMARY(id) 已满足,废弃 UNIQUE 方案)
+> **试验后裁决变更**(2026-08-18,用户批准"先对齐基线"):原方案拟加 `UNIQUE(id, owner_id)`。经实况库 `eve_helper@192.168.12.249` 实测:`wallet_journal` **已存在 PRIMARY(id) 主键**,且 `distinct_id == total`(id 全局唯一)。故幂等唯一键即现有主键,`ON DUPLICATE KEY UPDATE` 对主键冲突同样生效,`UNIQUE(id, owner_id)` 冗余——**废弃**。真正根因是建表脚本基线缺失主键(`id bigint null`),与实况库漂移;已把基线脚本补为 `id not null primary key` 消除漂移。
+`insertOrUpdateSelective` 的 `ON DUPLICATE KEY UPDATE` 依 PRIMARY(id) 生效,满足 FR-012(同步幂等)。
+> 迁移脚本 `009_wallet_journal_unique.sql` 改为幂等兜底:`DELETE` 删 id 重复冗余行(仅当无主键库生效)+ `ALTER ADD PRIMARY KEY(id)`;配有注释说明 D2 裁决。**FR-012 需求不变**,仅 D2 实现路径调整。
+> 已知限制:生产库(ali-eve / 47.96.179.174)开发期网络不可达,未远程核实其 schema;已在脚本注释标注为部署时核对项。
 
 ### 决策 D3:聚合价值口径
 价值 = `SUM(quantity * base_price)`,`base_price` 来自 `eve` 静态库表 `inv_types`。Market 无行情表,spec Assumptions 已确认用现有字段。聚合 SQL 所在 mapper 归属到能访问 `inv_types` 的数据源(按项目多数据源 `@DS` 配置/分库归属确认)。
@@ -116,7 +118,7 @@ src/SQL/convert/009_wallet_journal_unique.sql             [A] UNIQUE(id, owner_i
 
 ### 批次 A:治理修复(前置,两缺陷不修则后续不可验证)
 - **A1** 资产 ownerId 回填:改 `AssetsService.saveAndUpdateAsserts`
-- **A2** 钱包幂等 DDL 迁移:写 `src/SQL/convert/009_wallet_journal_unique.sql`(含去重+唯一键)
+- **A2** 钱包幂等对齐:基线脚本补 `wallet_journal.id PRIMARY KEY` + 写 `009_wallet_journal_unique.sql`(幂等兜底去重+补主键,见 D2 裁决)
 
 ### 批次 B:资产多角色聚合
 - **B1** 新增 `AssetsAggregateVO`(record: ownerId, assetCount, assetValue, categoryCount)

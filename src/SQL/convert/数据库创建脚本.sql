@@ -335,7 +335,8 @@ create table if not exists wallet_journal
     context_id      bigint       null,
     balance         double       null,
     amount          double       null,
-    id              bigint       null
+    id              bigint       not null
+        primary key
 );
 
 create index character_wallet_journal_owner_id_index
