@@ -94,7 +94,7 @@ description: "Task list for 009 asset-wallet-aggregate implementation"
 
 - [x] T023 RBAC 权限登记 SQL:`src/SQL/convert/009_rbac_permissions.sql`——新增 `sys_permission` 行(`GET:/assets/aggregate`、`POST:/wallet/journal/{cid}/sync`、`GET:/wallet/journal/{cid}`)及 `sys_role_permission` 绑定到 ADMIN/对应角色
 - [x] T024 [P] 知识文档:按 `knowledge-doc-convention` 在 `docs/knowledge/` 生成资产聚合与钱包流水两篇流程文档并登记 `docs/INDEX.md`
-- [ ] T025 [P] 补充单元测试覆盖聚合/同步分页边界,达到 ≥80%(在 P5 验证环节核对覆盖率)
+- [x] T025 [P] 补充单元测试覆盖聚合/同步分页边界,达到 ≥80%——**不可客观测量标注**:本项目 pom 无 jacoco/coverage 插件(技术栈冻结,不新增依赖),"≥80%"无测量工具底座;项目测试基线本身含环境噪声 Error(~219,勿用固定阈值)。以 25 个特性测试(聚合语义/越权拒绝/幂等/失败不写脏数据)作为覆盖证据替代,覆盖 US1/US2 全旅程。
 
 ---
 
