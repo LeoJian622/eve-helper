@@ -46,17 +46,17 @@ description: "Task list for 009 asset-wallet-aggregate implementation"
 
 ### Tests for User Story 1 (先 RED)
 
-- [ ] T003 [P] [US1] 集成测试 `AssetsAggregateIT`(interfaces/web)验证 `GET /assets/aggregate`:多角色返回分组、含件数/价值/类目数
-- [ ] T004 [P] [US1] 集成测试验证空资产角色→0 值、无角色→空列表、越权角色不出现(安全断言)
+- [x] T003 [P] [US1] 集成测试 `AssetsAggregateIT`(interfaces/web)验证 `GET /assets/aggregate`:多角色返回分组、含件数/价值/类目数
+- [x] T004 [P] [US1] 集成测试验证空资产角色→0 值、无角色→空列表、越权角色不出现(安全断言)
 
 ### Implementation for User Story 1
 
-- [ ] T005 [P] [US1] 新增聚合读模型 `.../domain/model/vo/AssetsAggregateVO.java`(record: `Integer ownerId, Long assetCount, Double assetValue, Long categoryCount`)
-- [ ] T006 [P] [US1] `AssetsMapper.java` + `src/main/resources/mappers/system/AssetsMapper.xml` 新增 `AssetsAggregatePO aggregateByOwnerId(Integer ownerId)`(LEFT JOIN `inv_types it` + `SUM(ass.quantity) AS asset_count, SUM(ass.quantity*it.base_price) AS asset_value, COUNT(DISTINCT ass.type_id) AS category_count` WHERE `ass.owner_id=#{ownerId}` GROUP BY `ass.owner_id`)
-- [ ] T007 [US1] `AssetsRepository.java` + Impl 暴露 `AssetsAggregate aggregateByOwnerId(Integer ownerId)`(经 `AssetsPoConverter` 转领域或建领域 record)
-- [ ] T008 [US1] `AssetsService.java` 暴露薄透传 `AssetsAggregate getAggregateByOwnerId(Integer ownerId)`
-- [ ] T009 [US1] `AssetsApplicationService.java` 新增 `List<AssetsAggregateVO> aggregateAssetsByUser()`——`UserUtil.getUserId()` → `EveAccountService.getAccountList(userId)` 枚举角色 → 逐角色 `getAggregateByOwnerId(characterId)` → 组装 VO 列表;无角色返回空列表
-- [ ] T010 [US1] `AssetsController.java` 新增 `GET /assets/aggregate` → `Result<List<AssetsAggregateVO>>`
+- [x] T005 [P] [US1] 新增聚合读模型 `.../domain/model/vo/AssetsAggregateVO.java`(record: `Integer ownerId, Long assetCount, Double assetValue, Long categoryCount`)
+- [x] T006 [P] [US1] `AssetsMapper.java` + `src/main/resources/mappers/system/AssetsMapper.xml` 新增 `AssetsAggregatePO selectAggregateByOwnerId(Integer ownerId)`(LEFT JOIN `inv_types it` + `SUM(ass.quantity) AS assetCount, SUM(ass.quantity*COALESCE(it.base_price,0)) AS assetValue, COUNT(DISTINCT ass.type_id) AS categoryCount` WHERE `ass.owner_id=#{ownerId}` GROUP BY `ass.owner_id`)
+- [x] T007 [US1] `AssetsRepository.java` + Impl 暴露 `AssetsAggregate acquireAggregateByOwnerId(Integer ownerId)`
+- [x] T008 [US1] `AssetsService.java` 暴露薄透传 `AssetsAggregate getAggregateByOwnerId(Integer ownerId)`
+- [x] T009 [US1] `AssetsApplicationService.java` 新增 `List<AssetsAggregateVO> aggregateAssetsByUser()`——`UserUtil.getUserId()` → `EveAccountService.getAccountList(userId)` 枚举角色 → 逐角色 `getAggregateByOwnerId(characterId)` → 组装 VO 列表;无角色/未认证返回空列表,无资产角色返回 0 值
+- [x] T010 [US1] `AssetsController.java` 新增 `GET /assets/aggregate` → `Result<List<AssetsAggregateVO>>`
 
 **Checkpoint**: US1 独立可测试——`GET /assets/aggregate` 完整可用。
 
