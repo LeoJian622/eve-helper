@@ -62,11 +62,13 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
     }
 
     @Override
-    public IPage<WalletJournal> selectPageByOwnerId(IPage<WalletJournalPO> page, Integer ownerId) {
-        IPage<WalletJournalPO> poPage = walletJournalMapper.selectPageByOwnerId(page, ownerId);
-        List<WalletJournal> domains = walletJournalPoConverter.po2Domain(poPage.getRecords());
-        // 复用原分页页向量(保留 size/current/total/pages 等分页插件填充的总数)
-        IPage<WalletJournal> result = new Page<>(poPage.getCurrent(), poPage.getSize(), poPage.getTotal());
+    public IPage<WalletJournal> selectPageByOwnerId(IPage<WalletJournal> page, Integer ownerId) {
+        // PO 分页内聚在本实现内:由领域实体维度 page 派生 PO 物理分页参数(current/size)
+        IPage<WalletJournalPO> poPage = new Page<>(page.getCurrent(), page.getSize());
+        IPage<WalletJournalPO> poResult = walletJournalMapper.selectPageByOwnerId(poPage, ownerId);
+        List<WalletJournal> domains = walletJournalPoConverter.po2Domain(poResult.getRecords());
+        // 复用分页插件填充的总数(保留 size/current/total/pages),领域层不暴露 PO
+        IPage<WalletJournal> result = new Page<>(poResult.getCurrent(), poResult.getSize(), poResult.getTotal());
         result.setRecords(domains);
         return result;
     }

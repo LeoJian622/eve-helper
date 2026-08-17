@@ -73,16 +73,6 @@ public class AssetsService {
      *
      * @param cid 角色ID
      */
-    /**
-     * 按角色 ID 聚合资产读模型。
-     *
-     * @param ownerId 角色 ID
-     * @return 聚合结果;该角色无资产时返回 null
-     */
-    public AssetsAggregateVO getAggregateByOwnerId(Integer ownerId) {
-        return assetsRepository.acquireAggregateByOwnerId(ownerId);
-    }
-
     public void saveAndUpdateAsserts(Integer cid) throws ParseException {
 
         /*
@@ -128,6 +118,16 @@ public class AssetsService {
                 .collect(Collectors.toList());
         assetsRepository.removeBatchByIds(removeItemIds);
 
+    }
+
+    /**
+     * 按角色 ID 聚合资产读模型。
+     *
+     * @param ownerId 角色 ID
+     * @return 聚合结果;该角色无资产时返回 null
+     */
+    public AssetsAggregateVO getAggregateByOwnerId(Integer ownerId) {
+        return assetsRepository.acquireAggregateByOwnerId(ownerId);
     }
 }
 

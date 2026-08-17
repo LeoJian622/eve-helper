@@ -47,7 +47,7 @@ public class WalletJournalController {
     })
     @Operation(summary = "钱包流水-分页查询", description = "按时间倒序分页返回人物钱包流水")
     @GetMapping("/{cid}")
-    public Result<PageResult<WalletJournalVO>> queryPage(@PathVariable String cid,
+    public Result<PageResult<WalletJournalVO>> queryPage(@PathVariable Integer cid,
                                                          @RequestParam(defaultValue = "1") Integer current,
                                                          @RequestParam(defaultValue = "20") Integer size) {
         return Result.success(walletJournalApplicationService.queryPage(cid, current, size));

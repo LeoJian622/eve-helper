@@ -11,7 +11,6 @@ import xyz.foolcat.eve.evehelper.application.security.AccessGuard;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.domain.repository.system.WalletJournalRepository;
 import xyz.foolcat.eve.evehelper.domain.service.system.WalletJournalService;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletJournalPO;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.util.PageResultUtil;
@@ -59,11 +58,15 @@ public class WalletJournalApplicationService {
      * @param size    每页行数
      * @return 钱包流水视图分页结果
      */
-    public PageResult<WalletJournalVO> queryPage(String cid, int current, int size) {
+    public PageResult<WalletJournalVO> queryPage(Integer cid, int current, int size) {
+        // 入参边界校验先于归属鉴定:size<1 会绕过 MAX_PAGE_SIZE 上限导致私有流水分页全量返回,current<1 产生非法 LIMIT
+        if (cid == null || current < 1 || size < 1 || size > 1000) {
+            throw new EveHelperException("分页参数不合法");
+        }
         // 归属校验先于业务逻辑:cid 为用户可控入参,须先确认该人物属于当前用户(防御 IDOR)
-        accessGuard.requireOwnership(cid, "钱包流水");
-        IPage<WalletJournalPO> page = new Page<>(current, size);
-        IPage<WalletJournal> domainPage = walletJournalRepository.selectPageByOwnerId(page, Integer.valueOf(cid));
+        accessGuard.requireOwnership(String.valueOf(cid), "钱包流水");
+        IPage<WalletJournal> page = new Page<>(current, size);
+        IPage<WalletJournal> domainPage = walletJournalRepository.selectPageByOwnerId(page, cid);
         return PageResultUtil.copy(domainPage, walletJournalAssembler::toVo);
     }
 }

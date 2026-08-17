@@ -159,6 +159,19 @@ class WalletJournalControllerIT {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    @DisplayName("分页参数越界(size<=0) -> 400 拒绝,不返回私密流水全量")
+    void queryPage_invalidPaginationParams_rejected() throws Exception {
+        loginAs(CURRENT_USER_ID, "ADMIN");
+        when(rbacAuthorizationManager.check(any(), any()))
+                .thenReturn(new AuthorizationDecision(true));
+
+        mockMvc.perform(get("/wallet/journal/" + CID)
+                        .param("current", "1").param("size", "-1")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
     // ---------- T012 同步 + 分页 ----------
 
     @Test

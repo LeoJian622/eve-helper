@@ -124,8 +124,10 @@ public class WalletJournalService {
 
         /*
          * 获取钱包记录
+         * maxPage 为 ESI 返回值,可能为 null(无数据/错误路径),此时按 0 页处理返回空,避免 limit(null) 抛 NPE
          */
-        List<WalletJournal> walletJournals = Stream.iterate(1, i -> i + 1).limit(maxPage)
+        int pages = maxPage == null ? 0 : maxPage;
+        List<WalletJournal> walletJournals = Stream.iterate(1, i -> i + 1).limit(pages)
                 .map(i -> esiApiService.queryCharacterWalletJournal(cId, i, accessToken)
                         .collectList().block())
                 .sequential().filter(Objects::nonNull)

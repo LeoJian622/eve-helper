@@ -2,7 +2,6 @@ package xyz.foolcat.eve.evehelper.domain.repository.system;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
-import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletJournalPO;
 
 import java.util.Date;
 import java.util.List;
@@ -29,9 +28,9 @@ public interface WalletJournalRepository {
     /**
      * 按所有者ID分页查询钱包流水(时间 date 倒序)。
      *
-     * @param page    MyBatis Plus 分页参数
+     * @param page    MyBatis Plus 分页参数(领域实体维度;PO 分页由实现内聚)
      * @param ownerId 人物ID
      * @return 领域实体分页结果(total 由分页插件填充)
      */
-    IPage<WalletJournal> selectPageByOwnerId(IPage<WalletJournalPO> page, Integer ownerId);
+    IPage<WalletJournal> selectPageByOwnerId(IPage<WalletJournal> page, Integer ownerId);
 }
