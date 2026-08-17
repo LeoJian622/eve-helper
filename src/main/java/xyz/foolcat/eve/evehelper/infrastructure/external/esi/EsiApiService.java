@@ -604,6 +604,17 @@ public class EsiApiService implements EsiGateway {
                 .map(wallet -> esiWalletJournalConverter.toDomain(wallet, corporationId, resolveWalletCharacter(wallet)));
     }
 
+    @Override
+    public Integer queryCharacterWalletJournalMaxPage(Integer characterId, String accessToken) {
+        return walletApi.queryCharacterWalletJournalMaxPage(characterId, EsiClientConfig.SERENITY, accessToken);
+    }
+
+    @Override
+    public Flux<WalletJournal> queryCharacterWalletJournal(Integer characterId, int page, String accessToken) {
+        return walletApi.queryCharacterWalletJournal(characterId, EsiClientConfig.SERENITY, page, accessToken)
+                .map(wallet -> esiWalletJournalConverter.toDomain(wallet, characterId, resolveWalletCharacter(wallet)));
+    }
+
     /**
      * 从钱包流水描述解析关联角色名(悬赏/赏金池/军团报酬)。
      */

@@ -22,9 +22,18 @@
   </resultMap>
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
-    id, amount, balance, context_id, context_id_type, `date`, description, first_party_id, 
+    id, amount, balance, context_id, context_id_type, `date`, description, first_party_id,
     reason, ref_type, second_party_id, tax, tax_receiver_id, `character`, owner_id
   </sql>
+
+  <!-- 按所有者ID分页查询钱包流水,时间 date 倒序。date 为 MySQL 保留字须反引号。 -->
+  <select id="selectPageByOwnerId" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from wallet_journal
+    where owner_id = #{ownerId}
+    order by `date` desc
+  </select>
   <update id="updateBatch" parameterType="java.util.List">
     <!--@mbg.generated-->
     update wallet_journal

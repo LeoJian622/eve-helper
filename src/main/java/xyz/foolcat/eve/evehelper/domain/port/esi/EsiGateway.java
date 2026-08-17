@@ -158,4 +158,14 @@ public interface EsiGateway {
      * 查询军团钱包流水。
      */
     Flux<WalletJournal> queryCorporationWalletJournal(Integer corporationId, int division, int page, String accessToken);
+
+    /**
+     * 查询人物钱包流水总页数(单分账)。
+     */
+    Integer queryCharacterWalletJournalMaxPage(Integer characterId, String accessToken);
+
+    /**
+     * 查询人物钱包流水指定页(单分账)。
+     */
+    Flux<WalletJournal> queryCharacterWalletJournal(Integer characterId, int page, String accessToken);
 }

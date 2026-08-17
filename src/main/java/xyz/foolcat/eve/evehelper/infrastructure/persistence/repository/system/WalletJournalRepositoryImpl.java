@@ -1,6 +1,8 @@
 package xyz.foolcat.eve.evehelper.infrastructure.persistence.repository.system;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
@@ -57,6 +59,16 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
         // 幂等 upsert):WalletJournalService 同步 ESI 钱包日志时经此落库,空实现会导致日志被静默丢弃
         walletJournals.forEach(walletJournal ->
                 walletJournalMapper.insertOrUpdateSelective(walletJournalPoConverter.domain2Po(walletJournal)));
+    }
+
+    @Override
+    public IPage<WalletJournal> selectPageByOwnerId(IPage<WalletJournalPO> page, Integer ownerId) {
+        IPage<WalletJournalPO> poPage = walletJournalMapper.selectPageByOwnerId(page, ownerId);
+        List<WalletJournal> domains = walletJournalPoConverter.po2Domain(poPage.getRecords());
+        // 复用原分页页向量(保留 size/current/total/pages 等分页插件填充的总数)
+        IPage<WalletJournal> result = new Page<>(poPage.getCurrent(), poPage.getSize(), poPage.getTotal());
+        result.setRecords(domains);
+        return result;
     }
 
     /**

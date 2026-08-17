@@ -94,6 +94,47 @@ public class WalletJournalService {
     }
 
     /**
+     * ESI获取的人物钱包流水批量同步(人物端点)。
+     *
+     * <p>严格仿照 {@link #batchInsertOrUpdateFromEsi}:相同 authorize/authorizeInternal 归属逻辑,
+     * 但改走人物钱包 journal 端点(单分账,无 division 参数,ownerId=characterId),幂等 upsert 落库。</p>
+     * <p>按 TDD 契约,原实现已删除重建。</p>
+     *
+     * @param cId 人物ID
+     */
+    public void syncCharacterJournal(Integer cId) throws ParseException {
+        /*
+          获取游戏人物信息及授权
+          请求路径有 SecurityContext 用 authorize(校验归属);
+          定时任务等无上下文路径用 authorizeInternal(显式系统身份),二者均 fail-closed。
+         */
+        EveAccount eveAccount;
+        Integer currentUserId = UserUtil.getUserId();
+        if (currentUserId != null && currentUserId > 0) {
+            eveAccount = authorizeUtil.authorize(cId);
+        } else {
+            eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, cId);
+        }
+        String accessToken = esiApiService.getAccessToken(cId, eveAccount.getUserId());
+
+        /*
+          获取总页数
+         */
+        Integer maxPage = esiApiService.queryCharacterWalletJournalMaxPage(cId, accessToken);
+
+        /*
+         * 获取钱包记录
+         */
+        List<WalletJournal> walletJournals = Stream.iterate(1, i -> i + 1).limit(maxPage)
+                .map(i -> esiApiService.queryCharacterWalletJournal(cId, i, accessToken)
+                        .collectList().block())
+                .sequential().filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+        walletJournalRepository.saveOrUpdateBatch(walletJournals);
+    }
+
+    /**
      * 计算退税
      *
      * @param normalTax 正常军团税
