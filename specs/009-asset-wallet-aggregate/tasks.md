@@ -31,8 +31,8 @@ description: "Task list for 009 asset-wallet-aggregate implementation"
 
 **Purpose**: 修复两个现状缺陷,否则资产聚合恒空、钱包重复同步产生脏数据。**A 未完成,US1/US2 不得开始。**
 
-- [ ] T001 修复资产 ownerId 空置:在 `.../domain/service/system/AssetsService.java` 的 `saveAndUpdateAsserts` 中,于 `batchInsertOrUpdate(assets)` 前对每个 `Assets a` 执行 `a.setOwnerId((long) eveAccount.getCharacterId())`
-- [ ] T002 [P] 新增钱包幂等 DDL 迁移:`src/SQL/convert/009_wallet_journal_unique.sql`——先去重(`DELETE w FROM wallet_journal w JOIN wallet_journal w2 ON w.id=w2.id AND w.owner_id=w2.owner_id AND w.gmt_create>w2.gmt_create`),再 `ALTER TABLE wallet_journal ADD UNIQUE KEY uk_id_owner (id, owner_id)`
+- [x] T001 修复资产 ownerId 空置:在 `.../domain/service/system/AssetsService.java` 的 `saveAndUpdateAsserts` 中,于 `batchInsertOrUpdate(assets)` 前对每个 `Assets a` 执行 `a.setOwnerId((long) eveAccount.getCharacterId())`
+- [x] T002 [P] 钱包幂等对齐:基线脚本 `wallet_journal.id` 补 PRIMARY KEY + 新增 `src/SQL/convert/009_wallet_journal_unique.sql`(幂等兜底去重+补主键;废弃冗余 UNIQUE,见 plan D2 裁决)
 
 **Checkpoint**: 两处治理修复提交后,进入 US1/US2。
 
