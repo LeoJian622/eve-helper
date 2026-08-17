@@ -70,21 +70,21 @@ description: "Task list for 009 asset-wallet-aggregate implementation"
 
 ### Tests for User Story 2 (先 RED)
 
-- [ ] T011 [P] [US2] 集成测试 `WalletJournalControllerIT`(interfaces/web):未登录越权拒绝(401/403)
-- [ ] T012 [P] [US2] 集成测试:同步后分页查询返回 `WalletJournalVO` 列表(倒序、含 amount/balance/date/refType/description)
-- [ ] T013 [P] [US2] 集成测试:重复同步不产生重复行(幂等);同步 ESI 失败返回错误不写脏数据
+- [x] T011 [P] [US2] 集成测试 `WalletJournalControllerIT`(interfaces/web):未登录越权拒绝(401/403)
+- [x] T012 [P] [US2] 集成测试:同步后分页查询返回 `WalletJournalVO` 列表(倒序、含 amount/balance/date/refType/description)
+- [x] T013 [P] [US2] 集成测试:重复同步不产生重复行(幂等);同步 ESI 失败返回错误不写脏数据
 
 ### Implementation for User Story 2
 
-- [ ] T014 [P] [US2] `EsiGateway.java` 新增人物钱包流水端口:`Integer queryCharacterWalletJournalMaxPage(Integer characterId, String accessToken)` 与 `Flux<WalletJournal> queryCharacterWalletJournal(Integer characterId, int page, String accessToken)`
-- [ ] T015 [US2] `.../infrastructure/external/esi/EsiApiService.java` 实现两方法(调 `walletApi.queryCharacterWalletJournal(MaxPage)(characterId, EsiClientConfig.SERENITY, page, accessToken)` 并 `.map(w -> esiWalletJournalConverter.toDomain(w, characterId, resolveWalletCharacter(w)))`)
-- [ ] T016 [P] [US2] 新增 `application/dto/response/WalletJournalVO.java`(含 id, amount, balance, date(OffsetDateTime), refType, description, tax, ownerId)
-- [ ] T017 [P] [US2] 新增 `application/assembler/system/WalletJournalAssembler.java`(MapStruct `WalletJournalVO toVo(WalletJournal)` + List 重载)
-- [ ] T018 [P] [US2] `WalletJournalMapper.java` + `src/main/resources/mappers/system/WalletJournalMapper.xml` 新增 `IPage<WalletJournalPO> selectPageByOwnerId(IPage, @Param("ownerId") Integer ownerId)`(保留字 `` `date` ``/`` `character` `` 反引号,`ORDER BY `` `date` `` DESC`)
-- [ ] T019 [US2] `WalletJournalRepository.java` + Impl 新增 `IPage<WalletJournal> selectPageByOwnerId(IPage<WalletJournalPO> page, Integer ownerId)`(PoConverter 转换)
-- [ ] T020 [US2] `WalletJournalService.java` 新增 `void syncCharacterJournal(Integer cId)`——authorize/authorizeInternal + 人物端点 `queryCharacterWalletJournalMaxPage` 串行分页 + `walletJournalRepository.saveOrUpdateBatch`(仿 `batchInsertOrUpdateFromEsi` 改为人物端点)
-- [ ] T021 [US2] 新增 `application/service/WalletJournalApplicationService.java`:`void syncCharacterJournal(Integer cid)`(`accessGuard.requireOwnership`, ParseException→EveHelperException)、`PageResult<WalletJournalVO> queryPage(String cid, int current, int size)`(`requireOwnership` + 分页 + `PageResultUtil.copy(page, walletJournalAssembler::toVo)`)
-- [ ] T022 [US2] 新增 `interfaces/web/controller/WalletJournalController.java`:`POST /wallet/journal/{cid}/sync`、`GET /wallet/journal/{cid}`(current 默认 1,size 默认 20,经参数校验)
+- [x] T014 [P] [US2] `EsiGateway.java` 新增人物钱包流水端口:`Integer queryCharacterWalletJournalMaxPage(Integer characterId, String accessToken)` 与 `Flux<WalletJournal> queryCharacterWalletJournal(Integer characterId, int page, String accessToken)`
+- [x] T015 [US2] `.../infrastructure/external/esi/EsiApiService.java` 实现两方法(调 `walletApi.queryCharacterWalletJournal(MaxPage)(characterId, EsiClientConfig.SERENITY, page, accessToken)` 并 `.map(w -> esiWalletJournalConverter.toDomain(w, characterId, resolveWalletCharacter(w)))`)
+- [x] T016 [P] [US2] 新增 `application/dto/response/WalletJournalVO.java`(含 id, amount, balance, date(OffsetDateTime), refType, description, tax, ownerId)
+- [x] T017 [P] [US2] 新增 `application/assembler/system/WalletJournalAssembler.java`(MapStruct `WalletJournalVO toVo(WalletJournal)` + List 重载)
+- [x] T018 [P] [US2] `WalletJournalMapper.java` + `src/main/resources/mappers/system/WalletJournalMapper.xml` 新增 `IPage<WalletJournalPO> selectPageByOwnerId(IPage, @Param("ownerId") Integer ownerId)`(保留字 `` `date` `/`` `character` `` 反引号,`ORDER BY `` `date` `` DESC`)
+- [x] T019 [US2] `WalletJournalRepository.java` + Impl 新增 `IPage<WalletJournal> selectPageByOwnerId(IPage<WalletJournalPO> page, Integer ownerId)`(PoConverter 转换)
+- [x] T020 [US2] `WalletJournalService.java` 新增 `void syncCharacterJournal(Integer cId)`——authorize/authorizeInternal + 人物端点 `queryCharacterWalletJournalMaxPage` 串行分页 + `walletJournalRepository.saveOrUpdateBatch`(仿 `batchInsertOrUpdateFromEsi` 改为人物端点)
+- [x] T021 [US2] 新增 `application/service/WalletJournalApplicationService.java`:`void syncCharacterJournal(Integer cid)`(`accessGuard.requireOwnership`, ParseException→EveHelperException)、`PageResult<WalletJournalVO> queryPage(String cid, int current, int size)`(`requireOwnership` + 分页 + `PageResultUtil.copy(page, walletJournalAssembler::toVo)`)
+- [x] T022 [US2] 新增 `interfaces/web/controller/WalletJournalController.java`:`POST /wallet/journal/{cid}/sync`、`GET /wallet/journal/{cid}`(current 默认 1,size 默认 20,经参数校验)
 
 **Checkpoint**: US2 独立可用——同步+分页完整,越权拒绝。
 
