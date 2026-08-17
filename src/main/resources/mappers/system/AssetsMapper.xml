@@ -300,4 +300,18 @@
     from assets
     where owner_id = #{characterId,jdbcType=INTEGER}
   </select>
+
+  <!-- US1 资产多角色聚合:按 ownerId 汇总件数/价值/类目数。
+       assets 与 inv_types 同处 eve_helper 数据源(与 selectAssertsInvtypeUniverse 同库 join),
+       故单条 SQL join 可行;无资产 owner 聚合无行 -> resultType 映射返回 null。 -->
+  <select id="selectAggregateByOwnerId" resultType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.AssetsAggregatePO">
+    select ass.owner_id              as ownerId,
+           SUM(ass.quantity)         as assetCount,
+           SUM(ass.quantity * COALESCE(it.base_price, 0)) as assetValue,
+           COUNT(DISTINCT ass.type_id) as categoryCount
+    from assets ass
+           left join inv_types it on ass.type_id = it.type_id
+    where ass.owner_id = #{ownerId,jdbcType=INTEGER}
+    group by ass.owner_id
+  </select>
 </mapper>

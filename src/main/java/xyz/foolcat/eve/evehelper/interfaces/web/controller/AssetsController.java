@@ -7,6 +7,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import xyz.foolcat.eve.evehelper.application.service.AssetsApplicationService;
+
+import java.util.List;
+import xyz.foolcat.eve.evehelper.domain.model.vo.AssetsAggregateVO;
 import xyz.foolcat.eve.evehelper.domain.model.vo.AssetsVO;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
@@ -44,5 +47,11 @@ public class AssetsController {
                                                       @RequestParam(defaultValue = "0") Integer current,
                                                       @RequestParam(defaultValue = "30") Integer size) {
         return Result.success(assetsApplicationService.queryAssetsList(cid, current, size));
+    }
+
+    @Operation(summary = "游戏资产-多角色聚合", description = "按角色聚合当前登录用户全部角色的资产件数/价值/类目数")
+    @GetMapping("/aggregate")
+    public Result<List<AssetsAggregateVO>> getAssetsAggregate() {
+        return Result.success(assetsApplicationService.aggregateAssetsByUser());
     }
 }

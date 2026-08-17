@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.domain.model.vo.AssetsAggregateVO;
 import xyz.foolcat.eve.evehelper.domain.repository.system.AssetsRepository;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
@@ -72,6 +73,16 @@ public class AssetsService {
      *
      * @param cid 角色ID
      */
+    /**
+     * 按角色 ID 聚合资产读模型。
+     *
+     * @param ownerId 角色 ID
+     * @return 聚合结果;该角色无资产时返回 null
+     */
+    public AssetsAggregateVO getAggregateByOwnerId(Integer ownerId) {
+        return assetsRepository.acquireAggregateByOwnerId(ownerId);
+    }
+
     public void saveAndUpdateAsserts(Integer cid) throws ParseException {
 
         /*

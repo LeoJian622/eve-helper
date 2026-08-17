@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
+import xyz.foolcat.eve.evehelper.domain.model.vo.AssetsAggregateVO;
 import xyz.foolcat.eve.evehelper.domain.repository.system.AssetsRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.AssetsPoConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.AssetsPO;
@@ -78,5 +79,12 @@ public class AssetsRepositoryImpl implements AssetsRepository {
     @Override
     public List<Assets> findByOwnerId(Integer characterId) {
         return assetsPoConverter.po2Domain(assetsMapper.findByOwnerId(characterId));
+    }
+
+    @Override
+    public AssetsAggregateVO acquireAggregateByOwnerId(Integer ownerId) {
+        var po = assetsMapper.selectAggregateByOwnerId(ownerId);
+        return po == null ? null : new AssetsAggregateVO(
+                po.getOwnerId(), po.getAssetCount(), po.getAssetValue(), po.getCategoryCount());
     }
 }
