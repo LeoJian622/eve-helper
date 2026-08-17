@@ -38,6 +38,8 @@ EVE Helper 项目文档中心。
 | [登录全生命周期](knowledge/login-lifecycle.md) | 注册/登录/请求认证/刷新/登出全链路与 Token 体系 | 2026-08-14 |
 | [ESI 授权绑定](knowledge/esi-authorization-binding.md) | OAuth 绑定/accessToken 刷新与锁/授权状态判定 | 2026-08-17 |
 | [RBAC 权限体系](knowledge/rbac-authorization.md) | 角色权限数据模型/规则缓存/请求鉴权 | 2026-08-17 |
+| [资产多角色聚合](knowledge/asset-aggregate-query.md) | 游戏资产按角色聚合概况(件数/价值/类目数)查询流程 | 2026-08-18 |
+| [人物钱包流水](knowledge/wallet-journal-character.md) | 人物钱包 journal 同步与分页倒序查询流程 | 2026-08-18 |
 
 ## 🚀 快速导航
 
