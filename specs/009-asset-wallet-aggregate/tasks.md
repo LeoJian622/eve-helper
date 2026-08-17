@@ -92,9 +92,9 @@ description: "Task list for 009 asset-wallet-aggregate implementation"
 
 ## Phase 5: Polish & 收尾
 
-- [ ] T023 RBAC 权限登记 SQL:`src/SQL/convert/009_rbac_permissions.sql`——新增 `sys_permission` 行(`GET:/assets/aggregate`、`POST:/wallet/journal/{cid}/sync`、`GET:/wallet/journal/{cid}`)及 `sys_role_permission` 绑定到 ADMIN/对应角色
-- [ ] T024 [P] 知识文档:按 `knowledge-doc-convention` 在 `docs/knowledge/` 生成资产聚合与钱包流水两篇流程文档并登记 `docs/INDEX.md`
-- [ ] T025 [P] 补充单元测试覆盖聚合/同步分页边界,达到 ≥80%
+- [x] T023 RBAC 权限登记 SQL:`src/SQL/convert/009_rbac_permissions.sql`——新增 `sys_permission` 行(`GET:/assets/aggregate`、`POST:/wallet/journal/{cid}/sync`、`GET:/wallet/journal/{cid}`)及 `sys_role_permission` 绑定到 ADMIN/对应角色
+- [x] T024 [P] 知识文档:按 `knowledge-doc-convention` 在 `docs/knowledge/` 生成资产聚合与钱包流水两篇流程文档并登记 `docs/INDEX.md`
+- [ ] T025 [P] 补充单元测试覆盖聚合/同步分页边界,达到 ≥80%(在 P5 验证环节核对覆盖率)
 
 ---
 
