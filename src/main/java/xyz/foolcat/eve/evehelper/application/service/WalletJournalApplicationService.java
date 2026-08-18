@@ -92,8 +92,8 @@ public class WalletJournalApplicationService {
      * @return 钱包流水视图分页结果
      */
     public PageResult<WalletJournalVO> queryPage(Integer cid, int current, int size) {
-        // 入参边界校验先于归属鉴定:size<1 会绕过 MAX_PAGE_SIZE 上限导致私有流水分页全量返回,current<1 产生非法 LIMIT
-        if (cid == null || current < 1 || size < 1 || size > 1000) {
+        // 入参边界校验先于归属鉴定:size<1 会绕过 MAX_PAGE_SIZE 上限导致私有流水分页全量返回,current<1 产生非法 LIMIT,current>10000 产生超大偏移
+        if (cid == null || current < 1 || current > 10000 || size < 1 || size > 1000) {
             throw new EveHelperException("分页参数不合法");
         }
         // 归属校验先于业务逻辑:cid 为用户可控入参,须先确认该人物属于当前用户(防御 IDOR)
@@ -119,7 +119,7 @@ public class WalletJournalApplicationService {
         if (corpId == null || division == null || division < 1 || division > 7) {
             throw new EveHelperException("军团分账参数不合法");
         }
-        if (current < 1 || size < 1 || size > 1000) {
+        if (current < 1 || current > 10000 || size < 1 || size > 1000) {
             throw new EveHelperException("分页参数不合法");
         }
         // 归属校验先于业务逻辑:corpId 为用户可控入参,须先确认该军团属于当前用户(防御 IDOR)
@@ -141,9 +141,9 @@ public class WalletJournalApplicationService {
         if (syncCooldownSeconds <= 0) {
             return; // 冷却已禁用(如测试 profile)
         }
-        if (Boolean.TRUE.equals(cacheGateway.hasKey(cooldownKey))) {
+        Boolean acquired = cacheGateway.setIfAbsent(cooldownKey, "1", syncCooldownSeconds, TimeUnit.SECONDS);
+        if (!Boolean.TRUE.equals(acquired)) {
             throw new EveHelperException("同步操作过于频繁，请稍后再试");
         }
-        cacheGateway.set(cooldownKey, "1", syncCooldownSeconds, TimeUnit.SECONDS);
     }
 }

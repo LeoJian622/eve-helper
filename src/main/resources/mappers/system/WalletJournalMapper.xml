@@ -109,6 +109,11 @@
           when id = #{item.id,jdbcType=BIGINT} then #{item.ownerId,jdbcType=BIGINT}
         </foreach>
       </trim>
+      <trim prefix="division = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          when id = #{item.id,jdbcType=BIGINT} then #{item.division,jdbcType=INTEGER}
+        </foreach>
+      </trim>
     </trim>
     where id in
     <foreach close=")" collection="list" item="item" open="(" separator=", ">
@@ -214,6 +219,13 @@
         <foreach collection="list" index="index" item="item">
           <if test="item.ownerId != null">
             when id = #{item.id,jdbcType=BIGINT} then #{item.ownerId,jdbcType=BIGINT}
+          </if>
+        </foreach>
+      </trim>
+      <trim prefix="division = case" suffix="end,">
+        <foreach collection="list" index="index" item="item">
+          <if test="item.division != null">
+            when id = #{item.id,jdbcType=BIGINT} then #{item.division,jdbcType=INTEGER}
           </if>
         </foreach>
       </trim>

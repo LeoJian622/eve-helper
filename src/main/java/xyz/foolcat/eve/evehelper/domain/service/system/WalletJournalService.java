@@ -62,7 +62,10 @@ public class WalletJournalService {
      * ESI获取的建筑列表批量获取数据
      *
      * @param cId 角色ID
+     * @deprecated 已被 {@link #syncCorporationJournal(Integer)}(division 1-7) 和
+     *             {@link #syncCharacterJournal(Integer)}(division=0) 取代。
      */
+    @Deprecated
     public void batchInsertOrUpdateFromEsi(Integer cId) throws ParseException {
         /*
           获取游戏人物信息及授权

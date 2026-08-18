@@ -97,7 +97,8 @@ class WalletJournalApplicationServiceTest {
         @DisplayName("冷却期内重复同步被拒绝,不触达领域服务")
         void cooldownActive_rejectedWithoutDelegation() {
             ReflectionTestUtils.setField(applicationService, "syncCooldownSeconds", 60L);
-            when(cacheGateway.hasKey("wallet:journal:sync:corp:" + CORP_ID)).thenReturn(Boolean.TRUE);
+            when(cacheGateway.setIfAbsent(eq("wallet:journal:sync:corp:" + CORP_ID), eq("1"), eq(60L), any()))
+                    .thenReturn(Boolean.FALSE);
 
             assertThatThrownBy(() -> applicationService.syncCorporationJournal(CORP_ID))
                     .isInstanceOf(EveHelperException.class)
