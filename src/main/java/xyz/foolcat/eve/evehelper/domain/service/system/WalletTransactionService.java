@@ -55,7 +55,7 @@ public class WalletTransactionService {
     private static final int MIN_CORP_DIVISION = 1;
     private static final int MAX_CORP_DIVISION = 7;
 
-    private final EsiGateway esiApiService;
+    private final EsiGateway esiGateway;
 
     private final AuthorizeUtil authorizeUtil;
 
@@ -74,10 +74,10 @@ public class WalletTransactionService {
      */
     public void syncCharacterTransactions(Integer cId) throws java.text.ParseException {
         EveAccount eveAccount = authorizeAccount(cId);
-        String accessToken = esiApiService.getAccessToken(cId, eveAccount.getUserId());
+        String accessToken = esiGateway.getAccessToken(cId, eveAccount.getUserId());
 
         List<WalletTransaction> transactions = pullTransactions(
-                fromId -> esiApiService.queryCharacterWalletTransactions(cId, fromId, accessToken));
+                fromId -> esiGateway.queryCharacterWalletTransactions(cId, fromId, accessToken));
         backfillOwner(transactions, OWNER_TYPE_CHARACTER, cId.longValue(), CHARACTER_DIVISION);
 
         // 空页终止:无可写数据时不触发保存
@@ -102,7 +102,7 @@ public class WalletTransactionService {
      */
     public Map<Integer, Boolean> syncCorporationTransactions(Integer corpId) throws java.text.ParseException {
         EveAccount eveAccount = authorizeAccount(corpId);
-        String accessToken = esiApiService.getAccessToken(corpId, eveAccount.getUserId());
+        String accessToken = esiGateway.getAccessToken(corpId, eveAccount.getUserId());
 
         Map<Integer, Boolean> results = new LinkedHashMap<>();
         List<Integer> failedDivisions = new ArrayList<>();
@@ -110,7 +110,7 @@ public class WalletTransactionService {
             final int currentDivision = division;
             try {
                 List<WalletTransaction> transactions = pullTransactions(
-                        fromId -> esiApiService.queryCorporationWalletTransactions(corpId, currentDivision, fromId, accessToken));
+                        fromId -> esiGateway.queryCorporationWalletTransactions(corpId, currentDivision, fromId, accessToken));
                 backfillOwner(transactions, OWNER_TYPE_CORPORATION, corpId.longValue(), currentDivision);
                 // 空页(无交易)也视为本分账成功;非空才触发保存
                 if (!transactions.isEmpty()) {

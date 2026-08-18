@@ -6,6 +6,8 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletTransactionPO;
 
+import java.util.List;
+
 /**
  * 钱包交易表(wallet_transaction)MyBatis Mapper。
  *
@@ -37,4 +39,13 @@ public interface WalletTransactionMapper extends BaseMapper<WalletTransactionPO>
      * @return 影响行数
      */
     int insertOrUpdateSelective(WalletTransactionPO walletTransactionPO);
+
+    /**
+     * 批量幂等 upsert:以复合唯一键 (owner_type, owner_id, division, transaction_id)
+     * 执行 {@code INSERT ... ON DUPLICATE KEY UPDATE}。
+     * <p>仓储层按 BATCH_SIZE 分批调用,避免单条 SQL 超过 max_allowed_packet。</p>
+     *
+     * @param list 待写入记录(不可为空)
+     */
+    void insertOrUpdateBatch(@Param("list") List<WalletTransactionPO> list);
 }

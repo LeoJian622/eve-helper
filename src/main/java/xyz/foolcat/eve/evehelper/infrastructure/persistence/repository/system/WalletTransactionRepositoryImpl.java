@@ -10,20 +10,26 @@ import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.WalletTran
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletTransactionPO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.WalletTransactionMapper;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * WalletTransaction 仓储实现。
  *
- * <p>幂等 upsert(plan D1)由 mapper.insertOrUpdateSelective 承担,其 SQL 依复合键
- * {@code insert ... on duplicate key update}。分页(plan D4)PO 分页内聚在本实现,
- * 由领域维度 IPage 派生物理分页参数,复用分页插件填充的 total。</p>
+ * <p>幂等 upsert 由 mapper 的 {@code insert ... on duplicate key update} 承担,
+ * 依复合键 {@code UNIQUE(owner_type, owner_id, division, transaction_id)}。
+ * 批量写入(M4)按 {@link #BATCH_SIZE} 分批 flush,避免单条 SQL 超过
+ * max_allowed_packet。分页(plan D4)PO 分页内聚在本实现,由领域维度 IPage
+ * 派生物理分页参数,复用分页插件填充的 total。</p>
  *
  * @author Leojan
  */
 @Repository
 @RequiredArgsConstructor
 public class WalletTransactionRepositoryImpl implements WalletTransactionRepository {
+
+    /** 批量 upsert 每批行数(不超 MySQL max_allowed_packet) */
+    private static final int BATCH_SIZE = 500;
 
     private final WalletTransactionMapper walletTransactionMapper;
     private final WalletTransactionPoConverter walletTransactionPoConverter;
@@ -33,11 +39,16 @@ public class WalletTransactionRepositoryImpl implements WalletTransactionReposit
         if (list == null || list.isEmpty()) {
             return;
         }
-        // 每条记录走 insertOrUpdateSelective(其 SQL 为 insert ... on duplicate key update,
-        // 依复合键 UNIQUE(owner_type, owner_id, division, transaction_id) 幂等 upsert),
-        // 同步重复调用不产生重复行;空实现会导致交易被静默丢弃
-        list.forEach(transaction ->
-                walletTransactionMapper.insertOrUpdateSelective(walletTransactionPoConverter.domain2Po(transaction)));
+        // 领域 → PO 转换
+        List<WalletTransactionPO> poList = new ArrayList<>(list.size());
+        for (WalletTransaction tx : list) {
+            poList.add(walletTransactionPoConverter.domain2Po(tx));
+        }
+        // 分批 flush:每批 BATCH_SIZE 条,走 insertOrUpdateBatch(批量 INSERT ON DUPLICATE KEY UPDATE)
+        for (int i = 0; i < poList.size(); i += BATCH_SIZE) {
+            int end = Math.min(i + BATCH_SIZE, poList.size());
+            walletTransactionMapper.insertOrUpdateBatch(poList.subList(i, end));
+        }
     }
 
     @Override

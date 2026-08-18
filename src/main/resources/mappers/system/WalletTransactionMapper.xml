@@ -63,4 +63,33 @@
       is_personal = #{isPersonal,jdbcType=BIT},
       journal_ref_id = #{journalRefId,jdbcType=BIGINT}
   </insert>
+
+  <!-- 批量幂等 upsert(M4 优化):以 <foreach> 生成多行 VALUES,
+       ON DUPLICATE KEY UPDATE 以 VALUES() 引用当前行待插值更新非键列。
+       仓储层按 BATCH_SIZE(500) 分批调用,防单条 SQL 超 max_allowed_packet。 -->
+  <insert id="insertOrUpdateBatch">
+    insert into wallet_transaction
+    (owner_type, owner_id, division, transaction_id, `date`, type_id, quantity, unit_price,
+      client_id, location_id, is_buy, is_personal, journal_ref_id)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.ownerType,jdbcType=VARCHAR}, #{item.ownerId,jdbcType=BIGINT},
+       #{item.division,jdbcType=INTEGER}, #{item.transactionId,jdbcType=BIGINT},
+       #{item.date,jdbcType=TIMESTAMP}, #{item.typeId,jdbcType=INTEGER},
+       #{item.quantity,jdbcType=INTEGER}, #{item.unitPrice,jdbcType=DOUBLE},
+       #{item.clientId,jdbcType=INTEGER}, #{item.locationId,jdbcType=BIGINT},
+       #{item.isBuy,jdbcType=BIT}, #{item.isPersonal,jdbcType=BIT},
+       #{item.journalRefId,jdbcType=BIGINT})
+    </foreach>
+    on duplicate key update
+      `date` = VALUES(`date`),
+      type_id = VALUES(type_id),
+      quantity = VALUES(quantity),
+      unit_price = VALUES(unit_price),
+      client_id = VALUES(client_id),
+      location_id = VALUES(location_id),
+      is_buy = VALUES(is_buy),
+      is_personal = VALUES(is_personal),
+      journal_ref_id = VALUES(journal_ref_id)
+  </insert>
 </mapper>

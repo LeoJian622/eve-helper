@@ -1,7 +1,6 @@
 package xyz.foolcat.eve.evehelper.domain.model.entity.system;
 
 import lombok.Data;
-import xyz.foolcat.eve.evehelper.shared.kernel.base.BaseEntity;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -12,11 +11,14 @@ import java.time.OffsetDateTime;
  * <p>
  * ownerType/ownerId/division 为归属字段,由应用/领域服务层回填
  * (ESI 响应本身不含归属信息)。
+ * <p>
+ * 不继承 BaseEntity:wallet_transaction 表无 gmt_create/gmt_modified 列,
+ * 不需要审计时间字段。
  *
  * @author Leojan
  */
 @Data
-public class WalletTransaction extends BaseEntity implements Serializable {
+public class WalletTransaction implements Serializable {
 
     /**
      * 主键ID(自增,不依赖 ESI id)

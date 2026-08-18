@@ -46,8 +46,8 @@ class WalletTransactionRepositoryImplTest {
     private WalletTransactionRepositoryImpl walletTransactionRepository;
 
     @Test
-    @DisplayName("saveOrUpdateBatch 逐条触发 insertOrUpdateSelective(复合键幂等 upsert),不得丢弃")
-    void saveOrUpdateBatch_callsUpsertPerRecord() {
+    @DisplayName("saveOrUpdateBatch 分批触发 insertOrUpdateBatch(复合键幂等 upsert),不得丢弃")
+    void saveOrUpdateBatch_callsBatchUpsert() {
         WalletTransaction a = new WalletTransaction();
         a.setTransactionId(1L);
         WalletTransaction b = new WalletTransaction();
@@ -59,16 +59,18 @@ class WalletTransactionRepositoryImplTest {
 
         walletTransactionRepository.saveOrUpdateBatch(list);
 
-        ArgumentCaptor<WalletTransactionPO> captor = ArgumentCaptor.forClass(WalletTransactionPO.class);
-        verify(walletTransactionMapper, times(2)).insertOrUpdateSelective(captor.capture());
-        assertThat(captor.getAllValues()).hasSize(2);
+        // 2 条 < BATCH_SIZE(500),应仅调用 1 次 insertOrUpdateBatch
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<WalletTransactionPO>> captor = ArgumentCaptor.forClass(List.class);
+        verify(walletTransactionMapper, times(1)).insertOrUpdateBatch(captor.capture());
+        assertThat(captor.getValue()).hasSize(2);
     }
 
     @Test
     @DisplayName("saveOrUpdateBatch 空列表直接返回,不得触发任何 DB 调用")
     void saveOrUpdateBatch_emptyList_noOp() {
         walletTransactionRepository.saveOrUpdateBatch(List.of());
-        verify(walletTransactionMapper, times(0)).insertOrUpdateSelective(any());
+        verify(walletTransactionMapper, times(0)).insertOrUpdateBatch(anyList());
     }
 
     @Test

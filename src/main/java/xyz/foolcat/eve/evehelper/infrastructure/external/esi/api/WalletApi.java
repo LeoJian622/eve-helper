@@ -142,7 +142,13 @@ public class WalletApi {
     })
     @Operation(summary = "ESI-人物钱包市场交易记录")
     public Flux<WalletTransactionsResponse> queryCharacterWalletTransactions(Integer characterId, String datasource, Long fromId, String accessesToken) {
-        return esiClient.get().uri("/characters/{character_id}/wallet/transactions/?datasource={datasource}&from_id={fromId}", characterId, datasource, fromId)
+        String uri = fromId != null
+                ? "/characters/{character_id}/wallet/transactions/?datasource={datasource}&from_id={fromId}"
+                : "/characters/{character_id}/wallet/transactions/?datasource={datasource}";
+        Object[] vars = fromId != null
+                ? new Object[]{characterId, datasource, fromId}
+                : new Object[]{characterId, datasource};
+        return esiClient.get().uri(uri, vars)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->
@@ -241,7 +247,13 @@ public class WalletApi {
     })
     @Operation(summary = "ESI-军团钱包交易记录")
     public Flux<WalletTransactionsResponse> queryCorporationWalletTransactions(Integer corporationId, Integer division, String datasource, Long fromId, String accessesToken) {
-        return esiClient.get().uri("/corporations/{corporation_id}/wallets/{division}/transactions/?datasource={datasource}&from_id={fromId}", corporationId, division, datasource, fromId)
+        String uri = fromId != null
+                ? "/corporations/{corporation_id}/wallets/{division}/transactions/?datasource={datasource}&from_id={fromId}"
+                : "/corporations/{corporation_id}/wallets/{division}/transactions/?datasource={datasource}";
+        Object[] vars = fromId != null
+                ? new Object[]{corporationId, division, datasource, fromId}
+                : new Object[]{corporationId, division, datasource};
+        return esiClient.get().uri(uri, vars)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
                 .onStatus(HttpStatusCode::is4xxClientError, response ->

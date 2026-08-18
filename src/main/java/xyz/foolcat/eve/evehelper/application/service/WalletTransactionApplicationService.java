@@ -9,6 +9,7 @@ import xyz.foolcat.eve.evehelper.application.assembler.system.WalletTransactionA
 import xyz.foolcat.eve.evehelper.application.dto.response.WalletTransactionVO;
 import xyz.foolcat.eve.evehelper.application.security.AccessGuard;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
+import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.repository.system.WalletTransactionRepository;
 import xyz.foolcat.eve.evehelper.domain.service.system.WalletTransactionService;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
@@ -17,6 +18,7 @@ import xyz.foolcat.eve.evehelper.shared.util.PageResultUtil;
 
 import java.text.ParseException;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 钱包交易应用服务。
@@ -31,10 +33,18 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class WalletTransactionApplicationService {
 
+    /** 同步冷却键前缀(同一 owner 冷却期内不允许重复同步,防 ESI 限流滥用) */
+    private static final String SYNC_COOLDOWN_PREFIX = "wallet:sync:";
+
+    /** 同步冷却秒数;测试 profile 设为 0 即禁用冷却 */
+    @org.springframework.beans.factory.annotation.Value("${eve-helper.sync.cooldown-seconds:60}")
+    private long syncCooldownSeconds;
+
     private final AccessGuard accessGuard;
     private final WalletTransactionService walletTransactionService;
     private final WalletTransactionRepository walletTransactionRepository;
     private final WalletTransactionAssembler walletTransactionAssembler;
+    private final CacheGateway cacheGateway;
 
     /**
      * 手动同步某人物钱包交易(ESI -> DB,幂等 upsert)。
@@ -44,6 +54,9 @@ public class WalletTransactionApplicationService {
     public void syncCharacterTransactions(Integer cid) {
         // 归属校验先于业务逻辑:cid 为用户可控入参,须先确认该人物属于当前用户(防御 IDOR)
         accessGuard.requireOwnership(String.valueOf(cid), "钱包交易同步");
+        // 冷却限流:同一人物 60 秒内不允许重复同步,防 ESI 限流滥用
+        String cooldownKey = SYNC_COOLDOWN_PREFIX + "char:" + cid;
+        requireSyncCooldown(cooldownKey);
         try {
             walletTransactionService.syncCharacterTransactions(cid);
         } catch (ParseException e) {
@@ -85,6 +98,9 @@ public class WalletTransactionApplicationService {
     public Map<Integer, Boolean> syncCorporationTransactions(Integer corpId) {
         // 归属校验先于业务逻辑:corpId 为用户可控入参,须先确认该军团属于当前用户(防御 IDOR)
         accessGuard.requireOwnership(String.valueOf(corpId), "军团钱包交易同步");
+        // 冷却限流:同一军团 60 秒内不允许重复同步,防 ESI 限流滥用
+        String cooldownKey = SYNC_COOLDOWN_PREFIX + "corp:" + corpId;
+        requireSyncCooldown(cooldownKey);
         try {
             return walletTransactionService.syncCorporationTransactions(corpId);
         } catch (ParseException e) {
@@ -119,5 +135,22 @@ public class WalletTransactionApplicationService {
         IPage<WalletTransaction> domainPage =
                 walletTransactionRepository.selectPageByOwner(page, "corporation", corpId.longValue(), division);
         return PageResultUtil.copy(domainPage, walletTransactionAssembler::toVo);
+    }
+
+    /* ────────────────────────── 同步限流 ────────────────────────── */
+
+    /**
+     * 同步冷却校验:若冷却键已存在则拒绝(60 秒内重复同步),否则设置冷却键。
+     *
+     * @param cooldownKey Redis 冷却键(如 {@code wallet:sync:char:9001})
+     */
+    private void requireSyncCooldown(String cooldownKey) {
+        if (syncCooldownSeconds <= 0) {
+            return; // 冷却已禁用(如测试 profile)
+        }
+        if (Boolean.TRUE.equals(cacheGateway.hasKey(cooldownKey))) {
+            throw new EveHelperException("同步操作过于频繁，请稍后再试");
+        }
+        cacheGateway.set(cooldownKey, "1", syncCooldownSeconds, TimeUnit.SECONDS);
     }
 }

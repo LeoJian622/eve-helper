@@ -23,6 +23,7 @@ public interface EsiWalletTransactionConverter {
      * WalletTransactionsResponse → WalletTransaction(不填归属字段)。
      */
     @Mappings({
+            @Mapping(target = "id", ignore = true),
             @Mapping(target = "ownerType", ignore = true),
             @Mapping(target = "ownerId", ignore = true),
             @Mapping(target = "division", ignore = true),

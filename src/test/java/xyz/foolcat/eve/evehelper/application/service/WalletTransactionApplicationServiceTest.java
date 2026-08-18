@@ -15,6 +15,7 @@ import xyz.foolcat.eve.evehelper.application.assembler.system.WalletTransactionA
 import xyz.foolcat.eve.evehelper.application.dto.response.WalletTransactionVO;
 import xyz.foolcat.eve.evehelper.application.security.AccessGuard;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
+import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.repository.system.WalletTransactionRepository;
 import xyz.foolcat.eve.evehelper.domain.service.system.WalletTransactionService;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
@@ -31,6 +32,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+
+import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * WalletTransactionApplicationService 单元测试(TDD)。
@@ -62,6 +65,9 @@ class WalletTransactionApplicationServiceTest {
     @Mock
     private WalletTransactionAssembler walletTransactionAssembler;
 
+    @Mock
+    private CacheGateway cacheGateway;
+
     @InjectMocks
     private WalletTransactionApplicationService applicationService;
 
@@ -89,6 +95,19 @@ class WalletTransactionApplicationServiceTest {
             assertThatThrownBy(() -> applicationService.syncCharacterTransactions(CID))
                     .isInstanceOf(EveHelperException.class)
                     .hasMessageContaining("钱包交易同步失败");
+        }
+
+        @Test
+        @DisplayName("冷却期内重复同步被拒绝,不触达领域服务")
+        void cooldownActive_rejectedWithoutDelegation() {
+            // @Value 字段在纯 Mockito 单测中不注入,手动设为 60 秒启用冷却
+            ReflectionTestUtils.setField(applicationService, "syncCooldownSeconds", 60L);
+            when(cacheGateway.hasKey("wallet:sync:char:" + CID)).thenReturn(Boolean.TRUE);
+
+            assertThatThrownBy(() -> applicationService.syncCharacterTransactions(CID))
+                    .isInstanceOf(EveHelperException.class)
+                    .hasMessageContaining("同步操作过于频繁");
+            verifyNoInteractions(walletTransactionService);
         }
     }
 

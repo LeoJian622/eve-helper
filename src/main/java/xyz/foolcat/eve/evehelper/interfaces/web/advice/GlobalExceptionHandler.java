@@ -129,7 +129,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({IllegalArgumentException.class})
     public Result handlerIllegalArgumentException(IllegalArgumentException e) {
         log.error("非法参数异常，异常原因：{}", e.getMessage(), e);
-        return Result.failed(e.getMessage());
+        return Result.failed("参数错误");
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
