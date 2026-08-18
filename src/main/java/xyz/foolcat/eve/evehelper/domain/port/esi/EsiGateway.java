@@ -10,6 +10,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.MiningDetail;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 
@@ -168,4 +169,25 @@ public interface EsiGateway {
      * 查询人物钱包流水指定页(单分账)。
      */
     Flux<WalletJournal> queryCharacterWalletJournal(Integer characterId, int page, String accessToken);
+
+    // ── 钱包交易 ──
+
+    /**
+     * 查询人物钱包交易(from_id 游标,首页传 null 表示最新)。
+     *
+     * @param characterId 角色 ID
+     * @param fromId      游标,返回该 ID 之前的记录;首页传 null
+     * @param accessToken 授权 Token
+     */
+    Flux<WalletTransaction> queryCharacterWalletTransactions(Integer characterId, Long fromId, String accessToken);
+
+    /**
+     * 查询军团钱包交易(from_id 游标,首页传 null 表示最新)。
+     *
+     * @param corporationId 军团 ID
+     * @param division      军团钱包分账
+     * @param fromId        游标,返回该 ID 之前的记录;首页传 null
+     * @param accessToken   授权 Token
+     */
+    Flux<WalletTransaction> queryCorporationWalletTransactions(Integer corporationId, Integer division, Long fromId, String accessToken);
 }

@@ -17,6 +17,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.MiningDetail;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
@@ -28,6 +29,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiMiningDetailCon
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiStructureConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiUniverseNameConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiWalletJournalConverter;
+import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiWalletTransactionConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.AssetsApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CharacterApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CorporationApi;
@@ -99,6 +101,8 @@ public class EsiApiService implements EsiGateway {
     private final EsiUniverseNameConverter esiUniverseNameConverter;
 
     private final EsiWalletJournalConverter esiWalletJournalConverter;
+
+    private final EsiWalletTransactionConverter esiWalletTransactionConverter;
 
     /**
      * ESI 授权状态缓存键前缀
@@ -613,6 +617,20 @@ public class EsiApiService implements EsiGateway {
     public Flux<WalletJournal> queryCharacterWalletJournal(Integer characterId, int page, String accessToken) {
         return walletApi.queryCharacterWalletJournal(characterId, EsiClientConfig.SERENITY, page, accessToken)
                 .map(wallet -> esiWalletJournalConverter.toDomain(wallet, characterId, resolveWalletCharacter(wallet)));
+    }
+
+    // ── 钱包交易 ──
+
+    @Override
+    public Flux<WalletTransaction> queryCharacterWalletTransactions(Integer characterId, Long fromId, String accessToken) {
+        return walletApi.queryCharacterWalletTransactions(characterId, EsiClientConfig.SERENITY, fromId, accessToken)
+                .map(esiWalletTransactionConverter::toDomain);
+    }
+
+    @Override
+    public Flux<WalletTransaction> queryCorporationWalletTransactions(Integer corporationId, Integer division, Long fromId, String accessToken) {
+        return walletApi.queryCorporationWalletTransactions(corporationId, division, EsiClientConfig.SERENITY, fromId, accessToken)
+                .map(esiWalletTransactionConverter::toDomain);
     }
 
     /**
