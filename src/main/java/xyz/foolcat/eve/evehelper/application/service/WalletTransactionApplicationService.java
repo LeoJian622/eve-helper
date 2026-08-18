@@ -16,11 +16,13 @@ import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.util.PageResultUtil;
 
 import java.text.ParseException;
+import java.util.Map;
 
 /**
  * 钱包交易应用服务。
- * <p>提供人物钱包交易(transaction)的手动同步与分页查询用例:
- * 两个入口均在业务逻辑前先做归属校验(accessGuard.requireOwnership),防御 IDOR。</p>
+ * <p>提供人物钱包交易(transaction)的手动同步与分页查询用例,以及军团钱包交易(1..7 分账)
+ * 的同步与分账分页查询用例:各入口均在业务逻辑前先做归属校验(accessGuard.requireOwnership),
+ * 防御 IDOR。</p>
  *
  * @author Leojan
  */
@@ -69,6 +71,53 @@ public class WalletTransactionApplicationService {
         // 人物侧 ownerType="character", division=0;ownerId = cid.longValue()
         IPage<WalletTransaction> domainPage =
                 walletTransactionRepository.selectPageByOwner(page, "character", cid.longValue(), 0);
+        return PageResultUtil.copy(domainPage, walletTransactionAssembler::toVo);
+    }
+
+    /**
+     * 手动同步某军团钱包交易(1..7 分账,幂等 upsert,分账级失败隔离)。
+     * <p>任一分账 ESI 失败由领域服务汇总抛出(含失败 division 明细),但已成功分账已落库、不回滚;
+     * 仅全部成功时正常返回 division→是否成功映射。</p>
+     *
+     * @param corpId 军团ID
+     * @return division→是否同步成功(仅全部成功时返回)
+     */
+    public Map<Integer, Boolean> syncCorporationTransactions(Integer corpId) {
+        // 归属校验先于业务逻辑:corpId 为用户可控入参,须先确认该军团属于当前用户(防御 IDOR)
+        accessGuard.requireOwnership(String.valueOf(corpId), "军团钱包交易同步");
+        try {
+            return walletTransactionService.syncCorporationTransactions(corpId);
+        } catch (ParseException e) {
+            log.error("军团钱包交易同步失败: corpId={}", corpId, e);
+            throw new EveHelperException("军团钱包交易同步失败", e);
+        }
+    }
+
+    /**
+     * 分页查询某军团某分账钱包交易(时间 date 倒序,真实 IPage 物理分页,total 正确)。
+     * <p>入参边界(division 1..7、current/size)先于归属校验执行,防越权探测/防泄漏。</p>
+     *
+     * @param corpId   军团ID
+     * @param division 军团分账(1..7)
+     * @param current  页码(从 1 开始)
+     * @param size     每页行数
+     * @return 钱包交易视图分页结果
+     */
+    public PageResult<WalletTransactionVO> queryCorporationPage(Integer corpId, Integer division,
+                                                                int current, int size) {
+        // 入参边界校验先于归属鉴定:division 越界或分页越界即拒绝,防越权探测/防私有数据泄漏
+        if (corpId == null || division == null || division < 1 || division > 7) {
+            throw new EveHelperException("军团分账参数不合法");
+        }
+        if (current < 1 || size < 1 || size > 1000) {
+            throw new EveHelperException("分页参数不合法");
+        }
+        // 归属校验先于业务逻辑:corpId 为用户可控入参,须先确认该军团属于当前用户(防御 IDOR)
+        accessGuard.requireOwnership(String.valueOf(corpId), "军团钱包交易");
+        IPage<WalletTransaction> page = new Page<>(current, size);
+        // 军团侧 ownerType="corporation",division=1..7;ownerId = corpId.longValue()
+        IPage<WalletTransaction> domainPage =
+                walletTransactionRepository.selectPageByOwner(page, "corporation", corpId.longValue(), division);
         return PageResultUtil.copy(domainPage, walletTransactionAssembler::toVo);
     }
 }
