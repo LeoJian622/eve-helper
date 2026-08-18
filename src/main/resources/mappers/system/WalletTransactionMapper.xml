@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.WalletTransactionMapper">
+  <resultMap id="BaseResultMap" type="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletTransactionPO">
+    <!--@mbg.generated-->
+    <!--@Table wallet_transaction-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="owner_type" jdbcType="VARCHAR" property="ownerType" />
+    <result column="owner_id" jdbcType="BIGINT" property="ownerId" />
+    <result column="division" jdbcType="INTEGER" property="division" />
+    <result column="transaction_id" jdbcType="BIGINT" property="transactionId" />
+    <result column="date" jdbcType="TIMESTAMP" property="date" />
+    <result column="type_id" jdbcType="INTEGER" property="typeId" />
+    <result column="quantity" jdbcType="INTEGER" property="quantity" />
+    <result column="unit_price" jdbcType="DOUBLE" property="unitPrice" />
+    <result column="client_id" jdbcType="INTEGER" property="clientId" />
+    <result column="location_id" jdbcType="BIGINT" property="locationId" />
+    <result column="is_buy" jdbcType="BIT" property="isBuy" />
+    <result column="is_personal" jdbcType="BIT" property="isPersonal" />
+    <result column="journal_ref_id" jdbcType="BIGINT" property="journalRefId" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, owner_type, owner_id, division, transaction_id, `date`, type_id, quantity,
+    unit_price, client_id, location_id, is_buy, is_personal, journal_ref_id
+  </sql>
+
+  <!-- 按 (owner_type, owner_id, division) 分页查询钱包交易,时间 `date` 倒序。
+       date 为 MySQL 保留字,必须反引号;分页插件依 IPage 注入 LIMIT。 -->
+  <select id="selectPageByOwner" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from wallet_transaction
+    where owner_type = #{ownerType}
+      and owner_id = #{ownerId}
+      and division = #{division}
+    order by `date` desc
+  </select>
+
+  <!-- 依复合唯一键 UNIQUE uk_owner_div_tx(owner_type, owner_id, division, transaction_id)
+       执行幂等 upsert:存在则更新非键列,不存在则插入。owner_type/owner_id/division/transaction_id
+       为契约判定键,恒定插入(不随 <if> 缺失,确保唯一键始终就位)。 -->
+  <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletTransactionPO">
+    <!--@mbg.generated-->
+    insert into wallet_transaction
+    (owner_type, owner_id, division, transaction_id, `date`, type_id, quantity, unit_price,
+      client_id, location_id, is_buy, is_personal, journal_ref_id)
+    values
+      (#{ownerType,jdbcType=VARCHAR}, #{ownerId,jdbcType=BIGINT}, #{division,jdbcType=INTEGER},
+        #{transactionId,jdbcType=BIGINT}, #{date,jdbcType=TIMESTAMP},
+        #{typeId,jdbcType=INTEGER}, #{quantity,jdbcType=INTEGER}, #{unitPrice,jdbcType=DOUBLE},
+        #{clientId,jdbcType=INTEGER}, #{locationId,jdbcType=BIGINT},
+        #{isBuy,jdbcType=BIT}, #{isPersonal,jdbcType=BIT}, #{journalRefId,jdbcType=BIGINT})
+    on duplicate key update
+      id = LAST_INSERT_ID(id),
+      `date` = #{date,jdbcType=TIMESTAMP},
+      type_id = #{typeId,jdbcType=INTEGER},
+      quantity = #{quantity,jdbcType=INTEGER},
+      unit_price = #{unitPrice,jdbcType=DOUBLE},
+      client_id = #{clientId,jdbcType=INTEGER},
+      location_id = #{locationId,jdbcType=BIGINT},
+      is_buy = #{isBuy,jdbcType=BIT},
+      is_personal = #{isPersonal,jdbcType=BIT},
+      journal_ref_id = #{journalRefId,jdbcType=BIGINT}
+  </insert>
+</mapper>
