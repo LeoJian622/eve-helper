@@ -17,12 +17,12 @@ import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 
 /**
- * 人物钱包流水控制器。
- * <p>cid 为 path 变量,归属校验在应用服务内(accessGuard.requireOwnership)执行。</p>
+ * 人物/军团钱包流水控制器。
+ * <p>人物 cid 与军团 corpId 均为 path 变量,归属校验在应用服务内(accessGuard.requireOwnership)执行。</p>
  *
  * @author Leojan
  */
-@Tag(name = "人物钱包流水")
+@Tag(name = "人物/军团钱包流水")
 @RestController
 @RequestMapping("/wallet/journal")
 @RequiredArgsConstructor
@@ -51,5 +51,30 @@ public class WalletJournalController {
                                                          @RequestParam(defaultValue = "1") Integer current,
                                                          @RequestParam(defaultValue = "20") Integer size) {
         return Result.success(walletJournalApplicationService.queryPage(cid, current, size));
+    }
+
+    @Parameters({
+            @Parameter(name = "corpId", description = "军团ID", required = true)
+    })
+    @Operation(summary = "钱包流水-军团同步", description = "调用服务器去获取 ESI 的军团各分账钱包流水数据(1..7 分账幂等 upsert)")
+    @PostMapping("/corp/{corpId}/sync")
+    public Result<Void> syncCorporationJournal(@PathVariable Integer corpId) {
+        walletJournalApplicationService.syncCorporationJournal(corpId);
+        return Result.success();
+    }
+
+    @Parameters({
+            @Parameter(name = "corpId", description = "军团ID", required = true),
+            @Parameter(name = "division", description = "军团分账(1..7)", required = true),
+            @Parameter(name = "current", description = "页码"),
+            @Parameter(name = "size", description = "每页行数")
+    })
+    @Operation(summary = "钱包流水-军团分账分页查询", description = "按时间倒序分页返回军团某分账的钱包流水")
+    @GetMapping("/corp/{corpId}")
+    public Result<PageResult<WalletJournalVO>> queryCorporationPage(@PathVariable Integer corpId,
+                                                                    @RequestParam Integer division,
+                                                                    @RequestParam(defaultValue = "1") Integer current,
+                                                                    @RequestParam(defaultValue = "20") Integer size) {
+        return Result.success(walletJournalApplicationService.queryCorporationPage(corpId, division, current, size));
     }
 }

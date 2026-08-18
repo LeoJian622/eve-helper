@@ -41,6 +41,7 @@ EVE Helper 项目文档中心。
 | [资产多角色聚合](knowledge/asset-aggregate-query.md) | 游戏资产按角色聚合概况(件数/价值/类目数)查询流程 | 2026-08-18 |
 | [人物钱包流水](knowledge/wallet-journal-character.md) | 人物钱包 journal 同步与分页倒序查询流程 | 2026-08-18 |
 | [钱包交易流水](knowledge/wallet-transaction.md) | 人物/军团钱包交易同步(from_id游标+division失败隔离)与分页倒序查询流程 | 2026-08-18 |
+| [军团钱包流水](knowledge/corporation-wallet-journal.md) | 军团钱包 journal 全 division 同步(page-based+M4批量+失败隔离)与分账分页查询流程 | 2026-08-18 |
 
 ## 🚀 快速导航
 

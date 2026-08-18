@@ -11,6 +11,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.WalletJour
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletJournalPO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.WalletJournalMapper;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,8 @@ import java.util.Map;
 @Repository
 @RequiredArgsConstructor
 public class WalletJournalRepositoryImpl implements WalletJournalRepository {
+
+    private static final int BATCH_SIZE = 500;
 
     private final WalletJournalMapper walletJournalMapper;
     private final WalletJournalPoConverter walletJournalPoConverter;
@@ -55,10 +58,14 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
         if (walletJournals == null || walletJournals.isEmpty()) {
             return;
         }
-        // 每条记录走 insertOrUpdateSelective(其 SQL 为 insert ... on duplicate key update,
-        // 幂等 upsert):WalletJournalService 同步 ESI 钱包日志时经此落库,空实现会导致日志被静默丢弃
-        walletJournals.forEach(walletJournal ->
-                walletJournalMapper.insertOrUpdateSelective(walletJournalPoConverter.domain2Po(walletJournal)));
+        List<WalletJournalPO> poList = new ArrayList<>(walletJournals.size());
+        for (WalletJournal j : walletJournals) {
+            poList.add(walletJournalPoConverter.domain2Po(j));
+        }
+        for (int i = 0; i < poList.size(); i += BATCH_SIZE) {
+            int end = Math.min(i + BATCH_SIZE, poList.size());
+            walletJournalMapper.insertOrUpdateBatch(poList.subList(i, end));
+        }
     }
 
     @Override
@@ -83,6 +90,16 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
      * @param refType 记录类型集合
      * @return 角色->总额的key-value
      */
+    @Override
+    public IPage<WalletJournal> selectPageByOwnerAndDivision(IPage<WalletJournal> page, Long ownerId, Integer division) {
+        IPage<WalletJournalPO> poPage = new Page<>(page.getCurrent(), page.getSize());
+        IPage<WalletJournalPO> poResult = walletJournalMapper.selectPageByOwnerAndDivision(poPage, ownerId, division);
+        List<WalletJournal> domains = walletJournalPoConverter.po2Domain(poResult.getRecords());
+        IPage<WalletJournal> result = new Page<>(poResult.getCurrent(), poResult.getSize(), poResult.getTotal());
+        result.setRecords(domains);
+        return result;
+    }
+
     @Override
     public List<Map<String, Object>> selectMapByDatetime(Date start, Date end, List<String> refType) {
         // character / date 均为 MySQL 保留字，列名必须加反引号；

@@ -3,6 +3,7 @@ package xyz.foolcat.eve.evehelper.domain.service.system;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
@@ -12,6 +13,7 @@ import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
+import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -133,7 +135,75 @@ public class WalletJournalService {
                 .sequential().filter(Objects::nonNull)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
-        walletJournalRepository.saveOrUpdateBatch(walletJournals);
+        // 人物钱包为单分账,归一分账号固定为 0
+        walletJournals.forEach(j -> j.setDivision(0));
+        if (!walletJournals.isEmpty()) {
+            walletJournalRepository.saveOrUpdateBatch(walletJournals);
+        }
+        log.info("钱包流水人物同步完成 cId={} 条数={}", cId, walletJournals.size());
+    }
+
+    /**
+     * 军团钱包分账区间 1..7。
+     */
+    private static final int MIN_CORP_DIVISION = 1;
+    private static final int MAX_CORP_DIVISION = 7;
+
+    /**
+     * 同步军团钱包流水(1..7 个分账)。
+     *
+     * <p>逐个 division 独立「maxPage→翻页→回填→保存」为一独立提交单元,任一 division 失败仅记录失败、
+     * 不影响其它已成功 division 落库。存在失败分账时汇总抛
+     * {@link EveHelperException}(含失败 division 明细),但已成功数据已在 DB,不回滚。</p>
+     *
+     * <p><b>事务边界</b>:本方法<b>不</b>标注 @Transactional —— 军团 7 个 division 各自
+     * 「拉取+回填+saveOrUpdateBatch」为一个独立提交单元,失败隔离不整体回滚。</p>
+     *
+     * @param corpId 军团ID
+     * @throws ParseException JWT 解析失败
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public void syncCorporationJournal(Integer corpId) throws ParseException {
+        EveAccount eveAccount;
+        Integer currentUserId = UserUtil.getUserId();
+        if (currentUserId != null && currentUserId > 0) {
+            eveAccount = authorizeUtil.authorize(corpId);
+        } else {
+            eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, corpId);
+        }
+        String accessToken = esiApiService.getAccessToken(corpId, eveAccount.getUserId());
+
+        List<Integer> failedDivisions = new ArrayList<>();
+        for (int division = MIN_CORP_DIVISION; division <= MAX_CORP_DIVISION; division++) {
+            final int currentDivision = division;
+            try {
+                Integer maxPage = esiApiService.queryCorporationWalletJournalMaxPage(corpId, currentDivision, accessToken);
+                int pages = maxPage == null ? 0 : maxPage;
+                List<WalletJournal> walletJournals = Stream.iterate(1, i -> i + 1).limit(pages)
+                        .map(i -> esiApiService.queryCorporationWalletJournal(corpId, currentDivision, i, accessToken)
+                                .collectList().block())
+                        .sequential().filter(Objects::nonNull)
+                        .flatMap(Collection::stream)
+                        .collect(Collectors.toList());
+                // 回填 ownerId + division
+                walletJournals.forEach(j -> {
+                    j.setOwnerId(corpId.longValue());
+                    j.setDivision(currentDivision);
+                });
+                if (!walletJournals.isEmpty()) {
+                    walletJournalRepository.saveOrUpdateBatch(walletJournals);
+                }
+                log.info("钱包流水军团同步完成 corpId={} division={} 条数={}", corpId, currentDivision, walletJournals.size());
+            } catch (RuntimeException e) {
+                // 失败隔离:记录失败分账与原因,继续下一 division
+                failedDivisions.add(currentDivision);
+                log.warn("钱包流水军团分账同步失败 corpId={} division={}: {}", corpId, currentDivision, e.getMessage());
+            }
+        }
+
+        if (!failedDivisions.isEmpty()) {
+            throw new EveHelperException("军团钱包流水部分分账同步失败,失败 division=" + failedDivisions);
+        }
     }
 
     /**

@@ -88,6 +88,11 @@ public class WalletJournal extends BaseEntity implements Serializable {
      */
     private Long ownerId;
 
+    /**
+     * 分账
+     */
+    private Integer division;
+
     @Serial
     private static final long serialVersionUID = 1L;
 } 

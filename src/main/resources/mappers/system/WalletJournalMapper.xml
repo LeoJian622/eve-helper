@@ -19,11 +19,12 @@
     <result column="tax_receiver_id" jdbcType="INTEGER" property="taxReceiverId" />
     <result column="character" jdbcType="VARCHAR" property="character" />
     <result column="owner_id" jdbcType="BIGINT" property="ownerId" />
+    <result column="division" jdbcType="INTEGER" property="division" />
   </resultMap>
   <sql id="Base_Column_List">
     <!--@mbg.generated-->
     id, amount, balance, context_id, context_id_type, `date`, description, first_party_id,
-    reason, ref_type, second_party_id, tax, tax_receiver_id, `character`, owner_id
+    reason, ref_type, second_party_id, tax, tax_receiver_id, `character`, owner_id, division
   </sql>
 
   <!-- 按所有者ID分页查询钱包流水,时间 date 倒序。date 为 MySQL 保留字须反引号。 -->
@@ -225,16 +226,16 @@
   <insert id="batchInsert" parameterType="map">
     <!--@mbg.generated-->
     insert into wallet_journal
-    (id, amount, balance, context_id, context_id_type, `date`, description, first_party_id, 
-      reason, ref_type, second_party_id, tax, tax_receiver_id, `character`, owner_id)
+    (id, amount, balance, context_id, context_id_type, `date`, description, first_party_id,
+      reason, ref_type, second_party_id, tax, tax_receiver_id, `character`, owner_id, division)
     values
     <foreach collection="list" item="item" separator=",">
-      (#{item.id,jdbcType=BIGINT}, #{item.amount,jdbcType=DOUBLE}, #{item.balance,jdbcType=DOUBLE}, 
-        #{item.contextId,jdbcType=BIGINT}, #{item.contextIdType,jdbcType=VARCHAR}, #{item.date,jdbcType=TIMESTAMP}, 
-        #{item.description,jdbcType=LONGVARCHAR}, #{item.firstPartyId,jdbcType=INTEGER}, 
-        #{item.reason,jdbcType=LONGVARCHAR}, #{item.refType,jdbcType=LONGVARCHAR}, #{item.secondPartyId,jdbcType=INTEGER}, 
-        #{item.tax,jdbcType=DOUBLE}, #{item.taxReceiverId,jdbcType=INTEGER}, #{item.character,jdbcType=VARCHAR}, 
-        #{item.ownerId,jdbcType=BIGINT})
+      (#{item.id,jdbcType=BIGINT}, #{item.amount,jdbcType=DOUBLE}, #{item.balance,jdbcType=DOUBLE},
+        #{item.contextId,jdbcType=BIGINT}, #{item.contextIdType,jdbcType=VARCHAR}, #{item.date,jdbcType=TIMESTAMP},
+        #{item.description,jdbcType=LONGVARCHAR}, #{item.firstPartyId,jdbcType=INTEGER},
+        #{item.reason,jdbcType=LONGVARCHAR}, #{item.refType,jdbcType=LONGVARCHAR}, #{item.secondPartyId,jdbcType=INTEGER},
+        #{item.tax,jdbcType=DOUBLE}, #{item.taxReceiverId,jdbcType=INTEGER}, #{item.character,jdbcType=VARCHAR},
+        #{item.ownerId,jdbcType=BIGINT}, #{item.division,jdbcType=INTEGER})
     </foreach>
   </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletJournalPO">
@@ -286,6 +287,9 @@
       <if test="ownerId != null">
         owner_id,
       </if>
+      <if test="division != null">
+        division,
+      </if>
     </trim>
     values
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -333,6 +337,9 @@
       </if>
       <if test="ownerId != null">
         #{ownerId,jdbcType=BIGINT},
+      </if>
+      <if test="division != null">
+        #{division,jdbcType=INTEGER},
       </if>
     </trim>
     on duplicate key update 
@@ -382,6 +389,51 @@
       <if test="ownerId != null">
         owner_id = #{ownerId,jdbcType=BIGINT},
       </if>
+      <if test="division != null">
+        division = #{division,jdbcType=INTEGER},
+      </if>
     </trim>
+  </insert>
+
+  <!-- 按所有者ID与分账分页查询钱包流水,时间 date 倒序 -->
+  <select id="selectPageByOwnerAndDivision" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>
+    from wallet_journal
+    where owner_id = #{ownerId} and division = #{division}
+    order by `date` desc
+  </select>
+
+  <!-- M4 批量 upsert -->
+  <insert id="insertOrUpdateBatch">
+    insert into wallet_journal
+    (id, amount, balance, context_id, context_id_type, `date`, description, first_party_id,
+      reason, ref_type, second_party_id, tax, tax_receiver_id, `character`, owner_id, division)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.id,jdbcType=BIGINT}, #{item.amount,jdbcType=DOUBLE}, #{item.balance,jdbcType=DOUBLE},
+       #{item.contextId,jdbcType=BIGINT}, #{item.contextIdType,jdbcType=VARCHAR},
+       #{item.date,jdbcType=TIMESTAMP}, #{item.description,jdbcType=LONGVARCHAR},
+       #{item.firstPartyId,jdbcType=INTEGER}, #{item.reason,jdbcType=LONGVARCHAR},
+       #{item.refType,jdbcType=LONGVARCHAR}, #{item.secondPartyId,jdbcType=INTEGER},
+       #{item.tax,jdbcType=DOUBLE}, #{item.taxReceiverId,jdbcType=INTEGER},
+       #{item.character,jdbcType=VARCHAR}, #{item.ownerId,jdbcType=BIGINT},
+       #{item.division,jdbcType=INTEGER})
+    </foreach>
+    on duplicate key update
+      amount = VALUES(amount),
+      balance = VALUES(balance),
+      context_id = VALUES(context_id),
+      context_id_type = VALUES(context_id_type),
+      `date` = VALUES(`date`),
+      description = VALUES(description),
+      first_party_id = VALUES(first_party_id),
+      reason = VALUES(reason),
+      ref_type = VALUES(ref_type),
+      second_party_id = VALUES(second_party_id),
+      tax = VALUES(tax),
+      tax_receiver_id = VALUES(tax_receiver_id),
+      `character` = VALUES(`character`),
+      owner_id = VALUES(owner_id),
+      division = VALUES(division)
   </insert>
 </mapper>
