@@ -72,7 +72,7 @@ public class WalletJournalController {
     @Operation(summary = "钱包流水-军团分账分页查询", description = "按时间倒序分页返回军团某分账的钱包流水")
     @GetMapping("/corp/{corpId}")
     public Result<PageResult<WalletJournalVO>> queryCorporationPage(@PathVariable Integer corpId,
-                                                                    @RequestParam Integer division,
+                                                                    @RequestParam(required = false) Integer division,
                                                                     @RequestParam(defaultValue = "1") Integer current,
                                                                     @RequestParam(defaultValue = "20") Integer size) {
         return Result.success(walletJournalApplicationService.queryCorporationPage(corpId, division, current, size));

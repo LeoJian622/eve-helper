@@ -69,7 +69,7 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
     }
 
     @Override
-    public IPage<WalletJournal> selectPageByOwnerId(IPage<WalletJournal> page, Integer ownerId) {
+    public IPage<WalletJournal> selectPageByOwnerId(IPage<WalletJournal> page, Long ownerId) {
         // PO 分页内聚在本实现内:由领域实体维度 page 派生 PO 物理分页参数(current/size)
         IPage<WalletJournalPO> poPage = new Page<>(page.getCurrent(), page.getSize());
         IPage<WalletJournalPO> poResult = walletJournalMapper.selectPageByOwnerId(poPage, ownerId);

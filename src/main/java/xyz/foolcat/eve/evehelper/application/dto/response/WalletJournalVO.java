@@ -64,7 +64,7 @@ public class WalletJournalVO implements Serializable {
     @Schema(description = "所有者ID")
     private Long ownerId;
 
-    @Schema(description = "分账")
+    @Schema(description = "分账(人物=0,军团=1-7)")
     private Integer division;
 
     @Serial

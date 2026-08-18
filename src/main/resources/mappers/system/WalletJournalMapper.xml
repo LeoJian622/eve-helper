@@ -416,6 +416,9 @@
   </select>
 
   <!-- M4 批量 upsert -->
+  <!-- M1 说明:MySQL 8.0.20+ 已将 VALUES(col) 标记为弃用,但行别名语法(... VALUES ... AS new ON DUPLICATE KEY UPDATE)
+       不被本仓库冻结的 Druid 1.2.24 SQL 解析器支持(报 sql injection violation ... token AS,见 M1 评审)。
+       在技术栈冻结束前暂保留 VALUES(col) 形式(仍可正常运行,仅弃用告警),技术栈解冻后再迁移。 -->
   <insert id="insertOrUpdateBatch">
     insert into wallet_journal
     (id, amount, balance, context_id, context_id_type, `date`, description, first_party_id,

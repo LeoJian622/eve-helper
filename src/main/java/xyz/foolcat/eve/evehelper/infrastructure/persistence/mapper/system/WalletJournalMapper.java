@@ -18,10 +18,10 @@ public interface WalletJournalMapper extends BaseMapper<WalletJournalPO> {
      * 按所有者ID物理分页查询钱包流水(index:selectPageByOwnerId,时间 date 倒序)。
      *
      * @param page    MyBatis Plus 分页参数,由分页插件注入 LIMIT
-     * @param ownerId 人物ID
+     * @param ownerId 所有者ID(人物ID 或军团ID)
      * @return 分页结果(total 由分页插件填充)
      */
-    IPage<WalletJournalPO> selectPageByOwnerId(IPage<WalletJournalPO> page, @Param("ownerId") Integer ownerId);
+    IPage<WalletJournalPO> selectPageByOwnerId(IPage<WalletJournalPO> page, @Param("ownerId") Long ownerId);
 
     int updateBatch(List<WalletJournalPO> walletJournalPOS);
 

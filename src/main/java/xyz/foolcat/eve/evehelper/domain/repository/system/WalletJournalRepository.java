@@ -29,10 +29,10 @@ public interface WalletJournalRepository {
      * 按所有者ID分页查询钱包流水(时间 date 倒序)。
      *
      * @param page    MyBatis Plus 分页参数(领域实体维度;PO 分页由实现内聚)
-     * @param ownerId 人物ID
+     * @param ownerId 所有者ID(人物ID 或军团ID)
      * @return 领域实体分页结果(total 由分页插件填充)
      */
-    IPage<WalletJournal> selectPageByOwnerId(IPage<WalletJournal> page, Integer ownerId);
+    IPage<WalletJournal> selectPageByOwnerId(IPage<WalletJournal> page, Long ownerId);
 
     /**
      * 按所有者ID与分账分页查询钱包流水(时间 date 倒序)。

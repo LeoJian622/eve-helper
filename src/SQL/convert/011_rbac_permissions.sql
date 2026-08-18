@@ -1,5 +1,30 @@
 -- =====================================================================
 -- 011_rbac_permissions.sql
+-- !!! 部署前必读 ⚠ !!!
+-- 本脚本采用【事务内先删后插】：Step 1 会删除这 2 个 url_perm 的【全部】角色绑定
+-- (sys_role_permission), 再在 Step 3 仅重新绑定到 ADMIN 角色。
+-- 若执行前已有【非 ADMIN】角色(如 OP/财务等)绑定了这些权限, 执行后这些绑定将被清除,
+-- 相关角色的权限会离线失效(LEFT JOIN 自然失效), 这可能造成意外的越权收紧。
+-- ⚠ 强烈建议执行前先运行下方 pre-check 查询, 核对是否存在非 ADMIN 绑定, 并评估影响。
+-- 幂等性质: 见下方「幂等说明」；如需保留其他角色既有绑定, 请勿直接执行本脚本,
+--   改用手工 INSERT 前 SELECT 查重(INSERT ... WHERE NOT EXISTS)的方式。
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- Pre-check(建议先运行核对, 只读不写, 不会影响数据):
+--   列出这两个 url_perm 当前的全部角色绑定, 便于确认是否存在会被清掉的非 ADMIN 绑定。
+-- ---------------------------------------------------------------------
+-- SELECT sp.url_perm, sr.code AS role_code,
+--        COUNT(srp.id) AS bind_count
+-- FROM sys_permission sp
+--          LEFT JOIN sys_role_permission srp ON srp.permission_id = sp.id
+--          LEFT JOIN sys_role sr ON srp.role_id = sr.id
+-- WHERE sp.url_perm IN ('POST:/wallet/journal/corp/{corpId}/sync',
+--                       'GET:/wallet/journal/corp/{corpId}')
+-- GROUP BY sp.url_perm, sr.code;
+
+-- =====================================================================
+-- 011_rbac_permissions.sql
 -- 用途: 为 011-corporation-wallet-journal 特性新增的 2 个 REST 端点登记 RBAC 权限。
 --       登记两张表:
 --         * sys_permission      —— 新增 2 条 URL 权限(url_perm = 'METHOD:PATH')

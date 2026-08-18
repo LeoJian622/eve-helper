@@ -28,7 +28,12 @@ import java.util.stream.Stream;
  */
 @Service
 @Slf4j
-@Transactional(rollbackFor = RuntimeException.class)
+/**
+ * 事务说明:类级 @Transactional 覆盖单命令方法;syncCorporationJournal 以
+ * {@code @Transactional(propagation = Propagation.NOT_SUPPORTED)} 覆盖,实现分账级
+ * 提交隔离(每 division 独立 auto-commit,失败不回滚已成功分账)。
+ */
+@Transactional
 @RequiredArgsConstructor
 public class WalletJournalService {
 
@@ -138,8 +143,11 @@ public class WalletJournalService {
                 .sequential().filter(Objects::nonNull)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
-        // 人物钱包为单分账,归一分账号固定为 0
-        walletJournals.forEach(j -> j.setDivision(0));
+        // 人物钱包为单分账,归一分账号固定为 0,并回填 ownerId(= 人物ID)
+        walletJournals.forEach(j -> {
+            j.setOwnerId(cId.longValue());
+            j.setDivision(0);
+        });
         if (!walletJournals.isEmpty()) {
             walletJournalRepository.saveOrUpdateBatch(walletJournals);
         }

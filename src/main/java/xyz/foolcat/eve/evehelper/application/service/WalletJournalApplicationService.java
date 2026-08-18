@@ -99,7 +99,7 @@ public class WalletJournalApplicationService {
         // 归属校验先于业务逻辑:cid 为用户可控入参,须先确认该人物属于当前用户(防御 IDOR)
         accessGuard.requireOwnership(String.valueOf(cid), "钱包流水");
         IPage<WalletJournal> page = new Page<>(current, size);
-        IPage<WalletJournal> domainPage = walletJournalRepository.selectPageByOwnerId(page, cid);
+        IPage<WalletJournal> domainPage = walletJournalRepository.selectPageByOwnerId(page, cid.longValue());
         return PageResultUtil.copy(domainPage, walletJournalAssembler::toVo);
     }
 
