@@ -217,24 +217,24 @@
   <insert id="batchInsert" parameterType="map">
     <!--@mbg.generated-->
     insert into `structure`
-    (structure_id, corporation_id, fuel_expires, `name`, next_reinforce_apply, next_reinforce_hour, 
-      profile_id, reinforce_hour, `state`, state_timer_end, state_timer_start, system_id, 
-      type_id, unanchors_at, services)
+    (structure_id, corporation_id, fuel_expires, `name`, next_reinforce_apply, next_reinforce_hour,
+      profile_id, reinforce_hour, `state`, state_timer_end, state_timer_start, system_id,
+      type_id, unanchors_at, services, user_id)
     values
     <foreach collection="list" item="item" separator=",">
-      (#{item.structureId,jdbcType=BIGINT}, #{item.corporationId,jdbcType=INTEGER}, #{item.fuelExpires,jdbcType=TIMESTAMP}, 
-        #{item.name,jdbcType=VARCHAR}, #{item.nextReinforceApply,jdbcType=TIMESTAMP}, #{item.nextReinforceHour,jdbcType=INTEGER}, 
-        #{item.profileId,jdbcType=INTEGER}, #{item.reinforceHour,jdbcType=INTEGER}, #{item.state,jdbcType=VARCHAR}, 
-        #{item.stateTimerEnd,jdbcType=TIMESTAMP}, #{item.stateTimerStart,jdbcType=TIMESTAMP}, 
-        #{item.systemId,jdbcType=INTEGER}, #{item.typeId,jdbcType=INTEGER}, #{item.unanchorsAt,jdbcType=TIMESTAMP}, 
-        #{item.services,jdbcType=VARCHAR})
+      (#{item.structureId,jdbcType=BIGINT}, #{item.corporationId,jdbcType=INTEGER}, #{item.fuelExpires,jdbcType=TIMESTAMP},
+        #{item.name,jdbcType=VARCHAR}, #{item.nextReinforceApply,jdbcType=TIMESTAMP}, #{item.nextReinforceHour,jdbcType=INTEGER},
+        #{item.profileId,jdbcType=INTEGER}, #{item.reinforceHour,jdbcType=INTEGER}, #{item.state,jdbcType=VARCHAR},
+        #{item.stateTimerEnd,jdbcType=TIMESTAMP}, #{item.stateTimerStart,jdbcType=TIMESTAMP},
+        #{item.systemId,jdbcType=INTEGER}, #{item.typeId,jdbcType=INTEGER}, #{item.unanchorsAt,jdbcType=TIMESTAMP},
+        #{item.services,jdbcType=VARCHAR}, #{item.userId,jdbcType=BIGINT})
     </foreach>
   </insert>
   <insert id="batchInsertOrUpdate" parameterType="map">
     insert into `structure`
     (structure_id, corporation_id, fuel_expires, `name`, next_reinforce_apply, next_reinforce_hour,
     profile_id, reinforce_hour, `state`, state_timer_end, state_timer_start, system_id,
-    type_id, unanchors_at, services)
+    type_id, unanchors_at, services, user_id)
     values
     <foreach collection="list" item="item" separator=",">
       (#{item.structureId,jdbcType=BIGINT}, #{item.corporationId,jdbcType=INTEGER}, #{item.fuelExpires,jdbcType=TIMESTAMP},
@@ -242,7 +242,7 @@
       #{item.profileId,jdbcType=INTEGER}, #{item.reinforceHour,jdbcType=INTEGER}, #{item.state,jdbcType=VARCHAR},
       #{item.stateTimerEnd,jdbcType=TIMESTAMP}, #{item.stateTimerStart,jdbcType=TIMESTAMP},
       #{item.systemId,jdbcType=INTEGER}, #{item.typeId,jdbcType=INTEGER}, #{item.unanchorsAt,jdbcType=TIMESTAMP},
-      #{item.services,jdbcType=VARCHAR})
+      #{item.services,jdbcType=VARCHAR}, #{item.userId,jdbcType=BIGINT})
     </foreach>
     on duplicate key update
     structure_id = values(structure_id),
@@ -259,7 +259,8 @@
     system_id = values(system_id),
     type_id = values(type_id),
     unanchors_at = values(unanchors_at),
-    services = values(services)
+    services = values(services),
+    user_id = values(user_id)
   </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.StructurePO">
     <!--@mbg.generated-->
@@ -310,6 +311,9 @@
       <if test="services != null">
         services,
       </if>
+      <if test="userId != null">
+        user_id,
+      </if>
     </trim>
     values
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -358,8 +362,11 @@
       <if test="services != null">
         #{services,jdbcType=VARCHAR},
       </if>
+      <if test="userId != null">
+        #{userId,jdbcType=BIGINT},
+      </if>
     </trim>
-    on duplicate key update 
+    on duplicate key update
     <trim suffixOverrides=",">
       <if test="structureId != null">
         structure_id = #{structureId,jdbcType=BIGINT},
@@ -405,6 +412,9 @@
       </if>
       <if test="services != null">
         services = #{services,jdbcType=VARCHAR},
+      </if>
+      <if test="userId != null">
+        user_id = #{userId,jdbcType=BIGINT},
       </if>
     </trim>
   </insert>

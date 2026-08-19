@@ -171,6 +171,9 @@ public class IndustryJobPO implements Serializable {
     @TableField(value = "corporation_id")
     @Schema(description = "公司ID")
     private Integer corporationId;
+    @TableField(value = "user_id")
+    @Schema(description = "同步者系统用户ID")
+    private Long userId;
     @Serial
     private static final long serialVersionUID = 1L;
 } 

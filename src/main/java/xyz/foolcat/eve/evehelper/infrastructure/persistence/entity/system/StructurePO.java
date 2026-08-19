@@ -26,6 +26,9 @@ public class StructurePO  implements Serializable {
     @TableField(value = "corporation_id")
     @Schema(description="公司ID")
     private Long corporationId;
+    @TableField(value = "user_id")
+    @Schema(description="同步者系统用户ID")
+    private Long userId;
     /**
      * 燃料耗尽时间
      */

@@ -361,23 +361,23 @@
   <insert id="batchInsert" parameterType="map">
     <!--@mbg.generated-->
     insert into industry_job
-    (job_id, activity_id, activity, blueprint_id, blueprint_type_id, blueprint_type, 
-      product_type_id, product_type, cost, duration, runs, licensed_runs, probability, 
-      station_id, output_location_id, blueprint_location_id, installer, completed_character, 
-      facility_id, start_date, end_date, completed_date, `status`, pause_date, installer_id, 
-      corporation_id)
+    (job_id, activity_id, activity, blueprint_id, blueprint_type_id, blueprint_type,
+      product_type_id, product_type, cost, duration, runs, licensed_runs, probability,
+      station_id, output_location_id, blueprint_location_id, installer, completed_character,
+      facility_id, start_date, end_date, completed_date, `status`, pause_date, installer_id,
+      corporation_id, user_id)
     values
     <foreach collection="list" item="item" separator=",">
-      (#{item.jobId,jdbcType=BIGINT}, #{item.activityId,jdbcType=INTEGER}, #{item.activity,jdbcType=VARCHAR}, 
-        #{item.blueprintId,jdbcType=BIGINT}, #{item.blueprintTypeId,jdbcType=INTEGER}, 
-        #{item.blueprintType,jdbcType=VARCHAR}, #{item.productTypeId,jdbcType=INTEGER}, 
-        #{item.productType,jdbcType=VARCHAR}, #{item.cost,jdbcType=INTEGER}, #{item.duration,jdbcType=BIGINT}, 
-        #{item.runs,jdbcType=INTEGER}, #{item.licensedRuns,jdbcType=INTEGER}, #{item.probability,jdbcType=DECIMAL}, 
-        #{item.stationId,jdbcType=BIGINT}, #{item.outputLocationId,jdbcType=BIGINT}, #{item.blueprintLocationId,jdbcType=BIGINT}, 
-        #{item.installer,jdbcType=VARCHAR}, #{item.completedCharacter,jdbcType=VARCHAR}, 
-        #{item.facilityId,jdbcType=BIGINT}, #{item.startDate,jdbcType=TIMESTAMP}, #{item.endDate,jdbcType=TIMESTAMP}, 
-        #{item.completedDate,jdbcType=TIMESTAMP}, #{item.status,jdbcType=VARCHAR}, #{item.pauseDate,jdbcType=TIMESTAMP}, 
-        #{item.installerId,jdbcType=BIGINT}, #{item.corporationId,jdbcType=INTEGER})
+      (#{item.jobId,jdbcType=BIGINT}, #{item.activityId,jdbcType=INTEGER}, #{item.activity,jdbcType=VARCHAR},
+        #{item.blueprintId,jdbcType=BIGINT}, #{item.blueprintTypeId,jdbcType=INTEGER},
+        #{item.blueprintType,jdbcType=VARCHAR}, #{item.productTypeId,jdbcType=INTEGER},
+        #{item.productType,jdbcType=VARCHAR}, #{item.cost,jdbcType=INTEGER}, #{item.duration,jdbcType=BIGINT},
+        #{item.runs,jdbcType=INTEGER}, #{item.licensedRuns,jdbcType=INTEGER}, #{item.probability,jdbcType=DECIMAL},
+        #{item.stationId,jdbcType=BIGINT}, #{item.outputLocationId,jdbcType=BIGINT}, #{item.blueprintLocationId,jdbcType=BIGINT},
+        #{item.installer,jdbcType=VARCHAR}, #{item.completedCharacter,jdbcType=VARCHAR},
+        #{item.facilityId,jdbcType=BIGINT}, #{item.startDate,jdbcType=TIMESTAMP}, #{item.endDate,jdbcType=TIMESTAMP},
+        #{item.completedDate,jdbcType=TIMESTAMP}, #{item.status,jdbcType=VARCHAR}, #{item.pauseDate,jdbcType=TIMESTAMP},
+        #{item.installerId,jdbcType=BIGINT}, #{item.corporationId,jdbcType=INTEGER}, #{item.userId,jdbcType=BIGINT})
     </foreach>
   </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.IndustryJobPO">
@@ -462,6 +462,9 @@
       <if test="corporationId != null">
         corporation_id,
       </if>
+      <if test="userId != null">
+        user_id,
+      </if>
     </trim>
     values
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -542,6 +545,9 @@
       </if>
       <if test="corporationId != null">
         #{corporationId,jdbcType=INTEGER},
+      </if>
+      <if test="userId != null">
+        #{userId,jdbcType=BIGINT},
       </if>
     </trim>
     on duplicate key update 
@@ -624,6 +630,9 @@
       <if test="corporationId != null">
         corporation_id = #{corporationId,jdbcType=INTEGER},
       </if>
+      <if test="userId != null">
+        user_id = #{userId,jdbcType=BIGINT},
+      </if>
     </trim>
   </insert>
   <insert id="batchInsertOrUpdate" parameterType="map">
@@ -632,7 +641,7 @@
     product_type_id, product_type, cost, duration, runs, licensed_runs, probability,
     station_id, output_location_id, blueprint_location_id, installer, completed_character,
     facility_id, start_date, end_date, completed_date, `status`, pause_date, installer_id,
-    corporation_id)
+    corporation_id, user_id)
     values
     <foreach collection="list" item="item" separator=",">
       (#{item.jobId,jdbcType=BIGINT}, #{item.activityId,jdbcType=INTEGER}, #{item.activity,jdbcType=VARCHAR},
@@ -644,7 +653,7 @@
       #{item.installer,jdbcType=VARCHAR}, #{item.completedCharacter,jdbcType=VARCHAR},
       #{item.facilityId,jdbcType=BIGINT}, #{item.startDate,jdbcType=TIMESTAMP}, #{item.endDate,jdbcType=TIMESTAMP},
       #{item.completedDate,jdbcType=TIMESTAMP}, #{item.status,jdbcType=VARCHAR}, #{item.pauseDate,jdbcType=TIMESTAMP},
-      #{item.installerId,jdbcType=BIGINT}, #{item.corporationId,jdbcType=INTEGER})
+      #{item.installerId,jdbcType=BIGINT}, #{item.corporationId,jdbcType=INTEGER}, #{item.userId,jdbcType=BIGINT})
     </foreach>
     on duplicate key update
     job_id = values(job_id),
@@ -672,6 +681,7 @@
     `status` = values(status),
     pause_date = values(pause_date),
     installer_id = values(installer_id),
-    corporation_id = values(corporation_id)
+    corporation_id = values(corporation_id),
+    user_id = values(user_id)
   </insert>
 </mapper>

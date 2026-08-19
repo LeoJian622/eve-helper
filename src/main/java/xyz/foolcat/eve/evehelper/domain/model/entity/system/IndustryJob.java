@@ -144,6 +144,11 @@ public class IndustryJob extends BaseEntity implements Serializable {
      */
     private Integer corporationId;
 
+    /**
+     * 同步者系统用户ID
+     */
+    private Long userId;
+
     @Serial
     private static final long serialVersionUID = 1L;
 

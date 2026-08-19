@@ -25,6 +25,11 @@ public class Structure extends BaseEntity implements Serializable {
     private Long corporationId;
 
     /**
+     * 同步者系统用户ID
+     */
+    private Long userId;
+
+    /**
      * 燃料耗尽时间
      */
     private OffsetDateTime fuelExpires;

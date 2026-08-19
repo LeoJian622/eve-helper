@@ -72,11 +72,11 @@
   <insert id="batchInsert" parameterType="map">
     <!--@mbg.generated-->
     insert into observer
-    (observer_id, observer_type, last_updated, croporation_id)
+    (observer_id, observer_type, last_updated, croporation_id, user_id)
     values
     <foreach collection="list" item="item" separator=",">
-      (#{item.observerId,jdbcType=BIGINT}, #{item.observerType,jdbcType=VARCHAR}, #{item.lastUpdated,jdbcType=TIMESTAMP}, 
-        #{item.croporationId,jdbcType=BIGINT})
+      (#{item.observerId,jdbcType=BIGINT}, #{item.observerType,jdbcType=VARCHAR}, #{item.lastUpdated,jdbcType=TIMESTAMP},
+        #{item.croporationId,jdbcType=BIGINT}, #{item.userId,jdbcType=BIGINT})
     </foreach>
   </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.ObserverPO">
@@ -95,6 +95,9 @@
       <if test="croporationId != null">
         croporation_id,
       </if>
+      <if test="userId != null">
+        user_id,
+      </if>
     </trim>
     values
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -110,8 +113,11 @@
       <if test="croporationId != null">
         #{croporationId,jdbcType=BIGINT},
       </if>
+      <if test="userId != null">
+        #{userId,jdbcType=BIGINT},
+      </if>
     </trim>
-    on duplicate key update 
+    on duplicate key update
     <trim suffixOverrides=",">
       <if test="observerId != null">
         observer_id = #{observerId,jdbcType=BIGINT},
@@ -124,6 +130,9 @@
       </if>
       <if test="croporationId != null">
         croporation_id = #{croporationId,jdbcType=BIGINT},
+      </if>
+      <if test="userId != null">
+        user_id = #{userId,jdbcType=BIGINT},
       </if>
     </trim>
   </insert>
