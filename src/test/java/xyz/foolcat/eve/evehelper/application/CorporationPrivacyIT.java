@@ -221,6 +221,8 @@ class CorporationPrivacyIT {
                 // 核心裁决:空 200,绝非 403
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.records.length()").value(0))
+                // 严封 FR-007:分页 total 同样必须为 0,杜绝「records 空但 total 泄漏规模」
+                .andExpect(jsonPath("$.data.total").value(0))
                 // 不泄漏:响应不含甲的 journal 明细(金额/描述/主键)
                 .andExpect(content().string(not(containsString(String.valueOf(OWN_AMOUNT)))))
                 .andExpect(content().string(not(containsString(OWN_DESC))))
