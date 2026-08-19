@@ -138,4 +138,30 @@ class WalletTransactionServiceSyncTest {
 
         verify(esiGateway, never()).queryCorporationWalletTransactions(anyInt(), anyInt(), any(), any());
     }
+
+    @Test
+    @DisplayName("军团同步:每行 setUserId=同步者 userId.longValue()（US2a T014 军团写路径落 user_id）")
+    void corpSync_setsUserId() throws Exception {
+        Integer characterId = 9003;
+        Integer userId = 100;
+        Integer corpId = 5001;
+        String token = "Bearer corp-token";
+        when(authorizeUtil.authorize(characterId)).thenReturn(account(userId, corpId));
+        when(esiGateway.getAccessToken(characterId, userId)).thenReturn(token);
+
+        for (int d = 1; d <= 7; d++) {
+            when(esiGateway.queryCorporationWalletTransactions(eq(corpId), eq(d), isNull(), eq(token)))
+                    .thenReturn(Flux.just(tx(d * 100L)));
+            when(esiGateway.queryCorporationWalletTransactions(eq(corpId), eq(d), eq(d * 100L), eq(token)))
+                    .thenReturn(Flux.empty());
+        }
+
+        walletTransactionService.syncCorporationTransactions(characterId);
+
+        Long syncUserId = userId.longValue();
+        ArgumentCaptor<List<WalletTransaction>> captor = ArgumentCaptor.forClass(List.class);
+        verify(walletTransactionRepository, times(7)).saveOrUpdateBatch(captor.capture());
+        captor.getAllValues().forEach(list -> assertThat(list).allSatisfy(t ->
+                assertThat(t.getUserId()).isEqualTo(syncUserId)));
+    }
 }

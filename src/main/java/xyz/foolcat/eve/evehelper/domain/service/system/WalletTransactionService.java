@@ -120,6 +120,8 @@ public class WalletTransactionService {
             throw new EsiException(ResultCode.ESI_AUTH_PERMISSION_LOW);
         }
         String accessToken = esiGateway.getAccessToken(characterId, eveAccount.getUserId());
+        // US2a(014 T014):军团交易随同步者 user_id 落库 —— 军团数据只对同步者可见的归属依据
+        Long syncUserId = eveAccount.getUserId() == null ? null : eveAccount.getUserId().longValue();
 
         Map<Integer, Boolean> results = new LinkedHashMap<>();
         List<Integer> failedDivisions = new ArrayList<>();
@@ -129,6 +131,7 @@ public class WalletTransactionService {
                 List<WalletTransaction> transactions = pullTransactions(
                         fromId -> esiGateway.queryCorporationWalletTransactions(corpId, currentDivision, fromId, accessToken));
                 backfillOwner(transactions, OWNER_TYPE_CORPORATION, corpId.longValue(), currentDivision);
+                transactions.forEach(t -> t.setUserId(syncUserId));
                 // 空页(无交易)也视为本分账成功;非空才触发保存
                 if (!transactions.isEmpty()) {
                     walletTransactionRepository.saveOrUpdateBatch(transactions);
