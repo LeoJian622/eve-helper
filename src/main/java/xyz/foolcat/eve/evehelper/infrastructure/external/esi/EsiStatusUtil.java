@@ -53,20 +53,28 @@ public final class EsiStatusUtil {
      *     <li>其余 4xx → {@link ResultCode#ESI_AUTHORIZATION_FAILURE}(授权失效/其它客户端错误)</li>
      *     <li>5xx → {@link ResultCode#ESI_SERVER_FAILURE}</li>
      * </ul>
-     * <p>全程不回显 ESI 原始 error/errorDescription(H2),原始信息仅日志记录。</p>
+     * <p><b>连接释放</b>:先 {@code releaseBody()} 消费/释放响应体(空 body、非 JSON 均安全),
+     * 再返回友好 {@code EsiException},避免 4xx/5xx 持续下占用连接池。</p>
+     * <p>全程不回显 ESI 原始 error/errorDescription(H2):原始错误详情<b>不读取、不落库、不日志</b>,
+     * 仅以 HTTP 状态 + 枚举友好码表达,杜绝任何向外泄露外部服务内部细节的路径。</p>
      */
     public static Function<ClientResponse, Mono<? extends Throwable>> dataError() {
         return response -> {
             HttpStatusCode status = response.statusCode();
+            // 先回收响应体释放连接,再构造友好异常(顺序无关 status 判定,但须在返回前完成)
+            Mono<Void> release = response.releaseBody().onErrorResume(ex -> {
+                log.debug("ESI 错误响应体释放失败,忽略: status={}, cause={}", status.value(), ex.getClass().getSimpleName());
+                return Mono.empty();
+            });
             if (isForbidden(status)) {
                 log.warn("ESI 数据接口权限不足(HTTP 403): status={}", status.value());
-                return Mono.error(forbiddenAgent());
+                return release.then(Mono.error(forbiddenAgent()));
             }
             ResultCode code = status.is5xxServerError()
                     ? ResultCode.ESI_SERVER_FAILURE
                     : ResultCode.ESI_AUTHORIZATION_FAILURE;
             log.warn("ESI 数据接口错误: status={}, code={}", status.value(), code.getMsg());
-            return Mono.error(new EsiException(code));
+            return release.then(Mono.error(new EsiException(code)));
         };
     }
 }
