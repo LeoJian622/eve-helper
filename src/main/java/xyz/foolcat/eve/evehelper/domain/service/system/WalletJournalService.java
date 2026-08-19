@@ -194,6 +194,8 @@ public class WalletJournalService {
             throw new EsiException(ResultCode.ESI_AUTH_PERMISSION_LOW);
         }
         String accessToken = esiApiService.getAccessToken(characterId, eveAccount.getUserId());
+        // US2a(014 T013):军团流水随同步者 user_id 落库 —— 军团数据只对同步者可见的归属依据
+        Long syncUserId = eveAccount.getUserId() == null ? null : eveAccount.getUserId().longValue();
 
         List<Integer> failedDivisions = new ArrayList<>();
         for (int division = MIN_CORP_DIVISION; division <= MAX_CORP_DIVISION; division++) {
@@ -207,10 +209,11 @@ public class WalletJournalService {
                         .sequential().filter(Objects::nonNull)
                         .flatMap(Collection::stream)
                         .collect(Collectors.toList());
-                // 回填 ownerId + division
+                // 回填 ownerId + division + userId
                 walletJournals.forEach(j -> {
                     j.setOwnerId(corpId.longValue());
                     j.setDivision(currentDivision);
+                    j.setUserId(syncUserId);
                 });
                 if (!walletJournals.isEmpty()) {
                     walletJournalRepository.saveOrUpdateBatch(walletJournals);

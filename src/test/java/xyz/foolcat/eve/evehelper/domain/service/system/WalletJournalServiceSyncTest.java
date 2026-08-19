@@ -136,4 +136,29 @@ class WalletJournalServiceSyncTest {
 
         verify(esiApiService, never()).queryCorporationWalletJournal(anyInt(), anyInt(), anyInt(), any());
     }
+
+    @Test
+    @DisplayName("军团同步:每行 setUserId=同步者 userId.longValue()（US2a T013 军团写路径落 user_id）")
+    void corpSync_setsUserId() throws Exception {
+        Integer characterId = 9003;
+        Integer userId = 100;
+        Integer corpId = 5001;
+        String token = "Bearer corp-token";
+        when(authorizeUtil.authorize(characterId)).thenReturn(account(userId, corpId));
+        when(esiApiService.getAccessToken(characterId, userId)).thenReturn(token);
+
+        for (int d = 1; d <= 7; d++) {
+            when(esiApiService.queryCorporationWalletJournalMaxPage(corpId, d, token)).thenReturn(1);
+            when(esiApiService.queryCorporationWalletJournal(corpId, d, 1, token))
+                    .thenReturn(Flux.just(journal(d * 100L)));
+        }
+
+        walletJournalService.syncCorporationJournal(characterId);
+
+        Long syncUserId = userId.longValue();
+        ArgumentCaptor<List<WalletJournal>> captor = ArgumentCaptor.forClass(List.class);
+        verify(walletJournalRepository, times(7)).saveOrUpdateBatch(captor.capture());
+        captor.getAllValues().forEach(list -> assertThat(list).allSatisfy(j ->
+                assertThat(j.getUserId()).isEqualTo(syncUserId)));
+    }
 }
