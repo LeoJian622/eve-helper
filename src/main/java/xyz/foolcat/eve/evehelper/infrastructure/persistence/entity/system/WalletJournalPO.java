@@ -64,6 +64,9 @@ public class WalletJournalPO  implements Serializable {
     @TableField(value = "division")
     @Schema(description = "分账")
     private Integer division;
+    @TableField(value = "user_id")
+    @Schema(description = "同步者系统用户ID")
+    private Long userId;
     @Serial
     private static final long serialVersionUID = 1L;
 } 

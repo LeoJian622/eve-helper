@@ -239,7 +239,8 @@
     <!--@mbg.generated-->
     insert into wallet_journal
     (id, amount, balance, context_id, context_id_type, `date`, description, first_party_id,
-      reason, ref_type, second_party_id, tax, tax_receiver_id, `character`, owner_id, division)
+      reason, ref_type, second_party_id, tax, tax_receiver_id, `character`, owner_id, division,
+      user_id)
     values
     <foreach collection="list" item="item" separator=",">
       (#{item.id,jdbcType=BIGINT}, #{item.amount,jdbcType=DOUBLE}, #{item.balance,jdbcType=DOUBLE},
@@ -247,7 +248,7 @@
         #{item.description,jdbcType=LONGVARCHAR}, #{item.firstPartyId,jdbcType=INTEGER},
         #{item.reason,jdbcType=LONGVARCHAR}, #{item.refType,jdbcType=LONGVARCHAR}, #{item.secondPartyId,jdbcType=INTEGER},
         #{item.tax,jdbcType=DOUBLE}, #{item.taxReceiverId,jdbcType=INTEGER}, #{item.character,jdbcType=VARCHAR},
-        #{item.ownerId,jdbcType=BIGINT}, #{item.division,jdbcType=INTEGER})
+        #{item.ownerId,jdbcType=BIGINT}, #{item.division,jdbcType=INTEGER}, #{item.userId,jdbcType=BIGINT})
     </foreach>
   </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletJournalPO">
@@ -302,6 +303,9 @@
       <if test="division != null">
         division,
       </if>
+      <if test="userId != null">
+        user_id,
+      </if>
     </trim>
     values
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -352,6 +356,9 @@
       </if>
       <if test="division != null">
         #{division,jdbcType=INTEGER},
+      </if>
+      <if test="userId != null">
+        #{userId,jdbcType=BIGINT},
       </if>
     </trim>
     on duplicate key update 
@@ -404,6 +411,9 @@
       <if test="division != null">
         division = #{division,jdbcType=INTEGER},
       </if>
+      <if test="userId != null">
+        user_id = #{userId,jdbcType=BIGINT},
+      </if>
     </trim>
   </insert>
 
@@ -422,7 +432,8 @@
   <insert id="insertOrUpdateBatch">
     insert into wallet_journal
     (id, amount, balance, context_id, context_id_type, `date`, description, first_party_id,
-      reason, ref_type, second_party_id, tax, tax_receiver_id, `character`, owner_id, division)
+      reason, ref_type, second_party_id, tax, tax_receiver_id, `character`, owner_id, division,
+      user_id)
     values
     <foreach collection="list" item="item" separator=",">
       (#{item.id,jdbcType=BIGINT}, #{item.amount,jdbcType=DOUBLE}, #{item.balance,jdbcType=DOUBLE},
@@ -432,7 +443,7 @@
        #{item.refType,jdbcType=LONGVARCHAR}, #{item.secondPartyId,jdbcType=INTEGER},
        #{item.tax,jdbcType=DOUBLE}, #{item.taxReceiverId,jdbcType=INTEGER},
        #{item.character,jdbcType=VARCHAR}, #{item.ownerId,jdbcType=BIGINT},
-       #{item.division,jdbcType=INTEGER})
+       #{item.division,jdbcType=INTEGER}, #{item.userId,jdbcType=BIGINT})
     </foreach>
     on duplicate key update
       amount = VALUES(amount),
@@ -449,7 +460,8 @@
       tax_receiver_id = VALUES(tax_receiver_id),
       `character` = VALUES(`character`),
       owner_id = VALUES(owner_id),
-      division = VALUES(division)
+      division = VALUES(division),
+      user_id = VALUES(user_id)
   </insert>
 
   <!-- 钱包总览标量聚合:收支合计(amount 正/负分别累)、净流、条数、当前余额(最新 id 的 balance)、
