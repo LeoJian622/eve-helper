@@ -30,7 +30,8 @@ public class BlueprintsService {
     /**
      * 与ESI蓝图数据进行同步并返回
      *
-     * @param cid   人物或公司ID
+     * @param cid   角色ID(人物ID)——token 恒取自该角色行(FR-001);军团查询的 corpId 由
+     *              {@code eveAccount.getCorpId()} 派生,不在此入参中(人物授权唯一基准)
      * @param isCor 是否为公司查询
      * @return
      * @throws ParseException
