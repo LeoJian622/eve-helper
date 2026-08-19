@@ -451,4 +451,62 @@
       owner_id = VALUES(owner_id),
       division = VALUES(division)
   </insert>
+
+  <!-- 钱包总览标量聚合:收支合计(amount 正/负分别累)、净流、条数、当前余额(最新 id 的 balance)、
+       统计截点(最新 date)。person 传 division=null 不过滤。date 为保留字须反引号。 -->
+  <select id="selectOverviewAggregate"
+          resultType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewAggregatePO">
+    select
+      COALESCE(SUM(CASE WHEN w.amount &gt; 0 THEN w.amount ELSE 0 END), 0)  as totalIncome,
+      COALESCE(SUM(CASE WHEN w.amount &lt; 0 THEN -w.amount ELSE 0 END), 0) as totalExpense,
+      COALESCE(SUM(w.amount), 0)                                            as netFlow,
+      COUNT(*)                                                              as journalCount,
+      (select w2.balance from wallet_journal w2
+        where w2.owner_id = #{ownerId}
+        <if test="division != null">and w2.division = #{division}</if>
+        order by w2.id desc limit 1)                                        as currentBalance,
+      (select MAX(w3.`date`) from wallet_journal w3
+        where w3.owner_id = #{ownerId}
+        <if test="division != null">and w3.division = #{division}</if>)    as asOfTime
+    from wallet_journal w
+    where w.owner_id = #{ownerId}
+    <if test="division != null">and w.division = #{division}</if>
+    <if test="start != null">and w.`date` &gt;= #{start}</if>
+    <if test="end != null">and w.`date` &lt;= #{end}</if>
+  </select>
+
+  <!-- 钱包总览按交易类型(ref_type)汇总,按 (income+expense) 降序,最多 50 类。 -->
+  <select id="selectOverviewCategories"
+          resultType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewCategoryPO">
+    select
+      w.ref_type                                                        as refType,
+      COALESCE(SUM(CASE WHEN w.amount &gt; 0 THEN w.amount ELSE 0 END), 0) as income,
+      COALESCE(SUM(CASE WHEN w.amount &lt; 0 THEN -w.amount ELSE 0 END), 0) as expense,
+      COUNT(*)                                                          as count
+    from wallet_journal w
+    where w.owner_id = #{ownerId}
+    <if test="division != null">and w.division = #{division}</if>
+    <if test="start != null">and w.`date` &gt;= #{start}</if>
+    <if test="end != null">and w.`date` &lt;= #{end}</if>
+    group by w.ref_type
+    order by (income + expense) desc
+    limit 50
+  </select>
+
+  <!-- 钱包总览按时间桶趋势,桶升序。granularity 为日期格式(月 %Y-%m / 日 %Y-%m-%d)。 -->
+  <select id="selectOverviewTrend"
+          resultType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewTrendPO">
+    select
+      DATE_FORMAT(w.`date`, #{granularity})                             as bucket,
+      COALESCE(SUM(CASE WHEN w.amount &gt; 0 THEN w.amount ELSE 0 END), 0) as income,
+      COALESCE(SUM(CASE WHEN w.amount &lt; 0 THEN -w.amount ELSE 0 END), 0) as expense,
+      SUM(w.amount)                                                     as net
+    from wallet_journal w
+    where w.owner_id = #{ownerId}
+    <if test="division != null">and w.division = #{division}</if>
+    <if test="start != null">and w.`date` &gt;= #{start}</if>
+    <if test="end != null">and w.`date` &lt;= #{end}</if>
+    group by bucket
+    order by bucket asc
+  </select>
 </mapper>

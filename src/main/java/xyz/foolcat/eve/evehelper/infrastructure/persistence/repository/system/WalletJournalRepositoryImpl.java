@@ -6,12 +6,18 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
+import xyz.foolcat.eve.evehelper.domain.model.vo.WalletOverviewAggregate;
+import xyz.foolcat.eve.evehelper.domain.model.vo.WalletOverviewVO;
 import xyz.foolcat.eve.evehelper.domain.repository.system.WalletJournalRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.WalletJournalPoConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletJournalPO;
+import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewAggregatePO;
+import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewCategoryPO;
+import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewTrendPO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.WalletJournalMapper;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +103,65 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
         List<WalletJournal> domains = walletJournalPoConverter.po2Domain(poResult.getRecords());
         IPage<WalletJournal> result = new Page<>(poResult.getCurrent(), poResult.getSize(), poResult.getTotal());
         result.setRecords(domains);
+        return result;
+    }
+
+    @Override
+    public WalletOverviewAggregate selectOverviewAggregate(Long ownerId, Integer division, Date start, Date end) {
+        WalletOverviewAggregatePO po = walletJournalMapper.selectOverviewAggregate(ownerId, division, start, end);
+        if (po == null) {
+            // 无任何流水行时聚合返回空,按契约回退为零值(金额/条数 0,时间 null)
+            return new WalletOverviewAggregate(0.0, 0.0, 0.0, 0.0, 0L, null);
+        }
+        // WalletOverviewAggregate 组件序:(currentBalance, totalIncome, totalExpense, netFlow, journalCount, asOfTime)
+        return new WalletOverviewAggregate(
+                po.currentBalance() == null ? 0.0 : po.currentBalance(),
+                zeroIfNull(po.totalIncome()),
+                zeroIfNull(po.totalExpense()),
+                zeroIfNull(po.netFlow()),
+                zeroIfNull(po.journalCount()),
+                po.asOfTime());
+    }
+
+    private Double zeroIfNull(Double v) {
+        return v == null ? 0.0 : v;
+    }
+
+    private Long zeroIfNull(Long v) {
+        return v == null ? 0L : v;
+    }
+
+    @Override
+    public List<WalletOverviewVO.CategorySummary> selectOverviewCategories(Long ownerId, Integer division, Date start, Date end) {
+        List<WalletOverviewCategoryPO> pos = walletJournalMapper.selectOverviewCategories(ownerId, division, start, end);
+        if (pos == null || pos.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<WalletOverviewVO.CategorySummary> result = new ArrayList<>(pos.size());
+        for (WalletOverviewCategoryPO p : pos) {
+            result.add(new WalletOverviewVO.CategorySummary(
+                    p.refType(),
+                    zeroIfNull(p.income()),
+                    zeroIfNull(p.expense()),
+                    p.count() == null ? 0L : p.count()));
+        }
+        return result;
+    }
+
+    @Override
+    public List<WalletOverviewVO.TrendPoint> selectOverviewTrend(Long ownerId, Integer division, Date start, Date end, String granularity) {
+        List<WalletOverviewTrendPO> pos = walletJournalMapper.selectOverviewTrend(ownerId, division, start, end, granularity);
+        if (pos == null || pos.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<WalletOverviewVO.TrendPoint> result = new ArrayList<>(pos.size());
+        for (WalletOverviewTrendPO p : pos) {
+            result.add(new WalletOverviewVO.TrendPoint(
+                    p.bucket(),
+                    zeroIfNull(p.income()),
+                    zeroIfNull(p.expense()),
+                    zeroIfNull(p.net())));
+        }
         return result;
     }
 

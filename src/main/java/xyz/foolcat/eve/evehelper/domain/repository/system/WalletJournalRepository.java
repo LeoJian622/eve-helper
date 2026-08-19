@@ -2,6 +2,8 @@ package xyz.foolcat.eve.evehelper.domain.repository.system;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
+import xyz.foolcat.eve.evehelper.domain.model.vo.WalletOverviewAggregate;
+import xyz.foolcat.eve.evehelper.domain.model.vo.WalletOverviewVO;
 
 import java.util.Date;
 import java.util.List;
@@ -43,4 +45,38 @@ public interface WalletJournalRepository {
      * @return 领域实体分页结果
      */
     IPage<WalletJournal> selectPageByOwnerAndDivision(IPage<WalletJournal> page, Long ownerId, Integer division);
+
+    /**
+     * 钱包总览标量聚合(收支/净流/条数/当前余额/统计截点)。
+     *
+     * @param ownerId  所有者ID(人物或军团)
+     * @param division 分账;人物传 null 不过滤
+     * @param start    起始时间(可空)
+     * @param end      结束时间(可空)
+     * @return 标量聚合(无数据时金额/条数为 0)
+     */
+    WalletOverviewAggregate selectOverviewAggregate(Long ownerId, Integer division, Date start, Date end);
+
+    /**
+     * 钱包总览按交易类型汇总。
+     *
+     * @param ownerId  所有者ID
+     * @param division 分账;人物传 null 不过滤
+     * @param start    起始时间(可空)
+     * @param end      结束时间(可空)
+     * @return 类型汇总列表
+     */
+    List<WalletOverviewVO.CategorySummary> selectOverviewCategories(Long ownerId, Integer division, Date start, Date end);
+
+    /**
+     * 钱包总览按时间桶趋势。
+     *
+     * @param ownerId     所有者ID
+     * @param division    分账;人物传 null 不过滤
+     * @param start       起始时间(可空)
+     * @param end         结束时间(可空)
+     * @param granularity 时间桶格式(月/日)
+     * @return 趋势点列表
+     */
+    List<WalletOverviewVO.TrendPoint> selectOverviewTrend(Long ownerId, Integer division, Date start, Date end, String granularity);
 }
