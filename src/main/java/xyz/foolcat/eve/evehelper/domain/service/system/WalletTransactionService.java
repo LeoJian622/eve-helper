@@ -10,6 +10,8 @@ import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.repository.system.WalletTransactionRepository;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 
@@ -90,19 +92,31 @@ public class WalletTransactionService {
     /* ────────────────────────── 军团同步 ────────────────────────── */
 
     /**
-     * 同步军团钱包交易(1..7 个分账)。
+     * 同步军团钱包交易(1..7 个分账),入参为<b>角色ID</b>,军团ID从该角色 eve_account 行解析。
+     *
+     * <p><b>013 US4 签名统一</b>:消除「同一入参兼作角色ID与军团ID」双重语义。入参恒为
+     * 角色ID(<code>characterId</code>);内部 {@code authorize(characterId)}（请求路径）/
+     * {@code authorizeInternal(SYSTEM_USER_ID, characterId)}（内部路径）解析出
+     * {@code corpusId = eveAccount.getCorpId()};ESI 军团交易查询与 owner 回填一律用解析值。
+     * 角色无关联军团( corpId 为 null) → {@link EsiException}(ESI00403, 映射 HTTP 403)。</p>
      *
      * <p>逐个 division 独立「拉取+回填+保存」为一独立提交单元,任一 division 失败仅记录失败、
      * 不影响其它已成功 division 落库。返回每 division 成败记录;存在失败分账时汇总抛
      * {@link EveHelperException}(含失败 division 明细),但已成功数据已在 DB,不回滚。</p>
      *
-     * @param corpId 军团ID
+     * @param characterId 角色ID(该角色的 eve_account 行须含关联军团)
      * @return 每 division 同步成败记录(顺序 1..7),仅全部成功时正常返回
      * @throws java.text.ParseException JWT 解析失败
      */
-    public Map<Integer, Boolean> syncCorporationTransactions(Integer corpId) throws java.text.ParseException {
-        EveAccount eveAccount = authorizeAccount(corpId);
-        String accessToken = esiGateway.getAccessToken(corpId, eveAccount.getUserId());
+    public Map<Integer, Boolean> syncCorporationTransactions(Integer characterId) throws java.text.ParseException {
+        EveAccount eveAccount = authorizeAccount(characterId);
+        // 目标军团ID恒从已授权角色行派生,入参恒为角色ID,不与军团ID复用
+        Integer corpId = eveAccount.getCorpId();
+        if (corpId == null) {
+            log.warn("钱包交易军团同步:角色 {} 无关联军团,映射 ESI 403 权限不足", characterId);
+            throw new EsiException(ResultCode.ESI_AUTH_PERMISSION_LOW);
+        }
+        String accessToken = esiGateway.getAccessToken(characterId, eveAccount.getUserId());
 
         Map<Integer, Boolean> results = new LinkedHashMap<>();
         List<Integer> failedDivisions = new ArrayList<>();
@@ -117,12 +131,12 @@ public class WalletTransactionService {
                     walletTransactionRepository.saveOrUpdateBatch(transactions);
                 }
                 results.put(currentDivision, Boolean.TRUE);
-                log.info("钱包交易军团同步完成 corpId={} division={} 条数={}", corpId, division, transactions.size());
+                log.info("钱包交易军团同步完成 characterId={} corpId={} division={} 条数={}", characterId, corpId, division, transactions.size());
             } catch (RuntimeException e) {
                 // 失败隔离:记录失败分账与原因,继续下一 division
                 failedDivisions.add(division);
                 results.put(division, Boolean.FALSE);
-                log.warn("钱包交易军团分账同步失败 corpId={} division={}: {}", corpId, division, e.getMessage());
+                log.warn("钱包交易军团分账同步失败 characterId={} corpId={} division={}: {}", characterId, corpId, division, e.getMessage());
             }
         }
 

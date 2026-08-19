@@ -12,6 +12,8 @@ import xyz.foolcat.eve.evehelper.domain.repository.system.WalletJournalRepositor
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 
@@ -174,15 +176,21 @@ public class WalletJournalService {
      * @throws ParseException JWT 解析失败
      */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public void syncCorporationJournal(Integer corpId) throws ParseException {
+    public void syncCorporationJournal(Integer characterId) throws ParseException {
         EveAccount eveAccount;
         Integer currentUserId = UserUtil.getUserId();
         if (currentUserId != null && currentUserId > 0) {
-            eveAccount = authorizeUtil.authorize(corpId);
+            eveAccount = authorizeUtil.authorize(characterId);
         } else {
-            eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, corpId);
+            eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, characterId);
         }
-        String accessToken = esiApiService.getAccessToken(corpId, eveAccount.getUserId());
+        // 目标军团ID恒从已授权角色行派生,入参恒为角色ID,不与军团ID复用(消除双重语义)
+        Integer corpId = eveAccount.getCorpId();
+        if (corpId == null) {
+            log.warn("钱包流水军团同步:角色 {} 无关联军团,映射 ESI 403 权限不足", characterId);
+            throw new EsiException(ResultCode.ESI_AUTH_PERMISSION_LOW);
+        }
+        String accessToken = esiApiService.getAccessToken(characterId, eveAccount.getUserId());
 
         List<Integer> failedDivisions = new ArrayList<>();
         for (int division = MIN_CORP_DIVISION; division <= MAX_CORP_DIVISION; division++) {
@@ -204,11 +212,11 @@ public class WalletJournalService {
                 if (!walletJournals.isEmpty()) {
                     walletJournalRepository.saveOrUpdateBatch(walletJournals);
                 }
-                log.info("钱包流水军团同步完成 corpId={} division={} 条数={}", corpId, currentDivision, walletJournals.size());
+                log.info("钱包流水军团同步完成 characterId={} corpId={} division={} 条数={}", characterId, corpId, currentDivision, walletJournals.size());
             } catch (RuntimeException e) {
                 // 失败隔离:记录失败分账与原因,继续下一 division
                 failedDivisions.add(currentDivision);
-                log.warn("钱包流水军团分账同步失败 corpId={} division={}: {}", corpId, currentDivision, e.getMessage());
+                log.warn("钱包流水军团分账同步失败 characterId={} corpId={} division={}: {}", characterId, corpId, currentDivision, e.getMessage());
             }
         }
 
