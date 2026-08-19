@@ -80,6 +80,8 @@ public class IndustryJobService  {
             eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, cid);
         }
         String accessToken = esiApiService.getAccessToken(cid, eveAccount.getUserId());
+        // US2a(014 T016):工业作业随同步者 user_id 落库 —— 角色/军团作业都只对同步者可见的归属依据
+        Long syncUserId = eveAccount.getUserId() == null ? null : eveAccount.getUserId().longValue();
 
         if (isCor != null && isCor) {
             /*
@@ -91,7 +93,7 @@ public class IndustryJobService  {
                     .sequential().filter(Objects::nonNull)
                     .flatMap(Collection::stream)
                     .collect(Collectors.toList());
-            batchSaveAndSetBlueTypeName(industryJobs);
+            batchSaveAndSetBlueTypeName(industryJobs, syncUserId);
         } else {
             /*
              * 获取人物生产线
@@ -99,21 +101,23 @@ public class IndustryJobService  {
             List<IndustryJob> industryJobs = Objects.requireNonNull(esiApiService.queryCharacterIndustryJobs(eveAccount.getCharacterId(), includeCompleted, accessToken).collectList().block())
                     .stream()
                     .collect(Collectors.toList());
-            batchSaveAndSetBlueTypeName(industryJobs);
+            batchSaveAndSetBlueTypeName(industryJobs, syncUserId);
         }
     }
 
     /**
-     * 设置蓝图名称并保存
+     * 设置蓝图名称与同步者 userId 并保存
      * @param industryJobs 生产线对象列表
+     * @param syncUserId   同步者 userId（对齐 user_id BIGINT，可能为 null）
      */
-    private void batchSaveAndSetBlueTypeName(List<IndustryJob> industryJobs) {
+    private void batchSaveAndSetBlueTypeName(List<IndustryJob> industryJobs, Long syncUserId) {
         Map<Integer, String> nameBlueprintByTypeIds = invTypesService.getNameByTypeIds(industryJobs.stream().map(IndustryJob::getBlueprintTypeId).collect(Collectors.toList()));
         Map<Integer, String> nameProductByTypeIds = invTypesService.getNameByTypeIds(industryJobs.stream().map(IndustryJob::getProductTypeId).collect(Collectors.toList()));
         industryJobs.forEach(industryJob -> {
             industryJob.setBlueprintType(nameBlueprintByTypeIds.get(industryJob.getBlueprintTypeId()));
             industryJob.setProductType(nameProductByTypeIds.get(industryJob.getProductTypeId()));
             industryJob.setActivity(IndustryActivityEnum.getValue(industryJob.getActivityId()));
+            industryJob.setUserId(syncUserId);
         });
         if (!industryJobs.isEmpty()) {
             batchInsertOrUpdate(industryJobs);
