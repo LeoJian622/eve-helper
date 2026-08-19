@@ -26,7 +26,8 @@
   </sql>
 
   <!-- 按 (owner_type, owner_id, division) 分页查询钱包交易,时间 `date` 倒序。
-       date 为 MySQL 保留字,必须反引号;分页插件依 IPage 注入 LIMIT。 -->
+       date 为 MySQL 保留字,必须反引号;分页插件依 IPage 注入 LIMIT。
+       US2b 军团维度读私有化:userId=null(ROOT/人物读)不过滤;非 null(军团同步者)按 user_id 过滤。 -->
   <select id="selectPageByOwner" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List"/>
@@ -34,6 +35,7 @@
     where owner_type = #{ownerType}
       and owner_id = #{ownerId}
       and division = #{division}
+    <if test="userId != null">and user_id = #{userId}</if>
     order by `date` desc
   </select>
 

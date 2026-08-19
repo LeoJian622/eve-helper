@@ -81,9 +81,9 @@ public class WalletTransactionApplicationService {
         // 归属校验先于业务逻辑:cid 为用户可控入参,须先确认该人物属于当前用户(防御 IDOR)
         accessGuard.requireOwnership(String.valueOf(cid), "钱包交易");
         IPage<WalletTransaction> page = new Page<>(current, size);
-        // 人物侧 ownerType="character", division=0;ownerId = cid.longValue()
+        // 人物侧 userId 传 null:FR-004 人物维共享,仓储不加 user_id 谓词
         IPage<WalletTransaction> domainPage =
-                walletTransactionRepository.selectPageByOwner(page, "character", cid.longValue(), 0);
+                walletTransactionRepository.selectPageByOwner(page, "character", cid.longValue(), 0, null);
         return PageResultUtil.copy(domainPage, walletTransactionAssembler::toVo);
     }
 
@@ -131,12 +131,13 @@ public class WalletTransactionApplicationService {
         if (current < 1 || size < 1 || size > 1000) {
             throw new EveHelperException("分页参数不合法");
         }
-        // 归属校验先于业务逻辑:corpId 为用户可控入参,须先确认该军团属于当前用户(防御 IDOR)
-        accessGuard.requireOwnership(String.valueOf(corpId), "军团钱包交易");
+        // 军团维度读过滤(US2b):corporationScope 返回当前同步者 userId(ROOT=null 看全量),
+        // 透传仓储按 user_id 过滤,只有同步者私有军团交易可见
+        Long scope = accessGuard.corporationScope("军团钱包交易");
         IPage<WalletTransaction> page = new Page<>(current, size);
         // 军团侧 ownerType="corporation",division=1..7;ownerId = corpId.longValue()
         IPage<WalletTransaction> domainPage =
-                walletTransactionRepository.selectPageByOwner(page, "corporation", corpId.longValue(), division);
+                walletTransactionRepository.selectPageByOwner(page, "corporation", corpId.longValue(), division, scope);
         return PageResultUtil.copy(domainPage, walletTransactionAssembler::toVo);
     }
 

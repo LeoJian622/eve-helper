@@ -53,11 +53,11 @@ public class WalletTransactionRepositoryImpl implements WalletTransactionReposit
 
     @Override
     public IPage<WalletTransaction> selectPageByOwner(IPage<WalletTransaction> page,
-                                                      String ownerType, Long ownerId, Integer division) {
+                                                      String ownerType, Long ownerId, Integer division, Long userId) {
         // PO 分页内聚在本实现内:由领域实体维度 page 派生 PO 物理分页参数(current/size)
         IPage<WalletTransactionPO> poPage = new Page<>(page.getCurrent(), page.getSize());
         IPage<WalletTransactionPO> poResult =
-                walletTransactionMapper.selectPageByOwner(poPage, ownerType, ownerId, division);
+                walletTransactionMapper.selectPageByOwner(poPage, ownerType, ownerId, division, userId);
         List<WalletTransaction> domains = walletTransactionPoConverter.po2Domain(poResult.getRecords());
         // 复用分页插件填充的总数(保留 size/current/total/pages),领域层不暴露 PO
         IPage<WalletTransaction> result =

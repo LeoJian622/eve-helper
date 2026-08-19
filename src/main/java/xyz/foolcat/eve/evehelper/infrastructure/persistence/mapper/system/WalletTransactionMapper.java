@@ -29,7 +29,8 @@ public interface WalletTransactionMapper extends BaseMapper<WalletTransactionPO>
     IPage<WalletTransactionPO> selectPageByOwner(IPage<WalletTransactionPO> page,
                                                  @Param("ownerType") String ownerType,
                                                  @Param("ownerId") Long ownerId,
-                                                 @Param("division") Integer division);
+                                                 @Param("division") Integer division,
+                                                 @Param("userId") Long userId);
 
     /**
      * 依复合唯一键 UNIQUE(owner_type, owner_id, division, transaction_id)

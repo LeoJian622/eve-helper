@@ -147,13 +147,13 @@ class WalletTransactionApplicationServiceTest {
         }
 
         @Test
-        @DisplayName("入参合法:归属校验 → 以 (page, character, cid, 0) 查仓储 → 装配为 VO 分页")
+        @DisplayName("入参合法:归属校验 → 以 (page, character, cid, 0, null) 查仓储 → 装配为 VO 分页")
         void valid_guardsAndQueriesOwnerMapsToVo() {
             WalletTransaction domain = new WalletTransaction();
             WalletTransactionVO vo = new WalletTransactionVO();
             IPage<WalletTransaction> repoPage = new Page<>(1, 20, 1);
             repoPage.setRecords(List.of(domain));
-            when(walletTransactionRepository.selectPageByOwner(any(), eq("character"), eq((long) CID), eq(0)))
+            when(walletTransactionRepository.selectPageByOwner(any(), eq("character"), eq((long) CID), eq(0), eq(null)))
                     .thenReturn(repoPage);
             when(walletTransactionAssembler.toVo(anyList())).thenReturn(List.of(vo));
 
@@ -161,12 +161,69 @@ class WalletTransactionApplicationServiceTest {
 
             // 归属校验先于业务逻辑(防 IDOR)
             verify(accessGuard).requireOwnership("9001", "钱包交易");
-            // 仓储调用契约:ownerType=character / ownerId=cid / division=0
+            // 仓储调用契约:ownerType=character / ownerId=cid / division=0 / userId=null(FR-004 人物维共享)
             verify(walletTransactionRepository)
-                    .selectPageByOwner(any(), eq("character"), eq((long) CID), eq(0));
+                    .selectPageByOwner(any(), eq("character"), eq((long) CID), eq(0), eq(null));
             assertThat(result.getRecords()).hasSize(1);
             assertThat(result.getRecords().get(0)).isSameAs(vo);
             assertThat(result.getTotal()).isEqualTo(1L);
+        }
+    }
+
+    /* ============================ 军团分页(US2b) ============================ */
+
+    @Nested
+    @DisplayName("queryCorporationPage 军团钱包交易分页")
+    class CorpPage {
+
+        private static final int CORP_ID = 98454654;
+
+        @ParameterizedTest
+        @ValueSource(ints = {0, 8, -1})
+        @DisplayName("division 越界(0/8/-1)抛 EveHelperException,不触达军团过滤")
+        void invalidDivision_rejected(int division) {
+            assertThatThrownBy(() -> applicationService.queryCorporationPage(CORP_ID, division, 1, 20))
+                    .isInstanceOf(EveHelperException.class)
+                    .hasMessageContaining("军团分账参数不合法");
+            verifyNoInteractions(accessGuard);
+        }
+
+        @Test
+        @DisplayName("入参合法:corporationScope 取 scope → 以 (page, corporation, corpId, division, scope) 查仓储")
+        void valid_corporationScopePassesScope() {
+            WalletTransaction domain = new WalletTransaction();
+            WalletTransactionVO vo = new WalletTransactionVO();
+            IPage<WalletTransaction> repoPage = new Page<>(1, 20, 1);
+            repoPage.setRecords(List.of(domain));
+            when(accessGuard.corporationScope("军团钱包交易")).thenReturn(999L);
+            when(walletTransactionRepository.selectPageByOwner(any(), eq("corporation"), eq((long) CORP_ID), eq(2), eq(999L)))
+                    .thenReturn(repoPage);
+            when(walletTransactionAssembler.toVo(anyList())).thenReturn(List.of(vo));
+
+            PageResult<WalletTransactionVO> result = applicationService.queryCorporationPage(CORP_ID, 2, 1, 20);
+
+            // US2b:军团维度读改为 corporationScope 取 scope 透传仓储
+            verify(accessGuard).corporationScope("军团钱包交易");
+            verify(walletTransactionRepository)
+                    .selectPageByOwner(any(), eq("corporation"), eq((long) CORP_ID), eq(2), eq(999L));
+            assertThat(result.getRecords()).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("ROOT(scope null):以 (page, corporation, corpId, division, null) 查仓储不过滤")
+        void root_scopeNull_passesNullUserId() {
+            WalletTransactionVO vo = new WalletTransactionVO();
+            IPage<WalletTransaction> repoPage = new Page<>(1, 20, 0);
+            repoPage.setRecords(List.of());
+            when(accessGuard.corporationScope("军团钱包交易")).thenReturn(null);
+            when(walletTransactionRepository.selectPageByOwner(any(), eq("corporation"), eq((long) CORP_ID), eq(2), eq(null)))
+                    .thenReturn(repoPage);
+            when(walletTransactionAssembler.toVo(anyList())).thenReturn(List.of(vo));
+
+            applicationService.queryCorporationPage(CORP_ID, 2, 1, 20);
+
+            verify(walletTransactionRepository)
+                    .selectPageByOwner(any(), eq("corporation"), eq((long) CORP_ID), eq(2), eq(null));
         }
     }
 }

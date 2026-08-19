@@ -74,7 +74,7 @@ class WalletTransactionRepositoryImplTest {
     }
 
     @Test
-    @DisplayName("selectPageByOwner 按 ownerType/ownerId/division 过滤并映射回领域,total 保留")
+    @DisplayName("selectPageByOwner 按 ownerType/ownerId/division 过滤并映射回领域,total 保留(userId 透传)")
     void selectPageByOwner_filtersAndMaps_preservesTotal() {
         IPage<WalletTransaction> pageIn = new Page<>(1, 10);
 
@@ -87,7 +87,7 @@ class WalletTransactionRepositoryImplTest {
         IPage<WalletTransactionPO> poPage = new Page<>(1, 10, 42);
         poPage.setRecords(List.of(po));
 
-        when(walletTransactionMapper.selectPageByOwner(any(), eq("character"), eq(100L), eq(0)))
+        when(walletTransactionMapper.selectPageByOwner(any(), eq("character"), eq(100L), eq(0), eq(null)))
                 .thenReturn(poPage);
         // 仓储实现调用的是 List 重载 po2Domain(List),此处 stub 该重载返回映射后的领域集合
         when(walletTransactionPoConverter.po2Domain(anyList())).thenAnswer(inv -> {
@@ -101,9 +101,9 @@ class WalletTransactionRepositoryImplTest {
         });
 
         IPage<WalletTransaction> result =
-                walletTransactionRepository.selectPageByOwner(pageIn, "character", 100L, 0);
+                walletTransactionRepository.selectPageByOwner(pageIn, "character", 100L, 0, null);
 
-        verify(walletTransactionMapper).selectPageByOwner(any(), eq("character"), eq(100L), eq(0));
+        verify(walletTransactionMapper).selectPageByOwner(any(), eq("character"), eq(100L), eq(0), eq(null));
         assertThat(result.getTotal()).isEqualTo(42L);
         assertThat(result.getRecords()).hasSize(1);
         assertThat(result.getRecords().get(0).getTransactionId()).isEqualTo(9L);

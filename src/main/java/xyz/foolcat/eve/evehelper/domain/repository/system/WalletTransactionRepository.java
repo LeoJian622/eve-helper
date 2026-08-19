@@ -31,8 +31,9 @@ public interface WalletTransactionRepository {
      * @param ownerType 所有者类型(character/corporation)
      * @param ownerId   所有者ID(Long,与库列 owner_id BIGINT 对齐)
      * @param division  钱包 division(人物=0,军团 1..7)
+     * @param userId    军团维读过滤(US2b):null=ROOT/人物读不过滤;非 null(军团同步者)按 user_id 过滤
      * @return 领域实体分页结果(total 由分页插件填充)
      */
     IPage<WalletTransaction> selectPageByOwner(IPage<WalletTransaction> page,
-                                               String ownerType, Long ownerId, Integer division);
+                                               String ownerType, Long ownerId, Integer division, Long userId);
 }
