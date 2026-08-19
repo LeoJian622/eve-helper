@@ -170,7 +170,8 @@ class StructureQueryApplicationServiceTest {
     @Test
     @DisplayName("建筑不存在抛越权异常(防枚举 L1,与归属不匹配同响应)")
     void queryDetailById_notFound_throws() {
-        when(structureRepository.selectDetailById(STRUCTURE_ID)).thenReturn(null);
+        when(accessGuard.corporationScope("建筑")).thenReturn(SCOPE);
+        when(structureRepository.selectDetailById(STRUCTURE_ID, SCOPE)).thenReturn(null);
 
         assertThrows(EveHelperException.class, () -> service.queryDetailById(CORP_ID, STRUCTURE_ID));
         verify(structureAssembler, never()).dto2Vo(any(StructureDetailDTO.class));
@@ -181,7 +182,8 @@ class StructureQueryApplicationServiceTest {
     void queryDetailById_corpMismatch_throws() {
         StructureDetailDTO dto = new StructureDetailDTO();
         dto.setCorporationId(99999999L);
-        when(structureRepository.selectDetailById(STRUCTURE_ID)).thenReturn(dto);
+        when(accessGuard.corporationScope("建筑")).thenReturn(SCOPE);
+        when(structureRepository.selectDetailById(STRUCTURE_ID, SCOPE)).thenReturn(dto);
 
         assertThrows(EveHelperException.class, () -> service.queryDetailById(CORP_ID, STRUCTURE_ID));
     }
@@ -193,7 +195,8 @@ class StructureQueryApplicationServiceTest {
         dto.setCorporationId(CORP_ID_NUM);
         dto.setServicesJson("[{\"name\":\"克隆\",\"state\":\"online\"}]");
         StructureDetailVO vo = new StructureDetailVO();
-        when(structureRepository.selectDetailById(STRUCTURE_ID)).thenReturn(dto);
+        when(accessGuard.corporationScope("建筑")).thenReturn(SCOPE);
+        when(structureRepository.selectDetailById(STRUCTURE_ID, SCOPE)).thenReturn(dto);
         when(structureAssembler.dto2Vo(any(StructureDetailDTO.class))).thenReturn(vo);
 
         StructureDetailVO result = service.queryDetailById(CORP_ID, STRUCTURE_ID);
@@ -209,7 +212,8 @@ class StructureQueryApplicationServiceTest {
         dto.setCorporationId(CORP_ID_NUM);
         dto.setServicesJson("{corrupt");
         StructureDetailVO vo = new StructureDetailVO();
-        when(structureRepository.selectDetailById(STRUCTURE_ID)).thenReturn(dto);
+        when(accessGuard.corporationScope("建筑")).thenReturn(SCOPE);
+        when(structureRepository.selectDetailById(STRUCTURE_ID, SCOPE)).thenReturn(dto);
         when(structureAssembler.dto2Vo(any(StructureDetailDTO.class))).thenReturn(vo);
 
         StructureDetailVO result = service.queryDetailById(CORP_ID, STRUCTURE_ID);
@@ -224,7 +228,8 @@ class StructureQueryApplicationServiceTest {
         dto.setCorporationId(CORP_ID_NUM);
         dto.setServicesJson("");
         StructureDetailVO vo = new StructureDetailVO();
-        when(structureRepository.selectDetailById(STRUCTURE_ID)).thenReturn(dto);
+        when(accessGuard.corporationScope("建筑")).thenReturn(SCOPE);
+        when(structureRepository.selectDetailById(STRUCTURE_ID, SCOPE)).thenReturn(dto);
         when(structureAssembler.dto2Vo(any(StructureDetailDTO.class))).thenReturn(vo);
 
         StructureDetailVO result = service.queryDetailById(CORP_ID, STRUCTURE_ID);
@@ -237,7 +242,8 @@ class StructureQueryApplicationServiceTest {
     @Test
     @DisplayName("服务状态建筑不存在抛越权异常(防枚举 L1,与归属不匹配同响应)")
     void queryServices_notFound_throws() {
-        when(structureRepository.selectServicesById(STRUCTURE_ID)).thenReturn(null);
+        when(accessGuard.corporationScope("建筑")).thenReturn(SCOPE);
+        when(structureRepository.selectServicesById(STRUCTURE_ID, SCOPE)).thenReturn(null);
 
         assertThrows(EveHelperException.class, () -> service.queryServices(CORP_ID, STRUCTURE_ID));
     }
@@ -247,7 +253,8 @@ class StructureQueryApplicationServiceTest {
     void queryServices_corpMismatch_throws() {
         StructureServiceDTO dto = new StructureServiceDTO();
         dto.setCorporationId(99999999L);
-        when(structureRepository.selectServicesById(STRUCTURE_ID)).thenReturn(dto);
+        when(accessGuard.corporationScope("建筑")).thenReturn(SCOPE);
+        when(structureRepository.selectServicesById(STRUCTURE_ID, SCOPE)).thenReturn(dto);
 
         assertThrows(EveHelperException.class, () -> service.queryServices(CORP_ID, STRUCTURE_ID));
     }
@@ -259,7 +266,8 @@ class StructureQueryApplicationServiceTest {
         dto.setCorporationId(CORP_ID_NUM);
         dto.setServicesJson("[{\"name\":\"市场\",\"state\":\"online\"}]");
         StructureServiceVO vo = new StructureServiceVO();
-        when(structureRepository.selectServicesById(STRUCTURE_ID)).thenReturn(dto);
+        when(accessGuard.corporationScope("建筑")).thenReturn(SCOPE);
+        when(structureRepository.selectServicesById(STRUCTURE_ID, SCOPE)).thenReturn(dto);
         when(structureAssembler.dto2Vo(any(StructureServiceDTO.class))).thenReturn(vo);
 
         StructureServiceVO result = service.queryServices(CORP_ID, STRUCTURE_ID);

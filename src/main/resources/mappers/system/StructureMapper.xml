@@ -501,6 +501,10 @@
       left join inv_types it on s.type_id = it.type_id
       left join universe_name un on s.system_id = un.id and un.category = 'solar_system'
     where s.structure_id = #{structureId}
+      <!-- US2b-R1 军团维度读私有化:单建筑读同样按 user_id 过滤,看全量需 ROOT(scope null) -->
+      <if test="userId != null">
+        and s.user_id = #{userId}
+      </if>
   </select>
 
   <select id="selectFuelExpiresListWithNames" resultType="xyz.foolcat.eve.evehelper.domain.model.vo.StructureFuelDTO">
@@ -531,6 +535,10 @@
       s.services as servicesJson
     from `structure` s
     where s.structure_id = #{structureId}
+      <!-- US2b-R1 军团维度读私有化:单建筑服务同样按 user_id 过滤,看全量需 ROOT(scope null) -->
+      <if test="userId != null">
+        and s.user_id = #{userId}
+      </if>
   </select>
 
   <select id="selectSummary" resultType="xyz.foolcat.eve.evehelper.domain.model.vo.StructureSummaryDTO">

@@ -95,10 +95,10 @@ public class StructureQueryApplicationService {
      */
     public StructureDetailVO queryDetailById(String corpId, Long structureId) {
         String corporationId = requireCorporationId(corpId);
-        // 军团维读过滤(US2b):仍强制 ROOT-or-authenticated 门(未认证抛异常);WHERE 按 structure_id + 应用层 corp 归属复核
-        // (selectDetailById 无 corporation_id 过滤,不引入 user_id 谓词,见 brief T020)
-        accessGuard.corporationScope("建筑");
-        StructureDetailDTO dto = structureRepository.selectDetailById(structureId);
+        // 军团维度读过滤(US2b-R1):scope 透传仓储按 user_id 过滤(ROOT null 全量);
+        // 应用层 corp 归属复核保留为第二道防线(FR-011 防跨军团)
+        Long scope = accessGuard.corporationScope("建筑");
+        StructureDetailDTO dto = structureRepository.selectDetailById(structureId, scope);
         // 防枚举(L1):建筑不存在与无权访问返回同一错误,避免攻击者枚举建筑 ID
         if (dto == null || !corporationId.equals(String.valueOf(dto.getCorporationId()))) {
             throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);
@@ -148,10 +148,10 @@ public class StructureQueryApplicationService {
      */
     public StructureServiceVO queryServices(String corpId, Long structureId) {
         String corporationId = requireCorporationId(corpId);
-        // 军团维读过滤(US2b):仍强制 ROOT-or-authenticated 门(未认证抛异常);WHERE 按 structure_id + 应用层 corp 归属复核
-        // (selectServicesById 无 corporation_id 过滤,不引入 user_id 谓词,见 brief T020)
-        accessGuard.corporationScope("建筑");
-        StructureServiceDTO dto = structureRepository.selectServicesById(structureId);
+        // 军团维度读过滤(US2b-R1):scope 透传仓储按 user_id 过滤(ROOT null 全量);
+        // 应用层 corp 归属复核保留为第二道防线(FR-011 防跨军团)
+        Long scope = accessGuard.corporationScope("建筑");
+        StructureServiceDTO dto = structureRepository.selectServicesById(structureId, scope);
         // 防枚举(L1):建筑不存在与无权访问返回同一错误,避免攻击者枚举建筑 ID
         if (dto == null || !corporationId.equals(String.valueOf(dto.getCorporationId()))) {
             throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);

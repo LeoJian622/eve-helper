@@ -49,7 +49,8 @@ public interface StructureMapper extends BaseMapper<StructurePO> {
     /**
      * 查询单建筑详情,关联 inv_types(类型名)与 universe_name(星系名)
      */
-    StructureDetailDTO selectDetailById(@Param("structureId") Long structureId);
+    StructureDetailDTO selectDetailById(@Param("structureId") Long structureId,
+                                            @Param("userId") Long userId);
 
     /**
      * 查询指定预警时长内燃料耗尽的建筑,关联类型名/星系名,返回剩余时长
@@ -62,7 +63,8 @@ public interface StructureMapper extends BaseMapper<StructurePO> {
     /**
      * 查询单建筑服务状态(仅 structureId/corporationId/name/services)
      */
-    StructureServiceDTO selectServicesById(@Param("structureId") Long structureId);
+    StructureServiceDTO selectServicesById(@Param("structureId") Long structureId,
+                                            @Param("userId") Long userId);
 
     /**
      * 统计概览:按状态分组聚合(GROUP BY state)

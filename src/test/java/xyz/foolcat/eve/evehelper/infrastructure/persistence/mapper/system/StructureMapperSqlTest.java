@@ -104,4 +104,32 @@ class StructureMapperSqlTest {
         user.put("userId", 5L);
         assertTrue(sql("selectTimers", user).contains("and s.user_id = ?"));
     }
+
+    @Test
+    @DisplayName("单建筑详情 selectDetailById(US2b-R1):userId=null(ROOT)不拼接,非 null 拼接 s.user_id")
+    void detailById_userIdPredicate() throws Exception {
+        Map<String, Object> root = new HashMap<>();
+        root.put("structureId", 100L);
+        root.put("userId", null);
+        assertFalse(sql("selectDetailById", root).contains("s.user_id"), "ROOT(scope null)不得过滤 user_id");
+
+        Map<String, Object> user = new HashMap<>();
+        user.put("structureId", 100L);
+        user.put("userId", 5L);
+        assertTrue(sql("selectDetailById", user).contains("and s.user_id = ?"), "同步者须按 user_id 过滤");
+    }
+
+    @Test
+    @DisplayName("单建筑服务 selectServicesById(US2b-R1):userId=null(ROOT)不拼接,非 null 拼接 s.user_id")
+    void servicesById_userIdPredicate() throws Exception {
+        Map<String, Object> root = new HashMap<>();
+        root.put("structureId", 100L);
+        root.put("userId", null);
+        assertFalse(sql("selectServicesById", root).contains("s.user_id"), "ROOT(scope null)不得过滤 user_id");
+
+        Map<String, Object> user = new HashMap<>();
+        user.put("structureId", 100L);
+        user.put("userId", 5L);
+        assertTrue(sql("selectServicesById", user).contains("and s.user_id = ?"), "同步者须按 user_id 过滤");
+    }
 }

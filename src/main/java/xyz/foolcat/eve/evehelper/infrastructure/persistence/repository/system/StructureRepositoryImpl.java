@@ -107,8 +107,8 @@ public class StructureRepositoryImpl implements StructureRepository {
     }
 
     @Override
-    public StructureDetailDTO selectDetailById(Long structureId) {
-        return structureMapper.selectDetailById(structureId);
+    public StructureDetailDTO selectDetailById(Long structureId, Long userId) {
+        return structureMapper.selectDetailById(structureId, userId);
     }
 
     @Override
@@ -117,8 +117,8 @@ public class StructureRepositoryImpl implements StructureRepository {
     }
 
     @Override
-    public StructureServiceDTO selectServicesById(Long structureId) {
-        return structureMapper.selectServicesById(structureId);
+    public StructureServiceDTO selectServicesById(Long structureId, Long userId) {
+        return structureMapper.selectServicesById(structureId, userId);
     }
 
     @Override

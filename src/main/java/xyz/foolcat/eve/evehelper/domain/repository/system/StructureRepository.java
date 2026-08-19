@@ -56,9 +56,10 @@ public interface StructureRepository {
      * 查询单建筑详情,关联解析类型名与星系名(只读)
      *
      * @param structureId 建筑ID
+     * @param userId      军团维读过滤(US2b-R1):null=ROOT 不过滤,非 null 按 user_id 过滤
      * @return 建筑详情(含 services 原始 JSON),不存在返回 null
      */
-    StructureDetailDTO selectDetailById(Long structureId);
+    StructureDetailDTO selectDetailById(Long structureId, Long userId);
 
     /**
      * 查询指定预警时长内燃料耗尽的建筑,关联解析类型名与星系名,返回剩余时长(只读)
@@ -74,9 +75,10 @@ public interface StructureRepository {
      * 查询单建筑服务状态(仅 structureId/name/services,只读)
      *
      * @param structureId 建筑ID
+     * @param userId      军团维读过滤(US2b-R1):null=ROOT 不过滤,非 null 按 user_id 过滤
      * @return 建筑服务状态(含 services 原始 JSON),不存在返回 null
      */
-    StructureServiceDTO selectServicesById(Long structureId);
+    StructureServiceDTO selectServicesById(Long structureId, Long userId);
 
     /**
      * 统计概览:按状态分组聚合,返回各状态计数与缺油小计(只读,单 SQL SC-003)
