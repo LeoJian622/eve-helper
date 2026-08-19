@@ -43,16 +43,17 @@
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletTransactionPO">
     <!--@mbg.generated-->
     insert into wallet_transaction
-    (owner_type, owner_id, division, transaction_id, `date`, type_id, quantity, unit_price,
+    (owner_type, owner_id, division, user_id, transaction_id, `date`, type_id, quantity, unit_price,
       client_id, location_id, is_buy, is_personal, journal_ref_id)
     values
       (#{ownerType,jdbcType=VARCHAR}, #{ownerId,jdbcType=BIGINT}, #{division,jdbcType=INTEGER},
-        #{transactionId,jdbcType=BIGINT}, #{date,jdbcType=TIMESTAMP},
+        #{userId,jdbcType=BIGINT}, #{transactionId,jdbcType=BIGINT}, #{date,jdbcType=TIMESTAMP},
         #{typeId,jdbcType=INTEGER}, #{quantity,jdbcType=INTEGER}, #{unitPrice,jdbcType=DOUBLE},
         #{clientId,jdbcType=INTEGER}, #{locationId,jdbcType=BIGINT},
         #{isBuy,jdbcType=BIT}, #{isPersonal,jdbcType=BIT}, #{journalRefId,jdbcType=BIGINT})
     on duplicate key update
       id = LAST_INSERT_ID(id),
+      user_id = #{userId,jdbcType=BIGINT},
       `date` = #{date,jdbcType=TIMESTAMP},
       type_id = #{typeId,jdbcType=INTEGER},
       quantity = #{quantity,jdbcType=INTEGER},
@@ -69,12 +70,13 @@
        仓储层按 BATCH_SIZE(500) 分批调用,防单条 SQL 超 max_allowed_packet。 -->
   <insert id="insertOrUpdateBatch">
     insert into wallet_transaction
-    (owner_type, owner_id, division, transaction_id, `date`, type_id, quantity, unit_price,
+    (owner_type, owner_id, division, user_id, transaction_id, `date`, type_id, quantity, unit_price,
       client_id, location_id, is_buy, is_personal, journal_ref_id)
     values
     <foreach collection="list" item="item" separator=",">
       (#{item.ownerType,jdbcType=VARCHAR}, #{item.ownerId,jdbcType=BIGINT},
-       #{item.division,jdbcType=INTEGER}, #{item.transactionId,jdbcType=BIGINT},
+       #{item.division,jdbcType=INTEGER}, #{item.userId,jdbcType=BIGINT},
+       #{item.transactionId,jdbcType=BIGINT},
        #{item.date,jdbcType=TIMESTAMP}, #{item.typeId,jdbcType=INTEGER},
        #{item.quantity,jdbcType=INTEGER}, #{item.unitPrice,jdbcType=DOUBLE},
        #{item.clientId,jdbcType=INTEGER}, #{item.locationId,jdbcType=BIGINT},
@@ -82,6 +84,7 @@
        #{item.journalRefId,jdbcType=BIGINT})
     </foreach>
     on duplicate key update
+      user_id = VALUES(user_id),
       `date` = VALUES(`date`),
       type_id = VALUES(type_id),
       quantity = VALUES(quantity),

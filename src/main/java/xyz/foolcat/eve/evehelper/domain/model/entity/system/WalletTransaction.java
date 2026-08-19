@@ -41,6 +41,11 @@ public class WalletTransaction implements Serializable {
     private Integer division;
 
     /**
+     * 同步者系统用户ID
+     */
+    private Long userId;
+
+    /**
      * 交易 ID
      */
     private Long transactionId;

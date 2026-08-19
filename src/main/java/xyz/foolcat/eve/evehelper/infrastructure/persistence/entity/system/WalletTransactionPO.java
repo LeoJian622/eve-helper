@@ -35,6 +35,9 @@ public class WalletTransactionPO implements Serializable {
     @TableField(value = "division")
     @Schema(description = "钱包 division")
     private Integer division;
+    @TableField(value = "user_id")
+    @Schema(description = "同步者系统用户ID")
+    private Long userId;
     @TableField(value = "transaction_id")
     @Schema(description = "交易ID")
     private Long transactionId;

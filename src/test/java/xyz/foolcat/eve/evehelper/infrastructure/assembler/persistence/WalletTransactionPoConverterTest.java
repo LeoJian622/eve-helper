@@ -103,4 +103,20 @@ class WalletTransactionPoConverterTest {
         List<WalletTransaction> back = converter.po2Domain(pos);
         assertThat(back).extracting(WalletTransaction::getTransactionId).containsExactly(1L, 2L);
     }
+
+    @Test
+    @DisplayName("domain2Po + po2Domain 往返后 userId 保持")
+    void roundTrip_preservesUserId() {
+        WalletTransaction domain = new WalletTransaction();
+        domain.setOwnerType("character");
+        domain.setOwnerId(2112832425L);
+        domain.setDivision(0);
+        domain.setUserId(35L);
+
+        WalletTransactionPO po = converter.domain2Po(domain);
+        assertThat(po.getUserId()).isEqualTo(35L);
+
+        WalletTransaction back = converter.po2Domain(po);
+        assertThat(back.getUserId()).isEqualTo(35L);
+    }
 }
