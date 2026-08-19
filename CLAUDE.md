@@ -118,6 +118,6 @@ mvn package -DskipTests
 - 业务代码变更须走统一 Spec-First 流程(不分级、无例外);技术栈本身不可变更
 
 <!-- SPECKIT START -->
-当前 feature: `012-wallet-overview`(钱包总览:按人物/军团聚合的汇总数据接口,只读)
-实现计划: [specs/012-wallet-overview/plan.md](specs/012-wallet-overview/plan.md)
+当前 feature: `014-esi-data-user-binding`(ESI 数据 × 系统用户强关联:8 表 user_id 归属 + 军团同步者私有读 + 联盟维度机制 + 存量迁移)
+实现计划: [specs/014-esi-data-user-binding/plan.md](specs/014-esi-data-user-binding/plan.md)
 <!-- SPECKIT END -->
