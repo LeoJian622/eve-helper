@@ -301,6 +301,30 @@ class WalletOverviewApplicationServiceTest {
             assertThat(vo.divisions()).isNull();
             assertThat(vo.currentBalance()).isEqualTo(50.0);
         }
+
+        @Test
+        @DisplayName("军团单分账边界:division=1 与 7 合法不抛,三聚合带对应 division 过滤,divisions=null")
+        void singleDivision_boundaries_div1And7Legal() {
+            for (int div : new int[]{1, 7}) {
+                WalletOverviewAggregate agg = new WalletOverviewAggregate(10.0, 5.0, 0.0, 5.0, 1L, null);
+                when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), eq(div), isNull(), isNull()))
+                        .thenReturn(agg);
+                when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any()))
+                        .thenReturn(List.of());
+                when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any()))
+                        .thenReturn(List.of());
+
+                WalletOverviewVO vo = applicationService.getCorporationOverview(CORP, div, null, null, null);
+
+                verify(walletJournalRepository)
+                        .selectOverviewAggregate(eq((long) CORP), eq(div), isNull(), isNull());
+                // 单分账 divisions 恒 null,绝不查分账分布
+                verify(walletJournalRepository, never()).selectOverviewDivisionBalances(any());
+                verify(walletJournalRepository, never()).selectOverviewDivisionFlow(any(), any(), any());
+                assertThat(vo.divisions()).isNull();
+                assertThat(vo.currentBalance()).isEqualTo(10.0);
+            }
+        }
     }
 
     /* ============================ VO 组装 ============================ */

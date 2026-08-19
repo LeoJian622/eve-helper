@@ -264,6 +264,38 @@ class WalletOverviewControllerIT {
     }
 
     @Test
+    @DisplayName("军团单分账边界:division=1 与 7 合法,仅含该分账数据(其它分账不入),divisions 不出现")
+    void corpOverview_singleDivision_boundary_div1And7Legal() throws Exception {
+        loginAsAdmin();
+        // div1、div7 有数据,div3、div5 为干扰数据(division=1/7 查询不得包含)
+        insertCorpJournal(501L, 1, 1000.0, 1000.0, LocalDate.of(2026, 1, 2), "bounty_prizes");
+        insertCorpJournal(502L, 3, 700.0, 700.0, LocalDate.of(2026, 1, 3), "market_sale");
+        insertCorpJournal(503L, 7, 300.0, 300.0, LocalDate.of(2026, 1, 4), "market_sale");
+        insertCorpJournal(504L, 5, 900.0, 900.0, LocalDate.of(2026, 1, 5), "market_sale");
+
+        // division=1:仅含 div1 数据(div3/div5/div7 不入)
+        mockMvc.perform(get("/wallet/overview/corp/" + CORP)
+                        .param("division", "1")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.journalCount").value(1))
+                .andExpect(jsonPath("$.data.totalIncome").value(1000.0))
+                .andExpect(jsonPath("$.data.totalExpense").value(0.0))
+                .andExpect(jsonPath("$.data.currentBalance").value(1000.0))
+                .andExpect(jsonPath("$.data.divisions").doesNotExist());
+
+        // division=7:仅含 div7 数据
+        mockMvc.perform(get("/wallet/overview/corp/" + CORP)
+                        .param("division", "7")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.journalCount").value(1))
+                .andExpect(jsonPath("$.data.totalIncome").value(300.0))
+                .andExpect(jsonPath("$.data.currentBalance").value(300.0))
+                .andExpect(jsonPath("$.data.divisions").doesNotExist());
+    }
+
+    @Test
     @DisplayName("军团 division=0/8 -> 400(PARAM_ERROR)")
     void corpOverview_invalidDivision_badRequest() throws Exception {
         loginAsAdmin();
