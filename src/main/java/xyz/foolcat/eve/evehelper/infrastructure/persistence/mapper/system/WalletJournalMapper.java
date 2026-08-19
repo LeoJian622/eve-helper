@@ -42,9 +42,10 @@ public interface WalletJournalMapper extends BaseMapper<WalletJournalPO> {
      * @param page     MyBatis Plus 分页参数
      * @param ownerId  所有者ID
      * @param division 分账
+     * @param userId   军团维读过滤(US2b):null=ROOT 不过滤;非 null 按 user_id 过滤;人物读传 null
      * @return 分页结果
      */
-    IPage<WalletJournalPO> selectPageByOwnerAndDivision(IPage<WalletJournalPO> page, @Param("ownerId") Long ownerId, @Param("division") Integer division);
+    IPage<WalletJournalPO> selectPageByOwnerAndDivision(IPage<WalletJournalPO> page, @Param("ownerId") Long ownerId, @Param("division") Integer division, @Param("userId") Long userId);
 
     void insertOrUpdateBatch(@Param("list") List<WalletJournalPO> list);
 
@@ -58,6 +59,7 @@ public interface WalletJournalMapper extends BaseMapper<WalletJournalPO> {
      * @return 标量聚合
      */
     WalletOverviewAggregatePO selectOverviewAggregate(@Param("ownerId") Long ownerId, @Param("division") Integer division,
+                                                      @Param("userId") Long userId,
                                                       @Param("start") Date start, @Param("end") Date end);
 
     /**
@@ -70,6 +72,7 @@ public interface WalletJournalMapper extends BaseMapper<WalletJournalPO> {
      * @return 类型汇总列表
      */
     List<WalletOverviewCategoryPO> selectOverviewCategories(@Param("ownerId") Long ownerId, @Param("division") Integer division,
+                                                            @Param("userId") Long userId,
                                                             @Param("start") Date start, @Param("end") Date end);
 
     /**
@@ -83,6 +86,7 @@ public interface WalletJournalMapper extends BaseMapper<WalletJournalPO> {
      * @return 趋势点列表
      */
     List<WalletOverviewTrendPO> selectOverviewTrend(@Param("ownerId") Long ownerId, @Param("division") Integer division,
+                                                    @Param("userId") Long userId,
                                                     @Param("start") Date start, @Param("end") Date end,
                                                     @Param("granularity") String granularity);
 
@@ -92,7 +96,8 @@ public interface WalletJournalMapper extends BaseMapper<WalletJournalPO> {
      * @param ownerId 所有者ID(军团)
      * @return 各 division 最新余额(无数据的分账不返回,交由服务层补零)
      */
-    List<WalletOverviewDivisionPO> selectOverviewDivisionBalances(@Param("ownerId") Long ownerId);
+    List<WalletOverviewDivisionPO> selectOverviewDivisionBalances(@Param("ownerId") Long ownerId,
+                                                                  @Param("userId") Long userId);
 
     /**
      * 军团全量:按 division 汇总区间收支(时间过滤作用于此)。
@@ -103,5 +108,6 @@ public interface WalletJournalMapper extends BaseMapper<WalletJournalPO> {
      * @return 各 division 区间收入/支出(无数据分账不返回)
      */
     List<WalletOverviewDivisionPO> selectOverviewDivisionFlow(@Param("ownerId") Long ownerId,
+                                                              @Param("userId") Long userId,
                                                               @Param("start") Date start, @Param("end") Date end);
 }

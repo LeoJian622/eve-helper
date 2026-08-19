@@ -140,8 +140,9 @@ class WalletOverviewApplicationServiceTest {
 
             applicationService.getCharacterOverview(CID, "last7d", null, null);
 
+            // 人物读:userId 传 null(FR-004 人物维共享,不加 user_id 谓词)
             verify(walletJournalRepository)
-                    .selectOverviewAggregate(eq((long) CID), isNull(), startCaptor.capture(), endCaptor.capture());
+                    .selectOverviewAggregate(eq((long) CID), isNull(), isNull(), startCaptor.capture(), endCaptor.capture());
             assertThat(startCaptor.getValue()).isNotNull();
             assertThat(endCaptor.getValue()).isNotNull();
             assertThat(startCaptor.getValue().getTime())
@@ -157,7 +158,7 @@ class WalletOverviewApplicationServiceTest {
             applicationService.getCharacterOverview(CID, null, null, null);
 
             verify(walletJournalRepository)
-                    .selectOverviewAggregate(eq((long) CID), isNull(), isNull(), isNull());
+                    .selectOverviewAggregate(eq((long) CID), isNull(), isNull(), isNull(), isNull());
         }
     }
 
@@ -173,7 +174,7 @@ class WalletOverviewApplicationServiceTest {
             applicationService.getCharacterOverview(CID, null, null, null);
 
             verify(walletJournalRepository).selectOverviewTrend(
-                    eq((long) CID), isNull(), isNull(), isNull(), eq("%Y-%m"));
+                    eq((long) CID), isNull(), isNull(), isNull(), isNull(), eq("%Y-%m"));
         }
 
         @Test
@@ -185,7 +186,7 @@ class WalletOverviewApplicationServiceTest {
             applicationService.getCharacterOverview(CID, null, start, end);
 
             verify(walletJournalRepository).selectOverviewTrend(
-                    eq((long) CID), isNull(), eq(start), eq(end), eq("%Y-%m-%d"));
+                    eq((long) CID), isNull(), isNull(), eq(start), eq(end), eq("%Y-%m-%d"));
         }
 
         @Test
@@ -197,7 +198,7 @@ class WalletOverviewApplicationServiceTest {
             applicationService.getCharacterOverview(CID, null, start, end);
 
             verify(walletJournalRepository).selectOverviewTrend(
-                    eq((long) CID), isNull(), eq(start), eq(end), eq("%Y-%m"));
+                    eq((long) CID), isNull(), isNull(), eq(start), eq(end), eq("%Y-%m"));
         }
     }
 
@@ -232,32 +233,35 @@ class WalletOverviewApplicationServiceTest {
         }
 
         @Test
-        @DisplayName("合法军团入参后调用 requireOwnership(corpId 字符串, 军团钱包总览)")
-        void validCorpInput_callsRequireOwnership() {
-            when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), isNull(), isNull(), isNull()))
+        @DisplayName("合法军团入参后调用 corporationScope 取 scope,并透传仓储")
+        void validCorpInput_callsCorporationScope() {
+            when(accessGuard.corporationScope("军团钱包总览")).thenReturn(777L);
+            when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), isNull(), eq(777L), isNull(), isNull()))
                     .thenReturn(new WalletOverviewAggregate(0.0, 0.0, 0.0, 0.0, 0L, null));
-            when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any())).thenReturn(List.of());
-            when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any())).thenReturn(List.of());
-            when(walletJournalRepository.selectOverviewDivisionBalances((long) CORP)).thenReturn(List.of());
-            when(walletJournalRepository.selectOverviewDivisionFlow(eq((long) CORP), isNull(), isNull())).thenReturn(List.of());
+            when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any(), any())).thenReturn(List.of());
+            when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any(), any())).thenReturn(List.of());
+            when(walletJournalRepository.selectOverviewDivisionBalances((long) CORP, 777L)).thenReturn(List.of());
+            when(walletJournalRepository.selectOverviewDivisionFlow(eq((long) CORP), eq(777L), isNull(), isNull())).thenReturn(List.of());
 
             applicationService.getCorporationOverview(CORP, null, null, null, null);
 
-            verify(accessGuard).requireOwnership(String.valueOf(CORP), "军团钱包总览");
+            // US2b:军团维度读改为 corporationScope 取 scope 透传仓储,不再 requireOwnership
+            verify(accessGuard).corporationScope("军团钱包总览");
         }
 
         @Test
         @DisplayName("军团全量:分账 1..7 补零,收支/余额按 division 归并,currentBalance=各分账余额和")
         void fullOverview_divisionsMergedAndBalanceSummed() {
+            when(accessGuard.corporationScope("军团钱包总览")).thenReturn(777L);
             WalletOverviewAggregate agg = new WalletOverviewAggregate(999.0, 300.0, 100.0, 200.0, 5L, OffsetDateTime.now());
-            when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), isNull(), isNull(), isNull())).thenReturn(agg);
-            when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any())).thenReturn(List.of());
-            when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any())).thenReturn(List.of());
-            when(walletJournalRepository.selectOverviewDivisionBalances((long) CORP))
+            when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), isNull(), eq(777L), isNull(), isNull())).thenReturn(agg);
+            when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any(), any())).thenReturn(List.of());
+            when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any(), any())).thenReturn(List.of());
+            when(walletJournalRepository.selectOverviewDivisionBalances((long) CORP, 777L))
                     .thenReturn(List.of(
                             new WalletOverviewVO.DivisionSummary(1, 100.0, 0.0, 0.0),
                             new WalletOverviewVO.DivisionSummary(3, 50.0, 0.0, 0.0)));
-            when(walletJournalRepository.selectOverviewDivisionFlow(eq((long) CORP), isNull(), isNull()))
+            when(walletJournalRepository.selectOverviewDivisionFlow(eq((long) CORP), eq(777L), isNull(), isNull()))
                     .thenReturn(List.of(
                             new WalletOverviewVO.DivisionSummary(1, 0.0, 10.0, 5.0),
                             new WalletOverviewVO.DivisionSummary(3, 0.0, 20.0, 8.0)));
@@ -285,19 +289,20 @@ class WalletOverviewApplicationServiceTest {
         @Test
         @DisplayName("军团单分账:三聚合带 division 过滤,divisions=null,不查分账分布")
         void singleDivision_divisionFilteredNoDivisions() {
+            when(accessGuard.corporationScope("军团钱包总览")).thenReturn(777L);
             WalletOverviewAggregate agg = new WalletOverviewAggregate(50.0, 20.0, 0.0, 20.0, 1L, null);
-            when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), eq(3), isNull(), isNull())).thenReturn(agg);
-            when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any())).thenReturn(List.of());
-            when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any())).thenReturn(List.of());
+            when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), eq(3), eq(777L), isNull(), isNull())).thenReturn(agg);
+            when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any(), any())).thenReturn(List.of());
+            when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any(), any())).thenReturn(List.of());
 
             WalletOverviewVO vo = applicationService.getCorporationOverview(CORP, 3, null, null, null);
 
-            verify(walletJournalRepository).selectOverviewAggregate(eq((long) CORP), eq(3), isNull(), isNull());
-            verify(walletJournalRepository).selectOverviewCategories(eq((long) CORP), eq(3), isNull(), isNull());
-            verify(walletJournalRepository).selectOverviewTrend(eq((long) CORP), eq(3), isNull(), isNull(), eq("%Y-%m"));
+            verify(walletJournalRepository).selectOverviewAggregate(eq((long) CORP), eq(3), eq(777L), isNull(), isNull());
+            verify(walletJournalRepository).selectOverviewCategories(eq((long) CORP), eq(3), eq(777L), isNull(), isNull());
+            verify(walletJournalRepository).selectOverviewTrend(eq((long) CORP), eq(3), eq(777L), isNull(), isNull(), eq("%Y-%m"));
             // division 为 null 时才查分账分布;单分账不查
-            verify(walletJournalRepository, never()).selectOverviewDivisionBalances(any());
-            verify(walletJournalRepository, never()).selectOverviewDivisionFlow(any(), any(), any());
+            verify(walletJournalRepository, never()).selectOverviewDivisionBalances(any(), any());
+            verify(walletJournalRepository, never()).selectOverviewDivisionFlow(any(), any(), any(), any());
             assertThat(vo.divisions()).isNull();
             assertThat(vo.currentBalance()).isEqualTo(50.0);
         }
@@ -306,21 +311,22 @@ class WalletOverviewApplicationServiceTest {
         @DisplayName("军团单分账边界:division=1 与 7 合法不抛,三聚合带对应 division 过滤,divisions=null")
         void singleDivision_boundaries_div1And7Legal() {
             for (int div : new int[]{1, 7}) {
+                when(accessGuard.corporationScope("军团钱包总览")).thenReturn(777L);
                 WalletOverviewAggregate agg = new WalletOverviewAggregate(10.0, 5.0, 0.0, 5.0, 1L, null);
-                when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), eq(div), isNull(), isNull()))
+                when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), eq(div), eq(777L), isNull(), isNull()))
                         .thenReturn(agg);
-                when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any()))
+                when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any(), any()))
                         .thenReturn(List.of());
-                when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any()))
+                when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any(), any()))
                         .thenReturn(List.of());
 
                 WalletOverviewVO vo = applicationService.getCorporationOverview(CORP, div, null, null, null);
 
                 verify(walletJournalRepository)
-                        .selectOverviewAggregate(eq((long) CORP), eq(div), isNull(), isNull());
+                        .selectOverviewAggregate(eq((long) CORP), eq(div), eq(777L), isNull(), isNull());
                 // 单分账 divisions 恒 null,绝不查分账分布
-                verify(walletJournalRepository, never()).selectOverviewDivisionBalances(any());
-                verify(walletJournalRepository, never()).selectOverviewDivisionFlow(any(), any(), any());
+                verify(walletJournalRepository, never()).selectOverviewDivisionBalances(any(), any());
+                verify(walletJournalRepository, never()).selectOverviewDivisionFlow(any(), any(), any(), any());
                 assertThat(vo.divisions()).isNull();
                 assertThat(vo.currentBalance()).isEqualTo(10.0);
             }
@@ -343,10 +349,10 @@ class WalletOverviewApplicationServiceTest {
                     new WalletOverviewVO.CategorySummary("bounty_prizes", 100.0, 0.0, 3L));
             List<WalletOverviewVO.TrendPoint> trend = List.of(
                     new WalletOverviewVO.TrendPoint("2026-08", 100.0, 0.0, 100.0));
-            when(walletJournalRepository.selectOverviewAggregate(eq((long) CID), isNull(), isNull(), isNull()))
+            when(walletJournalRepository.selectOverviewAggregate(eq((long) CID), isNull(), isNull(), isNull(), isNull()))
                     .thenReturn(agg);
-            when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any())).thenReturn(cats);
-            when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any())).thenReturn(trend);
+            when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any(), any())).thenReturn(cats);
+            when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any(), any())).thenReturn(trend);
 
             WalletOverviewVO vo = applicationService.getCharacterOverview(CID, null, null, null);
 
@@ -365,11 +371,11 @@ class WalletOverviewApplicationServiceTest {
         @DisplayName("空聚合(仓储零值 + 空类别/趋势)→ VO 零值,divisions=null")
         void repoEmptyAggregate_voZeroed() {
             WalletOverviewAggregate emptyAgg = new WalletOverviewAggregate(0.0, 0.0, 0.0, 0.0, 0L, null);
-            when(walletJournalRepository.selectOverviewAggregate(eq((long) CID), isNull(), isNull(), isNull()))
+            when(walletJournalRepository.selectOverviewAggregate(eq((long) CID), isNull(), isNull(), isNull(), isNull()))
                     .thenReturn(emptyAgg);
-            when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any()))
+            when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any(), any()))
                     .thenReturn(List.of());
-            when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any()))
+            when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any(), any()))
                     .thenReturn(List.of());
 
             WalletOverviewVO vo = applicationService.getCharacterOverview(CID, null, null, null);

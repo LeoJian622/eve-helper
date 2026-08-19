@@ -98,9 +98,9 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
      * @return 角色->总额的key-value
      */
     @Override
-    public IPage<WalletJournal> selectPageByOwnerAndDivision(IPage<WalletJournal> page, Long ownerId, Integer division) {
+    public IPage<WalletJournal> selectPageByOwnerAndDivision(IPage<WalletJournal> page, Long ownerId, Integer division, Long userId) {
         IPage<WalletJournalPO> poPage = new Page<>(page.getCurrent(), page.getSize());
-        IPage<WalletJournalPO> poResult = walletJournalMapper.selectPageByOwnerAndDivision(poPage, ownerId, division);
+        IPage<WalletJournalPO> poResult = walletJournalMapper.selectPageByOwnerAndDivision(poPage, ownerId, division, userId);
         List<WalletJournal> domains = walletJournalPoConverter.po2Domain(poResult.getRecords());
         IPage<WalletJournal> result = new Page<>(poResult.getCurrent(), poResult.getSize(), poResult.getTotal());
         result.setRecords(domains);
@@ -108,8 +108,8 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
     }
 
     @Override
-    public WalletOverviewAggregate selectOverviewAggregate(Long ownerId, Integer division, Date start, Date end) {
-        WalletOverviewAggregatePO po = walletJournalMapper.selectOverviewAggregate(ownerId, division, start, end);
+    public WalletOverviewAggregate selectOverviewAggregate(Long ownerId, Integer division, Long userId, Date start, Date end) {
+        WalletOverviewAggregatePO po = walletJournalMapper.selectOverviewAggregate(ownerId, division, userId, start, end);
         if (po == null) {
             // 无任何流水行时聚合返回空,按契约回退为零值(金额/条数 0,时间 null)
             return new WalletOverviewAggregate(0.0, 0.0, 0.0, 0.0, 0L, null);
@@ -133,8 +133,8 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
     }
 
     @Override
-    public List<WalletOverviewVO.CategorySummary> selectOverviewCategories(Long ownerId, Integer division, Date start, Date end) {
-        List<WalletOverviewCategoryPO> pos = walletJournalMapper.selectOverviewCategories(ownerId, division, start, end);
+    public List<WalletOverviewVO.CategorySummary> selectOverviewCategories(Long ownerId, Integer division, Long userId, Date start, Date end) {
+        List<WalletOverviewCategoryPO> pos = walletJournalMapper.selectOverviewCategories(ownerId, division, userId, start, end);
         if (pos == null || pos.isEmpty()) {
             return Collections.emptyList();
         }
@@ -150,8 +150,8 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
     }
 
     @Override
-    public List<WalletOverviewVO.TrendPoint> selectOverviewTrend(Long ownerId, Integer division, Date start, Date end, String granularity) {
-        List<WalletOverviewTrendPO> pos = walletJournalMapper.selectOverviewTrend(ownerId, division, start, end, granularity);
+    public List<WalletOverviewVO.TrendPoint> selectOverviewTrend(Long ownerId, Integer division, Long userId, Date start, Date end, String granularity) {
+        List<WalletOverviewTrendPO> pos = walletJournalMapper.selectOverviewTrend(ownerId, division, userId, start, end, granularity);
         if (pos == null || pos.isEmpty()) {
             return Collections.emptyList();
         }
@@ -167,8 +167,8 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
     }
 
     @Override
-    public List<WalletOverviewVO.DivisionSummary> selectOverviewDivisionBalances(Long ownerId) {
-        List<WalletOverviewDivisionPO> pos = walletJournalMapper.selectOverviewDivisionBalances(ownerId);
+    public List<WalletOverviewVO.DivisionSummary> selectOverviewDivisionBalances(Long ownerId, Long userId) {
+        List<WalletOverviewDivisionPO> pos = walletJournalMapper.selectOverviewDivisionBalances(ownerId, userId);
         if (pos == null || pos.isEmpty()) {
             return Collections.emptyList();
         }
@@ -184,8 +184,8 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
     }
 
     @Override
-    public List<WalletOverviewVO.DivisionSummary> selectOverviewDivisionFlow(Long ownerId, Date start, Date end) {
-        List<WalletOverviewDivisionPO> pos = walletJournalMapper.selectOverviewDivisionFlow(ownerId, start, end);
+    public List<WalletOverviewVO.DivisionSummary> selectOverviewDivisionFlow(Long ownerId, Long userId, Date start, Date end) {
+        List<WalletOverviewDivisionPO> pos = walletJournalMapper.selectOverviewDivisionFlow(ownerId, userId, start, end);
         if (pos == null || pos.isEmpty()) {
             return Collections.emptyList();
         }

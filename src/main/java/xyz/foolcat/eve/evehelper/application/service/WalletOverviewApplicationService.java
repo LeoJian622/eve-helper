@@ -65,13 +65,13 @@ public class WalletOverviewApplicationService {
         accessGuard.requireOwnership(String.valueOf(cid), "钱包总览");
 
         Long ownerId = cid.longValue();
-        // 人物总览:division 传 null 不过滤(硬性裁定)
-        var aggregate = walletJournalRepository.selectOverviewAggregate(ownerId, null, rStart, rEnd);
+        // 人物总览:division 传 null 不过滤(硬性裁定),userId 也传 null(FR-004 人物维共享,不加 user_id 谓词)
+        var aggregate = walletJournalRepository.selectOverviewAggregate(ownerId, null, null, rStart, rEnd);
         List<WalletOverviewVO.CategorySummary> categories =
-                walletJournalRepository.selectOverviewCategories(ownerId, null, rStart, rEnd);
+                walletJournalRepository.selectOverviewCategories(ownerId, null, null, rStart, rEnd);
         String granularity = granularity(rStart, rEnd);
         List<WalletOverviewVO.TrendPoint> trend =
-                walletJournalRepository.selectOverviewTrend(ownerId, null, rStart, rEnd, granularity);
+                walletJournalRepository.selectOverviewTrend(ownerId, null, null, rStart, rEnd, granularity);
 
         // 空聚合防御:无流水时仓储返回零值聚合;极端下聚合为 null 时回退为零值,list 为空
         Double cb = aggregate == null ? 0.0 : aggregate.currentBalance();
@@ -109,17 +109,18 @@ public class WalletOverviewApplicationService {
         Date[] resolved = resolveRange(range, start, end);
         Date rStart = resolved[0];
         Date rEnd = resolved[1];
-        // 归属校验先于业务逻辑:corpId 为用户可控入参,须先确认该军团属于当前用户(防御 IDOR)
-        accessGuard.requireOwnership(String.valueOf(corpId), "军团钱包总览");
+        // 军团维度读过滤(US2b):corporationScope 返回当前同步者 userId(ROOT=null 看全量),
+        // 透传 selectOverview* 仓储按 user_id 过滤,军团总览只有同步者数据可见
+        Long scope = accessGuard.corporationScope("军团钱包总览");
 
         Long ownerId = corpId.longValue();
         // 单分账带 division 过滤,全量无过滤;收支/类目/趋势沿用人物三条查询
-        var aggregate = walletJournalRepository.selectOverviewAggregate(ownerId, division, rStart, rEnd);
+        var aggregate = walletJournalRepository.selectOverviewAggregate(ownerId, division, scope, rStart, rEnd);
         List<WalletOverviewVO.CategorySummary> categories =
-                walletJournalRepository.selectOverviewCategories(ownerId, division, rStart, rEnd);
+                walletJournalRepository.selectOverviewCategories(ownerId, division, scope, rStart, rEnd);
         String granularity = granularity(rStart, rEnd);
         List<WalletOverviewVO.TrendPoint> trend =
-                walletJournalRepository.selectOverviewTrend(ownerId, division, rStart, rEnd, granularity);
+                walletJournalRepository.selectOverviewTrend(ownerId, division, scope, rStart, rEnd, granularity);
 
         Double cb = aggregate == null ? 0.0 : aggregate.currentBalance();
         Double ti = aggregate == null ? 0.0 : aggregate.totalIncome();
@@ -132,8 +133,8 @@ public class WalletOverviewApplicationService {
         if (division == null) {
             // 军团全量:分账分布合并为 1..7 补零;currentBalance = 各分账最新余额之和(覆盖聚合值)
             divs = mergeCorpDivisions(
-                    walletJournalRepository.selectOverviewDivisionBalances(ownerId),
-                    walletJournalRepository.selectOverviewDivisionFlow(ownerId, rStart, rEnd));
+                    walletJournalRepository.selectOverviewDivisionBalances(ownerId, scope),
+                    walletJournalRepository.selectOverviewDivisionFlow(ownerId, scope, rStart, rEnd));
             cb = 0.0;
             for (WalletOverviewVO.DivisionSummary d : divs) {
                 cb += d.balance();

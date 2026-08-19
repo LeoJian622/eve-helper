@@ -125,11 +125,12 @@ public class WalletJournalApplicationService {
         if (current < 1 || current > 10000 || size < 1 || size > 1000) {
             throw new EveHelperException("分页参数不合法");
         }
-        // 归属校验先于业务逻辑:corpId 为用户可控入参,须先确认该军团属于当前用户(防御 IDOR)
-        accessGuard.requireOwnership(String.valueOf(corpId), "军团钱包流水");
+        // 军团维度读过滤(US2b):corporationScope 返回当前同步者 userId(ROOT=null 不过滤看全量),
+        // 透传仓储按 user_id 过滤,只有同步者私有军团数据可见(推翻军团成员共享)
+        Long scope = accessGuard.corporationScope("军团钱包流水");
         IPage<WalletJournal> page = new Page<>(current, size);
         IPage<WalletJournal> domainPage =
-                walletJournalRepository.selectPageByOwnerAndDivision(page, corpId.longValue(), division);
+                walletJournalRepository.selectPageByOwnerAndDivision(page, corpId.longValue(), division, scope);
         return PageResultUtil.copy(domainPage, walletJournalAssembler::toVo);
     }
 

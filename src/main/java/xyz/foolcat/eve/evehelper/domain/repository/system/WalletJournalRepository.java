@@ -42,9 +42,10 @@ public interface WalletJournalRepository {
      * @param page     MyBatis Plus 分页参数
      * @param ownerId  所有者ID
      * @param division 分账(人物=0,军团=1-7)
+     * @param userId   军团维读过滤(US2b):null=ROOT 看全量不过滤,非 null 按 user_id 过滤;人物读取传 null
      * @return 领域实体分页结果
      */
-    IPage<WalletJournal> selectPageByOwnerAndDivision(IPage<WalletJournal> page, Long ownerId, Integer division);
+    IPage<WalletJournal> selectPageByOwnerAndDivision(IPage<WalletJournal> page, Long ownerId, Integer division, Long userId);
 
     /**
      * 钱包总览标量聚合(收支/净流/条数/当前余额/统计截点)。
@@ -55,7 +56,7 @@ public interface WalletJournalRepository {
      * @param end      结束时间(可空)
      * @return 标量聚合(无数据时金额/条数为 0)
      */
-    WalletOverviewAggregate selectOverviewAggregate(Long ownerId, Integer division, Date start, Date end);
+    WalletOverviewAggregate selectOverviewAggregate(Long ownerId, Integer division, Long userId, Date start, Date end);
 
     /**
      * 钱包总览按交易类型汇总。
@@ -66,7 +67,7 @@ public interface WalletJournalRepository {
      * @param end      结束时间(可空)
      * @return 类型汇总列表
      */
-    List<WalletOverviewVO.CategorySummary> selectOverviewCategories(Long ownerId, Integer division, Date start, Date end);
+    List<WalletOverviewVO.CategorySummary> selectOverviewCategories(Long ownerId, Integer division, Long userId, Date start, Date end);
 
     /**
      * 钱包总览按时间桶趋势。
@@ -78,7 +79,7 @@ public interface WalletJournalRepository {
      * @param granularity 时间桶格式(月/日)
      * @return 趋势点列表
      */
-    List<WalletOverviewVO.TrendPoint> selectOverviewTrend(Long ownerId, Integer division, Date start, Date end, String granularity);
+    List<WalletOverviewVO.TrendPoint> selectOverviewTrend(Long ownerId, Integer division, Long userId, Date start, Date end, String granularity);
 
     /**
      * 军团全量:取每个 division 最新 id 行的当前余额(income/expense 为 0)。
@@ -86,7 +87,7 @@ public interface WalletJournalRepository {
      * @param ownerId 所有者ID(军团)
      * @return 各 division 最新余额(无数据分账不返回,服务层补零)
      */
-    List<WalletOverviewVO.DivisionSummary> selectOverviewDivisionBalances(Long ownerId);
+    List<WalletOverviewVO.DivisionSummary> selectOverviewDivisionBalances(Long ownerId, Long userId);
 
     /**
      * 军团全量:按 division 汇总区间收支(balance 为 0)。
@@ -96,5 +97,5 @@ public interface WalletJournalRepository {
      * @param end     结束时间(可空)
      * @return 各 division 区间收入/支出
      */
-    List<WalletOverviewVO.DivisionSummary> selectOverviewDivisionFlow(Long ownerId, Date start, Date end);
+    List<WalletOverviewVO.DivisionSummary> selectOverviewDivisionFlow(Long ownerId, Long userId, Date start, Date end);
 }

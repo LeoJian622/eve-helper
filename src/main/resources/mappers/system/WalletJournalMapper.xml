@@ -417,11 +417,13 @@
     </trim>
   </insert>
 
-  <!-- 按所有者ID与分账分页查询钱包流水,时间 date 倒序 -->
+  <!-- 按所有者ID与分账分页查询钱包流水,时间 date 倒序。
+       US2b 军团维度读私有化:userId=null(ROOT)不过滤;非 null(同步者)按 user_id 过滤只有本人的流水。 -->
   <select id="selectPageByOwnerAndDivision" resultMap="BaseResultMap">
     select <include refid="Base_Column_List"/>
     from wallet_journal
     where owner_id = #{ownerId} and division = #{division}
+    <if test="userId != null">and user_id = #{userId}</if>
     order by `date` desc
   </select>
 
@@ -465,7 +467,9 @@
   </insert>
 
   <!-- 钱包总览标量聚合:收支合计(amount 正/负分别累)、净流、条数、当前余额(最新 id 的 balance)、
-       统计截点(最新 date)。person 传 division=null 不过滤。date 为保留字须反引号。 -->
+       统计截点(最新 date)。person 传 division=null 不过滤。date 为保留字须反引号。
+       US2b 军团维度读私有化:userId=null(ROOT/人物侧)不过滤;非 null(同步者)在外层 w、currentBalance 子查询
+       w2、asOfTime 子查询 w3 三处同步加 user_id 过滤,保证余额/截点与聚合口径一致。 -->
   <select id="selectOverviewAggregate"
           resultType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewAggregatePO">
     select
@@ -476,13 +480,16 @@
       (select w2.balance from wallet_journal w2
         where w2.owner_id = #{ownerId}
         <if test="division != null">and w2.division = #{division}</if>
+        <if test="userId != null">and w2.user_id = #{userId}</if>
         order by w2.id desc limit 1)                                        as currentBalance,
       (select MAX(w3.`date`) from wallet_journal w3
         where w3.owner_id = #{ownerId}
-        <if test="division != null">and w3.division = #{division}</if>)    as asOfTime
+        <if test="division != null">and w3.division = #{division}</if>
+        <if test="userId != null">and w3.user_id = #{userId}</if>)    as asOfTime
     from wallet_journal w
     where w.owner_id = #{ownerId}
     <if test="division != null">and w.division = #{division}</if>
+    <if test="userId != null">and w.user_id = #{userId}</if>
     <if test="start != null">and w.`date` &gt;= #{start}</if>
     <if test="end != null">and w.`date` &lt;= #{end}</if>
   </select>
@@ -498,6 +505,7 @@
     from wallet_journal w
     where w.owner_id = #{ownerId}
     <if test="division != null">and w.division = #{division}</if>
+    <if test="userId != null">and w.user_id = #{userId}</if>
     <if test="start != null">and w.`date` &gt;= #{start}</if>
     <if test="end != null">and w.`date` &lt;= #{end}</if>
     group by w.ref_type
@@ -516,19 +524,23 @@
     from wallet_journal w
     where w.owner_id = #{ownerId}
     <if test="division != null">and w.division = #{division}</if>
+    <if test="userId != null">and w.user_id = #{userId}</if>
     <if test="start != null">and w.`date` &gt;= #{start}</if>
     <if test="end != null">and w.`date` &lt;= #{end}</if>
     group by bucket
     order by bucket asc
   </select>
 
-  <!-- 军团全量:每个 division 最新 id 行的当前余额(自关联 MAX(id))。无数据分账不返回,服务层补零。 -->
+  <!-- 军团全量:每个 division 最新 id 行的当前余额(自关联 MAX(id))。无数据分账不返回,服务层补零。
+       US2b 军团维度读私有化:userId 非 null 时 MAX(id) 子查询同样按 user_id 过滤,限定本人各分账最新行。 -->
   <select id="selectOverviewDivisionBalances"
           resultType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewDivisionPO">
     select w.division as division, w.balance as balance, 0.0 as income, 0.0 as expense
     from wallet_journal w
     join (select owner_id, division, MAX(id) as mid from wallet_journal
-          where owner_id = #{ownerId} group by owner_id, division) m
+          where owner_id = #{ownerId}
+          <if test="userId != null">and user_id = #{userId}</if>
+          group by owner_id, division) m
       on w.owner_id = m.owner_id and w.division = m.division and w.id = m.mid
   </select>
 
@@ -542,6 +554,7 @@
       COALESCE(SUM(CASE WHEN amount &lt; 0 THEN -amount ELSE 0 END), 0) as expense
     from wallet_journal
     where owner_id = #{ownerId}
+    <if test="userId != null">and user_id = #{userId}</if>
     <if test="start != null">and `date` &gt;= #{start}</if>
     <if test="end != null">and `date` &lt;= #{end}</if>
     group by division
