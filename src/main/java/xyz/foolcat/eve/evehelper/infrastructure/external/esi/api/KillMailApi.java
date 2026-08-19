@@ -11,11 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ErrorResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.KillMailResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.KillMailsIdAndHashResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiStatusUtil;
 
 /**
  * ESI 击毁报告
@@ -72,10 +70,8 @@ public class KillMailApi {
         return esiClient.get().uri("/characters/{character_id}/killmails/recent/?datasource={datasource}&page={page}", characterId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(KillMailsIdAndHashResponse.class);
     }
 
@@ -99,10 +95,8 @@ public class KillMailApi {
         return esiClient.get().uri("/corporations/{corporation_id}/killmails/recent/?datasource={datasource}&page={page}", corporationId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(KillMailsIdAndHashResponse.class);
     }
 
@@ -123,10 +117,8 @@ public class KillMailApi {
     public Mono<KillMailResponse> queryKillMailDetail(Integer killMailId, String datasource, String killMailHash) {
         return esiClient.get().uri("/killmails/{killmail_id}/{killmail_hash}/?datasource={datasource}", killMailId, killMailHash, datasource)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(KillMailResponse.class);
     }
 

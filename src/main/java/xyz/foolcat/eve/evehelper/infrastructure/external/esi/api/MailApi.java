@@ -11,8 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiStatusUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.NewLabel;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.NewMail;
@@ -57,10 +56,8 @@ public class MailApi {
         return esiClient.get().uri("/characters/{character_id}/mail/?datasource={datasource}&labels={labels}&last_mail_id={last_mail_id}", characterId, datasource, labels, lastMailId)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(RequestedMailResponse.class);
     }
 
@@ -85,10 +82,8 @@ public class MailApi {
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .body(Mono.just(newMail), NewMail.class)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(Integer.class);
     }
 
@@ -113,10 +108,8 @@ public class MailApi {
         return esiClient.delete().uri("/characters/{character_id}/mail/{mail_id}/?datasource={datasource}", characterId, mailId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(Object.class);
     }
 
@@ -141,10 +134,8 @@ public class MailApi {
         return esiClient.get().uri("/characters/{character_id}/mail/{mail_id}/?datasource={datasource}", characterId, mailId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(MailResponse.class);
     }
 
@@ -176,10 +167,8 @@ public class MailApi {
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .body(Mono.just(contents), Map.class)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(MailResponse.class);
     }
 
@@ -201,10 +190,8 @@ public class MailApi {
         return esiClient.get().uri("/characters/{character_id}/mail/labels/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(MailLabelsAndUnreadCountsResponse.class);
     }
 
@@ -229,10 +216,8 @@ public class MailApi {
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .body(Mono.just(newLabel), NewMail.class)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(Integer.class);
     }
 
@@ -256,10 +241,8 @@ public class MailApi {
         return esiClient.delete().uri("/characters/{character_id}/mail/labels/{label_id}/?datasource={datasource}", characterId, labelId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(Integer.class);
     }
 
@@ -281,10 +264,8 @@ public class MailApi {
         return esiClient.get().uri("/characters/{character_id}/mail/lists/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(MailListResponse.class);
     }
 

@@ -10,10 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiStatusUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AlliancesResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ErrorResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.IconResponse;
 
 
@@ -43,10 +41,8 @@ public class AlliancesApi {
     public Flux<Long> queryAllActivePlayerAlliances(String datasource) {
         return esiClient.get().uri("/alliances/?datasource={datasource}", datasource)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(Long.class);
     }
 
@@ -64,10 +60,8 @@ public class AlliancesApi {
     public Mono<AlliancesResponse> queryAlliancesPublicInformation(Long allianceId, String datasource) {
         return esiClient.get().uri("/alliances/{alliance_id}/?datasource={datasource}", allianceId, datasource)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(AlliancesResponse.class);
     }
 
@@ -85,10 +79,8 @@ public class AlliancesApi {
     public Flux<Long> queryAlliancesCorporations(Long allianceId, String datasource) {
         return esiClient.get().uri("/alliances/{alliance_id}/corporations/?datasource={datasource}", allianceId, datasource)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(Long.class);
     }
 
@@ -106,10 +98,8 @@ public class AlliancesApi {
     public Mono<IconResponse> queryAlliancesIcon(Long allianceId, String datasource) {
         return esiClient.get().uri("/alliances/{alliance_id}/icons/?datasource={datasource}", allianceId, datasource)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(IconResponse.class);
     }
 

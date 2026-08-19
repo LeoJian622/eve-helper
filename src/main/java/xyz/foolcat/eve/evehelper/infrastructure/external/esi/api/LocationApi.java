@@ -10,10 +10,8 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiStatusUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CurrentShipResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ErrorResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.LocationResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.OnlineStatusResponse;
 
@@ -49,10 +47,8 @@ public class LocationApi {
         return esiClient.get().uri("/characters/{character_id}/location/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(LocationResponse.class);
     }
 
@@ -74,10 +70,8 @@ public class LocationApi {
         return esiClient.get().uri("/characters/{character_id}/online/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(OnlineStatusResponse.class);
     }
 
@@ -99,10 +93,8 @@ public class LocationApi {
         return esiClient.get().uri("/characters/{character_id}/ship/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(CurrentShipResponse.class);
     }
 }

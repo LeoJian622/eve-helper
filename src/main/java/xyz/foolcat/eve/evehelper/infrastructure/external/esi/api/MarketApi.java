@@ -12,8 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiStatusUtil;
 
 /**
  * ESI 市场相关接口
@@ -49,10 +48,8 @@ public class MarketApi {
         return esiClient.get().uri("/characters/{character_id}/orders/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(MarketOrderResponse.class);
     }
 
@@ -93,10 +90,8 @@ public class MarketApi {
         return esiClient.get().uri("/characters/{character_id}/orders/history/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(MarketOrderResponse.class);
     }
 
@@ -139,10 +134,8 @@ public class MarketApi {
         return esiClient.get().uri("/corporations/{corporation_id}/orders/?datasource={datasource}&page={page}", characterId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(MarketOrderResponse.class);
     }
 
@@ -183,10 +176,8 @@ public class MarketApi {
         return esiClient.get().uri("/corporations/{corporation_id}/orders/history/?datasource={datasource}", characterId, datasource)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(MarketOrderResponse.class);
     }
 
@@ -207,10 +198,8 @@ public class MarketApi {
     public Flux<HistoricalMarketStatisticsResponse> queryMarketRegionHistory(Integer regionId, String datasource, Integer typeId) {
         return esiClient.get().uri("/markets/{region_id}/history/?datasource={datasource}&type_id={type_id}", regionId, datasource, typeId)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(HistoricalMarketStatisticsResponse.class);
     }
 
@@ -253,10 +242,8 @@ public class MarketApi {
     public Flux<MarketOrderResponse> queryRegionOrders(Integer regionId, String datasource, Integer typeId, Integer page) {
         return esiClient.get().uri("/markets/{region_id}/orders/?datasource={datasource}&type_id={type_id}&page={page}", regionId, datasource, typeId, page)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(MarketOrderResponse.class);
     }
 
@@ -294,10 +281,8 @@ public class MarketApi {
     public Flux<Integer> queryRegionTypes(Integer regionId, String datasource, Integer page) {
         return esiClient.get().uri("/markets/{region_id}/types/?datasource={datasource}&page={page}", regionId, datasource, page)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(Integer.class);
     }
 
@@ -315,10 +300,8 @@ public class MarketApi {
     public Flux<Integer> queryMarketGroup(String datasource) {
         return esiClient.get().uri("/markets/groups/?datasource={datasource}", datasource)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(Integer.class);
     }
 
@@ -340,10 +323,8 @@ public class MarketApi {
         return esiClient.get().uri("/markets/groups/{market_group_id}/?datasource={datasource}&language={language}", marketGroupId, datasource, language)
                 .header(HttpHeaders.ACCEPT_LANGUAGE, language)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(GroupItemResponse.class);
     }
 
@@ -360,10 +341,8 @@ public class MarketApi {
     public Flux<PriceResponse> queryMarketPrices(String datasource) {
         return esiClient.get().uri("/markets/prices/?datasource={datasource}", datasource)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(PriceResponse.class);
     }
     /**
@@ -404,10 +383,8 @@ public class MarketApi {
         return esiClient.get().uri("/markets/structures/{structure_id}/?datasource={datasource}&page={page}", structureId, datasource, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
-                .onStatus(HttpStatusCode::is5xxServerError, response ->
-                        response.bodyToMono(ErrorResponse.class).flatMap(res -> Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE, res.getError() + ":" + res.getErrorDescription()))))
+                .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
+                .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(MarketOrderResponse.class);
     }
 }
