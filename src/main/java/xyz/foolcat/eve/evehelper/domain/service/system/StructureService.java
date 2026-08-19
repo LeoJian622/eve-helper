@@ -131,6 +131,9 @@ public class StructureService {
                 .sequential().filter(Objects::nonNull)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
+        // US2a(014 T015):军团建筑随同步者 user_id 落库 —— 军团数据只对同步者可见的归属依据
+        Long syncUserId = eveAccount.getUserId() == null ? null : eveAccount.getUserId().longValue();
+        structures.forEach(s -> s.setUserId(syncUserId));
         int updateCount = batchInsertOrUpdate(structures);
         log.info("更新{}条建筑数据", updateCount);
 
