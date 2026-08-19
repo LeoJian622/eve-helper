@@ -22,12 +22,12 @@ public class ResourceOwnershipPolicy {
     private final EveAccountService eveAccountService;
 
     /**
-     * 判断用户是否拥有该人物或军团。
-     * 允许本人名下任一角色的 characterId，或这些角色所属的 corpId
-     * （军团成员可访问本团资源）。
+     * 判断用户是否拥有该人物、军团或联盟。
+     * 允许本人名下任一角色的 characterId，或这些角色所属的 corpId（军团成员可访问本团资源），
+     * 或角色所属的 allianceId（联盟军团共享资源的可访问依据）。
      *
      * @param userId  用户ID
-     * @param ownerId 人物或军团ID
+     * @param ownerId 人物、军团或联盟ID
      * @return 拥有则为 true
      */
     public boolean isOwnedBy(Integer userId, String ownerId) {
@@ -40,7 +40,8 @@ public class ResourceOwnershipPolicy {
         }
         return accounts.stream().anyMatch(account ->
                 matches(ownerId, account.getCharacterId())
-                        || matches(ownerId, account.getCorpId()));
+                        || matches(ownerId, account.getCorpId())
+                        || matches(ownerId, account.getAllianceId()));
     }
 
     /**

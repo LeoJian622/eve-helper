@@ -30,6 +30,8 @@ class ResourceOwnershipPolicyUnitTest {
 
     private static final String CORP_ID = "98000001";
 
+    private static final String ALLIANCE_ID = "99000001";
+
     @MockBean
     EveAccountService eveAccountService;
 
@@ -41,6 +43,7 @@ class ResourceOwnershipPolicyUnitTest {
         EveAccount account = new EveAccount();
         account.setCharacterId(Integer.valueOf(CHARACTER_ID));
         account.setCorpId(Integer.valueOf(CORP_ID));
+        account.setAllianceId(Integer.valueOf(ALLIANCE_ID));
         when(eveAccountService.getAccountList(USER_ID)).thenReturn(List.of(account));
     }
 
@@ -60,6 +63,41 @@ class ResourceOwnershipPolicyUnitTest {
     @DisplayName("他人ID -> 不拥有")
     void doesNotOwnOthers() {
         assertFalse(policy.isOwnedBy(USER_ID, "9999"));
+    }
+
+    // ---------- 联盟维度（T012）----------
+
+    @Test
+    @DisplayName("本人角色所属联盟ID -> 拥有（alliance 维度归属）")
+    void ownsOwnAlliance() {
+        assertTrue(policy.isOwnedBy(USER_ID, ALLIANCE_ID));
+    }
+
+    @Test
+    @DisplayName("char / corp / alliance 三口径均可判拥有")
+    void allThreeDimensionsMatch() {
+        assertTrue(policy.isOwnedBy(USER_ID, CHARACTER_ID));
+        assertTrue(policy.isOwnedBy(USER_ID, CORP_ID));
+        assertTrue(policy.isOwnedBy(USER_ID, ALLIANCE_ID));
+    }
+
+    @Test
+    @DisplayName("乱序 ownerId（前导零）不匹配联盟，避免多种表示绕过")
+    void allianceLeadingZeroDoesNotMatch() {
+        assertFalse(policy.isOwnedBy(USER_ID, "000" + ALLIANCE_ID));
+    }
+
+    @Test
+    @DisplayName("联盟ID 为 null 的账户不误匹配字符串 \"null\"")
+    void nullAllianceIdDoesNotMatch() {
+        EveAccount noAlliance = new EveAccount();
+        noAlliance.setCharacterId(Integer.valueOf(CHARACTER_ID));
+        noAlliance.setCorpId(Integer.valueOf(CORP_ID));
+        noAlliance.setAllianceId(null);
+        when(eveAccountService.getAccountList(USER_ID)).thenReturn(List.of(noAlliance));
+
+        assertFalse(policy.isOwnedBy(USER_ID, "null"));
+        assertTrue(policy.isOwnedBy(USER_ID, CHARACTER_ID));
     }
 
     @Test
