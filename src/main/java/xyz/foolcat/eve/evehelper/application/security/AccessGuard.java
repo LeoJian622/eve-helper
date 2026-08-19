@@ -87,6 +87,31 @@ public class AccessGuard {
     }
 
     /**
+     * 计算军团维度读过滤口令：返回当前用户的 userId，供"军团同步者私有读"按
+     * {@code user_id} 过滤；ROOT 角色（ADMIN）豁免返回 null（看全量，不过滤）。
+     *
+     * <p>非 ROOT 必须取到合法当前用户ID（正整数），否则 fail-closed 抛访问未授权，
+     * 杜绝携带 null/非法值的空过滤条件穿透到下游，误放全量军团数据。</p>
+     *
+     * @param resource 资源名称，仅用于审计日志
+     * @return 军团读过滤所用 userId(Long，对齐 user_id BIGINT)；ROOT 返回 null
+     * @throws EveHelperException 未认证或主体无法识别时抛出
+     */
+    public Long corporationScope(String resource) {
+        if (isCurrentUserRoot()) {
+            // ROOT → 不过滤（看全量）
+            return null;
+        }
+        Integer uid = UserUtil.getUserId();
+        if (uid == null || uid <= 0) {
+            log.warn("{}军团读越权：未认证或主体无法识别", resource);
+            throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);
+        }
+        // 对齐 user_id BIGINT(Long)
+        return uid.longValue();
+    }
+
+    /**
      * 当前认证用户是否为 ROOT 角色（ADMIN）。
      * 要求令牌已通过认证，未认证令牌即便携带 ADMIN 权限也不豁免（fail-closed）。
      */
