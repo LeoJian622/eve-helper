@@ -78,11 +78,11 @@ public class StructureQueryApplicationService {
      */
     public PageResult<StructureListItemVO> queryStructuresByPage(StructureQuery query) {
         String corporationId = requireCorporationId(query.getCorporationId());
-        // 归属校验先于其余参数解析,避免越权请求探测参数校验细节(FR-010)
-        accessGuard.requireOwnership(corporationId, "建筑");
+        // 军团维度读过滤(US2b):role's scope 透传仓储按 user_id 过滤;ROOT(scope null)看全量
+        Long scope = accessGuard.corporationScope("建筑");
         StructurePageCriteria criteria = toCriteria(query, corporationId);
         return PageResultUtil.copy(
-                structureRepository.selectStructuresWithNames(criteria),
+                structureRepository.selectStructuresWithNames(criteria, scope),
                 structureAssembler::dtoList2VoList);
     }
 
@@ -95,7 +95,9 @@ public class StructureQueryApplicationService {
      */
     public StructureDetailVO queryDetailById(String corpId, Long structureId) {
         String corporationId = requireCorporationId(corpId);
-        accessGuard.requireOwnership(corporationId, "建筑");
+        // 军团维读过滤(US2b):仍强制 ROOT-or-authenticated 门(未认证抛异常);WHERE 按 structure_id + 应用层 corp 归属复核
+        // (selectDetailById 无 corporation_id 过滤,不引入 user_id 谓词,见 brief T020)
+        accessGuard.corporationScope("建筑");
         StructureDetailDTO dto = structureRepository.selectDetailById(structureId);
         // 防枚举(L1):建筑不存在与无权访问返回同一错误,避免攻击者枚举建筑 ID
         if (dto == null || !corporationId.equals(String.valueOf(dto.getCorporationId()))) {
@@ -130,10 +132,11 @@ public class StructureQueryApplicationService {
      */
     public List<StructureFuelVO> queryFuelExpiring(StructureFuelQuery query) {
         String corporationId = requireCorporationId(query.getCorporationId());
-        accessGuard.requireOwnership(corporationId, "建筑");
+        // 军团维度读过滤(US2b):scope 透传仓储按 user_id 过滤
+        Long scope = accessGuard.corporationScope("建筑");
         int hours = query.getHours() == null ? 72 : query.getHours();
         return structureAssembler.fuelDtoList2VoList(
-                structureRepository.selectFuelExpiresListWithNames(corporationId, hours));
+                structureRepository.selectFuelExpiresListWithNames(corporationId, hours, scope));
     }
 
     /**
@@ -145,7 +148,9 @@ public class StructureQueryApplicationService {
      */
     public StructureServiceVO queryServices(String corpId, Long structureId) {
         String corporationId = requireCorporationId(corpId);
-        accessGuard.requireOwnership(corporationId, "建筑");
+        // 军团维读过滤(US2b):仍强制 ROOT-or-authenticated 门(未认证抛异常);WHERE 按 structure_id + 应用层 corp 归属复核
+        // (selectServicesById 无 corporation_id 过滤,不引入 user_id 谓词,见 brief T020)
+        accessGuard.corporationScope("建筑");
         StructureServiceDTO dto = structureRepository.selectServicesById(structureId);
         // 防枚举(L1):建筑不存在与无权访问返回同一错误,避免攻击者枚举建筑 ID
         if (dto == null || !corporationId.equals(String.valueOf(dto.getCorporationId()))) {
@@ -164,8 +169,9 @@ public class StructureQueryApplicationService {
      */
     public StructureSummaryVO querySummary(String corpId) {
         String corporationId = requireCorporationId(corpId);
-        accessGuard.requireOwnership(corporationId, "建筑");
-        List<StructureSummaryDTO> rows = structureRepository.selectSummary(corporationId);
+        // 军团维度读过滤(US2b):scope 透传仓储按 user_id 过滤
+        Long scope = accessGuard.corporationScope("建筑");
+        List<StructureSummaryDTO> rows = structureRepository.selectSummary(corporationId, scope);
         Map<String, Long> stateCounts = new LinkedHashMap<>();
         long total = 0L;
         long fuelExpiredCount = 0L;
@@ -196,9 +202,10 @@ public class StructureQueryApplicationService {
      */
     public List<StructureTimerVO> queryTimers(String corpId) {
         String corporationId = requireCorporationId(corpId);
-        accessGuard.requireOwnership(corporationId, "建筑");
+        // 军团维度读过滤(US2b):scope 透传仓储按 user_id 过滤
+        Long scope = accessGuard.corporationScope("建筑");
         return structureAssembler.timerDtoList2VoList(
-                structureRepository.selectTimers(corporationId));
+                structureRepository.selectTimers(corporationId, scope));
     }
 
     private StructurePageCriteria toCriteria(StructureQuery query, String corporationId) {

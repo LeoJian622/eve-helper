@@ -450,6 +450,10 @@
       left join universe_name un on s.system_id = un.id and un.category = 'solar_system'
     <where>
       s.corporation_id = #{corporationId}
+      <!-- US2b 军团维度读私有化:userId=null(ROOT)不过滤;非 null(同步者)按 user_id 过滤 -->
+      <if test="userId != null">
+        and s.user_id = #{userId}
+      </if>
       <if test="name != null">
         and s.`name` like concat('%', #{name}, '%')
       </if>
@@ -512,6 +516,9 @@
       left join inv_types it on s.type_id = it.type_id
       left join universe_name un on s.system_id = un.id and un.category = 'solar_system'
     where s.corporation_id = #{corporationId}
+      <if test="userId != null">
+        and s.user_id = #{userId}
+      </if>
       and (s.fuel_expires &lt; date_add(now() + interval 8 hour,interval #{hour}-8 hour) or s.fuel_expires is null)
     order by s.fuel_expires asc
   </select>
@@ -534,6 +541,9 @@
       sum(IF(s.fuel_expires &lt; date_add(now() + interval 8 hour,interval 72-8 hour), 1, 0)) as lowFuelCount
     from `structure` s
     where s.corporation_id = #{corporationId}
+      <if test="userId != null">
+        and s.user_id = #{userId}
+      </if>
     group by s.`state`
   </select>
 
@@ -554,6 +564,9 @@
       left join inv_types it on s.type_id = it.type_id
       left join universe_name un on s.system_id = un.id and un.category = 'solar_system'
     where s.corporation_id = #{corporationId}
+      <if test="userId != null">
+        and s.user_id = #{userId}
+      </if>
       and (s.`state` like '%vulnerable%' or (s.unanchors_at is not null and s.unanchors_at &lt; date_add(now() + interval 8 hour,interval 168 hour)))
     order by s.state_timer_end asc, s.unanchors_at asc
   </select>

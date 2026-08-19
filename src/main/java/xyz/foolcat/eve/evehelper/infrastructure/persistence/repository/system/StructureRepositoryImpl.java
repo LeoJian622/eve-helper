@@ -83,7 +83,7 @@ public class StructureRepositoryImpl implements StructureRepository {
     }
 
     @Override
-    public PageResult<StructureListItemDTO> selectStructuresWithNames(StructurePageCriteria criteria) {
+    public PageResult<StructureListItemDTO> selectStructuresWithNames(StructurePageCriteria criteria, Long userId) {
         IPage<StructureListItemDTO> page = new Page<>(criteria.getCurrent(), criteria.getSize());
         StructurePageCriteria.SortField sortField = criteria.getSortField();
         page = structureMapper.selectStructuresWithNames(
@@ -93,7 +93,8 @@ public class StructureRepositoryImpl implements StructureRepository {
                 criteria.getState(),
                 criteria.isLowFuelOnly(),
                 sortField == null ? null : sortField.getColumn(),
-                criteria.isAscending());
+                criteria.isAscending(),
+                userId);
         return PageResult.<StructureListItemDTO>builder()
                 .records(page.getRecords())
                 .total(page.getTotal())
@@ -111,8 +112,8 @@ public class StructureRepositoryImpl implements StructureRepository {
     }
 
     @Override
-    public List<StructureFuelDTO> selectFuelExpiresListWithNames(String corporationId, Integer hour) {
-        return structureMapper.selectFuelExpiresListWithNames(corporationId, hour);
+    public List<StructureFuelDTO> selectFuelExpiresListWithNames(String corporationId, Integer hour, Long userId) {
+        return structureMapper.selectFuelExpiresListWithNames(corporationId, hour, userId);
     }
 
     @Override
@@ -121,12 +122,12 @@ public class StructureRepositoryImpl implements StructureRepository {
     }
 
     @Override
-    public List<StructureSummaryDTO> selectSummary(String corporationId) {
-        return structureMapper.selectSummary(corporationId);
+    public List<StructureSummaryDTO> selectSummary(String corporationId, Long userId) {
+        return structureMapper.selectSummary(corporationId, userId);
     }
 
     @Override
-    public List<StructureTimerDTO> selectTimers(String corporationId) {
-        return structureMapper.selectTimers(corporationId);
+    public List<StructureTimerDTO> selectTimers(String corporationId, Long userId) {
+        return structureMapper.selectTimers(corporationId, userId);
     }
 }

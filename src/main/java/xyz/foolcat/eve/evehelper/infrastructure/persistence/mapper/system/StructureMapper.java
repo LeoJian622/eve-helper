@@ -43,7 +43,8 @@ public interface StructureMapper extends BaseMapper<StructurePO> {
             @Param("state") String state,
             @Param("lowFuelOnly") boolean lowFuelOnly,
             @Param("sortColumn") String sortColumn,
-            @Param("ascending") boolean ascending);
+            @Param("ascending") boolean ascending,
+            @Param("userId") Long userId);
 
     /**
      * 查询单建筑详情,关联 inv_types(类型名)与 universe_name(星系名)
@@ -55,7 +56,8 @@ public interface StructureMapper extends BaseMapper<StructurePO> {
      */
     List<StructureFuelDTO> selectFuelExpiresListWithNames(
             @Param("corporationId") String corporationId,
-            @Param("hour") Integer hour);
+            @Param("hour") Integer hour,
+            @Param("userId") Long userId);
 
     /**
      * 查询单建筑服务状态(仅 structureId/corporationId/name/services)
@@ -65,10 +67,12 @@ public interface StructureMapper extends BaseMapper<StructurePO> {
     /**
      * 统计概览:按状态分组聚合(GROUP BY state)
      */
-    List<StructureSummaryDTO> selectSummary(@Param("corporationId") String corporationId);
+    List<StructureSummaryDTO> selectSummary(@Param("corporationId") String corporationId,
+                                            @Param("userId") Long userId);
 
     /**
      * 查询增强/解锚时间提醒建筑
      */
-    List<StructureTimerDTO> selectTimers(@Param("corporationId") String corporationId);
+    List<StructureTimerDTO> selectTimers(@Param("corporationId") String corporationId,
+                                         @Param("userId") Long userId);
 }

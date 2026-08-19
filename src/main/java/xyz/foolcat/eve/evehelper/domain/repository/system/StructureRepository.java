@@ -47,9 +47,10 @@ public interface StructureRepository {
      * 分页查询军团建筑列表,关联解析类型名与星系名(只读)
      *
      * @param criteria 分页查询条件(含排序白名单)
+     * @param userId   军团维读过滤(US2b):null=ROOT 看全量不过滤,非 null 按 user_id 过滤
      * @return 分页结果
      */
-    PageResult<StructureListItemDTO> selectStructuresWithNames(StructurePageCriteria criteria);
+    PageResult<StructureListItemDTO> selectStructuresWithNames(StructurePageCriteria criteria, Long userId);
 
     /**
      * 查询单建筑详情,关联解析类型名与星系名(只读)
@@ -64,9 +65,10 @@ public interface StructureRepository {
      *
      * @param corporationId 军团ID
      * @param hour          预警时长(小时)
+     * @param userId        军团维读过滤(US2b):null=ROOT 不过滤,非 null 按 user_id 过滤
      * @return 缺油建筑列表(含剩余时长)
      */
-    List<StructureFuelDTO> selectFuelExpiresListWithNames(String corporationId, Integer hour);
+    List<StructureFuelDTO> selectFuelExpiresListWithNames(String corporationId, Integer hour, Long userId);
 
     /**
      * 查询单建筑服务状态(仅 structureId/name/services,只读)
@@ -80,15 +82,17 @@ public interface StructureRepository {
      * 统计概览:按状态分组聚合,返回各状态计数与缺油小计(只读,单 SQL SC-003)
      *
      * @param corporationId 军团ID
+     * @param userId        军团维读过滤(US2b):null=ROOT 不过滤,非 null 按 user_id 过滤
      * @return 按状态分组的行级统计列表(应用层汇总为概览 VO)
      */
-    List<StructureSummaryDTO> selectSummary(String corporationId);
+    List<StructureSummaryDTO> selectSummary(String corporationId, Long userId);
 
     /**
      * 查询增强/解锚时间提醒建筑(只读)
      *
      * @param corporationId 军团ID
+     * @param userId        军团维读过滤(US2b):null=ROOT 不过滤,非 null 按 user_id 过滤
      * @return 处于增强窗口或即将解锚的建筑列表
      */
-    List<StructureTimerDTO> selectTimers(String corporationId);
+    List<StructureTimerDTO> selectTimers(String corporationId, Long userId);
 }

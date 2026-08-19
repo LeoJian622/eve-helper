@@ -37,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -56,6 +57,8 @@ class StructureQueryApplicationServiceTest {
     private static final String CORP_ID = "98000001";
     private static final long CORP_ID_NUM = 98000001L;
     private static final long STRUCTURE_ID = 100L;
+    /** 非 ROOT 同步者(成绩:corporationScope 返回其 userId) */
+    private static final Long SCOPE = 55L;
 
     @MockBean
     StructureRepository structureRepository;
@@ -116,14 +119,15 @@ class StructureQueryApplicationServiceTest {
     void queryStructuresByPage_sortFieldNormalizedToWhitelist() {
         StructureQuery q = StructureQuery.builder().corporationId(CORP_ID)
                 .sortField("fuelExpires").sortOrder("asc").current(1).size(20).build();
-        when(structureRepository.selectStructuresWithNames(any()))
+        when(accessGuard.corporationScope("建筑")).thenReturn(SCOPE);
+        when(structureRepository.selectStructuresWithNames(any(), eq(SCOPE)))
                 .thenReturn(PageResult.<StructureListItemDTO>builder().records(Collections.emptyList()).total(0L).build());
         when(structureAssembler.dtoList2VoList(any())).thenReturn(Collections.emptyList());
 
         assertDoesNotThrow(() -> service.queryStructuresByPage(q));
 
         ArgumentCaptor<StructurePageCriteria> captor = ArgumentCaptor.forClass(StructurePageCriteria.class);
-        verify(structureRepository).selectStructuresWithNames(captor.capture());
+        verify(structureRepository).selectStructuresWithNames(captor.capture(), eq(SCOPE));
         assertEquals(StructurePageCriteria.SortField.FUEL_EXPIRES, captor.getValue().getSortField());
         assertTrue(captor.getValue().isAscending());
     }
@@ -131,32 +135,34 @@ class StructureQueryApplicationServiceTest {
     // ===== IDOR(FR-010)=====
 
     @Test
-    @DisplayName("AccessGuard 拒绝时传播越权异常,不查仓储")
+    @DisplayName("AccessGuard 拒绝(未认证)时传播越权异常,不查仓储")
     void queryStructuresByPage_accessDenied_propagatesAndSkipsRepo() {
         StructureQuery q = StructureQuery.builder().corporationId(CORP_ID).build();
         org.mockito.Mockito.doThrow(new EveHelperException("访问未授权"))
-                .when(accessGuard).requireOwnership(CORP_ID, "建筑");
+                .when(accessGuard).corporationScope("建筑");
 
         assertThrows(EveHelperException.class, () -> service.queryStructuresByPage(q));
-        verify(structureRepository, never()).selectStructuresWithNames(any());
+        verify(structureRepository, never()).selectStructuresWithNames(any(), any());
     }
 
     // ===== queryStructuresByPage 正常 =====
 
     @Test
-    @DisplayName("正常分页查询返回结果并校验归属")
+    @DisplayName("正常分页查询返回结果并取军团 scope 透传仓储")
     void queryStructuresByPage_normal_returnsPagedResult() {
         StructureQuery q = StructureQuery.builder().corporationId(CORP_ID).current(1).size(20).build();
         StructureListItemDTO dto = new StructureListItemDTO();
         dto.setStructureId(STRUCTURE_ID);
-        when(structureRepository.selectStructuresWithNames(any()))
+        when(accessGuard.corporationScope("建筑")).thenReturn(SCOPE);
+        when(structureRepository.selectStructuresWithNames(any(), eq(SCOPE)))
                 .thenReturn(PageResult.<StructureListItemDTO>builder().records(List.of(dto)).total(1L).build());
         when(structureAssembler.dtoList2VoList(any())).thenReturn(List.of(new StructureListItemVO()));
 
         PageResult<StructureListItemVO> result = service.queryStructuresByPage(q);
 
         assertEquals(1, result.getRecords().size());
-        verify(accessGuard).requireOwnership(CORP_ID, "建筑");
+        // US2b:军团维度读改为 corporationScope 取 scope 透传仓储
+        verify(accessGuard).corporationScope("建筑");
     }
 
     // ===== queryDetailById(FR-005/011/014)=====
@@ -267,19 +273,21 @@ class StructureQueryApplicationServiceTest {
     @DisplayName("hours 为 null 时默认 72 小时")
     void queryFuelExpiring_nullHours_defaultsTo72() {
         StructureFuelQuery q = StructureFuelQuery.builder().corporationId(CORP_ID).hours(null).build();
-        when(structureRepository.selectFuelExpiresListWithNames(CORP_ID, 72)).thenReturn(Collections.emptyList());
+        when(accessGuard.corporationScope("建筑")).thenReturn(SCOPE);
+        when(structureRepository.selectFuelExpiresListWithNames(CORP_ID, 72, SCOPE)).thenReturn(Collections.emptyList());
         when(structureAssembler.fuelDtoList2VoList(any())).thenReturn(Collections.emptyList());
 
         service.queryFuelExpiring(q);
 
-        verify(structureRepository).selectFuelExpiresListWithNames(CORP_ID, 72);
+        verify(structureRepository).selectFuelExpiresListWithNames(CORP_ID, 72, SCOPE);
     }
 
     @Test
     @DisplayName("燃料预警正常返回")
     void queryFuelExpiring_normal_returnsList() {
         StructureFuelQuery q = StructureFuelQuery.builder().corporationId(CORP_ID).hours(48).build();
-        when(structureRepository.selectFuelExpiresListWithNames(CORP_ID, 48))
+        when(accessGuard.corporationScope("建筑")).thenReturn(SCOPE);
+        when(structureRepository.selectFuelExpiresListWithNames(CORP_ID, 48, SCOPE))
                 .thenReturn(List.of(new StructureFuelDTO()));
         when(structureAssembler.fuelDtoList2VoList(any())).thenReturn(List.of(new StructureFuelVO()));
 
@@ -303,7 +311,8 @@ class StructureQueryApplicationServiceTest {
         row2.setStateCount(3L);
         row2.setFuelExpiredCount(0L);
         row2.setLowFuelCount(1L);
-        when(structureRepository.selectSummary(CORP_ID)).thenReturn(List.of(row1, row2));
+        when(accessGuard.corporationScope("建筑")).thenReturn(SCOPE);
+        when(structureRepository.selectSummary(CORP_ID, SCOPE)).thenReturn(List.of(row1, row2));
 
         StructureSummaryVO vo = service.querySummary(CORP_ID);
 
@@ -323,7 +332,8 @@ class StructureQueryApplicationServiceTest {
         row.setStateCount(null);
         row.setFuelExpiredCount(null);
         row.setLowFuelCount(null);
-        when(structureRepository.selectSummary(CORP_ID)).thenReturn(List.of(row));
+        when(accessGuard.corporationScope("建筑")).thenReturn(SCOPE);
+        when(structureRepository.selectSummary(CORP_ID, SCOPE)).thenReturn(List.of(row));
 
         StructureSummaryVO vo = service.querySummary(CORP_ID);
 
@@ -336,7 +346,8 @@ class StructureQueryApplicationServiceTest {
     @Test
     @DisplayName("统计空列表返回全 0")
     void querySummary_emptyList_returnsZeros() {
-        when(structureRepository.selectSummary(CORP_ID)).thenReturn(Collections.emptyList());
+        when(accessGuard.corporationScope("建筑")).thenReturn(SCOPE);
+        when(structureRepository.selectSummary(CORP_ID, SCOPE)).thenReturn(Collections.emptyList());
 
         StructureSummaryVO vo = service.querySummary(CORP_ID);
 
@@ -347,14 +358,16 @@ class StructureQueryApplicationServiceTest {
     // ===== queryTimers(FR-009)=====
 
     @Test
-    @DisplayName("时间提醒正常返回并校验归属")
+    @DisplayName("时间提醒正常返回并取军团 scope 透传仓储")
     void queryTimers_normal_returnsList() {
-        when(structureRepository.selectTimers(CORP_ID)).thenReturn(List.of(new StructureTimerDTO()));
+        when(accessGuard.corporationScope("建筑")).thenReturn(SCOPE);
+        when(structureRepository.selectTimers(CORP_ID, SCOPE)).thenReturn(List.of(new StructureTimerDTO()));
         when(structureAssembler.timerDtoList2VoList(any())).thenReturn(List.of(new StructureTimerVO()));
 
         List<StructureTimerVO> result = service.queryTimers(CORP_ID);
 
         assertEquals(1, result.size());
-        verify(accessGuard).requireOwnership(CORP_ID, "建筑");
+        // US2b:军团维度读改为 corporationScope 取 scope 透传仓储
+        verify(accessGuard).corporationScope("建筑");
     }
 }
