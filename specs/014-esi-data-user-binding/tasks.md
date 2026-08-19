@@ -38,11 +38,11 @@ description: "Task list for ESI 数据 × 系统用户强关联 (014)"
 
 **⚠️ CRITICAL**: no user story work until all of Phase 2 complete.
 
-- [ ] T001 生成迁移 SQL `src/main/resources/db/migration/014_esi_user_binding.sql`：8 表各 `ALTER TABLE ... ADD COLUMN user_id BIGINT NULL COMMENT '同步者系统用户ID'`（对齐 `eve_account.user_id`；market_order 排除）；核对 test 环境建表脚本（若 `src/test/resources` 有独立 schema DDL，同加列否则测试落库失败）
-- [ ] T002 [P] 人物 3 表 userId 字段：`Assets`/`Blueprints`/`MiningDetail` 实体 + `AssetsPO`/`BlueprintsPO`/`MiningDetailPO` + 各 `*PoConverter` + `AssetsMapper.xml`/`BlueprintsMapper.xml`/`MiningDetailMapper.xml` insert 加列；单测断言 PO↔domain userId 往返保留
-- [ ] T003 [P] 军团 3 表 userId 字段：`IndustryJob`/`Observer`/`Structure` 实体 + `IndustryJobPO`/`ObserverPO`/`StructurePO` + 各 `*PoConverter` + `IndustryJobMapper.xml`/`ObserverMapper.xml`/`StructureMapper.xml` insert 加列；单测 userId 往返保留
-- [ ] T004 [P] `WalletJournal` 实体 + `WalletJournalPO` + `WalletJournalPoConverter` + `WalletJournalMapper.xml`（人物 division 0/NULL·军团 1-7 同表）insert 加 user_id 列；单测 userId 往返保留
-- [ ] T005 [P] `WalletTransaction` 实体（不继承 BaseEntity）+ `WalletTransactionPO` + `WalletTransactionPoConverter` + `WalletTransactionMapper.xml` insert 加 user_id 列；单测 userId 往返保留
+- [x] T001 生成迁移 SQL `src/main/resources/db/migration/014_esi_user_binding.sql`：8 表各 `ALTER TABLE ... ADD COLUMN user_id BIGINT NULL COMMENT '同步者系统用户ID'`（对齐 `eve_account.user_id`；market_order 排除）；核对 test 环境建表脚本（若 `src/test/resources` 有独立 schema DDL，同加列否则测试落库失败）
+- [x] T002 [P] 人物 3 表 userId 字段：`Assets`/`Blueprints`/`MiningDetail` 实体 + `AssetsPO`/`BlueprintsPO`/`MiningDetailPO` + 各 `*PoConverter` + `AssetsMapper.xml`/`BlueprintsMapper.xml`/`MiningDetailMapper.xml` insert 加列；单测断言 PO↔domain userId 往返保留
+- [x] T003 [P] 军团 3 表 userId 字段：`IndustryJob`/`Observer`/`Structure` 实体 + `IndustryJobPO`/`ObserverPO`/`StructurePO` + 各 `*PoConverter` + `IndustryJobMapper.xml`/`ObserverMapper.xml`/`StructureMapper.xml` insert 加列；单测 userId 往返保留
+- [x] T004 [P] `WalletJournal` 实体 + `WalletJournalPO` + `WalletJournalPoConverter` + `WalletJournalMapper.xml`（人物 division 0/NULL·军团 1-7 同表）insert 加 user_id 列；单测 userId 往返保留
+- [x] T005 [P] `WalletTransaction` 实体（不继承 BaseEntity）+ `WalletTransactionPO` + `WalletTransactionPoConverter` + `WalletTransactionMapper.xml` insert 加 user_id 列；单测 userId 往返保留
 
 **Checkpoint**: 8 表 `user_id` 列 + 实体/PO/converter/XML 就绪。故事可并行开工。
 
@@ -55,11 +55,11 @@ description: "Task list for ESI 数据 × 系统用户强关联 (014)"
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] 字符写路径落 userId：`AssetsService.saveAndUpdateAsserts`（`domain/service/system/AssetsService.java`）在 `setOwnerId(characterId)` 处同补 `setUserId(eveAccount.getUserId())`；单测断言传入 `AssetsRepository.batchInsertOrUpdate` 的实体 userId==eveAccount.getUserId()
-- [ ] T007 [US1] 字符写路径落 userId：`MiningDetailService.saveObserverMining`（`domain/service/system/MiningDetailService.java`）setOwner/observer 处补 `setUserId`；单测断言 userId==eveAccount.getUserId()
-- [ ] T008 [US1] 字符写路径落 userId：`WalletJournalService.syncCharacterJournal`（`domain/service/system/WalletJournalService.java`）setOwnerId/division=0 处补 `setUserId`；单测 userId==eveAccount.getUserId()
-- [ ] T009 [US1] 字符写路径落 userId：`WalletTransactionService` 角色同步（`domain/service/system/WalletTransactionService.java`）ownerType=character 处补 `setUserId`；单测 userId==eveAccount.getUserId()
-- [ ] T010 [US1] 集成测试：甲/乙双用户，甲持角色 A 同步资产+钱包，乙登录但非持有 A；调用 A 资产/钱包接口 → 甲返完整、乙被挡、乙响应不泄漏 A 数据规模（`src/test/java/xyz/foolcat/eve/evehelper/application/CharacterPrivacyIT.java`，@ActiveProfiles("test")）
+- [x] T006 [US1] 字符写路径落 userId：`AssetsService.saveAndUpdateAsserts`（`domain/service/system/AssetsService.java`）在 `setOwnerId(characterId)` 处同补 `setUserId(eveAccount.getUserId())`；单测断言传入 `AssetsRepository.batchInsertOrUpdate` 的实体 userId==eveAccount.getUserId()
+- [x] T007 [US1] 字符写路径落 userId：`MiningDetailService.saveObserverMining`（`domain/service/system/MiningDetailService.java`）setOwner/observer 处补 `setUserId`；单测断言 userId==eveAccount.getUserId()
+- [x] T008 [US1] 字符写路径落 userId：`WalletJournalService.syncCharacterJournal`（`domain/service/system/WalletJournalService.java`）setOwnerId/division=0 处补 `setUserId`；单测 userId==eveAccount.getUserId()
+- [x] T009 [US1] 字符写路径落 userId：`WalletTransactionService` 角色同步（`domain/service/system/WalletTransactionService.java`）ownerType=character 处补 `setUserId`；单测 userId==eveAccount.getUserId()
+- [x] T010 [US1] 集成测试：甲/乙双用户，甲持角色 A 同步资产+钱包，乙登录但非持有 A；调用 A 资产/钱包接口 → 甲返完整、乙被挡、乙响应不泄漏 A 数据规模（`src/test/java/xyz/foolcat/eve/evehelper/application/CharacterPrivacyIT.java`，@ActiveProfiles("test")）
 
 **Checkpoint**: US1 独立可测（甲见/乙挡）。
 
@@ -72,17 +72,17 @@ description: "Task list for ESI 数据 × 系统用户强关联 (014)"
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] 军团句管理层 `AccessGuard.corporationScope(String resource)`（`application/security/AccessGuard.java`）：ROOT→返回 null（不过滤看全量）；非 ROOT 返回 `UserUtil.getUserId().longValue()`；未认证/身份不可识别 → 抛 `ACCESS_UNAUTHORIZED`；单测三类路径（ROOT null / 认证返回 Long / 未认证抛）
-- [ ] T012 [US2] 联盟维度机制：`ResourceOwnershipPolicy.isOwnedBy`（`domain/service/security/ResourceOwnershipPolicy.java`）加 `matches(ownerId, account.getAllianceId())` 分支，保留 char/corp 匹配；单测 char/corp/alliance 三口径均判定
-- [ ] T013 [US2] 军团写路径落 userId：`WalletJournalService.syncCorporationJournal`（`domain/service/system/WalletJournalService.java`）setOwnerId/division 1-7 处补 `setUserId`；单测 userId==eveAccount.getUserId()
-- [ ] T014 [US2] 军团写路径落 userId：`WalletTransactionService` 军团同步（`domain/service/system/WalletTransactionService.java`）ownerType=corporation 处补 `setUserId`；单测 userId==eveAccount.getUserId()
-- [ ] T015 [US2] 军团写路径落 userId：`StructureService.batchInsertOrUpdateFromEsi`（`domain/service/system/StructureService.java`）L134 前批量 setUserId(eveAccount.getUserId())；单测 userId==eveAccount.getUserId()
-- [ ] T016 [US2] 军团写路径落 userId：`IndustryJobService.batchInsertOrUpdateFromEsi`（`domain/service/system/IndustryJobService.java`）L119 前 setUserId；单测 userId==eveAccount.getUserId()
-- [ ] T017 [US2] 军团读过滤改造——`WalletJournalApplicationService`（`application/service/WalletJournalApplicationService.java:129`）：`requireOwnership(corpId,"军团钱包流水")` → `Long scope=accessGuard.corporationScope("军团钱包流水")`，scope 透传仓储；`WalletJournalRepository`/Impl 签名加 `userId`，`WalletJournalMapper.xml` 军团读语句加 `<if test="userId != null"> AND user_id=#{userId}</if>`；单测 scope null/非 null 两分支
-- [ ] T018 [US2] 军团读过滤改造——`WalletTransactionApplicationService`（`application/service/WalletTransactionApplicationService.java:135`）同 T017 模式；`WalletTransactionRepository`/Impl/XML 加 userId 谓词；单测 null/非 null
-- [ ] T019 [US2] 军团读过滤改造——`WalletOverviewApplicationService`（`application/service/WalletOverviewApplicationService.java:113`：军团钱包总览）：corporationScope + `WalletJournalRepository.selectOverview*` 4查询（`where w.owner_id=?`）加 userId 谓词；单测 null/非 null + ROOT 全量
-- [ ] T020 [US2] 军团读过滤改造——`StructureQueryApplicationService`（`application/service/StructureQueryApplicationService.java:82/98/133/148/167/199` 6 处 `"建筑"`）：corporationScope + `StructureRepository`/Impl + `StructureMapper.xml`（selectFuelExpires*/selectSummary/selectTimers 等 `s.corporation_id=?` 查询）加 userId 谓词；单测 null/非 null
-- [ ] T021 [US2] 集成测试：甲/乙同团（`src/test/java/xyz/foolcat/eve/evehelper/application/CorporationPrivacyIT.java`）——甲同步军团钱包后甲查见其部分；乙从未同步 → 乙查询为**空 200、非 403**（FR-007 不泄漏、不透露乙同步过没）；甲只见自己同步部分不并入他人数据（FR-003 AC3）
+- [x] T011 [US2] 军团句管理层 `AccessGuard.corporationScope(String resource)`（`application/security/AccessGuard.java`）：ROOT→返回 null（不过滤看全量）；非 ROOT 返回 `UserUtil.getUserId().longValue()`；未认证/身份不可识别 → 抛 `ACCESS_UNAUTHORIZED`；单测三类路径（ROOT null / 认证返回 Long / 未认证抛）
+- [x] T012 [US2] 联盟维度机制：`ResourceOwnershipPolicy.isOwnedBy`（`domain/service/security/ResourceOwnershipPolicy.java`）加 `matches(ownerId, account.getAllianceId())` 分支，保留 char/corp 匹配；单测 char/corp/alliance 三口径均判定
+- [x] T013 [US2] 军团写路径落 userId：`WalletJournalService.syncCorporationJournal`（`domain/service/system/WalletJournalService.java`）setOwnerId/division 1-7 处补 `setUserId`；单测 userId==eveAccount.getUserId()
+- [x] T014 [US2] 军团写路径落 userId：`WalletTransactionService` 军团同步（`domain/service/system/WalletTransactionService.java`）ownerType=corporation 处补 `setUserId`；单测 userId==eveAccount.getUserId()
+- [x] T015 [US2] 军团写路径落 userId：`StructureService.batchInsertOrUpdateFromEsi`（`domain/service/system/StructureService.java`）L134 前批量 setUserId(eveAccount.getUserId())；单测 userId==eveAccount.getUserId()
+- [x] T016 [US2] 军团写路径落 userId：`IndustryJobService.batchInsertOrUpdateFromEsi`（`domain/service/system/IndustryJobService.java`）L119 前 setUserId；单测 userId==eveAccount.getUserId()
+- [x] T017 [US2] 军团读过滤改造——`WalletJournalApplicationService`（`application/service/WalletJournalApplicationService.java:129`）：`requireOwnership(corpId,"军团钱包流水")` → `Long scope=accessGuard.corporationScope("军团钱包流水")`，scope 透传仓储；`WalletJournalRepository`/Impl 签名加 `userId`，`WalletJournalMapper.xml` 军团读语句加 `<if test="userId != null"> AND user_id=#{userId}</if>`；单测 scope null/非 null 两分支
+- [x] T018 [US2] 军团读过滤改造——`WalletTransactionApplicationService`（`application/service/WalletTransactionApplicationService.java:135`）同 T017 模式；`WalletTransactionRepository`/Impl/XML 加 userId 谓词；单测 null/非 null
+- [x] T019 [US2] 军团读过滤改造——`WalletOverviewApplicationService`（`application/service/WalletOverviewApplicationService.java:113`：军团钱包总览）：corporationScope + `WalletJournalRepository.selectOverview*` 4查询（`where w.owner_id=?`）加 userId 谓词；单测 null/非 null + ROOT 全量
+- [x] T020 [US2] 军团读过滤改造——`StructureQueryApplicationService`（`application/service/StructureQueryApplicationService.java:82/98/133/148/167/199` 6 处 `"建筑"`）：corporationScope + `StructureRepository`/Impl + `StructureMapper.xml`（selectFuelExpires*/selectSummary/selectTimers 等 `s.corporation_id=?` 查询）加 userId 谓词；单测 null/非 null
+- [x] T021 [US2] 集成测试：甲/乙同团（`src/test/java/xyz/foolcat/eve/evehelper/application/CorporationPrivacyIT.java`）——甲同步军团钱包后甲查见其部分；乙从未同步 → 乙查询为**空 200、非 403**（FR-007 不泄漏、不透露乙同步过没）；甲只见自己同步部分不并入他人数据（FR-003 AC3）
 
 **Checkpoint**: US2 独立可测（士兵甲/乙同团不同可见性）。
 
@@ -95,8 +95,8 @@ description: "Task list for ESI 数据 × 系统用户强关联 (014)"
 
 ### Implementation for User Story 3
 
-- [ ] T022 [US3] ROOT 豁免集成核验：`corporationScope` ROOT→null 路径 + 既有 `isCurrentUserRoot()` 在军团/字符读链路全量通过；构造 ROOT token 调军团钱包/建筑接口返全量（对甲同步与乙同步的数据都可见）（`src/test/java/xyz/foolcat/eve/evehelper/application/AdminDomainExemptionIT.java`，@ActiveProfiles("test")）
-- [ ] T023 [US3] 反例断言：普通用户（非 ROOT）持非法/非属主身份调军团接口仍为空——验证"管理域豁免不扩散到普通用户"（SC-003 对照）
+- [x] T022 [US3] ROOT 豁免集成核验：`corporationScope` ROOT→null 路径 + 既有 `isCurrentUserRoot()` 在军团/字符读链路全量通过；构造 ROOT token 调军团钱包/建筑接口返全量（对甲同步与乙同步的数据都可见）（`src/test/java/xyz/foolcat/eve/evehelper/application/AdminDomainExemptionIT.java`，@ActiveProfiles("test")）
+- [x] T023 [US3] 反例断言：普通用户（非 ROOT）持非法/非属主身份调军团接口仍为空——验证"管理域豁免不扩散到普通用户"（SC-003 对照）
 
 **Checkpoint**: US3 可测。
 
@@ -109,9 +109,9 @@ description: "Task list for ESI 数据 × 系统用户强关联 (014)"
 
 ### Implementation for User Story 4
 
-- [ ] T024 [US4] 追加迁移 UPDATE 至 `src/main/resources/db/migration/014_esi_user_binding.sql`：人物行 join `eve_account` 按 `character_id` 回填 `user_id`（assets/blueprints/mining_detail/wallet_journal 人物行/wallet_transaction owner_type='character'）；军团行 join `eve_account` 按 `corp_id` 回填 ROOT admin userId（含 `?` 部署占位符：industry_job/observer/structure/wallet_journal 军团行/wallet_transaction owner_type='corporation'）；`WHERE user_id IS NULL` 孤儿行归管理域兜底
-- [ ] T025 [US4] 迁移正确性与 0 丢失测试：`src/test/java/xyz/foolcat/eve/evehelper/MigrationBackfillTest`（@ActiveProfiles("test") 或迁到测试 schema）——迁移前各表 COUNT 快照，执行迁移后 COUNT 相等（0 丢失）；人物行 user_id==属主、军团行 user_id==管理域；抽样核对（spec US4 Independent Test）
-- [ ] T026 [US4] 迁移幂等/可重跑性：`ALTER` 用 `IF NOT EXISTS` 语义或脚本幂等标注；重复执行不产生重复列错误（在测试脚本核对）
+- [x] T024 [US4] 追加迁移 UPDATE 至 `src/main/resources/db/migration/014_esi_user_binding.sql`：人物行 join `eve_account` 按 `character_id` 回填 `user_id`（assets/blueprints/mining_detail/wallet_journal 人物行/wallet_transaction owner_type='character'）；军团行 join `eve_account` 按 `corp_id` 回填 ROOT admin userId（含 `?` 部署占位符：industry_job/observer/structure/wallet_journal 军团行/wallet_transaction owner_type='corporation'）；`WHERE user_id IS NULL` 孤儿行归管理域兜底
+- [x] T025 [US4] 迁移正确性与 0 丢失测试：`src/test/java/xyz/foolcat/eve/evehelper/MigrationBackfillTest`（@ActiveProfiles("test") 或迁到测试 schema）——迁移前各表 COUNT 快照，执行迁移后 COUNT 相等（0 丢失）；人物行 user_id==属主、军团行 user_id==管理域；抽样核对（spec US4 Independent Test）
+- [x] T026 [US4] 迁移幂等/可重跑性：`ALTER` 用 `IF NOT EXISTS` 语义或脚本幂等标注；重复执行不产生重复列错误（在测试脚本核对）
 
 **Checkpoint**: US4 可测（迁移 0 丢失 + 归属正确）。
 
@@ -121,11 +121,11 @@ description: "Task list for ESI 数据 × 系统用户强关联 (014)"
 
 **Purpose**: 全量验证、索引核对、评审（G6）、文档。
 
-- [ ] T027 军团读性能核验：核对新增 `user_id` 谓词命中既有 owner_id 索引（`EXPLAIN` 或 plan 静态分析语句），确认无全表扫引入（不新增复合索引，决策已定）
-- [ ] T028 全量测试+覆盖率：`./mvnw -q clean package -DskipTests`（exit 0）→ `./mvnw test`（0 failures/0 errors）→ 覆盖率 ≥80%（本特性新增/修改逻辑）
-- [ ] T029 安全评审：`ecc:security-reviewer`（认证/授权/输入变更必过：双锁守卫、军团私有过滤、越权空响应、迁移 SQL 注入面）
-- [ ] T030 Java 评审：`ecc:java-reviewer`（双锁守卫、org 读谓词、写路径 userId 透传、休眠表范围符合 YAGNI）
-- [ ] T031 [P] 文档：`docs/knowledge/` 生成 014 流程文档（ESI 数据归属双锁模型 + 军团同步者私有语义 + 迁移脚本用法）+ 登记 `docs/INDEX.md`
+- [x] T027 军团读性能核验：核对新增 `user_id` 谓词命中既有 owner_id 索引（`EXPLAIN` 或 plan 静态分析语句），确认无全表扫引入（不新增复合索引，决策已定）
+- [x] T028 全量测试+覆盖率：`./mvnw -q clean package -DskipTests`（exit 0）→ `./mvnw test`（0 failures/0 errors）→ 覆盖率 ≥80%（本特性新增/修改逻辑）
+- [x] T029 安全评审：`ecc:security-reviewer`（认证/授权/输入变更必过：双锁守卫、军团私有过滤、越权空响应、迁移 SQL 注入面）
+- [x] T030 Java 评审：`ecc:java-reviewer`（双锁守卫、org 读谓词、写路径 userId 透传、休眠表范围符合 YAGNI）
+- [x] T031 [P] 文档：`docs/knowledge/` 生成 014 流程文档（ESI 数据归属双锁模型 + 军团同步者私有语义 + 迁移脚本用法）+ 登记 `docs/INDEX.md`
 
 **Checkpoint**: G6 无 Critical/Important 未修项 → VERIFICATION REPORT READY。
 
