@@ -86,15 +86,47 @@ class StructureServiceBatchSyncTest {
         when(esiApiService.queryCorporationStructures(corpId, "zh", 1, token))
                 .thenReturn(Flux.just(structure(1001L), structure(1002L)));
         // 无待移除建筑（避免 selectByCorporationId 差异影响断言）
-        when(structureRepository.selectByCorporationId(corpId)).thenReturn(List.of());
+        Long syncUserId = userId.longValue();
+        when(structureRepository.selectByCorporationId(corpId, syncUserId)).thenReturn(List.of());
 
         structureService.batchInsertOrUpdateFromEsi(cId);
 
-        Long syncUserId = userId.longValue();
         ArgumentCaptor<List<Structure>> captor = ArgumentCaptor.forClass(List.class);
         verify(structureRepository).batchInsertOrUpdate(captor.capture());
 
         List<Structure> saved = captor.getValue();
         assertThat(saved).hasSize(2).allSatisfy(s -> assertThat(s.getUserId()).isEqualTo(syncUserId));
+    }
+
+    @Test
+    @DisplayName("P6-R1 stale 删除按 user_id 隔离：selectByCorporationId 以(corpId, syncUserId)查询，防删他人/ROOT 行")
+    void staleDelete_isScopedToSyncUser() throws Exception {
+        Integer cId = 9002;
+        Integer userId = 100;
+        Integer corpId = 5002;
+        String token = "Bearer corp-token";
+
+        EveAccount account = new EveAccount();
+        account.setUserId(userId);
+        account.setCorpId(corpId);
+        when(authorizeUtil.authorize(cId)).thenReturn(account);
+        when(esiApiService.getAccessToken(cId, userId)).thenReturn(token);
+
+        when(esiApiService.queryCorporationStructuresMaxPage(corpId, token)).thenReturn(1);
+        // ESI 侧本轮无建筑 → stale 删除应把「当前同步者名下」的行删掉
+        when(esiApiService.queryCorporationStructures(corpId, "zh", 1, token))
+                .thenReturn(Flux.just());
+        Long syncUserId = userId.longValue();
+        // DB 中已有当前同步者名下的两行（ESI 已缺失 → 应被删除候选）
+        when(structureRepository.selectByCorporationId(corpId, syncUserId))
+                .thenReturn(List.of(structure(1010L), structure(1011L)));
+
+        structureService.batchInsertOrUpdateFromEsi(cId);
+
+        // 关键契约:查询必须携带 syncUserId(=UserId.longValue()),而非仅 corpId
+        verify(structureRepository).selectByCorporationId(corpId, syncUserId);
+        ArgumentCaptor<List<Long>> idCaptor = ArgumentCaptor.forClass(List.class);
+        verify(structureRepository).removeBatchByIds(idCaptor.capture());
+        assertThat(idCaptor.getValue()).containsExactlyInAnyOrder(1010L, 1011L);
     }
 }

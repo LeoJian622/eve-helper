@@ -141,7 +141,7 @@ public class StructureService {
          * 移除不在ESI列表的建筑
          */
         Set<Long> newStructureIds = structures.stream().map(Structure::getStructureId).collect(Collectors.toSet());
-        List<Long> structureIds = structureRepository.selectByCorporationId(eveAccount.getCorpId())
+        List<Long> structureIds = structureRepository.selectByCorporationId(eveAccount.getCorpId(), syncUserId)
                 .stream()
                 .map(Structure::getStructureId)
                 .filter(id -> !newStructureIds.contains(id))

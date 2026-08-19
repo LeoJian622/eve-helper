@@ -41,7 +41,14 @@ public interface StructureRepository {
 
     int removeBatchByIds(List<Long> ids);
 
-    List<Structure> selectByCorporationId(Integer corporationId);
+    /**
+     * 按军团ID查询建筑(写入侧 stale 删除左源)
+     *
+     * @param corporationId 军团ID
+     * @param userId        所有者归属过滤:null=不过滤(ROOT/管理),非 null=仅该同步者自己的行
+     * @return 建筑列表
+     */
+    List<Structure> selectByCorporationId(Integer corporationId, Long userId);
 
     /**
      * 分页查询军团建筑列表,关联解析类型名与星系名(只读)

@@ -73,8 +73,14 @@ public class StructureRepositoryImpl implements StructureRepository {
     }
 
     @Override
-    public List<Structure> selectByCorporationId(Integer corporationId) {
-        return structurePoConverter.po2Domain(structureMapper.selectList(new QueryWrapper<StructurePO>().lambda().eq(StructurePO::getCorporationId, corporationId)));
+    public List<Structure> selectByCorporationId(Integer corporationId, Long userId) {
+        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<StructurePO> wrapper =
+                new QueryWrapper<StructurePO>().lambda().eq(StructurePO::getCorporationId, corporationId);
+        // 私有同步隔离:仅过滤当前同步者自己的行,防 stale 删除误删他人/ROOT 建筑
+        if (userId != null) {
+            wrapper.eq(StructurePO::getUserId, userId);
+        }
+        return structurePoConverter.po2Domain(structureMapper.selectList(wrapper));
     }
 
     @Override
