@@ -102,7 +102,12 @@ public class AssetsService {
          * 需在此归因到所属角色,否则资产 owner_id=NULL,按角色聚合/归属鉴权/stale 删除均失效。
          */
         Long ownerId = eveAccount.getCharacterId() == null ? null : eveAccount.getCharacterId().longValue();
-        assets.forEach(a -> a.setOwnerId(ownerId));
+        // US1(014 T006):同步者 user_id 随写路径落库 —— 人物资产只对当前同步用户可见的归属依据
+        Long syncUserId = eveAccount.getUserId() == null ? null : eveAccount.getUserId().longValue();
+        assets.forEach(a -> {
+            a.setOwnerId(ownerId);
+            a.setUserId(syncUserId);
+        });
 
         batchInsertOrUpdate(assets);
 

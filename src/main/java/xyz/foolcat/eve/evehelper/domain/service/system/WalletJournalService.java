@@ -146,9 +146,12 @@ public class WalletJournalService {
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
         // 人物钱包为单分账,归一分账号固定为 0,并回填 ownerId(= 人物ID)
+        // US1(014 T008):同步者 user_id 随写路径落库 —— 人物流水只对当前同步用户可见的归属依据
+        Long syncUserId = eveAccount.getUserId() == null ? null : eveAccount.getUserId().longValue();
         walletJournals.forEach(j -> {
             j.setOwnerId(cId.longValue());
             j.setDivision(0);
+            j.setUserId(syncUserId);
         });
         if (!walletJournals.isEmpty()) {
             walletJournalRepository.saveOrUpdateBatch(walletJournals);

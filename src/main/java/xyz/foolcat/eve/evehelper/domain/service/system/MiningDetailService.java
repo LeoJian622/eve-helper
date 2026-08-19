@@ -59,6 +59,8 @@ public class MiningDetailService  {
 
         MD5 md5 = new MD5();
 
+        // US1(014 T007):同步者 user_id 随写路径落库 —— 采掘数据只对当前同步用户可见的归属依据
+        Long syncUserId = eveAccount.getUserId() == null ? null : eveAccount.getUserId().longValue();
         miningDetails.forEach(miningDetail -> {
             // 用哈希生成主键原因：
             // 将角色、矿石类型、建筑、采集时间四个业务维度拼接后取 MD5 前 16 位作为记录主键，
@@ -68,6 +70,7 @@ public class MiningDetailService  {
             String md5Digest = md5.digestHex16(Long.toString(key), StandardCharsets.UTF_8);
             miningDetail.setId(md5Digest);
             miningDetail.setObserverId(observerId);
+            miningDetail.setUserId(syncUserId);
             miningDetail.setCharacterName(universeName.get(miningDetail.getCharacterId()));
             miningDetail.setRecordedCorporationName(universeName.get(miningDetail.getRecordedCorporationId()));
         });

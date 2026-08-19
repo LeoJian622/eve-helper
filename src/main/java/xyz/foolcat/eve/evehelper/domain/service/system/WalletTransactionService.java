@@ -81,6 +81,9 @@ public class WalletTransactionService {
         List<WalletTransaction> transactions = pullTransactions(
                 fromId -> esiGateway.queryCharacterWalletTransactions(cId, fromId, accessToken));
         backfillOwner(transactions, OWNER_TYPE_CHARACTER, cId.longValue(), CHARACTER_DIVISION);
+        // US1(014 T009):人物钱包交易随同步者 user_id 落库 —— 人物交易只对当前同步用户可见的归属依据
+        Long syncUserId = eveAccount.getUserId() == null ? null : eveAccount.getUserId().longValue();
+        transactions.forEach(t -> t.setUserId(syncUserId));
 
         // 空页终止:无可写数据时不触发保存
         if (!transactions.isEmpty()) {
