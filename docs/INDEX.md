@@ -43,6 +43,7 @@ EVE Helper 项目文档中心。
 | [钱包交易流水](knowledge/wallet-transaction.md) | 人物/军团钱包交易同步(from_id游标+division失败隔离)与分页倒序查询流程 | 2026-08-18 |
 | [军团钱包流水](knowledge/corporation-wallet-journal.md) | 军团钱包 journal 全 division 同步(page-based+M4批量+失败隔离)与分账分页查询流程 | 2026-08-18 |
 | [钱包总览](knowledge/wallet-overview.md) | 人物/军团钱包总览聚合(余额/收支/类目/趋势/分账分布)与时间范围/安全/RBAC | 2026-08-19 |
+| [ESI 人物授权基准与403](knowledge/esi-char-auth-403.md) | 人物授权唯一基准(FR-001)/军团同步传角色ID/ESI 数据403友好映射 | 2026-08-19 |
 
 ## 🚀 快速导航
 
