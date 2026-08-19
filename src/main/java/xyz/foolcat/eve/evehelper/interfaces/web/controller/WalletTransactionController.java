@@ -25,7 +25,7 @@ import java.util.Map;
  *
  * @author Leojan
  */
-@Tag(name = "人物钱包交易")
+@Tag(name = "人物/军团钱包交易")
 @RestController
 @RequestMapping("/wallet/transaction")
 @RequiredArgsConstructor
