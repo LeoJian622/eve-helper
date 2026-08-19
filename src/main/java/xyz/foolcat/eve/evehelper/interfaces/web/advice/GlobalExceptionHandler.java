@@ -204,6 +204,10 @@ public class GlobalExceptionHandler {
         if (ResultCode.ACCESS_UNAUTHORIZED.getCode().equals(code)) {
             return HttpStatus.FORBIDDEN;
         }
+        // M3/013:ESI 数据接口权限不足(403)映射为 HTTP 403,区别于应用层 ACCESS_UNAUTHORIZED(码不同但同为 403)
+        if ("ESI00403".equals(code)) {
+            return HttpStatus.FORBIDDEN;
+        }
         return HttpStatus.BAD_REQUEST;
     }
 
