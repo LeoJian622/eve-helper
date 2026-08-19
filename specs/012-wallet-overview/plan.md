@@ -205,3 +205,10 @@ public class WalletOverviewController {
 
 - ESI 层、同步逻辑(角色/军团 journal 同步)、现有分页查询、数据库表结构。
 - `WalletJournalVO`/`WalletTransactionVO` 及其组装器。
+---
+
+## Polish 检查点（T024：仅标记，交由协调方评审）
+
+- **P5 验证报告**：待协调方执行（`./mvnw test` 全量绿 + `ecc:verification-loop` + `ecc:security-scan`），本任务未执行。
+- **P6 评审标记**：待协调方派遣 `ecc:java-reviewer` / `ecc:security-reviewer` 执行 G6 门禁，本任务未执行。
+- 本任务 T021（RBAC SQL）、T022（全量测试+覆盖率记录）、T023（知识文档）已完成；P5/P6 交回协调方继续。
