@@ -23,6 +23,8 @@ import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.security.ResourceOwnershipPolicy;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.RbacAuthorizationManager;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -35,6 +37,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -129,6 +132,7 @@ class WalletTransactionControllerCorpIT {
                               Set<Integer> failed) {
         EveAccount acc = new EveAccount();
         acc.setCharacterId(corpId);
+        acc.setCorpId(corpId); // 013 US4:解析 corpId 须非空,否则服务在 ESI 前抛 403(validate stub 语义)
         acc.setUserId(CURRENT_USER_ID);
         when(eveAccountService.getAccountOne(CURRENT_USER_ID, corpId)).thenReturn(acc);
         try {
@@ -147,6 +151,27 @@ class WalletTransactionControllerCorpIT {
                     // from_id 游标:首页(null)给该分账数据,翻页(非 null)给空页终止
                     return fromId == null ? Flux.fromIterable(page) : Flux.empty();
                 });
+    }
+
+    /**
+     * stub 军团同步,使 ESI 军团交易查询直接抛指定 ESI 异常(013 US3:验证 403/5xx 透传,
+     * 不被 division 级失败隔离折叠成笼统 400)。
+     */
+    @SuppressWarnings("unchecked")
+    private void stubCorpSyncEsiError(Integer corpId, EsiException esiException) {
+        EveAccount acc = new EveAccount();
+        acc.setCharacterId(corpId);
+        acc.setCorpId(corpId);
+        acc.setUserId(CURRENT_USER_ID);
+        when(eveAccountService.getAccountOne(CURRENT_USER_ID, corpId)).thenReturn(acc);
+        try {
+            when(esiGateway.getAccessToken(corpId, CURRENT_USER_ID)).thenReturn("tk");
+        } catch (java.text.ParseException e) {
+            throw new IllegalStateException(e);
+        }
+        // 任一分账首次翻页(from_id=null)即抛 ESI 异常
+        when(esiGateway.queryCorporationWalletTransactions(eq(corpId), anyInt(), isNull(), eq("tk")))
+                .thenThrow(esiException);
     }
 
     private Integer countByDivision(Integer corpId, Integer division) {
@@ -277,5 +302,33 @@ class WalletTransactionControllerCorpIT {
 
         // transaction_id 相同 => on duplicate key update 覆盖而非新增,division=2 始终仅 1 行
         org.assertj.core.api.Assertions.assertThat(countByDivision(CORP_ID, 2)).isEqualTo(1);
+    }
+
+    // ---------- 013 US3:ESI 数据接口 403 透传(FR-005) ----------
+
+    @Test
+    @DisplayName("ESI 军团交易查询返回 403 → 前端收 HTTP 403 + ESI00403 + 友好文案(非 ACCESS_UNAUTHORIZED 折叠)")
+    void syncCorporation_esi403_forbidden_friendlyMessage() throws Exception {
+        loginAs(CURRENT_USER_ID, "ADMIN");
+        stubCorpSyncEsiError(CORP_ID, new EsiException(ResultCode.ESI_AUTH_PERMISSION_LOW));
+
+        mockMvc.perform(post("/wallet/transaction/corp/" + CORP_ID + "/sync")
+                        .contentType(MediaType.APPLICATION_JSON))
+                // FR-005:数据权限 403 MUST 映射 HTTP 403 + 专属码,不被 division 隔离折叠成 400
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ESI00403"))
+                .andExpect(jsonPath("$.msg", containsString("Director")));
+    }
+
+    @Test
+    @DisplayName("ESI 军团交易查询 5xx → 返回异于 403 的错误(ESI00500),不与权限问题混淆")
+    void syncCorporation_esi5xx_distinctFrom403() throws Exception {
+        loginAs(CURRENT_USER_ID, "ADMIN");
+        stubCorpSyncEsiError(CORP_ID, new EsiException(ResultCode.ESI_SERVER_FAILURE));
+
+        mockMvc.perform(post("/wallet/transaction/corp/" + CORP_ID + "/sync")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest()) // 非 403,异于权限混淆(FR-006 可区分)
+                .andExpect(jsonPath("$.code").value("ESI00500"));
     }
 }

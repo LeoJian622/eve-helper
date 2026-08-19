@@ -132,8 +132,14 @@ public class WalletTransactionService {
                 }
                 results.put(currentDivision, Boolean.TRUE);
                 log.info("钱包交易军团同步完成 characterId={} corpId={} division={} 条数={}", characterId, corpId, division, transactions.size());
+            } catch (EsiException esiEx) {
+                // FR-005/FR-006(013 US3):ESI 数据接口 403 是系统性「权限/角色/成员资格」条件,非单分账瞬时故障——
+                // 透传交由全局异常处理器映射 HTTP 403 + ESI00403(区别于应用层 ACCESS_UNAUTHORIZED)。
+                // 授权失效(ESI00400)/服务故障(ESI00500)同样透传,使 403 与 5xx/失效可区分,
+                // 不被 division 级失败隔离折叠成笼统 400。
+                throw esiEx;
             } catch (RuntimeException e) {
-                // 失败隔离:记录失败分账与原因,继续下一 division
+                // 失败隔离:仅瞬时非-ESI 运行时故障(单分账网络抖动等)记录失败分账,继续下一 division,不整体回滚
                 failedDivisions.add(division);
                 results.put(division, Boolean.FALSE);
                 log.warn("钱包交易军团分账同步失败 characterId={} corpId={} division={}: {}", characterId, corpId, division, e.getMessage());
