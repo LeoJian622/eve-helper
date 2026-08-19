@@ -75,6 +75,9 @@ public class BlueprintsPO extends BaseEntity implements Serializable {
     @TableField(value = "owner_id")
     @Schema(description = "所有者ID")
     private Long ownerId;
+    @TableField(value = "user_id")
+    @Schema(description = "同步者系统用户ID")
+    private Long userId;
     @Serial
     private static final long serialVersionUID = 1L;
 } 

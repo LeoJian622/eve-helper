@@ -58,6 +58,11 @@ public class Assets extends BaseEntity implements Serializable {
     private Long ownerId;
 
     /**
+     * 同步者系统用户ID
+     */
+    private Long userId;
+
+    /**
      * 物品名称（联表inv_types）
      */
     private String typeName;

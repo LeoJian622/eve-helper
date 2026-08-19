@@ -24,6 +24,11 @@ public class MiningDetail extends BaseEntity implements Serializable {
     private Integer characterId;
 
     /**
+     * 同步者系统用户ID
+     */
+    private Long userId;
+
+    /**
      * 人物名称
      */
     private String characterName;

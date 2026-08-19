@@ -138,14 +138,14 @@
   <insert id="batchInsert" parameterType="map">
     <!--@mbg.generated-->
     insert into blueprints
-    (item_id, type_id, material_efficiency, time_efficiency, runs, quantity, location_id, 
-      location_flag, owner_id)
+    (item_id, type_id, material_efficiency, time_efficiency, runs, quantity, location_id,
+      location_flag, owner_id, user_id)
     values
     <foreach collection="list" item="item" separator=",">
-      (#{item.itemId,jdbcType=BIGINT}, #{item.typeId,jdbcType=INTEGER}, #{item.materialEfficiency,jdbcType=INTEGER}, 
-        #{item.timeEfficiency,jdbcType=INTEGER}, #{item.runs,jdbcType=INTEGER}, #{item.quantity,jdbcType=BIGINT}, 
-        #{item.locationId,jdbcType=BIGINT}, #{item.locationFlag,jdbcType=VARCHAR}, #{item.ownerId,jdbcType=BIGINT}
-        )
+      (#{item.itemId,jdbcType=BIGINT}, #{item.typeId,jdbcType=INTEGER}, #{item.materialEfficiency,jdbcType=INTEGER},
+        #{item.timeEfficiency,jdbcType=INTEGER}, #{item.runs,jdbcType=INTEGER}, #{item.quantity,jdbcType=BIGINT},
+        #{item.locationId,jdbcType=BIGINT}, #{item.locationFlag,jdbcType=VARCHAR}, #{item.ownerId,jdbcType=BIGINT},
+        #{item.userId,jdbcType=BIGINT})
     </foreach>
   </insert>
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.BlueprintsPO">
@@ -179,6 +179,9 @@
       <if test="ownerId != null">
         owner_id,
       </if>
+      <if test="userId != null">
+        user_id,
+      </if>
     </trim>
     values
     <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -209,8 +212,11 @@
       <if test="ownerId != null">
         #{ownerId,jdbcType=BIGINT},
       </if>
+      <if test="userId != null">
+        #{userId,jdbcType=BIGINT},
+      </if>
     </trim>
-    on duplicate key update 
+    on duplicate key update
     <trim suffixOverrides=",">
       <if test="itemId != null">
         item_id = #{itemId,jdbcType=BIGINT},
@@ -238,6 +244,9 @@
       </if>
       <if test="ownerId != null">
         owner_id = #{ownerId,jdbcType=BIGINT},
+      </if>
+      <if test="userId != null">
+        user_id = #{userId,jdbcType=BIGINT},
       </if>
     </trim>
   </insert>

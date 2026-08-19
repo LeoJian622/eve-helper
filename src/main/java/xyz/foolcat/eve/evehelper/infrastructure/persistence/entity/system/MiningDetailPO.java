@@ -24,6 +24,9 @@ public class MiningDetailPO  implements Serializable {
     @TableField(value = "character_id")
     @Schema(description = "人物ID")
     private Integer characterId;
+    @TableField(value = "user_id")
+    @Schema(description = "同步者系统用户ID")
+    private Long userId;
     @TableField(value = "character_name")
     @Schema(description = "")
     private String characterName;

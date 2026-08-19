@@ -64,6 +64,11 @@ public class Blueprints extends BaseEntity implements Serializable {
      */
     private Long ownerId;
 
+    /**
+     * 同步者系统用户ID
+     */
+    private Long userId;
+
     @Serial
     private static final long serialVersionUID = 1L;
 } 

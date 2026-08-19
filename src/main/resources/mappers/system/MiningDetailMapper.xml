@@ -138,13 +138,14 @@
   <insert id="batchInsert" parameterType="map">
     <!--@mbg.generated-->
     insert into mining_detail
-    (id, character_id, character_name, recorded_corporation_id, recorded_corporation_name, 
+    (id, character_id, user_id, character_name, recorded_corporation_id, recorded_corporation_name,
       type_id, quantity, observer_id, last_updated)
     values
     <foreach collection="list" item="item" separator=",">
-      (#{item.id,jdbcType=VARCHAR}, #{item.characterId,jdbcType=INTEGER}, #{item.characterName,jdbcType=VARCHAR}, 
-        #{item.recordedCorporationId,jdbcType=INTEGER}, #{item.recordedCorporationName,jdbcType=VARCHAR}, 
-        #{item.typeId,jdbcType=INTEGER}, #{item.quantity,jdbcType=BIGINT}, #{item.observerId,jdbcType=BIGINT}, 
+      (#{item.id,jdbcType=VARCHAR}, #{item.characterId,jdbcType=INTEGER}, #{item.userId,jdbcType=BIGINT},
+        #{item.characterName,jdbcType=VARCHAR},
+        #{item.recordedCorporationId,jdbcType=INTEGER}, #{item.recordedCorporationName,jdbcType=VARCHAR},
+        #{item.typeId,jdbcType=INTEGER}, #{item.quantity,jdbcType=BIGINT}, #{item.observerId,jdbcType=BIGINT},
         #{item.lastUpdated,jdbcType=DATE})
     </foreach>
   </insert>
@@ -157,6 +158,9 @@
       </if>
       <if test="characterId != null">
         character_id,
+      </if>
+      <if test="userId != null">
+        user_id,
       </if>
       <if test="characterName != null">
         character_name,
@@ -188,6 +192,9 @@
       <if test="characterId != null">
         #{characterId,jdbcType=INTEGER},
       </if>
+      <if test="userId != null">
+        #{userId,jdbcType=BIGINT},
+      </if>
       <if test="characterName != null">
         #{characterName,jdbcType=VARCHAR},
       </if>
@@ -218,6 +225,9 @@
       <if test="characterId != null">
         character_id = #{characterId,jdbcType=INTEGER},
       </if>
+      <if test="userId != null">
+        user_id = #{userId,jdbcType=BIGINT},
+      </if>
       <if test="characterName != null">
         character_name = #{characterName,jdbcType=VARCHAR},
       </if>
@@ -244,11 +254,12 @@
 
     <insert id="batchInsertOrUpdate" parameterType="map">
         insert into mining_detail
-        (id, character_id, character_name, recorded_corporation_id, recorded_corporation_name,
+        (id, character_id, user_id, character_name, recorded_corporation_id, recorded_corporation_name,
          type_id, quantity, observer_id, last_updated)
         values
         <foreach collection="list" item="item" separator=",">
-            (#{item.id,jdbcType=VARCHAR}, #{item.characterId,jdbcType=INTEGER}, #{item.characterName,jdbcType=VARCHAR},
+            (#{item.id,jdbcType=VARCHAR}, #{item.characterId,jdbcType=INTEGER}, #{item.userId,jdbcType=BIGINT},
+             #{item.characterName,jdbcType=VARCHAR},
              #{item.recordedCorporationId,jdbcType=INTEGER}, #{item.recordedCorporationName,jdbcType=VARCHAR},
              #{item.typeId,jdbcType=INTEGER}, #{item.quantity,jdbcType=BIGINT}, #{item.observerId,jdbcType=BIGINT},
              #{item.lastUpdated,jdbcType=DATE})
@@ -256,6 +267,7 @@
         on duplicate key update
         id = values(id),
         character_id = values(character_id),
+        user_id = values(user_id),
         character_name = values(character_name),
         recorded_corporation_id = values(recorded_corporation_id),
         recorded_corporation_name = values(recorded_corporation_name),
