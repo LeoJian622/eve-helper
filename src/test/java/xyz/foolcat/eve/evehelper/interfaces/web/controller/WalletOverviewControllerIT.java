@@ -44,6 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class WalletOverviewControllerIT {
 
     private static final int CID = 2112832425;
+    private static final int CORP = 98454654;
 
     @Autowired
     MockMvc mockMvc;
@@ -60,6 +61,7 @@ class WalletOverviewControllerIT {
     @BeforeEach
     void setUp() {
         jdbcTemplate.update("delete from wallet_journal where owner_id = ?", CID);
+        jdbcTemplate.update("delete from wallet_journal where owner_id = ?", CORP);
         when(rbacAuthorizationManager.authorize(any(), any()))
                 .thenReturn(new AuthorizationDecision(true));
         when(rbacAuthorizationManager.check(any(), any()))
@@ -82,6 +84,13 @@ class WalletOverviewControllerIT {
         jdbcTemplate.update(
                 "insert into wallet_journal (id, amount, balance, `date`, ref_type, owner_id) values (?,?,?,?,?,?)",
                 id, amount, balance, java.sql.Date.valueOf(date), refType, (long) CID);
+    }
+
+    /** 军团侧落库:额外带 division。 */
+    private void insertCorpJournal(long id, int division, double amount, double balance, LocalDate date, String refType) {
+        jdbcTemplate.update(
+                "insert into wallet_journal (id, amount, balance, division, `date`, ref_type, owner_id) values (?,?,?,?,?,?,?)",
+                id, amount, balance, division, java.sql.Date.valueOf(date), refType, (long) CORP);
     }
 
     // ---------- 五个标量 + 类目 + 趋势 ----------
@@ -191,5 +200,107 @@ class WalletOverviewControllerIT {
                 .andExpect(jsonPath("$.data.currentBalance").value(0.0))
                 .andExpect(jsonPath("$.data.categories").isArray())
                 .andExpect(jsonPath("$.data.trend").isArray());
+    }
+
+    // ---------- 军团总览(US2) ----------
+
+    @Test
+    @DisplayName("军团全量 -> 分账分布 1..7(有数据归并/无数据补零),currentBalance=各分账余额和")
+    void corpOverview_full_divisionDistribution() throws Exception {
+        loginAsAdmin();
+        // div1:最新 id302 balance=800;income=1000,expense=200
+        insertCorpJournal(301L, 1, 1000.0, 1000.0, LocalDate.of(2026, 1, 2), "bounty_prizes");
+        insertCorpJournal(302L, 1, -200.0, 800.0, LocalDate.of(2026, 1, 3), "ess_escrow_transfer");
+        // div3 单条
+        insertCorpJournal(303L, 3, 500.0, 500.0, LocalDate.of(2026, 1, 4), "market_sale");
+        // div5 单条
+        insertCorpJournal(304L, 5, 300.0, 300.0, LocalDate.of(2026, 1, 5), "market_sale");
+
+        mockMvc.perform(get("/wallet/overview/corp/" + CORP).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                // 全量标量(无 division 过滤):income=1800, expense=200, net=1600, count=4
+                .andExpect(jsonPath("$.data.totalIncome").value(1800.0))
+                .andExpect(jsonPath("$.data.totalExpense").value(200.0))
+                .andExpect(jsonPath("$.data.netFlow").value(1600.0))
+                .andExpect(jsonPath("$.data.journalCount").value(4))
+                // currentBalance = 800(div1)+500(div3)+300(div5) = 1600
+                .andExpect(jsonPath("$.data.currentBalance").value(1600.0))
+                // divisions 固定 1..7
+                .andExpect(jsonPath("$.data.divisions.length()").value(7))
+                .andExpect(jsonPath("$.data.divisions[0].division").value(1))
+                .andExpect(jsonPath("$.data.divisions[0].balance").value(800.0))
+                .andExpect(jsonPath("$.data.divisions[0].income").value(1000.0))
+                .andExpect(jsonPath("$.data.divisions[0].expense").value(200.0))
+                .andExpect(jsonPath("$.data.divisions[2].division").value(3))
+                .andExpect(jsonPath("$.data.divisions[2].balance").value(500.0))
+                .andExpect(jsonPath("$.data.divisions[4].division").value(5))
+                .andExpect(jsonPath("$.data.divisions[4].balance").value(300.0))
+                // 无数据分账补零:div2
+                .andExpect(jsonPath("$.data.divisions[1].division").value(2))
+                .andExpect(jsonPath("$.data.divisions[1].balance").value(0.0))
+                .andExpect(jsonPath("$.data.divisions[1].income").value(0.0))
+                .andExpect(jsonPath("$.data.divisions[1].expense").value(0.0))
+                // div6 补零
+                .andExpect(jsonPath("$.data.divisions[5].division").value(6))
+                .andExpect(jsonPath("$.data.divisions[5].balance").value(0.0));
+    }
+
+    @Test
+    @DisplayName("军团单分账 -> 仅该 division 过滤,divisions 不出现")
+    void corpOverview_singleDivision_filteredNoDivisions() throws Exception {
+        loginAsAdmin();
+        insertCorpJournal(401L, 1, 1000.0, 1000.0, LocalDate.of(2026, 1, 2), "bounty_prizes");
+        insertCorpJournal(402L, 3, 500.0, 500.0, LocalDate.of(2026, 1, 4), "market_sale");
+
+        mockMvc.perform(get("/wallet/overview/corp/" + CORP)
+                        .param("division", "3")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.journalCount").value(1))
+                .andExpect(jsonPath("$.data.totalIncome").value(500.0))
+                .andExpect(jsonPath("$.data.totalExpense").value(0.0))
+                .andExpect(jsonPath("$.data.currentBalance").value(500.0))
+                .andExpect(jsonPath("$.data.divisions").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("军团 division=0/8 -> 400(PARAM_ERROR)")
+    void corpOverview_invalidDivision_badRequest() throws Exception {
+        loginAsAdmin();
+
+        mockMvc.perform(get("/wallet/overview/corp/" + CORP).param("division", "0")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(get("/wallet/overview/corp/" + CORP).param("division", "8")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("军团越权访问 -> 403")
+    void corpOverview_foreignCorp_forbidden() throws Exception {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        (long) 7, null, List.of(new SimpleGrantedAuthority("USER"))));
+        when(resourceOwnershipPolicy.isOwnedBy(any(), any())).thenReturn(false);
+
+        mockMvc.perform(get("/wallet/overview/corp/999999").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("军团空分账零值 -> divisions 1..7 全零,currentBalance=0")
+    void corpOverview_empty_zeroedDivisions() throws Exception {
+        loginAsAdmin();
+
+        mockMvc.perform(get("/wallet/overview/corp/" + CORP).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.currentBalance").value(0.0))
+                .andExpect(jsonPath("$.data.journalCount").value(0))
+                .andExpect(jsonPath("$.data.divisions.length()").value(7))
+                .andExpect(jsonPath("$.data.divisions[0].division").value(1))
+                .andExpect(jsonPath("$.data.divisions[0].balance").value(0.0))
+                .andExpect(jsonPath("$.data.divisions[6].division").value(7))
+                .andExpect(jsonPath("$.data.divisions[6].balance").value(0.0));
     }
 }

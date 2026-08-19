@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -44,6 +45,7 @@ import static org.mockito.Mockito.when;
 class WalletOverviewApplicationServiceTest {
 
     private static final int CID = 9001;
+    private static final int CORP = 98454654;
 
     private static final long DAY_MS = 86400000L;
 
@@ -200,6 +202,108 @@ class WalletOverviewApplicationServiceTest {
     }
 
     /* ============================ 组装 ============================ */
+
+    /* ============================ 军团总览(US2) ============================ */
+
+    @Nested
+    @DisplayName("军团钱包总览用例")
+    class CorporationOverview {
+
+        @Test
+        @DisplayName("division 越界(0/8)抛 PARAM_ERROR,不触达归属校验")
+        void invalidDivision_rejectedBeforeOwnership() {
+            for (int bad : new int[]{0, 8}) {
+                assertThatThrownBy(() -> applicationService.getCorporationOverview(CORP, bad, null, null, null))
+                        .isInstanceOf(EveHelperException.class)
+                        .hasMessageContaining("参数");
+            }
+            verifyNoInteractions(accessGuard);
+            verifyNoInteractions(walletJournalRepository);
+        }
+
+        @Test
+        @DisplayName("corpId 为空抛 PARAM_ERROR,不触达归属校验")
+        void nullCorpId_rejectedBeforeOwnership() {
+            assertThatThrownBy(() -> applicationService.getCorporationOverview(null, null, null, null, null))
+                    .isInstanceOf(EveHelperException.class)
+                    .hasMessageContaining("参数");
+            verifyNoInteractions(accessGuard);
+            verifyNoInteractions(walletJournalRepository);
+        }
+
+        @Test
+        @DisplayName("合法军团入参后调用 requireOwnership(corpId 字符串, 军团钱包总览)")
+        void validCorpInput_callsRequireOwnership() {
+            when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), isNull(), isNull(), isNull()))
+                    .thenReturn(new WalletOverviewAggregate(0.0, 0.0, 0.0, 0.0, 0L, null));
+            when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any())).thenReturn(List.of());
+            when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any())).thenReturn(List.of());
+            when(walletJournalRepository.selectOverviewDivisionBalances((long) CORP)).thenReturn(List.of());
+            when(walletJournalRepository.selectOverviewDivisionFlow(eq((long) CORP), isNull(), isNull())).thenReturn(List.of());
+
+            applicationService.getCorporationOverview(CORP, null, null, null, null);
+
+            verify(accessGuard).requireOwnership(String.valueOf(CORP), "军团钱包总览");
+        }
+
+        @Test
+        @DisplayName("军团全量:分账 1..7 补零,收支/余额按 division 归并,currentBalance=各分账余额和")
+        void fullOverview_divisionsMergedAndBalanceSummed() {
+            WalletOverviewAggregate agg = new WalletOverviewAggregate(999.0, 300.0, 100.0, 200.0, 5L, OffsetDateTime.now());
+            when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), isNull(), isNull(), isNull())).thenReturn(agg);
+            when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any())).thenReturn(List.of());
+            when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any())).thenReturn(List.of());
+            when(walletJournalRepository.selectOverviewDivisionBalances((long) CORP))
+                    .thenReturn(List.of(
+                            new WalletOverviewVO.DivisionSummary(1, 100.0, 0.0, 0.0),
+                            new WalletOverviewVO.DivisionSummary(3, 50.0, 0.0, 0.0)));
+            when(walletJournalRepository.selectOverviewDivisionFlow(eq((long) CORP), isNull(), isNull()))
+                    .thenReturn(List.of(
+                            new WalletOverviewVO.DivisionSummary(1, 0.0, 10.0, 5.0),
+                            new WalletOverviewVO.DivisionSummary(3, 0.0, 20.0, 8.0)));
+
+            WalletOverviewVO vo = applicationService.getCorporationOverview(CORP, null, null, null, null);
+
+            assertThat(vo.divisions()).isNotNull();
+            assertThat(vo.divisions()).hasSize(7);
+            // 有数据分账:div1/div3 归并 balance+income+expense
+            assertThat(vo.divisions().get(0)).isEqualTo(new WalletOverviewVO.DivisionSummary(1, 100.0, 10.0, 5.0));
+            assertThat(vo.divisions().get(2)).isEqualTo(new WalletOverviewVO.DivisionSummary(3, 50.0, 20.0, 8.0));
+            // 无数据分账补零:div2、div4-7
+            assertThat(vo.divisions().get(1)).isEqualTo(new WalletOverviewVO.DivisionSummary(2, 0.0, 0.0, 0.0));
+            assertThat(vo.divisions().get(3)).isEqualTo(new WalletOverviewVO.DivisionSummary(4, 0.0, 0.0, 0.0));
+            assertThat(vo.divisions().get(6)).isEqualTo(new WalletOverviewVO.DivisionSummary(7, 0.0, 0.0, 0.0));
+            // currentBalance = 分账余额和 150,覆盖 aggregate 的 999
+            assertThat(vo.currentBalance()).isEqualTo(150.0);
+            // 其余标量透传 aggregate(无 division 过滤)
+            assertThat(vo.totalIncome()).isEqualTo(300.0);
+            assertThat(vo.totalExpense()).isEqualTo(100.0);
+            assertThat(vo.netFlow()).isEqualTo(200.0);
+            assertThat(vo.journalCount()).isEqualTo(5L);
+        }
+
+        @Test
+        @DisplayName("军团单分账:三聚合带 division 过滤,divisions=null,不查分账分布")
+        void singleDivision_divisionFilteredNoDivisions() {
+            WalletOverviewAggregate agg = new WalletOverviewAggregate(50.0, 20.0, 0.0, 20.0, 1L, null);
+            when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), eq(3), isNull(), isNull())).thenReturn(agg);
+            when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any())).thenReturn(List.of());
+            when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any())).thenReturn(List.of());
+
+            WalletOverviewVO vo = applicationService.getCorporationOverview(CORP, 3, null, null, null);
+
+            verify(walletJournalRepository).selectOverviewAggregate(eq((long) CORP), eq(3), isNull(), isNull());
+            verify(walletJournalRepository).selectOverviewCategories(eq((long) CORP), eq(3), isNull(), isNull());
+            verify(walletJournalRepository).selectOverviewTrend(eq((long) CORP), eq(3), isNull(), isNull(), eq("%Y-%m"));
+            // division 为 null 时才查分账分布;单分账不查
+            verify(walletJournalRepository, never()).selectOverviewDivisionBalances(any());
+            verify(walletJournalRepository, never()).selectOverviewDivisionFlow(any(), any(), any());
+            assertThat(vo.divisions()).isNull();
+            assertThat(vo.currentBalance()).isEqualTo(50.0);
+        }
+    }
+
+    /* ============================ VO 组装 ============================ */
 
     @Nested
     @DisplayName("VO 组装")
