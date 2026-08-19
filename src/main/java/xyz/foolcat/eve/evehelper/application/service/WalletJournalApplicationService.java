@@ -65,20 +65,23 @@ public class WalletJournalApplicationService {
     }
 
     /**
-     * 手动同步某军团钱包流水(1..7 分账,幂等 upsert,分账级失败隔离)。
+     * 手动同步某角色关联军团的钱包流水(1..7 分账,幂等 upsert,分账级失败隔离)。
      *
-     * @param corpId 军团ID
+     * <p><b>013 US1</b>:入参统一为<b>角色ID(characterId)</b>;归属校验(requireOwnership)基于该角色
+     * 是否属于当前用户(防 IDOR),目标军团ID由领域服务从该角色 eve_account 行派生 —— 调用方无法指定任意军团。</p>
+     *
+     * @param characterId 角色ID(该角色的 eve_account 行须含关联军团)
      */
-    public void syncCorporationJournal(Integer corpId) {
-        // 归属校验先于业务逻辑:corpId 为用户可控入参,须先确认该军团属于当前用户(防御 IDOR)
-        accessGuard.requireOwnership(String.valueOf(corpId), "军团钱包流水同步");
-        // 冷却限流:同一军团冷却期内不允许重复同步,防 ESI 限流滥用
-        String cooldownKey = SYNC_COOLDOWN_PREFIX + "corp:" + corpId;
+    public void syncCorporationJournal(Integer characterId) {
+        // 归属校验先于业务逻辑:characterId 为用户可控入参,须先确认该角色属于当前用户(防御 IDOR)
+        accessGuard.requireOwnership(String.valueOf(characterId), "军团钱包流水同步");
+        // 冷却限流:同一角色冷却期内不允许重复同步,防 ESI 限流滥用
+        String cooldownKey = SYNC_COOLDOWN_PREFIX + "corp:" + characterId;
         requireSyncCooldown(cooldownKey);
         try {
-            walletJournalService.syncCorporationJournal(corpId);
+            walletJournalService.syncCorporationJournal(characterId);
         } catch (ParseException e) {
-            log.error("军团钱包流水同步失败: corpId={}", corpId, e);
+            log.error("军团钱包流水同步失败: characterId={}", characterId, e);
             throw new EveHelperException("军团钱包流水同步失败", e);
         }
     }

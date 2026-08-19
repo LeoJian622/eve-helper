@@ -54,12 +54,12 @@ public class WalletJournalController {
     }
 
     @Parameters({
-            @Parameter(name = "corpId", description = "军团ID", required = true)
+            @Parameter(name = "characterId", description = "角色ID(该角色须关联目标军团)", required = true)
     })
-    @Operation(summary = "钱包流水-军团同步", description = "调用服务器去获取 ESI 的军团各分账钱包流水数据(1..7 分账幂等 upsert)")
-    @PostMapping("/corp/{corpId}/sync")
-    public Result<Void> syncCorporationJournal(@PathVariable Integer corpId) {
-        walletJournalApplicationService.syncCorporationJournal(corpId);
+    @Operation(summary = "钱包流水-军团同步", description = "调用服务器去获取 ESI 的军团各分账钱包流水数据(1..7 分账幂等 upsert)。军团ID由该角色 eve_account 行派生(013 US1,调用方无法指定任意军团)")
+    @PostMapping("/corp/{characterId}/sync")
+    public Result<Void> syncCorporationJournal(@PathVariable Integer characterId) {
+        walletJournalApplicationService.syncCorporationJournal(characterId);
         return Result.success();
     }
 
