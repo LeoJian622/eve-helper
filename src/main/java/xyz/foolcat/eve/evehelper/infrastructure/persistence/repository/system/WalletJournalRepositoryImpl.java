@@ -13,6 +13,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.WalletJour
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletJournalPO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewAggregatePO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewCategoryPO;
+import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewDivisionPO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewTrendPO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.WalletJournalMapper;
 
@@ -161,6 +162,40 @@ public class WalletJournalRepositoryImpl implements WalletJournalRepository {
                     zeroIfNull(p.income()),
                     zeroIfNull(p.expense()),
                     zeroIfNull(p.net())));
+        }
+        return result;
+    }
+
+    @Override
+    public List<WalletOverviewVO.DivisionSummary> selectOverviewDivisionBalances(Long ownerId) {
+        List<WalletOverviewDivisionPO> pos = walletJournalMapper.selectOverviewDivisionBalances(ownerId);
+        if (pos == null || pos.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<WalletOverviewVO.DivisionSummary> result = new ArrayList<>(pos.size());
+        for (WalletOverviewDivisionPO p : pos) {
+            result.add(new WalletOverviewVO.DivisionSummary(
+                    p.division(),
+                    p.balance() == null ? 0.0 : p.balance(),
+                    0.0,
+                    0.0));
+        }
+        return result;
+    }
+
+    @Override
+    public List<WalletOverviewVO.DivisionSummary> selectOverviewDivisionFlow(Long ownerId, Date start, Date end) {
+        List<WalletOverviewDivisionPO> pos = walletJournalMapper.selectOverviewDivisionFlow(ownerId, start, end);
+        if (pos == null || pos.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<WalletOverviewVO.DivisionSummary> result = new ArrayList<>(pos.size());
+        for (WalletOverviewDivisionPO p : pos) {
+            result.add(new WalletOverviewVO.DivisionSummary(
+                    p.division(),
+                    0.0,
+                    p.income() == null ? 0.0 : p.income(),
+                    p.expense() == null ? 0.0 : p.expense()));
         }
         return result;
     }

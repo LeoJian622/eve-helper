@@ -79,4 +79,22 @@ public interface WalletJournalRepository {
      * @return 趋势点列表
      */
     List<WalletOverviewVO.TrendPoint> selectOverviewTrend(Long ownerId, Integer division, Date start, Date end, String granularity);
+
+    /**
+     * 军团全量:取每个 division 最新 id 行的当前余额(income/expense 为 0)。
+     *
+     * @param ownerId 所有者ID(军团)
+     * @return 各 division 最新余额(无数据分账不返回,服务层补零)
+     */
+    List<WalletOverviewVO.DivisionSummary> selectOverviewDivisionBalances(Long ownerId);
+
+    /**
+     * 军团全量:按 division 汇总区间收支(balance 为 0)。
+     *
+     * @param ownerId 所有者ID(军团)
+     * @param start   起始时间(可空)
+     * @param end     结束时间(可空)
+     * @return 各 division 区间收入/支出
+     */
+    List<WalletOverviewVO.DivisionSummary> selectOverviewDivisionFlow(Long ownerId, Date start, Date end);
 }

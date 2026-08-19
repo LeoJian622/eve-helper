@@ -11,9 +11,12 @@ import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -83,6 +86,97 @@ public class WalletOverviewApplicationService {
                 categories == null ? Collections.emptyList() : categories,
                 trend == null ? Collections.emptyList() : trend,
                 null);
+    }
+
+    /**
+     * 军团钱包总览。
+     *
+     * @param corpId   军团ID
+     * @param division 军团分账(1..7);null 为全量(分账分布 1..7,currentBalance=各分账最新余额和)
+     * @param range    预设时间范围(today/last7d/last30d/last90d/year),与 start/end 二选一;都空为全量
+     * @param start    起始时间(可空)
+     * @param end      结束时间(可空)
+     * @return 军团钱包总览读模型(全量 divisions 为 1..7 分账分布,单分账 divisions=null)
+     */
+    public WalletOverviewVO getCorporationOverview(Integer corpId, Integer division, String range, Date start, Date end) {
+        // 入参边界校验先于归属校验:非法入参直接拒绝,不触达越权探测路径
+        if (corpId == null || !isValidCorpDivision(division) || !isValidRange(range)
+                || (range != null && (start != null || end != null))) {
+            log.warn("军团钱包总览参数不合法: corpId={}, division={}, range={}, hasStart={}, hasEnd={}",
+                    corpId, division, range, start != null, end != null);
+            throw new EveHelperException(ResultCode.PARAM_ERROR);
+        }
+        Date[] resolved = resolveRange(range, start, end);
+        Date rStart = resolved[0];
+        Date rEnd = resolved[1];
+        // 归属校验先于业务逻辑:corpId 为用户可控入参,须先确认该军团属于当前用户(防御 IDOR)
+        accessGuard.requireOwnership(String.valueOf(corpId), "军团钱包总览");
+
+        Long ownerId = corpId.longValue();
+        // 单分账带 division 过滤,全量无过滤;收支/类目/趋势沿用人物三条查询
+        var aggregate = walletJournalRepository.selectOverviewAggregate(ownerId, division, rStart, rEnd);
+        List<WalletOverviewVO.CategorySummary> categories =
+                walletJournalRepository.selectOverviewCategories(ownerId, division, rStart, rEnd);
+        String granularity = granularity(rStart, rEnd);
+        List<WalletOverviewVO.TrendPoint> trend =
+                walletJournalRepository.selectOverviewTrend(ownerId, division, rStart, rEnd, granularity);
+
+        Double cb = aggregate == null ? 0.0 : aggregate.currentBalance();
+        Double ti = aggregate == null ? 0.0 : aggregate.totalIncome();
+        Double te = aggregate == null ? 0.0 : aggregate.totalExpense();
+        Double nf = aggregate == null ? 0.0 : aggregate.netFlow();
+        Long jc = aggregate == null ? 0L : aggregate.journalCount();
+        OffsetDateTime asOf = aggregate == null ? null : aggregate.asOfTime();
+
+        List<WalletOverviewVO.DivisionSummary> divs = null;
+        if (division == null) {
+            // 军团全量:分账分布合并为 1..7 补零;currentBalance = 各分账最新余额之和(覆盖聚合值)
+            divs = mergeCorpDivisions(
+                    walletJournalRepository.selectOverviewDivisionBalances(ownerId),
+                    walletJournalRepository.selectOverviewDivisionFlow(ownerId, rStart, rEnd));
+            cb = 0.0;
+            for (WalletOverviewVO.DivisionSummary d : divs) {
+                cb += d.balance();
+            }
+        }
+
+        return new WalletOverviewVO(
+                cb, ti, te, nf, jc, asOf,
+                categories == null ? Collections.emptyList() : categories,
+                trend == null ? Collections.emptyList() : trend,
+                divs);
+    }
+
+    private boolean isValidCorpDivision(Integer division) {
+        return division == null || (division >= 1 && division <= 7);
+    }
+
+    /**
+     * 军团全量分账分布:余额按 division 与收支按 division 归并,按 1..7 补零成有序列表。
+     */
+    private List<WalletOverviewVO.DivisionSummary> mergeCorpDivisions(
+            List<WalletOverviewVO.DivisionSummary> balances, List<WalletOverviewVO.DivisionSummary> flow) {
+        Map<Integer, Double> balanceByDiv = new HashMap<>();
+        if (balances != null) {
+            for (WalletOverviewVO.DivisionSummary d : balances) {
+                balanceByDiv.put(d.division(), d.balance() == null ? 0.0 : d.balance());
+            }
+        }
+        Map<Integer, WalletOverviewVO.DivisionSummary> flowByDiv = new HashMap<>();
+        if (flow != null) {
+            for (WalletOverviewVO.DivisionSummary d : flow) {
+                flowByDiv.put(d.division(), d);
+            }
+        }
+        List<WalletOverviewVO.DivisionSummary> result = new ArrayList<>(7);
+        for (int div = 1; div <= 7; div++) {
+            double bal = balanceByDiv.getOrDefault(div, 0.0);
+            WalletOverviewVO.DivisionSummary f = flowByDiv.get(div);
+            double inc = f == null ? 0.0 : (f.income() == null ? 0.0 : f.income());
+            double exp = f == null ? 0.0 : (f.expense() == null ? 0.0 : f.expense());
+            result.add(new WalletOverviewVO.DivisionSummary(div, bal, inc, exp));
+        }
+        return result;
     }
 
     private boolean isValidRange(String range) {

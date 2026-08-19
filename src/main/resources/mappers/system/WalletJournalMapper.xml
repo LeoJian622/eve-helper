@@ -509,4 +509,29 @@
     group by bucket
     order by bucket asc
   </select>
+
+  <!-- 军团全量:每个 division 最新 id 行的当前余额(自关联 MAX(id))。无数据分账不返回,服务层补零。 -->
+  <select id="selectOverviewDivisionBalances"
+          resultType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewDivisionPO">
+    select w.division as division, w.balance as balance, 0.0 as income, 0.0 as expense
+    from wallet_journal w
+    join (select owner_id, division, MAX(id) as mid from wallet_journal
+          where owner_id = #{ownerId} group by owner_id, division) m
+      on w.owner_id = m.owner_id and w.division = m.division and w.id = m.mid
+  </select>
+
+  <!-- 军团全量:按 division 汇总区间收支。`date` 为保留字须反引号;amount 正负分别累。 -->
+  <select id="selectOverviewDivisionFlow"
+          resultType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewDivisionPO">
+    select
+      division,
+      0.0 as balance,
+      COALESCE(SUM(CASE WHEN amount &gt; 0 THEN amount ELSE 0 END), 0) as income,
+      COALESCE(SUM(CASE WHEN amount &lt; 0 THEN -amount ELSE 0 END), 0) as expense
+    from wallet_journal
+    where owner_id = #{ownerId}
+    <if test="start != null">and `date` &gt;= #{start}</if>
+    <if test="end != null">and `date` &lt;= #{end}</if>
+    group by division
+  </select>
 </mapper>

@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Param;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletJournalPO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewAggregatePO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewCategoryPO;
+import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewDivisionPO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.WalletOverviewTrendPO;
 
 import java.util.Date;
@@ -84,4 +85,23 @@ public interface WalletJournalMapper extends BaseMapper<WalletJournalPO> {
     List<WalletOverviewTrendPO> selectOverviewTrend(@Param("ownerId") Long ownerId, @Param("division") Integer division,
                                                     @Param("start") Date start, @Param("end") Date end,
                                                     @Param("granularity") String granularity);
+
+    /**
+     * 军团全量:取每个 division 最新 id 行的当前余额。
+     *
+     * @param ownerId 所有者ID(军团)
+     * @return 各 division 最新余额(无数据的分账不返回,交由服务层补零)
+     */
+    List<WalletOverviewDivisionPO> selectOverviewDivisionBalances(@Param("ownerId") Long ownerId);
+
+    /**
+     * 军团全量:按 division 汇总区间收支(时间过滤作用于此)。
+     *
+     * @param ownerId 所有者ID(军团)
+     * @param start   起始时间(可空,不过滤)
+     * @param end     结束时间(可空,不过滤)
+     * @return 各 division 区间收入/支出(无数据分账不返回)
+     */
+    List<WalletOverviewDivisionPO> selectOverviewDivisionFlow(@Param("ownerId") Long ownerId,
+                                                              @Param("start") Date start, @Param("end") Date end);
 }
