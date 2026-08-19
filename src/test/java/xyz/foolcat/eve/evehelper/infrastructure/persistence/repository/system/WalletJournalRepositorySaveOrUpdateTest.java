@@ -38,14 +38,16 @@ class WalletJournalRepositorySaveOrUpdateTest {
     private WalletJournalRepositoryImpl walletJournalRepository;
 
     @Test
-    @DisplayName("每笔记录都应触发单条 upsert,不得静默丢弃")
-    void saveOrUpdateBatch_callsUpsertForEachRecord() {
+    @DisplayName("记录按 BATCH_SIZE 分块批量 upsert(而非逐条 insertOrUpdateSelective),不得静默丢弃")
+    void saveOrUpdateBatch_callsBatchUpsert() {
         List<WalletJournal> list = List.of(new WalletJournal(), new WalletJournal());
         when(walletJournalPoConverter.domain2Po(any(WalletJournal.class)))
                 .thenReturn(new WalletJournalPO());
 
         walletJournalRepository.saveOrUpdateBatch(list);
 
-        verify(walletJournalMapper, times(2)).insertOrUpdateSelective(any(WalletJournalPO.class));
+        // 2 条记录 < BATCH_SIZE(500) → 单批 insertOrUpdateBatch(list);逐条 insertOrUpdateSelective 已被 011 批量重构取代
+        verify(walletJournalMapper, times(1)).insertOrUpdateBatch(any(List.class));
+        verify(walletJournalPoConverter, times(2)).domain2Po(any(WalletJournal.class));
     }
 }
