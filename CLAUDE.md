@@ -118,6 +118,6 @@ mvn package -DskipTests
 - 业务代码变更须走统一 Spec-First 流程(不分级、无例外);技术栈本身不可变更
 
 <!-- SPECKIT START -->
-当前 feature: `008-security-review-followup`(安全评审遗留修复)
-实现计划: [specs/008-security-review-followup/plan.md](specs/008-security-review-followup/plan.md)
+当前 feature: `012-wallet-overview`(钱包总览:按人物/军团聚合的汇总数据接口,只读)
+实现计划: [specs/012-wallet-overview/plan.md](specs/012-wallet-overview/plan.md)
 <!-- SPECKIT END -->
