@@ -13,6 +13,7 @@ import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.IndustryJobPlacedResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ObserverMiningLedgerResponse;
 
 import java.util.List;
 
@@ -112,6 +113,62 @@ class IndustryApiResponseTest {
 
         assertThat(r.maxPage()).isEqualTo(4);
         assertThat(r.headers().getFirst("X-Pages")).isEqualTo("4");
+        assertThat(r.headers().getFirst(HttpHeaders.CACHE_CONTROL)).contains("max-age=300");
+    }
+
+    // ── 采矿观察(observerId 入 uri) ──
+
+    @Test
+    @DisplayName("军团单建筑采矿:取到 max-age 响应头且 body 反序列化为 List<ObserverMiningLedgerResponse>")
+    void miningObserverResponse_headerAndTypedBody() {
+        ClientResponse ok = ClientResponse.create(HttpStatus.OK)
+                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .body("[{\"character_id\":1,\"type_id\":2,\"quantity\":3}]")
+                .build();
+        IndustryApi api = new IndustryApi(clientReturning(ok), new PageTotalApi());
+
+        ResponseEntity<List<ObserverMiningLedgerResponse>> resp = api
+                .queryCorporationMiningObserverResponse(5, "tranquility", 9L, 1, "Bearer x")
+                .block();
+
+        assertThat(resp).isNotNull();
+        assertThat(resp.getHeaders().getFirst(HttpHeaders.CACHE_CONTROL)).contains("max-age=3600");
+        assertThat(resp.getBody()).isInstanceOf(List.class).hasSize(1);
+        ObserverMiningLedgerResponse item = resp.getBody().get(0);
+        assertThat(item).isInstanceOf(ObserverMiningLedgerResponse.class);
+        assertThat(item.getCharacterId()).isEqualTo(1);
+        assertThat(item.getQuantity()).isEqualTo(3L);
+    }
+
+    @Test
+    @DisplayName("军团单建筑采矿:401 → 抛 ESI_AUTHORIZATION_FAILURE")
+    void miningObserverResponse_401_mapsAuthFailure() {
+        ClientResponse unauthorized = ClientResponse.create(HttpStatus.UNAUTHORIZED).build();
+        IndustryApi api = new IndustryApi(clientReturning(unauthorized), new PageTotalApi());
+
+        assertThatThrownBy(() -> api
+                .queryCorporationMiningObserverResponse(5, "tranquility", 9L, 1, "Bearer x")
+                .block())
+                .isInstanceOf(EsiException.class)
+                .isInstanceOfSatisfying(EsiException.class, e ->
+                        assertThat(e.getResultCode()).isEqualTo(ResultCode.ESI_AUTHORIZATION_FAILURE));
+    }
+
+    @Test
+    @DisplayName("军团单建筑采矿 maxPage 含头:返回 maxPage + 响应头(X-Pages 与 Cache-Control)")
+    void miningObserverMaxPageResponse_maxPageAndHeaders() {
+        ClientResponse ok = ClientResponse.create(HttpStatus.OK)
+                .header("X-Pages", "8")
+                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=300")
+                .build();
+        IndustryApi api = new IndustryApi(clientReturning(ok), new PageTotalApi());
+
+        PageTotalApi.PageCountResult r = api
+                .queryCorporationMiningObserverMaxPageResponse(5, "tranquility", 9L, "Bearer x");
+
+        assertThat(r.maxPage()).isEqualTo(8);
+        assertThat(r.headers().getFirst("X-Pages")).isEqualTo("8");
         assertThat(r.headers().getFirst(HttpHeaders.CACHE_CONTROL)).contains("max-age=300");
     }
 }

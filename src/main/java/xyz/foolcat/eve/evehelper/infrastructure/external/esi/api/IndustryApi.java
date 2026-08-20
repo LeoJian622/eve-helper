@@ -259,6 +259,24 @@ public class IndustryApi {
     }
 
     /**
+     * 军团单个建筑采矿明细最大页数(含响应头,015/T010 maxPage TTL 来源通路)。
+     *
+     * <p>调 {@link PageTotalApi#queryMaxPageWithHeaders} 同时取最大页数与响应头,
+     * 供包裹层为 maxPage 计算缓存 TTL。原 {@link #queryCorporationMiningObserverMaxPage} 保留、零破坏。</p>
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "observerId", description = "工业建筑ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团单个建筑采矿明细最大页数(含响应头)")
+    public PageTotalApi.PageCountResult queryCorporationMiningObserverMaxPageResponse(Integer corporationId, String datasource, Long observerId, String accessesToken) {
+        String uri = "/corporation/" + corporationId + "/mining/observers/" + observerId + "/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPageWithHeaders(accessesToken, uri, esiClient);
+    }
+
+    /**
      * 军团单个建筑采矿明细
      *
      * @param corporationId 军团ID
@@ -283,6 +301,42 @@ public class IndustryApi {
                 .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
                 .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(ObserverMiningLedgerResponse.class);
+    }
+
+    /**
+     * 军团单个建筑采矿明细(含响应头,015/T010 复制 T008 模式)。
+     *
+     * <p>用 {@code exchangeToMono} + {@code toEntity(ParameterizedTypeReference)} 一次取出
+     * 含响应头(如 {@code Cache-Control: max-age})的 {@link ResponseEntity},
+     * 供包裹层解析缓存 TTL。4xx/5xx 分支复刻 {@link PageTotalApi#queryMaxPage} 先例。</p>
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "observerId", description = "工业建筑ID", required = true),
+            @Parameter(name = "page", description = "页码", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团单个建筑采矿明细(含响应头)")
+    public Mono<ResponseEntity<List<ObserverMiningLedgerResponse>>> queryCorporationMiningObserverResponse(Integer corporationId, String datasource, Long observerId, Integer page, String accessesToken) {
+        return esiClient.get().uri("/corporation/{corporation_id}/mining/observers/{observer_id}/?datasource={datasource}&page={page}", corporationId, observerId, datasource, page)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .exchangeToMono(response -> {
+                    HttpStatusCode httpStatusCode = response.statusCode();
+                    if (httpStatusCode.is4xxClientError()) {
+                        if (EsiStatusUtil.isForbidden(httpStatusCode)) {
+                            log.warn("ESI 军团单建筑采矿权限不足(403): corporationId={}, observerId={}", corporationId, observerId);
+                            return Mono.error(EsiStatusUtil.forbiddenAgent());
+                        }
+                        return Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE));
+                    }
+                    if (httpStatusCode.is5xxServerError()) {
+                        log.warn("ESI 军团单建筑采矿服务端错误(5xx): corporationId={}, status={}", corporationId, httpStatusCode.value());
+                        return Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE));
+                    }
+                    return response.toEntity(new ParameterizedTypeReference<List<ObserverMiningLedgerResponse>>() {
+                    });
+                }).timeout(ESI_DATA_TIMEOUT);
     }
 
     /**
