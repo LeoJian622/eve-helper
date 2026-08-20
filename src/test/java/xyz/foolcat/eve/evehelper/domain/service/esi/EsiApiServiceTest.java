@@ -16,6 +16,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.IndustryJob;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiApiService;
@@ -23,6 +24,8 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.AssetsApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CharacterApi;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CorporationApi;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.PageTotalApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UniverseApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
@@ -31,6 +34,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCa
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCacheProperties;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AssetResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.IndustryJobPlacedResponse;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 
 import java.util.List;
@@ -83,6 +87,12 @@ class EsiApiServiceTest {
     @MockBean
     AssetsApi assetsApi;
 
+    @MockBean
+    IndustryApi industryApi;
+
+    @MockBean
+    CorporationApi corporationApi;
+
     @Autowired
     private EsiApiService esiApiService;
 
@@ -94,6 +104,7 @@ class EsiApiServiceTest {
 
     private static final Integer USER_ID = 100;
     private static final Integer CID = 95465499;
+    private static final Integer CORP_ID = 999888;
     private static final String STATUS_KEY = "esi_auth_status:" + CID;
     private static final String LOCK_KEY = "esi_refresh_lock:" + CID;
     private static final String ACCESS_TOKEN_KEY = "esi_access_token:" + USER_ID + ":" + CID;
@@ -411,6 +422,242 @@ class EsiApiServiceTest {
 
         assertThat(mp).isEqualTo(7);
         verify(assetsApi).queryCharactersAssetsMaxPage(eq(CID), eq("serenity"), anyString());
+        verify(cacheGateway, never()).get(anyString());
+    }
+
+    // ─═ 015/T009:工业/蓝图类查询接入缓存判读(列表 + maxPage) ═─
+
+    private String cacheKeyFor(String uri, Object pageOrToken) {
+        if (pageOrToken instanceof Integer page) {
+            return esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID, uri, page);
+        }
+        return esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID, uri, String.valueOf(pageOrToken));
+    }
+
+    private static IndustryJobPlacedResponse industryJob(int jobId) {
+        IndustryJobPlacedResponse r = new IndustryJobPlacedResponse();
+        r.setJobId(jobId);
+        r.setActivityId(2);
+        return r;
+    }
+
+    // ── 人物工业任务列表 ──
+
+    @Test
+    @DisplayName("人物工业任务:缓存命中 → 返回缓存数据,不真调")
+    void characterIndustryJobs_cacheHit_noRealCall() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/characters/" + CID + "/industry/jobs/", 0);
+        when(cacheGateway.get(key)).thenReturn("[{\"jobId\":10,\"activityId\":2}]");
+
+        List<IndustryJob> result = esiApiService.queryCharacterIndustryJobs(CID, true, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getJobId()).isEqualTo(10);
+        verify(industryApi, never()).queryCharacterIndustryJobsResponse(any(), anyString(), any(), anyString());
+        verify(industryApi, never()).queryCharacterIndustryJobs(any(), anyString(), any(), anyString());
+    }
+
+    @Test
+    @DisplayName("人物工业任务:未命中 → 真调一次并按 max-age 回填")
+    void characterIndustryJobs_cacheMiss_realCallAndBackfill() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/characters/" + CID + "/industry/jobs/", 0);
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(industryApi.queryCharacterIndustryJobsResponse(eq(CID), eq("serenity"), eq(true), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(industryJob(20)))));
+
+        List<IndustryJob> result = esiApiService.queryCharacterIndustryJobs(CID, true, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getJobId()).isEqualTo(20);
+        verify(industryApi).queryCharacterIndustryJobsResponse(eq(CID), eq("serenity"), eq(true), anyString());
+        ArgumentCaptor<String> kc = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Object> vc = ArgumentCaptor.forClass(Object.class);
+        verify(cacheGateway).set(kc.capture(), vc.capture(), eq(3600L), eq(TimeUnit.SECONDS));
+        assertThat(kc.getValue()).isEqualTo(key);
+        assertThat(vc.getValue()).isInstanceOf(String.class);
+    }
+
+    @Test
+    @DisplayName("人物工业任务:未认证 → 直接真调原 Flux 入口,不进缓存")
+    void characterIndustryJobs_unauthenticated_directRealCall() {
+        authAsAnonymous();
+        when(industryApi.queryCharacterIndustryJobs(eq(CID), eq("serenity"), eq(true), anyString()))
+                .thenReturn(Flux.just(industryJob(30)));
+
+        List<IndustryJob> result = esiApiService.queryCharacterIndustryJobs(CID, true, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getJobId()).isEqualTo(30);
+        verify(industryApi).queryCharacterIndustryJobs(eq(CID), eq("serenity"), eq(true), anyString());
+        verify(cacheGateway, never()).get(anyString());
+    }
+
+    // ── 军团工业任务列表 ──
+
+    @Test
+    @DisplayName("军团工业任务:缓存命中 → 返回缓存数据,不真调")
+    void corporationIndustryJobs_cacheHit_noRealCall() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/industry/jobs/", 0);
+        when(cacheGateway.get(key)).thenReturn("[{\"jobId\":40,\"activityId\":2}]");
+
+        List<IndustryJob> result = esiApiService.queryCorporationIndustryJobs(CORP_ID, false, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getJobId()).isEqualTo(40);
+        verify(industryApi, never()).queryCorporationIndustryJobsResponse(any(), anyString(), any(), anyString());
+        verify(industryApi, never()).queryCorporationIndustryJobs(any(), anyString(), any(), anyString());
+    }
+
+    @Test
+    @DisplayName("军团工业任务:未命中 → 真调一次并按 max-age 回填")
+    void corporationIndustryJobs_cacheMiss_realCallAndBackfill() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/industry/jobs/", 0);
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(industryApi.queryCorporationIndustryJobsResponse(eq(CORP_ID), eq("serenity"), eq(false), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(industryJob(50)))));
+
+        List<IndustryJob> result = esiApiService.queryCorporationIndustryJobs(CORP_ID, false, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getJobId()).isEqualTo(50);
+        verify(industryApi).queryCorporationIndustryJobsResponse(eq(CORP_ID), eq("serenity"), eq(false), anyString());
+        ArgumentCaptor<String> kc = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Object> vc = ArgumentCaptor.forClass(Object.class);
+        verify(cacheGateway).set(kc.capture(), vc.capture(), eq(3600L), eq(TimeUnit.SECONDS));
+        assertThat(kc.getValue()).isEqualTo(key);
+        assertThat(vc.getValue()).isInstanceOf(String.class);
+    }
+
+    @Test
+    @DisplayName("军团工业任务:未认证 → 直接真调原 Flux 入口,不进缓存")
+    void corporationIndustryJobs_unauthenticated_directRealCall() {
+        authAsAnonymous();
+        when(industryApi.queryCorporationIndustryJobs(eq(CORP_ID), eq("serenity"), eq(false), anyString()))
+                .thenReturn(Flux.just(industryJob(60)));
+
+        List<IndustryJob> result = esiApiService.queryCorporationIndustryJobs(CORP_ID, false, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getJobId()).isEqualTo(60);
+        verify(industryApi).queryCorporationIndustryJobs(eq(CORP_ID), eq("serenity"), eq(false), anyString());
+        verify(cacheGateway, never()).get(anyString());
+    }
+
+    // ── 军团蓝图 maxPage(独立 :maxPage 键) ──
+
+    @Test
+    @DisplayName("军团蓝图 maxPage:缓存命中 → 直接返回,不真调")
+    void corporationBlueprintsMaxPage_cacheHit_noRealCall() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/blueprints/", "maxPage");
+        when(cacheGateway.get(key)).thenReturn(12);
+
+        Integer mp = esiApiService.queryCorporationBlueprintsMaxPage(CORP_ID, "Bearer x");
+
+        assertThat(mp).isEqualTo(12);
+        verify(corporationApi, never()).queryCorporationBlueprintsMaxPage(any(), anyString(), anyString());
+        verify(corporationApi, never()).queryCorporationBlueprintsMaxPageResponse(any(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("军团蓝图 maxPage:未命中 → 真调含头入口并按 max-age 回填 Integer(:maxPage 键)")
+    void corporationBlueprintsMaxPage_cacheMiss_usesMaxPageKeyAndBackfill() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/blueprints/", "maxPage");
+        // 列表首页键(page=1)与 maxPage 键必须不同(T008 评审 M1)
+        assertThat(key).endsWith(":maxPage");
+        assertThat(key).isNotEqualTo(esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID,
+                "/corporations/" + CORP_ID + "/blueprints/", 1));
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(corporationApi.queryCorporationBlueprintsMaxPageResponse(eq(CORP_ID), eq("serenity"), anyString()))
+                .thenReturn(new PageTotalApi.PageCountResult(12, maxAge300()));
+
+        Integer mp = esiApiService.queryCorporationBlueprintsMaxPage(CORP_ID, "Bearer x");
+
+        assertThat(mp).isEqualTo(12);
+        verify(corporationApi).queryCorporationBlueprintsMaxPageResponse(eq(CORP_ID), eq("serenity"), anyString());
+        verify(cacheGateway).set(eq(key), eq(12), eq(300L), eq(TimeUnit.SECONDS));
+    }
+
+    @Test
+    @DisplayName("军团蓝图 maxPage:无响应头 → 不回填,真调结果照常返回")
+    void corporationBlueprintsMaxPage_noHeader_noCacheWrite() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/blueprints/", "maxPage");
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(corporationApi.queryCorporationBlueprintsMaxPageResponse(eq(CORP_ID), eq("serenity"), anyString()))
+                .thenReturn(new PageTotalApi.PageCountResult(3, new HttpHeaders()));
+
+        Integer mp = esiApiService.queryCorporationBlueprintsMaxPage(CORP_ID, "Bearer x");
+
+        assertThat(mp).isEqualTo(3);
+        verify(cacheGateway, never()).set(anyString(), any(), anyLong(), eq(TimeUnit.SECONDS));
+    }
+
+    @Test
+    @DisplayName("军团蓝图 maxPage:未认证 → 直接真调原方法,不进缓存")
+    void corporationBlueprintsMaxPage_unauthenticated_directRealCall() {
+        authAsAnonymous();
+        when(corporationApi.queryCorporationBlueprintsMaxPage(eq(CORP_ID), eq("serenity"), anyString())).thenReturn(9);
+
+        Integer mp = esiApiService.queryCorporationBlueprintsMaxPage(CORP_ID, "Bearer x");
+
+        assertThat(mp).isEqualTo(9);
+        verify(corporationApi).queryCorporationBlueprintsMaxPage(eq(CORP_ID), eq("serenity"), anyString());
+        verify(cacheGateway, never()).get(anyString());
+    }
+
+    // ── 军团工业任务 maxPage(独立 :maxPage 键) ──
+
+    @Test
+    @DisplayName("军团工业任务 maxPage:缓存命中 → 直接返回,不真调")
+    void corporationIndustryJobsMaxPage_cacheHit_noRealCall() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/industry/jobs/", "maxPage");
+        when(cacheGateway.get(key)).thenReturn(4);
+
+        Integer mp = esiApiService.queryCorporationIndustryJobsMaxPage(CORP_ID, true, "Bearer x");
+
+        assertThat(mp).isEqualTo(4);
+        verify(industryApi, never()).queryCorporationIndustryJobsMaxPage(any(), anyString(), any(), anyString());
+        verify(industryApi, never()).queryCorporationIndustryJobsMaxPageResponse(any(), anyString(), any(), anyString());
+    }
+
+    @Test
+    @DisplayName("军团工业任务 maxPage:未命中 → 真调含头入口并按 max-age 回填 Integer(:maxPage 键)")
+    void corporationIndustryJobsMaxPage_cacheMiss_usesMaxPageKeyAndBackfill() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/industry/jobs/", "maxPage");
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(industryApi.queryCorporationIndustryJobsMaxPageResponse(eq(CORP_ID), eq("serenity"), eq(true), anyString()))
+                .thenReturn(new PageTotalApi.PageCountResult(4, maxAge300()));
+
+        Integer mp = esiApiService.queryCorporationIndustryJobsMaxPage(CORP_ID, true, "Bearer x");
+
+        assertThat(mp).isEqualTo(4);
+        verify(industryApi).queryCorporationIndustryJobsMaxPageResponse(eq(CORP_ID), eq("serenity"), eq(true), anyString());
+        verify(cacheGateway).set(eq(key), eq(4), eq(300L), eq(TimeUnit.SECONDS));
+    }
+
+    @Test
+    @DisplayName("军团工业任务 maxPage:未认证 → 直接真调原方法,不进缓存")
+    void corporationIndustryJobsMaxPage_unauthenticated_directRealCall() {
+        authAsAnonymous();
+        when(industryApi.queryCorporationIndustryJobsMaxPage(eq(CORP_ID), eq("serenity"), eq(true), anyString()))
+                .thenReturn(6);
+
+        Integer mp = esiApiService.queryCorporationIndustryJobsMaxPage(CORP_ID, true, "Bearer x");
+
+        assertThat(mp).isEqualTo(6);
+        verify(industryApi).queryCorporationIndustryJobsMaxPage(eq(CORP_ID), eq("serenity"), eq(true), anyString());
         verify(cacheGateway, never()).get(anyString());
     }
 }

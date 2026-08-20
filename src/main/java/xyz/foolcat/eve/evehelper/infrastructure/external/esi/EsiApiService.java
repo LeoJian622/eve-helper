@@ -585,26 +585,98 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Integer queryCorporationBlueprintsMaxPage(Integer corporationId, String accessToken) {
-        return corporationApi.queryCorporationBlueprintsMaxPage(corporationId, EsiClientConfig.SERENITY, accessToken);
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return corporationApi.queryCorporationBlueprintsMaxPage(corporationId, EsiClientConfig.SERENITY, accessToken);
+        }
+        // maxPage 用独立 :maxPage 键,不与列表首页 page=1 共用(避免互相覆盖震荡,T008 评审 M1)
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/blueprints/", "maxPage");
+        Integer cached = esiResponseCache.getInt(key);
+        if (cached != null) {
+            return cached;
+        }
+        PageTotalApi.PageCountResult count = corporationApi.queryCorporationBlueprintsMaxPageResponse(
+                corporationId, EsiClientConfig.SERENITY, accessToken);
+        Duration ttl = esiCacheTtlExtractor.extract(count.headers());
+        esiResponseCache.put(key, count.maxPage(), ttl);   // ttl null → put 内部跳过
+        return count.maxPage();
     }
 
     // ── 工业 ──
 
     @Override
     public Integer queryCorporationIndustryJobsMaxPage(Integer corporationId, boolean includeCompleted, String accessToken) {
-        return industryApi.queryCorporationIndustryJobsMaxPage(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken);
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return industryApi.queryCorporationIndustryJobsMaxPage(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken);
+        }
+        // 军团工业列表统一归一化 uri;maxPage 用独立 :maxPage 键
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/industry/jobs/", "maxPage");
+        Integer cached = esiResponseCache.getInt(key);
+        if (cached != null) {
+            return cached;
+        }
+        PageTotalApi.PageCountResult count = industryApi.queryCorporationIndustryJobsMaxPageResponse(
+                corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken);
+        Duration ttl = esiCacheTtlExtractor.extract(count.headers());
+        esiResponseCache.put(key, count.maxPage(), ttl);   // ttl null → put 内部跳过
+        return count.maxPage();
     }
 
     @Override
     public Flux<IndustryJob> queryCorporationIndustryJobs(Integer corporationId, boolean includeCompleted, String accessToken) {
-        return industryApi.queryCorporationIndustryJobs(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
-                .map(resp -> esiIndustryJobConverter.toDomain(resp, corporationId));
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return industryApi.queryCorporationIndustryJobs(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
+                    .map(resp -> esiIndustryJobConverter.toDomain(resp, corporationId));
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/industry/jobs/", 0);
+        List<IndustryJob> cached = esiResponseCache.getList(key, objectMapper.constructType(IndustryJob.class));
+        if (cached != null) {
+            return Flux.fromIterable(cached);
+        }
+        return industryApi.queryCorporationIndustryJobsResponse(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
+                .mapNotNull(response -> {
+                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                    // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                    List<IndustryJob> domain = response.getBody() == null ? List.of()
+                            : response.getBody().stream().map(resp -> esiIndustryJobConverter.toDomain(resp, corporationId)).toList();
+                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                    return domain;
+                })
+                .flatMapIterable(Function.identity());
     }
 
     @Override
     public Flux<IndustryJob> queryCharacterIndustryJobs(Integer characterId, boolean includeCompleted, String accessToken) {
-        return industryApi.queryCharacterIndustryJobs(characterId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
-                .map(resp -> esiIndustryJobConverter.toDomain(resp, null));
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return industryApi.queryCharacterIndustryJobs(characterId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
+                    .map(resp -> esiIndustryJobConverter.toDomain(resp, null));
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/industry/jobs/", 0);
+        List<IndustryJob> cached = esiResponseCache.getList(key, objectMapper.constructType(IndustryJob.class));
+        if (cached != null) {
+            return Flux.fromIterable(cached);
+        }
+        return industryApi.queryCharacterIndustryJobsResponse(characterId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
+                .mapNotNull(response -> {
+                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                    // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                    List<IndustryJob> domain = response.getBody() == null ? List.of()
+                            : response.getBody().stream().map(resp -> esiIndustryJobConverter.toDomain(resp, null)).toList();
+                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                    return domain;
+                })
+                .flatMapIterable(Function.identity());
     }
 
     // ── 物品类型 ──
