@@ -17,6 +17,8 @@ import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.IndustryJob;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.MiningDetail;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiApiService;
@@ -35,6 +37,8 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCa
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AssetResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.IndustryJobPlacedResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ObserverMiningLedgerResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.StructuresInformationResponse;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 
 import java.util.List;
@@ -105,6 +109,8 @@ class EsiApiServiceTest {
     private static final Integer USER_ID = 100;
     private static final Integer CID = 95465499;
     private static final Integer CORP_ID = 999888;
+    private static final Long OBSERVER_ID = 888777L;
+    private static final String LANG = "es";
     private static final String STATUS_KEY = "esi_auth_status:" + CID;
     private static final String LOCK_KEY = "esi_refresh_lock:" + CID;
     private static final String ACCESS_TOKEN_KEY = "esi_access_token:" + USER_ID + ":" + CID;
@@ -658,6 +664,241 @@ class EsiApiServiceTest {
 
         assertThat(mp).isEqualTo(6);
         verify(industryApi).queryCorporationIndustryJobsMaxPage(eq(CORP_ID), eq("serenity"), eq(true), anyString());
+        verify(cacheGateway, never()).get(anyString());
+    }
+
+    // ─═ 015/T010:采矿/建筑类查询接入缓存判读(列表 + maxPage) ═─
+
+    private static ObserverMiningLedgerResponse miningLedger(int typeId) {
+        ObserverMiningLedgerResponse r = new ObserverMiningLedgerResponse();
+        r.setTypeId(typeId);
+        r.setQuantity(3L);
+        return r;
+    }
+
+    private static StructuresInformationResponse structureResp(long id) {
+        StructuresInformationResponse r = new StructuresInformationResponse();
+        r.setStructureId(id);
+        r.setName("Fort");
+        return r;
+    }
+
+    // ── 军团单建筑采矿列表 ──
+
+    @Test
+    @DisplayName("采矿列表:缓存命中 → 返回缓存数据,不真调")
+    void miningObserver_cacheHit_noRealCall() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/mining/observers/" + OBSERVER_ID + "/", 1);
+        when(cacheGateway.get(key)).thenReturn("[{\"typeId\":34,\"quantity\":3}]");
+
+        List<MiningDetail> result = esiApiService.queryCorporationMiningObserver(CORP_ID, OBSERVER_ID, 1, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getTypeId()).isEqualTo(34);
+        verify(industryApi, never()).queryCorporationMiningObserverResponse(any(), anyString(), any(), any(), anyString());
+        verify(industryApi, never()).queryCorporationMiningObserver(any(), anyString(), any(), any(), anyString());
+    }
+
+    @Test
+    @DisplayName("采矿列表:未命中 → 真调一次并按 max-age 回填")
+    void miningObserver_cacheMiss_realCallAndBackfill() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/mining/observers/" + OBSERVER_ID + "/", 1);
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(industryApi.queryCorporationMiningObserverResponse(eq(CORP_ID), eq("serenity"), eq(OBSERVER_ID), eq(1), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(miningLedger(34)))));
+
+        List<MiningDetail> result = esiApiService.queryCorporationMiningObserver(CORP_ID, OBSERVER_ID, 1, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getTypeId()).isEqualTo(34);
+        verify(industryApi).queryCorporationMiningObserverResponse(eq(CORP_ID), eq("serenity"), eq(OBSERVER_ID), eq(1), anyString());
+        ArgumentCaptor<String> kc = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Object> vc = ArgumentCaptor.forClass(Object.class);
+        verify(cacheGateway).set(kc.capture(), vc.capture(), eq(3600L), eq(TimeUnit.SECONDS));
+        assertThat(kc.getValue()).isEqualTo(key);
+        assertThat(vc.getValue()).isInstanceOf(String.class);
+    }
+
+    @Test
+    @DisplayName("采矿列表:未认证 → 直接真调原 Flux 入口,不进缓存")
+    void miningObserver_unauthenticated_directRealCall() {
+        authAsAnonymous();
+        when(industryApi.queryCorporationMiningObserver(eq(CORP_ID), eq("serenity"), eq(OBSERVER_ID), eq(1), anyString()))
+                .thenReturn(Flux.just(miningLedger(34)));
+
+        List<MiningDetail> result = esiApiService.queryCorporationMiningObserver(CORP_ID, OBSERVER_ID, 1, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        verify(industryApi).queryCorporationMiningObserver(eq(CORP_ID), eq("serenity"), eq(OBSERVER_ID), eq(1), anyString());
+        verify(cacheGateway, never()).get(anyString());
+    }
+
+    @Test
+    @DisplayName("采矿列表:M1 隔离 — observerId 不同 → 缓存键不同")
+    void miningObserverKey_differsByObserverId() {
+        String k1 = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID,
+                "/corporations/" + CORP_ID + "/mining/observers/" + OBSERVER_ID + "/", 1);
+        String k2 = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID,
+                "/corporations/" + CORP_ID + "/mining/observers/" + (OBSERVER_ID + 1) + "/", 1);
+        assertThat(k1).isNotEqualTo(k2);
+    }
+
+    // ── 军团单建筑采矿 maxPage(独立 :maxPage 键) ──
+
+    @Test
+    @DisplayName("采矿 maxPage:缓存命中 → 直接返回,不真调")
+    void miningObserverMaxPage_cacheHit_noRealCall() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/mining/observers/" + OBSERVER_ID + "/", "maxPage");
+        when(cacheGateway.get(key)).thenReturn(5);
+
+        Integer mp = esiApiService.queryCorporationMiningObserverMaxPage(CORP_ID, OBSERVER_ID, "Bearer x");
+
+        assertThat(mp).isEqualTo(5);
+        verify(industryApi, never()).queryCorporationMiningObserverMaxPage(any(), any(), anyString(), anyString());
+        verify(industryApi, never()).queryCorporationMiningObserverMaxPageResponse(any(), anyString(), any(), anyString());
+    }
+
+    @Test
+    @DisplayName("采矿 maxPage:未命中 → 真调含头入口并按 max-age 回填 Integer")
+    void miningObserverMaxPage_cacheMiss_realCallAndBackfill() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/mining/observers/" + OBSERVER_ID + "/", "maxPage");
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(industryApi.queryCorporationMiningObserverMaxPageResponse(eq(CORP_ID), eq("serenity"), eq(OBSERVER_ID), anyString()))
+                .thenReturn(new PageTotalApi.PageCountResult(5, maxAge300()));
+
+        Integer mp = esiApiService.queryCorporationMiningObserverMaxPage(CORP_ID, OBSERVER_ID, "Bearer x");
+
+        assertThat(mp).isEqualTo(5);
+        verify(industryApi).queryCorporationMiningObserverMaxPageResponse(eq(CORP_ID), eq("serenity"), eq(OBSERVER_ID), anyString());
+        verify(cacheGateway).set(eq(key), eq(5), eq(300L), eq(TimeUnit.SECONDS));
+    }
+
+    @Test
+    @DisplayName("采矿 maxPage:未认证 → 直接真调原方法,不进缓存")
+    void miningObserverMaxPage_unauthenticated_directRealCall() {
+        authAsAnonymous();
+        when(industryApi.queryCorporationMiningObserverMaxPage(eq(CORP_ID), eq(OBSERVER_ID), eq("serenity"), anyString()))
+                .thenReturn(5);
+
+        Integer mp = esiApiService.queryCorporationMiningObserverMaxPage(CORP_ID, OBSERVER_ID, "Bearer x");
+
+        assertThat(mp).isEqualTo(5);
+        verify(industryApi).queryCorporationMiningObserverMaxPage(eq(CORP_ID), eq(OBSERVER_ID), eq("serenity"), anyString());
+        verify(cacheGateway, never()).get(anyString());
+    }
+
+    // ── 军团建筑列表 ──
+
+    @Test
+    @DisplayName("建筑列表:缓存命中 → 返回缓存数据,不真调")
+    void structures_cacheHit_noRealCall() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/structures/" + LANG + "/", 1);
+        when(cacheGateway.get(key)).thenReturn("[{\"structureId\":10,\"name\":\"Fort\"}]");
+
+        List<Structure> result = esiApiService.queryCorporationStructures(CORP_ID, LANG, 1, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getStructureId()).isEqualTo(10L);
+        verify(corporationApi, never()).queryCorporationStructuresResponse(any(), anyString(), anyString(), any(), anyString());
+        verify(corporationApi, never()).queryCorporationStructures(any(), anyString(), anyString(), any(), anyString());
+    }
+
+    @Test
+    @DisplayName("建筑列表:未命中 → 真调一次并按 max-age 回填")
+    void structures_cacheMiss_realCallAndBackfill() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/structures/" + LANG + "/", 1);
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(corporationApi.queryCorporationStructuresResponse(eq(CORP_ID), eq("serenity"), eq(LANG), eq(1), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(structureResp(10L)))));
+
+        List<Structure> result = esiApiService.queryCorporationStructures(CORP_ID, LANG, 1, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getStructureId()).isEqualTo(10L);
+        verify(corporationApi).queryCorporationStructuresResponse(eq(CORP_ID), eq("serenity"), eq(LANG), eq(1), anyString());
+        ArgumentCaptor<String> kc = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Object> vc = ArgumentCaptor.forClass(Object.class);
+        verify(cacheGateway).set(kc.capture(), vc.capture(), eq(3600L), eq(TimeUnit.SECONDS));
+        assertThat(kc.getValue()).isEqualTo(key);
+        assertThat(vc.getValue()).isInstanceOf(String.class);
+    }
+
+    @Test
+    @DisplayName("建筑列表:未认证 → 直接真调原 Flux 入口,不进缓存")
+    void structures_unauthenticated_directRealCall() {
+        authAsAnonymous();
+        when(corporationApi.queryCorporationStructures(eq(CORP_ID), eq("serenity"), eq(LANG), eq(1), anyString()))
+                .thenReturn(Flux.just(structureResp(10L)));
+
+        List<Structure> result = esiApiService.queryCorporationStructures(CORP_ID, LANG, 1, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        verify(corporationApi).queryCorporationStructures(eq(CORP_ID), eq("serenity"), eq(LANG), eq(1), anyString());
+        verify(cacheGateway, never()).get(anyString());
+    }
+
+    @Test
+    @DisplayName("建筑列表:M1 隔离 — language 不同 → 缓存键不同")
+    void structuresKey_differsByLanguage() {
+        String en = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID,
+                "/corporations/" + CORP_ID + "/structures/en/", 1);
+        String es = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID,
+                "/corporations/" + CORP_ID + "/structures/es/", 1);
+        assertThat(en).isNotEqualTo(es);
+    }
+
+    // ── 军团建筑 maxPage(独立 :maxPage 键,语言无关) ──
+
+    @Test
+    @DisplayName("建筑 maxPage:缓存命中 → 直接返回,不真调")
+    void structuresMaxPage_cacheHit_noRealCall() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/structures/", "maxPage");
+        when(cacheGateway.get(key)).thenReturn(7);
+
+        Integer mp = esiApiService.queryCorporationStructuresMaxPage(CORP_ID, "Bearer x");
+
+        assertThat(mp).isEqualTo(7);
+        verify(corporationApi, never()).queryCorporationStructuresMaxPage(any(), anyString(), anyString());
+        verify(corporationApi, never()).queryCorporationStructuresMaxPageResponse(any(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("建筑 maxPage:未命中 → 真调含头入口并按 max-age 回填 Integer")
+    void structuresMaxPage_cacheMiss_realCallAndBackfill() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/structures/", "maxPage");
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(corporationApi.queryCorporationStructuresMaxPageResponse(eq(CORP_ID), eq("serenity"), anyString()))
+                .thenReturn(new PageTotalApi.PageCountResult(7, maxAge300()));
+
+        Integer mp = esiApiService.queryCorporationStructuresMaxPage(CORP_ID, "Bearer x");
+
+        assertThat(mp).isEqualTo(7);
+        verify(corporationApi).queryCorporationStructuresMaxPageResponse(eq(CORP_ID), eq("serenity"), anyString());
+        verify(cacheGateway).set(eq(key), eq(7), eq(300L), eq(TimeUnit.SECONDS));
+    }
+
+    @Test
+    @DisplayName("建筑 maxPage:未认证 → 直接真调原方法,不进缓存")
+    void structuresMaxPage_unauthenticated_directRealCall() {
+        authAsAnonymous();
+        when(corporationApi.queryCorporationStructuresMaxPage(eq(CORP_ID), eq("serenity"), anyString())).thenReturn(11);
+
+        Integer mp = esiApiService.queryCorporationStructuresMaxPage(CORP_ID, "Bearer x");
+
+        assertThat(mp).isEqualTo(11);
+        verify(corporationApi).queryCorporationStructuresMaxPage(eq(CORP_ID), eq("serenity"), anyString());
         verify(cacheGateway, never()).get(anyString());
     }
 }

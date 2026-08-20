@@ -691,26 +691,100 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Integer queryCorporationMiningObserverMaxPage(Integer corporationId, Long observerId, String accessToken) {
-        return industryApi.queryCorporationMiningObserverMaxPage(corporationId, observerId, EsiClientConfig.SERENITY, accessToken);
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return industryApi.queryCorporationMiningObserverMaxPage(corporationId, observerId, EsiClientConfig.SERENITY, accessToken);
+        }
+        // observerId 进归一化 uri(变体参数必须进键,T010 规避 T009 MEDIUM-1);maxPage 用独立 :maxPage 键
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/mining/observers/" + observerId + "/", "maxPage");
+        Integer cached = esiResponseCache.getInt(key);
+        if (cached != null) {
+            return cached;
+        }
+        PageTotalApi.PageCountResult count = industryApi.queryCorporationMiningObserverMaxPageResponse(
+                corporationId, EsiClientConfig.SERENITY, observerId, accessToken);
+        Duration ttl = esiCacheTtlExtractor.extract(count.headers());
+        esiResponseCache.put(key, count.maxPage(), ttl);   // ttl null → put 内部跳过
+        return count.maxPage();
     }
 
     @Override
     public Flux<MiningDetail> queryCorporationMiningObserver(Integer corporationId, Long observerId, int page, String accessToken) {
-        return industryApi.queryCorporationMiningObserver(corporationId, EsiClientConfig.SERENITY, observerId, page, accessToken)
-                .map(esiMiningDetailConverter::toDomain);
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return industryApi.queryCorporationMiningObserver(corporationId, EsiClientConfig.SERENITY, observerId, page, accessToken)
+                    .map(esiMiningDetailConverter::toDomain);
+        }
+        // observerId 进归一化 uri,页面参数用实际 page
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/mining/observers/" + observerId + "/", page);
+        List<MiningDetail> cached = esiResponseCache.getList(key, objectMapper.constructType(MiningDetail.class));
+        if (cached != null) {
+            return Flux.fromIterable(cached);
+        }
+        return industryApi.queryCorporationMiningObserverResponse(corporationId, EsiClientConfig.SERENITY, observerId, page, accessToken)
+                .mapNotNull(response -> {
+                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                    // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                    List<MiningDetail> domain = response.getBody() == null ? List.of()
+                            : response.getBody().stream().map(esiMiningDetailConverter::toDomain).toList();
+                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                    return domain;
+                })
+                .flatMapIterable(Function.identity());
     }
 
     // ── 建筑 ──
 
     @Override
     public Integer queryCorporationStructuresMaxPage(Integer corporationId, String accessToken) {
-        return corporationApi.queryCorporationStructuresMaxPage(corporationId, EsiClientConfig.SERENITY, accessToken);
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return corporationApi.queryCorporationStructuresMaxPage(corporationId, EsiClientConfig.SERENITY, accessToken);
+        }
+        // 端口签名无 language,maxPage 页数与语言无关 → 用语言无关的 :maxPage 独立键
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/structures/", "maxPage");
+        Integer cached = esiResponseCache.getInt(key);
+        if (cached != null) {
+            return cached;
+        }
+        PageTotalApi.PageCountResult count = corporationApi.queryCorporationStructuresMaxPageResponse(
+                corporationId, EsiClientConfig.SERENITY, accessToken);
+        Duration ttl = esiCacheTtlExtractor.extract(count.headers());
+        esiResponseCache.put(key, count.maxPage(), ttl);   // ttl null → put 内部跳过
+        return count.maxPage();
     }
 
     @Override
     public Flux<Structure> queryCorporationStructures(Integer corporationId, String language, int page, String accessToken) {
-        return corporationApi.queryCorporationStructures(corporationId, EsiClientConfig.SERENITY, language, page, accessToken)
-                .map(esiStructureConverter::toDomain);
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return corporationApi.queryCorporationStructures(corporationId, EsiClientConfig.SERENITY, language, page, accessToken)
+                    .map(esiStructureConverter::toDomain);
+        }
+        // language 进归一化 uri(变体参数必须进键:T010 规避 T009 MEDIUM-1,换语种不得互命中)
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/structures/" + language + "/", page);
+        List<Structure> cached = esiResponseCache.getList(key, objectMapper.constructType(Structure.class));
+        if (cached != null) {
+            return Flux.fromIterable(cached);
+        }
+        return corporationApi.queryCorporationStructuresResponse(corporationId, EsiClientConfig.SERENITY, language, page, accessToken)
+                .mapNotNull(response -> {
+                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                    // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                    List<Structure> domain = response.getBody() == null ? List.of()
+                            : response.getBody().stream().map(esiStructureConverter::toDomain).toList();
+                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                    return domain;
+                })
+                .flatMapIterable(Function.identity());
     }
 
     // ── 名称解析 ──
