@@ -46,9 +46,9 @@ public class EveAccountRepositoryImpl implements EveAccountRepository {
     }
 
     @Override
-    public EveAccount getAccount(Integer userId, Integer cId) {
+    public EveAccount getAccount(Integer userId, Integer characterId) {
         return eveAccountPoConverter.po2Domain(
-        eveAccountMapper.queryOneUserIdAndCharacterId(userId, cId));
+        eveAccountMapper.queryOneUserIdAndCharacterId(userId, characterId));
     }
 
     @Override

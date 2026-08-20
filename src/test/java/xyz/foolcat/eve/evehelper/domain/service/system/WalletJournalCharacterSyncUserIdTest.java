@@ -28,8 +28,8 @@ import static org.mockito.Mockito.when;
  * US1 T008:人物钱包流水写路径落 user_id。
  *
  * <p>同构于 {@link WalletJournalServiceSyncTest} 的请求路径构造:SecurityContext 设 Number principal
- * 令 {@code UserUtil.getUserId()>0} → {@code authorize(cId)};人物走 {@link #syncCharacterJournal},
- * ownerId=cId、division=0,外加同步者 user_id 随 saveOrUpdateBatch 落库。</p>
+ * 令 {@code UserUtil.getUserId()>0} → {@code authorize(characterId)};人物走 {@link #syncCharacterJournal},
+ * ownerId=characterId、division=0,外加同步者 user_id 随 saveOrUpdateBatch 落库。</p>
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("WalletJournalService.syncCharacterJournal 人物写路径落 userId")

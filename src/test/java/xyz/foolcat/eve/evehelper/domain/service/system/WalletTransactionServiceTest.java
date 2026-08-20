@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
  * {@link WalletTransactionRepository},聚焦核心同步逻辑:</p>
  * <ul>
  *     <li>from_id 游标翻页(plan D2):首页 null → 末条 transactionId 续拉 → 空页终止</li>
- *     <li>归属回填(plan):人物 ownerType=character/ownerId=cId/division=0;军团按当前 division</li>
+ *     <li>归属回填(plan):人物 ownerType=character/ownerId=characterId/division=0;军团按当前 division</li>
  *     <li>军团 division 1..7 循环失败隔离(plan)：某分账失败不影响其它成功分账落库,且汇总抛 EveHelperException</li>
  *     <li>游标上限保护 MAX_CURSOR_PAGES,防死循环</li>
  * </ul>

@@ -68,19 +68,19 @@ public class WalletTransactionService {
     /**
      * 同步人物钱包交易(单分账)。
      *
-     * <p>获授权后从最新拉取全部交易,回填 ownerType=character / ownerId=cId / division=0,
+     * <p>获授权后从最新拉取全部交易,回填 ownerType=character / ownerId=characterId / division=0,
      * 幂等 upsert 落库。人物同步任一页失败即上抛(无分账隔离需求)。</p>
      *
-     * @param cId 人物ID
+     * @param characterId 人物ID
      * @throws java.text.ParseException JWT 解析失败
      */
-    public void syncCharacterTransactions(Integer cId) throws java.text.ParseException {
-        EveAccount eveAccount = authorizeAccount(cId);
-        String accessToken = esiGateway.getAccessToken(cId, eveAccount.getUserId());
+    public void syncCharacterTransactions(Integer characterId) throws java.text.ParseException {
+        EveAccount eveAccount = authorizeAccount(characterId);
+        String accessToken = esiGateway.getAccessToken(characterId, eveAccount.getUserId());
 
         List<WalletTransaction> transactions = pullTransactions(
-                fromId -> esiGateway.queryCharacterWalletTransactions(cId, fromId, accessToken));
-        backfillOwner(transactions, OWNER_TYPE_CHARACTER, cId.longValue(), CHARACTER_DIVISION);
+                fromId -> esiGateway.queryCharacterWalletTransactions(characterId, fromId, accessToken));
+        backfillOwner(transactions, OWNER_TYPE_CHARACTER, characterId.longValue(), CHARACTER_DIVISION);
         // US1(014 T009):人物钱包交易随同步者 user_id 落库 —— 人物交易只对当前同步用户可见的归属依据
         Long syncUserId = eveAccount.getUserId() == null ? null : eveAccount.getUserId().longValue();
         transactions.forEach(t -> t.setUserId(syncUserId));
@@ -89,7 +89,7 @@ public class WalletTransactionService {
         if (!transactions.isEmpty()) {
             walletTransactionRepository.saveOrUpdateBatch(transactions);
         }
-        log.info("钱包交易人物同步完成 cId={} 条数={}", cId, transactions.size());
+        log.info("钱包交易人物同步完成 characterId={} 条数={}", characterId, transactions.size());
     }
 
     /* ────────────────────────── 军团同步 ────────────────────────── */
@@ -164,12 +164,12 @@ public class WalletTransactionService {
      * 归属解析:请求上下文(有登录主体)→ {@link AuthorizeUtil#authorize},否则
      * 显式系统身份 → {@link AuthorizeUtil#authorizeInternal}。严格仿 WalletJournalService。
      */
-    private EveAccount authorizeAccount(Integer cId) {
+    private EveAccount authorizeAccount(Integer characterId) {
         Integer currentUserId = UserUtil.getUserId();
         if (currentUserId != null && currentUserId > 0) {
-            return authorizeUtil.authorize(cId);
+            return authorizeUtil.authorize(characterId);
         }
-        return authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, cId);
+        return authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, characterId);
     }
 
     /**

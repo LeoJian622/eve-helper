@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 /**
  * StructureService.batchInsertOrUpdateFromEsi 军团批量写路径落 user_id 契约测试(TDD 红-绿)。
  *
- * <p>纯 Mockito：SecurityContextHolder 设 Number principal 走请求路径 {@code authorize(cId)}，
+ * <p>纯 Mockito：SecurityContextHolder 设 Number principal 走请求路径 {@code authorize(characterId)}，
  * ESI 军团建筑端点返回样例，断言经 {@code batchInsertOrUpdate} 落库的建筑行
  * {@code userId == eveAccount.getUserId().longValue()}（US2a T015）。</p>
  */
@@ -71,7 +71,7 @@ class StructureServiceBatchSyncTest {
     @Test
     @DisplayName("军团建筑批量：每行 setUserId=同步者 userId.longValue()")
     void corpBatch_setsUserId() throws Exception {
-        Integer cId = 9001;
+        Integer characterId = 9001;
         Integer userId = 100;
         Integer corpId = 5001;
         String token = "Bearer corp-token";
@@ -79,8 +79,8 @@ class StructureServiceBatchSyncTest {
         EveAccount account = new EveAccount();
         account.setUserId(userId);
         account.setCorpId(corpId);
-        when(authorizeUtil.authorize(cId)).thenReturn(account);
-        when(esiApiService.getAccessToken(cId, userId)).thenReturn(token);
+        when(authorizeUtil.authorize(characterId)).thenReturn(account);
+        when(esiApiService.getAccessToken(characterId, userId)).thenReturn(token);
 
         when(esiApiService.queryCorporationStructuresMaxPage(corpId, token)).thenReturn(1);
         when(esiApiService.queryCorporationStructures(corpId, "zh", 1, token))
@@ -89,7 +89,7 @@ class StructureServiceBatchSyncTest {
         Long syncUserId = userId.longValue();
         when(structureRepository.selectByCorporationId(corpId, syncUserId)).thenReturn(List.of());
 
-        structureService.batchInsertOrUpdateFromEsi(cId);
+        structureService.batchInsertOrUpdateFromEsi(characterId);
 
         ArgumentCaptor<List<Structure>> captor = ArgumentCaptor.forClass(List.class);
         verify(structureRepository).batchInsertOrUpdate(captor.capture());
@@ -101,7 +101,7 @@ class StructureServiceBatchSyncTest {
     @Test
     @DisplayName("P6-R1 stale 删除按 user_id 隔离：selectByCorporationId 以(corpId, syncUserId)查询，防删他人/ROOT 行")
     void staleDelete_isScopedToSyncUser() throws Exception {
-        Integer cId = 9002;
+        Integer characterId = 9002;
         Integer userId = 100;
         Integer corpId = 5002;
         String token = "Bearer corp-token";
@@ -109,8 +109,8 @@ class StructureServiceBatchSyncTest {
         EveAccount account = new EveAccount();
         account.setUserId(userId);
         account.setCorpId(corpId);
-        when(authorizeUtil.authorize(cId)).thenReturn(account);
-        when(esiApiService.getAccessToken(cId, userId)).thenReturn(token);
+        when(authorizeUtil.authorize(characterId)).thenReturn(account);
+        when(esiApiService.getAccessToken(characterId, userId)).thenReturn(token);
 
         when(esiApiService.queryCorporationStructuresMaxPage(corpId, token)).thenReturn(1);
         // ESI 侧本轮无建筑 → stale 删除应把「当前同步者名下」的行删掉
@@ -121,7 +121,7 @@ class StructureServiceBatchSyncTest {
         when(structureRepository.selectByCorporationId(corpId, syncUserId))
                 .thenReturn(List.of(structure(1010L), structure(1011L)));
 
-        structureService.batchInsertOrUpdateFromEsi(cId);
+        structureService.batchInsertOrUpdateFromEsi(characterId);
 
         // 关键契约:查询必须携带 syncUserId(=UserId.longValue()),而非仅 corpId
         verify(structureRepository).selectByCorporationId(corpId, syncUserId);

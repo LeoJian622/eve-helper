@@ -18,7 +18,7 @@ public interface EveAccountMapper extends BaseMapper<EveAccountPO> {
 
     int batchInsert(List<EveAccountPO> list);
 
-    EveAccountPO queryOneUserIdAndCharacterId(@Param("userId") Integer userId,@Param("cId") Integer cId);
+    EveAccountPO queryOneUserIdAndCharacterId(@Param("userId") Integer userId,@Param("characterId") Integer characterId);
 
     List<EveAccountPO> queryAccountList(Integer userId);
 

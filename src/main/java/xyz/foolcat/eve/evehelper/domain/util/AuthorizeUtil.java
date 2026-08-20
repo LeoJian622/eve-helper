@@ -30,17 +30,17 @@ public class AuthorizeUtil {
      * 会使任何主体不可识别的请求静默以该用户身份执行（含用其 refreshToken 换取 ESI token）。
      * 系统内部调用请改用 {@link #authorizeInternal}。
      *
-     * @param cId 人物或军团ID
+     * @param characterId 人物或军团ID
      * @return 游戏账户信息
      * @throws EveHelperException 未认证或该账户不属于当前用户时抛出
      */
-    public EveAccount authorize(Integer cId) {
+    public EveAccount authorize(Integer characterId) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
-            log.warn("游戏账户访问越权：未认证或主体无法识别 cId={}", cId);
+            log.warn("游戏账户访问越权：未认证或主体无法识别 characterId={}", characterId);
             throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);
         }
-        return eveAccountService.getAccountOne(userId, cId);
+        return eveAccountService.getAccountOne(userId, characterId);
     }
 
     /**
@@ -53,20 +53,20 @@ public class AuthorizeUtil {
      * 说明这是处理外部请求的线程，一律拒绝（运行时不变量，不仅靠注释约定）。
      *
      * @param userId 操作身份的用户ID
-     * @param cId    人物或军团ID
+     * @param characterId    人物或军团ID
      * @return 游戏账户信息
      * @throws EveHelperException userId 缺失、处于请求上下文、或该账户不属于该用户时抛出
      */
-    public EveAccount authorizeInternal(Integer userId, Integer cId) {
+    public EveAccount authorizeInternal(Integer userId, Integer characterId) {
         if (userId == null || userId <= 0) {
-            log.warn("系统内部调用未声明操作身份：cId={}", cId);
+            log.warn("系统内部调用未声明操作身份：characterId={}", characterId);
             throw new EveHelperException(ResultCode.PARAM_ERROR);
         }
         Integer currentUserId = UserUtil.getUserId();
         if (currentUserId != null && currentUserId > 0) {
-            log.warn("内部通道被请求路径误用：currentUserId={}, 声明身份={}, cId={}", currentUserId, userId, cId);
+            log.warn("内部通道被请求路径误用：currentUserId={}, 声明身份={}, characterId={}", currentUserId, userId, characterId);
             throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);
         }
-        return eveAccountService.getAccountOne(userId, cId);
+        return eveAccountService.getAccountOne(userId, characterId);
     }
 }

@@ -49,13 +49,13 @@ public class EveAccountService  {
      * 根据人物或者公司ID以及用户ID或者QQ
      * 获取游戏账户信息
      *
-     * @param cId    人物或者公司ID
+     * @param characterId    人物或者公司ID
      * @param userId 用户ID或者QQ
      * @return 游戏账户信息
      * @throws EveHelperException 账户不存在则抛出异常
      */
-    public EveAccount getAccountOne(Integer userId, Integer cId) {
-        EveAccount account = eveAccountRepository.getAccount(userId, cId);
+    public EveAccount getAccountOne(Integer userId, Integer characterId) {
+        EveAccount account = eveAccountRepository.getAccount(userId, characterId);
         if (account == null) {
             throw new EveHelperException(ResultCode.USER_ACCOUNT_NOT_EXIST);
         }

@@ -81,7 +81,7 @@ class EveAccountMapperSqlTest {
         // Arrange
         Map<String, Object> params = new HashMap<>();
         params.put("userId", 100);
-        params.put("cId", 95465499);
+        params.put("characterId", 95465499);
 
         // Act
         String sql = boundSql("queryOneUserIdAndCharacterId", params).getSql();

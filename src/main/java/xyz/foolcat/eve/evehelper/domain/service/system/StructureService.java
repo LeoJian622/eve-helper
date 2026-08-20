@@ -99,9 +99,9 @@ public class StructureService {
     /**
      * ESI获取的建筑列表批量获取数据
      *
-     * @param cId 角色ID
+     * @param characterId 角色ID
      */
-    public void batchInsertOrUpdateFromEsi(Integer cId) throws ParseException {
+    public void batchInsertOrUpdateFromEsi(Integer characterId) throws ParseException {
 
         /*
           获取游戏人物信息及授权
@@ -111,11 +111,11 @@ public class StructureService {
         EveAccount eveAccount;
         Integer currentUserId = UserUtil.getUserId();
         if (currentUserId != null && currentUserId > 0) {
-            eveAccount = authorizeUtil.authorize(cId);
+            eveAccount = authorizeUtil.authorize(characterId);
         } else {
-            eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, cId);
+            eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, characterId);
         }
-        String accessToken = esiApiService.getAccessToken(cId, eveAccount.getUserId());
+        String accessToken = esiApiService.getAccessToken(characterId, eveAccount.getUserId());
 
         /*
           获取总页数

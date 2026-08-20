@@ -68,12 +68,12 @@ public class WalletJournalService {
     /**
      * ESI获取的建筑列表批量获取数据
      *
-     * @param cId 角色ID
+     * @param characterId 角色ID
      * @deprecated 已被 {@link #syncCorporationJournal(Integer)}(division 1-7) 和
      *             {@link #syncCharacterJournal(Integer)}(division=0) 取代。
      */
     @Deprecated
-    public void batchInsertOrUpdateFromEsi(Integer cId) throws ParseException {
+    public void batchInsertOrUpdateFromEsi(Integer characterId) throws ParseException {
         /*
           获取游戏人物信息及授权
           请求路径有 SecurityContext 用 authorize(校验归属);
@@ -82,11 +82,11 @@ public class WalletJournalService {
         EveAccount eveAccount;
         Integer currentUserId = UserUtil.getUserId();
         if (currentUserId != null && currentUserId > 0) {
-            eveAccount = authorizeUtil.authorize(cId);
+            eveAccount = authorizeUtil.authorize(characterId);
         } else {
-            eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, cId);
+            eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, characterId);
         }
-        String accessToken = esiApiService.getAccessToken(cId, eveAccount.getUserId());
+        String accessToken = esiApiService.getAccessToken(characterId, eveAccount.getUserId());
 
         /*
           获取总页数
@@ -112,9 +112,9 @@ public class WalletJournalService {
      * 但改走人物钱包 journal 端点(单分账,无 division 参数,ownerId=characterId),幂等 upsert 落库。</p>
      * <p>按 TDD 契约,原实现已删除重建。</p>
      *
-     * @param cId 人物ID
+     * @param characterId 人物ID
      */
-    public void syncCharacterJournal(Integer cId) throws ParseException {
+    public void syncCharacterJournal(Integer characterId) throws ParseException {
         /*
           获取游戏人物信息及授权
           请求路径有 SecurityContext 用 authorize(校验归属);
@@ -123,16 +123,16 @@ public class WalletJournalService {
         EveAccount eveAccount;
         Integer currentUserId = UserUtil.getUserId();
         if (currentUserId != null && currentUserId > 0) {
-            eveAccount = authorizeUtil.authorize(cId);
+            eveAccount = authorizeUtil.authorize(characterId);
         } else {
-            eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, cId);
+            eveAccount = authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, characterId);
         }
-        String accessToken = esiApiService.getAccessToken(cId, eveAccount.getUserId());
+        String accessToken = esiApiService.getAccessToken(characterId, eveAccount.getUserId());
 
         /*
           获取总页数
          */
-        Integer maxPage = esiApiService.queryCharacterWalletJournalMaxPage(cId, accessToken);
+        Integer maxPage = esiApiService.queryCharacterWalletJournalMaxPage(characterId, accessToken);
 
         /*
          * 获取钱包记录
@@ -140,7 +140,7 @@ public class WalletJournalService {
          */
         int pages = maxPage == null ? 0 : maxPage;
         List<WalletJournal> walletJournals = Stream.iterate(1, i -> i + 1).limit(pages)
-                .map(i -> esiApiService.queryCharacterWalletJournal(cId, i, accessToken)
+                .map(i -> esiApiService.queryCharacterWalletJournal(characterId, i, accessToken)
                         .collectList().block())
                 .sequential().filter(Objects::nonNull)
                 .flatMap(Collection::stream)
@@ -149,14 +149,14 @@ public class WalletJournalService {
         // US1(014 T008):同步者 user_id 随写路径落库 —— 人物流水只对当前同步用户可见的归属依据
         Long syncUserId = eveAccount.getUserId() == null ? null : eveAccount.getUserId().longValue();
         walletJournals.forEach(j -> {
-            j.setOwnerId(cId.longValue());
+            j.setOwnerId(characterId.longValue());
             j.setDivision(0);
             j.setUserId(syncUserId);
         });
         if (!walletJournals.isEmpty()) {
             walletJournalRepository.saveOrUpdateBatch(walletJournals);
         }
-        log.info("钱包流水人物同步完成 cId={} 条数={}", cId, walletJournals.size());
+        log.info("钱包流水人物同步完成 characterId={} 条数={}", characterId, walletJournals.size());
     }
 
     /**
