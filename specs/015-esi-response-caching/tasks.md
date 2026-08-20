@@ -36,7 +36,7 @@ description: "Task list for ESI 响应缓存特性 (015)"
 
 **Purpose**: 12 类业务查询接入缓存判读。每个查询统一模式：命中不真调 / 未命中真调+回填 / 强刷限流 / 公开 pub。
 
-- [ ] T006 `[US1]` 列表通路响应头改造 — 使列表查询可取响应头 TTL：在涉及的 API 类新增"含响应头"入口（`exchangeToMono`+`toEntity` 取 `ResponseEntity`，参照 `PageTotalApi` 先例），原 `Flux<T>` 方法保留。**P4 裁定具体类**（优先资产/工业/钱包/建筑，分步）。
+- [x] T006 `[US1]` 列表通路响应头改造 — 使列表查询可取响应头 TTL：在涉及的 API 类新增"含响应头"入口（`exchangeToMono`+`toEntity` 取 `ResponseEntity`，参照 `PageTotalApi` 先例），原 `Flux<T>` 方法保留。**P4 裁定具体类**。已试点 `AssetsApi`，commit 3c7a270 + 7382de9，评审 clean。
 - [ ] T007 `[US1]` EsiApiService 注入缓存组件 — 注入 `EsiResponseCache`、`EsiCacheTtlExtractor`、`ForceRefreshLimiter`、`EsiResponseCacheProperties`，端口签名不变。
 - [ ] T008 `[US1]` 资产类包裹 — `queryCharactersAssets` / `queryCorporationsAssets`（列表）与 `*MaxPage`（Integer）。命中不真调、未命中真调+回填、无响应头每次真调。
 - [ ] T009 `[US1]` 工业/蓝图类包裹 — `queryCharacterIndustryJobs` / `queryCorporationIndustryJobs` / `queryCorporationBlueprintsMaxPage` / `queryCorporationIndustryJobsMaxPage`。

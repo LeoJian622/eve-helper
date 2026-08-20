@@ -1,16 +1,14 @@
-<!-- Sync Impact Report: Constitution v1.5.0
-- Version change: 1.4.0 -> 1.5.0 (MINOR: Replaced tiered process with uniform Spec-First process)
-- Modified principles: V. Tiered Development Process -> V. Uniform Spec-First Process (NON-NEGOTIABLE)
-- Added principles: None
-- Removed sections: L1/L2/L3 tier classification (routing changes by scope is no longer permitted); urgent-fix retroactive-documentation allowance (spec must precede implementation without exception)
+<!-- Sync Impact Report: Constitution v1.6.0
+- Version change: 1.5.0 -> 1.6.0 (MINOR: Added mandatory feature-branch isolation + development-trunk protection)
+- Added principles: V.1 特性轨必须创建独立特性分支;发展主干(springboot3.0 / main)禁止直接提交特性实现
+- Modified principles: V. Uniform Spec-First Process (added feature-branch mandate as sub-clause)
 - Templates requiring updates:
-  ✅ .specify/templates/plan-template.md (checked, no principle-name references)
+  ✅ .specify/templates/plan-template.md (no change needed; plan already carries Branch header)
   ✅ .specify/templates/spec-template.md (checked, no principle-name references)
   ✅ .specify/templates/tasks-template.md (checked, no principle-name references)
   ✅ .specify/templates/constitution-template.md (generic Spec-Kit examples only, unchanged)
-- Documents synced: docs/AI_WORKFLOW.md (rewritten as 工程开发规则), CLAUDE.md, docs/INDEX.md, Readme.md, docs/DEVELOPMENT.md
-- Follow-up TODOs: specs/005-structure-query-api/plan.md retains a historical "分级流程(第五条)" gate reference; left as-is as an archived record
-
+- Documents synced: constitution.md (this file), CLAUDE.md (workflow引用), docs/workflow/DEVELOPMENT-WORKFLOW.md (轨道表补充分支要求)
+- Follow-up TODOs: none
 -->
 
 # EVE Helper Constitution
@@ -40,6 +38,9 @@ Experimental libraries may only be used in prototypes and must not enter the mai
 
 ### V. Uniform Spec-First Process (NON-NEGOTIABLE)
 All development operations follow one uniform process regardless of change scope — routing work into lighter tiers by size is not permitted: clarify (when ambiguous) -> `/speckit-specify` -> `/speckit-plan` (with `ecc:security-reviewer` design review) -> `/speckit-tasks` (atomic tasks < 2h, each with explicit AC) -> `/speckit-implement` under strict TDD (RED -> GREEN -> REFACTOR)
+
+### V.1 特性轨必须创建独立特性分支 (NON-NEGOTIABLE)
+Every feature track (特性轨) MUST be developed on a dedicated feature branch, named per the feature (`<NNN>-<feature>`, e.g. `015-esi-response-caching`, as declared in the plan.md `Branch` header). Implementation commits MUST NOT be made directly on the development trunk (`springboot3.0` / `main` / `origin/...`): trunk branches are reserved for integration only, updated exclusively via merge/PR at the P7 收尾阶段. Rationale: trunk is a long-lived shared reference; direct feature commits pollute its history, break per-feature review/rollback, and leak half-finished work. Violation is corrected by moving the feature commits onto the feature branch and rewinding the trunk to its upstream.
 Mandatory post-implementation review gate: `ecc:java-reviewer` required on Java changes; `ecc:security-reviewer` added for auth/user-input/external-API/crypto changes; `ecc:java-build-resolver` on build failure; review records archived under `docs/reviews/`
 No change may bypass spec/plan/tasks to write code directly; implementation claims require test/build evidence (`superpowers:verification-before-completion`)
 Urgent fixes receive NO exemption and must complete the full spec/plan/tasks sequence before any implementation code is touched: `superpowers:systematic-debugging` establishes root cause as input to `/speckit-specify` (recording reproduction steps, root cause, blast radius, and fix boundary), then plan/tasks (including a failing regression test task), then TDD implementation. Retroactive documentation is prohibited
@@ -68,5 +69,5 @@ Constitution supersedes all other practices; Amendments require documentation, a
 All changes must include performance impact assessment and test coverage analysis
 
 ## Memory Files
-CONSTITUTION_VERSION: 1.5.0 | RATIFICATION_DATE: 2026-05-12 | LAST_AMENDED_DATE: 2026-08-09
-<!-- Version: 1.5.0 | Ratified: 2026-05-12 | Last Amended: 2026-08-09 -->
+CONSTITUTION_VERSION: 1.6.0 | RATIFICATION_DATE: 2026-05-12 | LAST_AMENDED_DATE: 2026-08-20
+<!-- Version: 1.6.0 | Ratified: 2026-05-12 | Last Amended: 2026-08-20 -->
