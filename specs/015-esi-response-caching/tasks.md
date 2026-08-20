@@ -54,11 +54,11 @@ description: "Task list for ESI 响应缓存特性 (015)"
 
 **Purpose**: 端到端验证缓存语义与隔离，满足 P5 验证门禁。
 
-- [ ] T014 `[US1]` 缓存命中不真调 — Mockito 断言同一资源 TTL 内二次调用 API 调用次数 0（SC-001）。
-- [ ] T015 `[US2]` 无响应头每次真调 — 无缓存头接口二次调用仍真调、缓存键不存在（SC-004）。
-- [ ] T016 `[US3]` 键用户隔离（IDOR） — 两 userId 同一 characterId 互不命中、各自真调；公开 pub 共享。
-- [ ] T017 `[US4]` 强刷窗口 — 连续 6 次强刷第 6 次拒；窗口过后归零（SC-003）。
-- [ ] T018 `[US5]` 并发不穿透 — 10 并发同一已过期键，真实调用次数 = 1（SC-002）。
+- [x] T014 `[US1]` 缓存命中不真调 — Mockito 断言同一资源 TTL 内二次调用 API 调用次数 0（SC-001）。**commit f14eadc：`assets_sameKey_firstMissBackfill_secondHit_noRealCall` 旅程（miss→回填→hit→不真调，times(1)）；命中不真调核心单测已早由 T008-T013 覆盖**
+- [x] T015 `[US2]` 无响应头每次真调 — 无缓存头接口二次调用仍真调、缓存键不存在（SC-004）。**由既有测试覆盖（`characterAssets_noHeader_realCallEveryTime`，二次调用真调 2 次），未重派**
+- [x] T016 `[US3]` 键用户隔离（IDOR） — 两 userId 同一 characterId 互不命中、各自真调；公开 pub 共享。**commit f14eadc：`assets_twoUsers_sameCharacter_isolatedKeys_eachRealCalls`（构造 keyA≠keyB、各自真调、回填键隔离）；M2 遗留"userId 隔离断言留 T016"至此达成**
+- [x] T017 `[US4]` 强刷窗口 — 连续 6 次强刷第 6 次拒；窗口过后归零（SC-003）。**commit f14eadc：`forceRefresh_windowExpiry_requota_reallowsFresh`（编排队列耗尽落缓存、窗口重新有额度再取新鲜）；强刷三态已早由 T013 覆盖**
+- [x] T018 `[US5]` 并发不穿透 — 10 并发同一已过期键，真实调用次数 = 1（SC-002）。**commit f14eadc：`assets_tenConcurrentSameExpiredKey_onlyOneRealCall`（排队式模拟，1 抢锁真调 + 9 awaitCached 轮询复用，times(1)）；H1 扩至 5s 轮询为其成立基础**
 
 ---
 
