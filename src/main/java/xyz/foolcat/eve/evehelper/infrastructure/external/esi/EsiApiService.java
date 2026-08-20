@@ -178,6 +178,20 @@ public class EsiApiService implements EsiGateway {
     private static final Duration CLAIM_TTL = Duration.ofSeconds(REFRESH_LOCK_TTL_SECONDS);
 
     /**
+     * 防穿透未抢锁方的有界轮询预算(H1 修正):~5s,与 ESI_DATA_TIMEOUT(5s)对齐。
+     * <p>
+     * 真实 ESI 真调常 &gt;1s,原 10×100ms≈1s 预算在持锁方真调期间就耗尽,并发请求各自
+     * fallback 真调 → N~N 恰好绕过防穿透(SC-002 10→1 不成立)。扩至 50×100ms≈5s 覆盖真实
+     * 真调全程(真调上限 5s timeout),总量 &lt;= CLAIM_TTL(20s)。仅争用路径(claimed=false)付费。</p>
+     */
+    private static final int CLAIM_WAIT_ATTEMPTS = 50;
+
+    /**
+     * 防穿透轮询间隔,毫秒(25 行内以 100ms 节奏,合计 5s)。
+     */
+    private static final long CLAIM_WAIT_INTERVAL_MILLIS = 100;
+
+    /**
      * 争用时等待持锁方填充缓存的轮询次数与间隔(合计约 1 秒)
      */
     private static final int LOCK_WAIT_ATTEMPTS = 10;
@@ -564,16 +578,15 @@ public class EsiApiService implements EsiGateway {
         // maxPage 与列表首页共用同一缓存键(page=1);值类型(getInt vs getList)由键下内容决定
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/characters/" + characterId + "/assets/", 1);
-        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
-            // force + 有额度:忽略缓存,直接真调回填
-        } else {
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
             Integer cached = esiResponseCache.getInt(key);
             if (cached != null) {
                 return cached;
             }
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doMaxPageWithClaim(key, () -> assetsApi.queryCharactersAssetsMaxPageResponse(
+        return doMaxPageWithClaim(key, forceGranted, () -> assetsApi.queryCharactersAssetsMaxPageResponse(
                 characterId, EsiClientConfig.SERENITY, accessToken));
     }
 
@@ -596,16 +609,15 @@ public class EsiApiService implements EsiGateway {
         }
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/characters/" + characterId + "/assets/", page);
-        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
-            // force + 有额度:忽略缓存,直接真调回填
-        } else {
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
             List<Assets> cached = esiResponseCache.getList(key, objectMapper.constructType(Assets.class));
             if (cached != null) {
                 return Flux.fromIterable(cached);
             }
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doListWithClaim(key, Assets.class, () ->
+        return doListWithClaim(key, Assets.class, forceGranted, () ->
                 assetsApi.queryCharactersAssetsResponse(characterId, EsiClientConfig.SERENITY, page, accessToken)
                         .mapNotNull(response -> {
                             Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
@@ -638,16 +650,15 @@ public class EsiApiService implements EsiGateway {
         // maxPage 用独立 :maxPage 键,不与列表首页 page=1 共用(避免互相覆盖震荡,T008 评审 M1)
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/blueprints/", "maxPage");
-        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
-            // force + 有额度:忽略缓存,直接真调回填
-        } else {
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
             Integer cached = esiResponseCache.getInt(key);
             if (cached != null) {
                 return cached;
             }
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doMaxPageWithClaim(key, () -> corporationApi.queryCorporationBlueprintsMaxPageResponse(
+        return doMaxPageWithClaim(key, forceGranted, () -> corporationApi.queryCorporationBlueprintsMaxPageResponse(
                 corporationId, EsiClientConfig.SERENITY, accessToken));
     }
 
@@ -672,16 +683,15 @@ public class EsiApiService implements EsiGateway {
         // 军团工业列表统一归一化 uri;maxPage 用独立 :maxPage 键
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/industry/jobs/", "maxPage");
-        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
-            // force + 有额度:忽略缓存,直接真调回填
-        } else {
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
             Integer cached = esiResponseCache.getInt(key);
             if (cached != null) {
                 return cached;
             }
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doMaxPageWithClaim(key, () -> industryApi.queryCorporationIndustryJobsMaxPageResponse(
+        return doMaxPageWithClaim(key, forceGranted, () -> industryApi.queryCorporationIndustryJobsMaxPageResponse(
                 corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken));
     }
 
@@ -704,16 +714,15 @@ public class EsiApiService implements EsiGateway {
         }
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/industry/jobs/", 0);
-        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
-            // force + 有额度:忽略缓存,直接真调回填
-        } else {
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
             List<IndustryJob> cached = esiResponseCache.getList(key, objectMapper.constructType(IndustryJob.class));
             if (cached != null) {
                 return Flux.fromIterable(cached);
             }
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doListWithClaim(key, IndustryJob.class, () ->
+        return doListWithClaim(key, IndustryJob.class, forceGranted, () ->
                 industryApi.queryCorporationIndustryJobsResponse(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
                         .mapNotNull(response -> {
                             Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
@@ -744,16 +753,15 @@ public class EsiApiService implements EsiGateway {
         }
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/characters/" + characterId + "/industry/jobs/", 0);
-        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
-            // force + 有额度:忽略缓存,直接真调回填
-        } else {
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
             List<IndustryJob> cached = esiResponseCache.getList(key, objectMapper.constructType(IndustryJob.class));
             if (cached != null) {
                 return Flux.fromIterable(cached);
             }
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doListWithClaim(key, IndustryJob.class, () ->
+        return doListWithClaim(key, IndustryJob.class, forceGranted, () ->
                 industryApi.queryCharacterIndustryJobsResponse(characterId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
                         .mapNotNull(response -> {
                             Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
@@ -778,7 +786,7 @@ public class EsiApiService implements EsiGateway {
             return Mono.just(cached.get(0));
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doListWithClaim(key, InvTypes.class, () ->
+        return doListWithClaim(key, InvTypes.class, false, () ->
                 universeApi.queryUniverseTypeResponse(typeId, EsiClientConfig.SERENITY, language)
                         .mapNotNull(response -> {
                             Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
@@ -813,16 +821,15 @@ public class EsiApiService implements EsiGateway {
         // observerId 进归一化 uri(变体参数必须进键,T010 规避 T009 MEDIUM-1);maxPage 用独立 :maxPage 键
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/mining/observers/" + observerId + "/", "maxPage");
-        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
-            // force + 有额度:忽略缓存,直接真调回填
-        } else {
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
             Integer cached = esiResponseCache.getInt(key);
             if (cached != null) {
                 return cached;
             }
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doMaxPageWithClaim(key, () -> industryApi.queryCorporationMiningObserverMaxPageResponse(
+        return doMaxPageWithClaim(key, forceGranted, () -> industryApi.queryCorporationMiningObserverMaxPageResponse(
                 corporationId, EsiClientConfig.SERENITY, observerId, accessToken));
     }
 
@@ -846,16 +853,15 @@ public class EsiApiService implements EsiGateway {
         // observerId 进归一化 uri,页面参数用实际 page
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/mining/observers/" + observerId + "/", page);
-        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
-            // force + 有额度:忽略缓存,直接真调回填
-        } else {
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
             List<MiningDetail> cached = esiResponseCache.getList(key, objectMapper.constructType(MiningDetail.class));
             if (cached != null) {
                 return Flux.fromIterable(cached);
             }
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doListWithClaim(key, MiningDetail.class, () ->
+        return doListWithClaim(key, MiningDetail.class, forceGranted, () ->
                 industryApi.queryCorporationMiningObserverResponse(corporationId, EsiClientConfig.SERENITY, observerId, page, accessToken)
                         .mapNotNull(response -> {
                             Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
@@ -888,16 +894,15 @@ public class EsiApiService implements EsiGateway {
         // 端口签名无 language,maxPage 页数与语言无关 → 用语言无关的 :maxPage 独立键
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/structures/", "maxPage");
-        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
-            // force + 有额度:忽略缓存,直接真调回填
-        } else {
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
             Integer cached = esiResponseCache.getInt(key);
             if (cached != null) {
                 return cached;
             }
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doMaxPageWithClaim(key, () -> corporationApi.queryCorporationStructuresMaxPageResponse(
+        return doMaxPageWithClaim(key, forceGranted, () -> corporationApi.queryCorporationStructuresMaxPageResponse(
                 corporationId, EsiClientConfig.SERENITY, accessToken));
     }
 
@@ -921,16 +926,15 @@ public class EsiApiService implements EsiGateway {
         // language 进归一化 uri(变体参数必须进键:T010 规避 T009 MEDIUM-1,换语种不得互命中)
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/structures/" + language + "/", page);
-        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
-            // force + 有额度:忽略缓存,直接真调回填
-        } else {
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
             List<Structure> cached = esiResponseCache.getList(key, objectMapper.constructType(Structure.class));
             if (cached != null) {
                 return Flux.fromIterable(cached);
             }
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doListWithClaim(key, Structure.class, () ->
+        return doListWithClaim(key, Structure.class, forceGranted, () ->
                 corporationApi.queryCorporationStructuresResponse(corporationId, EsiClientConfig.SERENITY, language, page, accessToken)
                         .mapNotNull(response -> {
                             Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
@@ -954,7 +958,7 @@ public class EsiApiService implements EsiGateway {
             return Flux.fromIterable(cached);
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doListWithClaim(key, UniverseName.class, () ->
+        return doListWithClaim(key, UniverseName.class, false, () ->
                 universeApi.queryUniverseNamesResponse(ids, EsiClientConfig.SERENITY)
                         .mapNotNull(response -> {
                             Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
@@ -995,14 +999,16 @@ public class EsiApiService implements EsiGateway {
      * <p>
      * 真调异常照常上抛勿吞;占位锁经 {@code doFinally} 在流终止(回填后)释放。
      */
-    private <T> Flux<T> doListWithClaim(String key, Class<T> elementType, Supplier<Mono<List<T>>> realCaller) {
+    private <T> Flux<T> doListWithClaim(String key, Class<T> elementType, boolean forceGranted, Supplier<Mono<List<T>>> realCaller) {
         boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
-        if (!claimed) {
+        if (!claimed && !forceGranted) {
+            // 未抢锁且非强刷:有界轮询复用持锁方回填结果(~5s),命中则不重复真调
             List<T> filled = awaitCachedList(key, objectMapper.constructType(elementType));
             if (filled != null) {
                 return Flux.fromIterable(filled);
             }
         }
+        // 持锁承担真调;或强刷有额度未抢锁(保新鲜,直接真调不读陈旧缓存);或轮询超时 fail-open
         Flux<T> out = realCaller.get().flatMapIterable(Function.identity());
         return claimed ? out.doFinally(sig -> esiResponseCache.releaseClaim(key)) : out;
     }
@@ -1010,9 +1016,9 @@ public class EsiApiService implements EsiGateway {
     /**
      * maxPage(Integer)查询的防穿透包裹:同列表语义,轮询用 getInt;同步真调用 try/finally 释放。
      */
-    private Integer doMaxPageWithClaim(String key, Supplier<PageTotalApi.PageCountResult> realCaller) {
+    private Integer doMaxPageWithClaim(String key, boolean forceGranted, Supplier<PageTotalApi.PageCountResult> realCaller) {
         boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
-        if (!claimed) {
+        if (!claimed && !forceGranted) {
             Integer filled = awaitCachedInt(key);
             if (filled != null) {
                 return filled;
@@ -1041,9 +1047,9 @@ public class EsiApiService implements EsiGateway {
      * 有界轮询读列表缓存(未抢锁方等待持锁方回填)。窗口内返回缓存即命中;超时返回 null。
      */
     private <T> List<T> awaitCachedList(String key, JavaType elementType) {
-        for (int i = 0; i < LOCK_WAIT_ATTEMPTS; i++) {
+        for (int i = 0; i < CLAIM_WAIT_ATTEMPTS; i++) {
             try {
-                TimeUnit.MILLISECONDS.sleep(LOCK_WAIT_INTERVAL_MILLIS);
+                TimeUnit.MILLISECONDS.sleep(CLAIM_WAIT_INTERVAL_MILLIS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return null;
@@ -1060,9 +1066,9 @@ public class EsiApiService implements EsiGateway {
      * 有界轮询读 maxPage 缓存(未抢锁方等待持锁方回填)。超时返回 null(fail-open 真调)。
      */
     private Integer awaitCachedInt(String key) {
-        for (int i = 0; i < LOCK_WAIT_ATTEMPTS; i++) {
+        for (int i = 0; i < CLAIM_WAIT_ATTEMPTS; i++) {
             try {
-                TimeUnit.MILLISECONDS.sleep(LOCK_WAIT_INTERVAL_MILLIS);
+                TimeUnit.MILLISECONDS.sleep(CLAIM_WAIT_INTERVAL_MILLIS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return null;
@@ -1096,16 +1102,15 @@ public class EsiApiService implements EsiGateway {
         // division 进归一化 uri(变体参数进键,规避 MEDIUM-1);maxPage 用独立 :maxPage 键
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/wallets/" + division + "/journal/", "maxPage");
-        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
-            // force + 有额度:忽略缓存,直接真调回填
-        } else {
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
             Integer cached = esiResponseCache.getInt(key);
             if (cached != null) {
                 return cached;
             }
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doMaxPageWithClaim(key, () -> walletApi.queryCorporationWalletJournalMaxPageResponse(
+        return doMaxPageWithClaim(key, forceGranted, () -> walletApi.queryCorporationWalletJournalMaxPageResponse(
                 corporationId, division, EsiClientConfig.SERENITY, accessToken));
     }
 
@@ -1129,16 +1134,15 @@ public class EsiApiService implements EsiGateway {
         // division 进归一化 uri
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/wallets/" + division + "/journal/", page);
-        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
-            // force + 有额度:忽略缓存,直接真调回填
-        } else {
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
             List<WalletJournal> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletJournal.class));
             if (cached != null) {
                 return Flux.fromIterable(cached);
             }
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doListWithClaim(key, WalletJournal.class, () ->
+        return doListWithClaim(key, WalletJournal.class, forceGranted, () ->
                 walletApi.queryCorporationWalletJournalResponse(corporationId, division, EsiClientConfig.SERENITY, page, accessToken)
                         .mapNotNull(response -> {
                             Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
@@ -1169,16 +1173,15 @@ public class EsiApiService implements EsiGateway {
         }
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/characters/" + characterId + "/wallet/journal/", "maxPage");
-        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
-            // force + 有额度:忽略缓存,直接真调回填
-        } else {
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
             Integer cached = esiResponseCache.getInt(key);
             if (cached != null) {
                 return cached;
             }
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doMaxPageWithClaim(key, () -> walletApi.queryCharacterWalletJournalMaxPageResponse(
+        return doMaxPageWithClaim(key, forceGranted, () -> walletApi.queryCharacterWalletJournalMaxPageResponse(
                 characterId, EsiClientConfig.SERENITY, accessToken));
     }
 
@@ -1201,16 +1204,15 @@ public class EsiApiService implements EsiGateway {
         }
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/characters/" + characterId + "/wallet/journal/", page);
-        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
-            // force + 有额度:忽略缓存,直接真调回填
-        } else {
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
             List<WalletJournal> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletJournal.class));
             if (cached != null) {
                 return Flux.fromIterable(cached);
             }
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doListWithClaim(key, WalletJournal.class, () ->
+        return doListWithClaim(key, WalletJournal.class, forceGranted, () ->
                 walletApi.queryCharacterWalletJournalResponse(characterId, EsiClientConfig.SERENITY, page, accessToken)
                         .mapNotNull(response -> {
                             Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
@@ -1245,16 +1247,15 @@ public class EsiApiService implements EsiGateway {
         String base = "/characters/" + characterId + "/wallet/transactions/";
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 fromId == null ? base : base + "?from_id=" + fromId, 0);
-        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
-            // force + 有额度:忽略缓存,直接真调回填
-        } else {
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
             List<WalletTransaction> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletTransaction.class));
             if (cached != null) {
                 return Flux.fromIterable(cached);
             }
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doListWithClaim(key, WalletTransaction.class, () ->
+        return doListWithClaim(key, WalletTransaction.class, forceGranted, () ->
                 walletApi.queryCharacterWalletTransactionsResponse(characterId, EsiClientConfig.SERENITY, fromId, accessToken)
                         .mapNotNull(response -> {
                             Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
@@ -1286,16 +1287,15 @@ public class EsiApiService implements EsiGateway {
         String base = "/corporations/" + corporationId + "/wallets/" + division + "/transactions/";
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 fromId == null ? base : base + "?from_id=" + fromId, 0);
-        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
-            // force + 有额度:忽略缓存,直接真调回填
-        } else {
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
             List<WalletTransaction> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletTransaction.class));
             if (cached != null) {
                 return Flux.fromIterable(cached);
             }
         }
         // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
-        return doListWithClaim(key, WalletTransaction.class, () ->
+        return doListWithClaim(key, WalletTransaction.class, forceGranted, () ->
                 walletApi.queryCorporationWalletTransactionsResponse(corporationId, division, EsiClientConfig.SERENITY, fromId, accessToken)
                         .mapNotNull(response -> {
                             Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());

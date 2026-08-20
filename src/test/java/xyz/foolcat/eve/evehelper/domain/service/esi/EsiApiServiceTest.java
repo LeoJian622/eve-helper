@@ -1418,4 +1418,25 @@ class EsiApiServiceTest {
         // 轮询超时按 fail-open 真调一次,不阻塞也不报争用错误
         verify(assetsApi).queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString());
     }
+
+    @Test
+    @DisplayName("强刷 L1:force 有额度但未抢锁 → 直接真调,不读陈旧缓存(保 force 新鲜语义)")
+    void forceRefresh_notClaimed_doesNotReadStaleCache_usesFreshRealCall() {
+        authAs(USER_ID);
+        String key = assetsKey(1);
+        when(cacheGateway.get(key)).thenReturn("[{\"itemId\":100}]");   // 陈旧缓存
+        when(forceRefreshLimiter.tryAcquire(any(String.class), any(), anyInt())).thenReturn(true); // force 有额度
+        when(cacheGateway.setIfAbsent(eq(key + ":lock"), eq(true), anyLong(), eq(TimeUnit.MILLISECONDS))).thenReturn(false); // 未抢锁
+        when(assetsApi.queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(assetResponse(999L)))));
+
+        List<Assets> r = esiApiService.queryCharactersAssets(CID, 1, "Bearer x", true).collectList().block();
+
+        // force 目标新鲜:即便未抢锁/有陈旧缓存,也要真调取新鲜数据,而非返回 100
+        assertThat(r).hasSize(1);
+        assertThat(r.get(0).getItemId()).isEqualTo(999L);
+        verify(assetsApi).queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString());
+    }
 }
