@@ -30,6 +30,10 @@ import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiStructureConver
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiUniverseNameConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiWalletJournalConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiWalletTransactionConverter;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiCacheTtlExtractor;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCache;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCacheProperties;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.ForceRefreshLimiter;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.AssetsApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CharacterApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CorporationApi;
@@ -103,6 +107,14 @@ public class EsiApiService implements EsiGateway {
     private final EsiWalletJournalConverter esiWalletJournalConverter;
 
     private final EsiWalletTransactionConverter esiWalletTransactionConverter;
+
+    private final EsiResponseCache esiResponseCache;
+
+    private final EsiCacheTtlExtractor esiCacheTtlExtractor;
+
+    private final ForceRefreshLimiter forceRefreshLimiter;
+
+    private final EsiResponseCacheProperties esiResponseCacheProperties;
 
     /**
      * ESI 授权状态缓存键前缀
