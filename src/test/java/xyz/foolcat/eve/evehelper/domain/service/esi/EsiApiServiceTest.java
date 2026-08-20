@@ -19,6 +19,8 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.IndustryJob;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.MiningDetail;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiApiService;
@@ -30,6 +32,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CorporationApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.PageTotalApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UniverseApi;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.WalletApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCache;
@@ -39,6 +42,8 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResp
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.IndustryJobPlacedResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ObserverMiningLedgerResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.StructuresInformationResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.WalletJournalResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.WalletTransactionsResponse;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 
 import java.util.List;
@@ -97,6 +102,9 @@ class EsiApiServiceTest {
     @MockBean
     CorporationApi corporationApi;
 
+    @MockBean
+    WalletApi walletApi;
+
     @Autowired
     private EsiApiService esiApiService;
 
@@ -111,6 +119,8 @@ class EsiApiServiceTest {
     private static final Integer CORP_ID = 999888;
     private static final Long OBSERVER_ID = 888777L;
     private static final String LANG = "es";
+    private static final int DIVISION = 2;
+    private static final Long FROM_ID = 555444L;
     private static final String STATUS_KEY = "esi_auth_status:" + CID;
     private static final String LOCK_KEY = "esi_refresh_lock:" + CID;
     private static final String ACCESS_TOKEN_KEY = "esi_access_token:" + USER_ID + ":" + CID;
@@ -900,5 +910,230 @@ class EsiApiServiceTest {
         assertThat(mp).isEqualTo(11);
         verify(corporationApi).queryCorporationStructuresMaxPage(eq(CORP_ID), eq("serenity"), anyString());
         verify(cacheGateway, never()).get(anyString());
+    }
+
+    // ─═ 015/T011:钱包流水/交易类查询接入缓存判读 ═─
+
+    private static WalletJournalResponse journalResp() {
+        WalletJournalResponse r = new WalletJournalResponse();
+        r.setRefType("wallet");
+        r.setDescription("x");
+        return r;
+    }
+
+    private static WalletTransactionsResponse txnResp() {
+        return new WalletTransactionsResponse();
+    }
+
+    @Test
+    @DisplayName("人物钱包流水:缓存命中 → 返回缓存数据,不真调")
+    void charJournal_cacheHit_noRealCall() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/characters/" + CID + "/wallet/journal/", 1);
+        when(cacheGateway.get(key)).thenReturn("[{\"id\":1}]");
+
+        List<WalletJournal> result = esiApiService.queryCharacterWalletJournal(CID, 1, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        verify(walletApi, never()).queryCharacterWalletJournalResponse(any(), anyString(), any(), anyString());
+        verify(walletApi, never()).queryCharacterWalletJournal(any(), anyString(), any(), anyString());
+    }
+
+    @Test
+    @DisplayName("人物钱包流水:未命中 → 真调一次并按 max-age 回填")
+    void charJournal_cacheMiss_realCallAndBackfill() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/characters/" + CID + "/wallet/journal/", 1);
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(walletApi.queryCharacterWalletJournalResponse(eq(CID), eq("serenity"), eq(1), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(journalResp()))));
+
+        List<WalletJournal> result = esiApiService.queryCharacterWalletJournal(CID, 1, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        verify(walletApi).queryCharacterWalletJournalResponse(eq(CID), eq("serenity"), eq(1), anyString());
+        ArgumentCaptor<String> kc = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Object> vc = ArgumentCaptor.forClass(Object.class);
+        verify(cacheGateway).set(kc.capture(), vc.capture(), eq(3600L), eq(TimeUnit.SECONDS));
+        assertThat(kc.getValue()).isEqualTo(key);
+        assertThat(vc.getValue()).isInstanceOf(String.class);
+    }
+
+    @Test
+    @DisplayName("人物钱包流水:未认证 → 直接真调原 Flux 入口,不进缓存")
+    void charJournal_unauthenticated_directRealCall() {
+        authAsAnonymous();
+        when(walletApi.queryCharacterWalletJournal(eq(CID), eq("serenity"), eq(1), anyString()))
+                .thenReturn(Flux.just(journalResp()));
+
+        List<WalletJournal> result = esiApiService.queryCharacterWalletJournal(CID, 1, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        verify(walletApi).queryCharacterWalletJournal(eq(CID), eq("serenity"), eq(1), anyString());
+        verify(cacheGateway, never()).get(anyString());
+    }
+
+    @Test
+    @DisplayName("军团钱包流水:未命中 → 真调一次并按 max-age 回填(division 进键)")
+    void corpJournal_cacheMiss_realCallAndBackfill() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/wallets/" + DIVISION + "/journal/", 1);
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(walletApi.queryCorporationWalletJournalResponse(eq(CORP_ID), eq(DIVISION), eq("serenity"), eq(1), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(journalResp()))));
+
+        List<WalletJournal> result = esiApiService.queryCorporationWalletJournal(CORP_ID, DIVISION, 1, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        verify(walletApi).queryCorporationWalletJournalResponse(eq(CORP_ID), eq(DIVISION), eq("serenity"), eq(1), anyString());
+        ArgumentCaptor<String> kc = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Object> vc = ArgumentCaptor.forClass(Object.class);
+        verify(cacheGateway).set(kc.capture(), vc.capture(), eq(3600L), eq(TimeUnit.SECONDS));
+        assertThat(kc.getValue()).isEqualTo(key);
+        assertThat(vc.getValue()).isInstanceOf(String.class);
+    }
+
+    @Test
+    @DisplayName("军团钱包流水:M1 隔离 — division 不同 → 缓存键不同")
+    void corpJournalKey_differsByDivision() {
+        String k1 = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID,
+                "/corporations/" + CORP_ID + "/wallets/" + DIVISION + "/journal/", 1);
+        String k2 = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID,
+                "/corporations/" + CORP_ID + "/wallets/" + (DIVISION + 1) + "/journal/", 1);
+        assertThat(k1).isNotEqualTo(k2);
+    }
+
+    @Test
+    @DisplayName("人物钱包流水 maxPage:缓存命中 → 直接返回,不真调")
+    void charJournalMaxPage_cacheHit_noRealCall() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/characters/" + CID + "/wallet/journal/", "maxPage");
+        when(cacheGateway.get(key)).thenReturn(9);
+
+        Integer mp = esiApiService.queryCharacterWalletJournalMaxPage(CID, "Bearer x");
+
+        assertThat(mp).isEqualTo(9);
+        verify(walletApi, never()).queryCharacterWalletJournalMaxPage(any(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("人物钱包流水 maxPage:未命中 → 真调含头入口并按 max-age 回填 Integer")
+    void charJournalMaxPage_cacheMiss_realCallAndBackfill() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/characters/" + CID + "/wallet/journal/", "maxPage");
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(walletApi.queryCharacterWalletJournalMaxPageResponse(eq(CID), eq("serenity"), anyString()))
+                .thenReturn(new PageTotalApi.PageCountResult(9, maxAge300()));
+
+        Integer mp = esiApiService.queryCharacterWalletJournalMaxPage(CID, "Bearer x");
+
+        assertThat(mp).isEqualTo(9);
+        verify(walletApi).queryCharacterWalletJournalMaxPageResponse(eq(CID), eq("serenity"), anyString());
+        verify(cacheGateway).set(eq(key), eq(9), eq(300L), eq(TimeUnit.SECONDS));
+    }
+
+    @Test
+    @DisplayName("军团钱包流水 maxPage:未命中 → 真调含头入口并按 max-age 回填(division 进键)")
+    void corpJournalMaxPage_cacheMiss_realCallAndBackfill() {
+        authAs(USER_ID);
+        String key = cacheKeyFor("/corporations/" + CORP_ID + "/wallets/" + DIVISION + "/journal/", "maxPage");
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(walletApi.queryCorporationWalletJournalMaxPageResponse(eq(CORP_ID), eq(DIVISION), eq("serenity"), anyString()))
+                .thenReturn(new PageTotalApi.PageCountResult(6, maxAge300()));
+
+        Integer mp = esiApiService.queryCorporationWalletJournalMaxPage(CORP_ID, DIVISION, "Bearer x");
+
+        assertThat(mp).isEqualTo(6);
+        verify(walletApi).queryCorporationWalletJournalMaxPageResponse(eq(CORP_ID), eq(DIVISION), eq("serenity"), anyString());
+        verify(cacheGateway).set(eq(key), eq(6), eq(300L), eq(TimeUnit.SECONDS));
+    }
+
+    @Test
+    @DisplayName("人物钱包交易:缓存命中 → 返回缓存数据,不真调")
+    void charTransactions_cacheHit_noRealCall() {
+        authAs(USER_ID);
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID,
+                "/characters/" + CID + "/wallet/transactions/?from_id=" + FROM_ID, 0);
+        when(cacheGateway.get(key)).thenReturn("[{\"amount\":2}]");
+
+        List<WalletTransaction> result = esiApiService.queryCharacterWalletTransactions(CID, FROM_ID, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        verify(walletApi, never()).queryCharacterWalletTransactionsResponse(any(), anyString(), any(), anyString());
+        verify(walletApi, never()).queryCharacterWalletTransactions(any(), anyString(), any(), anyString());
+    }
+
+    @Test
+    @DisplayName("人物钱包交易:未命中 → 真调一次并按 max-age 回填(from_id 进键)")
+    void charTransactions_cacheMiss_realCallAndBackfill() {
+        authAs(USER_ID);
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID,
+                "/characters/" + CID + "/wallet/transactions/?from_id=" + FROM_ID, 0);
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(walletApi.queryCharacterWalletTransactionsResponse(eq(CID), eq("serenity"), eq(FROM_ID), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(txnResp()))));
+
+        List<WalletTransaction> result = esiApiService.queryCharacterWalletTransactions(CID, FROM_ID, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        verify(walletApi).queryCharacterWalletTransactionsResponse(eq(CID), eq("serenity"), eq(FROM_ID), anyString());
+        ArgumentCaptor<String> kc = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Object> vc = ArgumentCaptor.forClass(Object.class);
+        verify(cacheGateway).set(kc.capture(), vc.capture(), eq(3600L), eq(TimeUnit.SECONDS));
+        assertThat(kc.getValue()).isEqualTo(key);
+        assertThat(vc.getValue()).isInstanceOf(String.class);
+    }
+
+    @Test
+    @DisplayName("人物钱包交易:未认证 → 直接真调原 Flux 入口,不进缓存")
+    void charTransactions_unauthenticated_directRealCall() {
+        authAsAnonymous();
+        when(walletApi.queryCharacterWalletTransactions(eq(CID), eq("serenity"), eq(FROM_ID), anyString()))
+                .thenReturn(Flux.just(txnResp()));
+
+        List<WalletTransaction> result = esiApiService.queryCharacterWalletTransactions(CID, FROM_ID, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        verify(walletApi).queryCharacterWalletTransactions(eq(CID), eq("serenity"), eq(FROM_ID), anyString());
+        verify(cacheGateway, never()).get(anyString());
+    }
+
+    @Test
+    @DisplayName("钱包交易:M1 隔离 — fromId null 与非 null → 缓存键不同")
+    void transactionsKey_nullVsNonNullFromId_differs() {
+        String base = "/characters/" + CID + "/wallet/transactions/";
+        String kNull = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID, base, 0);
+        String kNonNull = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID,
+                base + "?from_id=" + FROM_ID, 0);
+        assertThat(kNull).isNotEqualTo(kNonNull);
+    }
+
+    @Test
+    @DisplayName("军团钱包交易:未命中 → 真调含头入口并回填(division 与 from_id 进键)")
+    void corpTransactions_cacheMiss_realCallAndBackfill() {
+        authAs(USER_ID);
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID,
+                "/corporations/" + CORP_ID + "/wallets/" + DIVISION + "/transactions/?from_id=" + FROM_ID, 0);
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(walletApi.queryCorporationWalletTransactionsResponse(eq(CORP_ID), eq(DIVISION), eq("serenity"), eq(FROM_ID), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(txnResp()))));
+
+        List<WalletTransaction> result = esiApiService.queryCorporationWalletTransactions(CORP_ID, DIVISION, FROM_ID, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        verify(walletApi).queryCorporationWalletTransactionsResponse(eq(CORP_ID), eq(DIVISION), eq("serenity"), eq(FROM_ID), anyString());
+        ArgumentCaptor<String> kc = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Object> vc = ArgumentCaptor.forClass(Object.class);
+        verify(cacheGateway).set(kc.capture(), vc.capture(), eq(3600L), eq(TimeUnit.SECONDS));
+        assertThat(kc.getValue()).isEqualTo(key);
+        assertThat(vc.getValue()).isInstanceOf(String.class);
     }
 }

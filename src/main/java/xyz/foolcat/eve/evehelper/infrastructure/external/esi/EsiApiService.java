@@ -799,38 +799,153 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Integer queryCorporationWalletJournalMaxPage(Integer corporationId, int division, String accessToken) {
-        return walletApi.queryCorporationWalletJournalMaxPage(corporationId, division, EsiClientConfig.SERENITY, accessToken);
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return walletApi.queryCorporationWalletJournalMaxPage(corporationId, division, EsiClientConfig.SERENITY, accessToken);
+        }
+        // division 进归一化 uri(变体参数进键,规避 MEDIUM-1);maxPage 用独立 :maxPage 键
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/wallets/" + division + "/journal/", "maxPage");
+        Integer cached = esiResponseCache.getInt(key);
+        if (cached != null) {
+            return cached;
+        }
+        PageTotalApi.PageCountResult count = walletApi.queryCorporationWalletJournalMaxPageResponse(
+                corporationId, division, EsiClientConfig.SERENITY, accessToken);
+        Duration ttl = esiCacheTtlExtractor.extract(count.headers());
+        esiResponseCache.put(key, count.maxPage(), ttl);   // ttl null → put 内部跳过
+        return count.maxPage();
     }
 
     @Override
     public Flux<WalletJournal> queryCorporationWalletJournal(Integer corporationId, int division, int page, String accessToken) {
-        return walletApi.queryCorporationWalletJournal(corporationId, division, EsiClientConfig.SERENITY, page, accessToken)
-                .map(wallet -> esiWalletJournalConverter.toDomain(wallet, corporationId, resolveWalletCharacter(wallet)));
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return walletApi.queryCorporationWalletJournal(corporationId, division, EsiClientConfig.SERENITY, page, accessToken)
+                    .map(wallet -> esiWalletJournalConverter.toDomain(wallet, corporationId, resolveWalletCharacter(wallet)));
+        }
+        // division 进归一化 uri
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/wallets/" + division + "/journal/", page);
+        List<WalletJournal> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletJournal.class));
+        if (cached != null) {
+            return Flux.fromIterable(cached);
+        }
+        return walletApi.queryCorporationWalletJournalResponse(corporationId, division, EsiClientConfig.SERENITY, page, accessToken)
+                .mapNotNull(response -> {
+                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                    // 空 body → 空列表回填;三参转换在回填时计算(含 resolveWalletCharacter 赏金角色名解析)
+                    List<WalletJournal> domain = response.getBody() == null ? List.of()
+                            : response.getBody().stream()
+                            .map(w -> esiWalletJournalConverter.toDomain(w, corporationId, resolveWalletCharacter(w))).toList();
+                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                    return domain;
+                })
+                .flatMapIterable(Function.identity());
     }
 
     @Override
     public Integer queryCharacterWalletJournalMaxPage(Integer characterId, String accessToken) {
-        return walletApi.queryCharacterWalletJournalMaxPage(characterId, EsiClientConfig.SERENITY, accessToken);
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return walletApi.queryCharacterWalletJournalMaxPage(characterId, EsiClientConfig.SERENITY, accessToken);
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/wallet/journal/", "maxPage");
+        Integer cached = esiResponseCache.getInt(key);
+        if (cached != null) {
+            return cached;
+        }
+        PageTotalApi.PageCountResult count = walletApi.queryCharacterWalletJournalMaxPageResponse(
+                characterId, EsiClientConfig.SERENITY, accessToken);
+        Duration ttl = esiCacheTtlExtractor.extract(count.headers());
+        esiResponseCache.put(key, count.maxPage(), ttl);   // ttl null → put 内部跳过
+        return count.maxPage();
     }
 
     @Override
     public Flux<WalletJournal> queryCharacterWalletJournal(Integer characterId, int page, String accessToken) {
-        return walletApi.queryCharacterWalletJournal(characterId, EsiClientConfig.SERENITY, page, accessToken)
-                .map(wallet -> esiWalletJournalConverter.toDomain(wallet, characterId, resolveWalletCharacter(wallet)));
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return walletApi.queryCharacterWalletJournal(characterId, EsiClientConfig.SERENITY, page, accessToken)
+                    .map(wallet -> esiWalletJournalConverter.toDomain(wallet, characterId, resolveWalletCharacter(wallet)));
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/wallet/journal/", page);
+        List<WalletJournal> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletJournal.class));
+        if (cached != null) {
+            return Flux.fromIterable(cached);
+        }
+        return walletApi.queryCharacterWalletJournalResponse(characterId, EsiClientConfig.SERENITY, page, accessToken)
+                .mapNotNull(response -> {
+                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                    List<WalletJournal> domain = response.getBody() == null ? List.of()
+                            : response.getBody().stream()
+                            .map(w -> esiWalletJournalConverter.toDomain(w, characterId, resolveWalletCharacter(w))).toList();
+                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                    return domain;
+                })
+                .flatMapIterable(Function.identity());
     }
 
     // ── 钱包交易 ──
 
     @Override
     public Flux<WalletTransaction> queryCharacterWalletTransactions(Integer characterId, Long fromId, String accessToken) {
-        return walletApi.queryCharacterWalletTransactions(characterId, EsiClientConfig.SERENITY, fromId, accessToken)
-                .map(esiWalletTransactionConverter::toDomain);
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return walletApi.queryCharacterWalletTransactions(characterId, EsiClientConfig.SERENITY, fromId, accessToken)
+                    .map(esiWalletTransactionConverter::toDomain);
+        }
+        // fromId 是游标须进键:null 与非 null 由归一化 uri 是否含 from_id 段区分(M06 规避 MEDIUM-1)
+        String base = "/characters/" + characterId + "/wallet/transactions/";
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                fromId == null ? base : base + "?from_id=" + fromId, 0);
+        List<WalletTransaction> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletTransaction.class));
+        if (cached != null) {
+            return Flux.fromIterable(cached);
+        }
+        return walletApi.queryCharacterWalletTransactionsResponse(characterId, EsiClientConfig.SERENITY, fromId, accessToken)
+                .mapNotNull(response -> {
+                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                    List<WalletTransaction> domain = response.getBody() == null ? List.of()
+                            : response.getBody().stream().map(esiWalletTransactionConverter::toDomain).toList();
+                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                    return domain;
+                })
+                .flatMapIterable(Function.identity());
     }
 
     @Override
     public Flux<WalletTransaction> queryCorporationWalletTransactions(Integer corporationId, Integer division, Long fromId, String accessToken) {
-        return walletApi.queryCorporationWalletTransactions(corporationId, division, EsiClientConfig.SERENITY, fromId, accessToken)
-                .map(esiWalletTransactionConverter::toDomain);
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return walletApi.queryCorporationWalletTransactions(corporationId, division, EsiClientConfig.SERENITY, fromId, accessToken)
+                    .map(esiWalletTransactionConverter::toDomain);
+        }
+        // division 进归一化 uri;fromId null/非 null 由 from_id 段区分
+        String base = "/corporations/" + corporationId + "/wallets/" + division + "/transactions/";
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                fromId == null ? base : base + "?from_id=" + fromId, 0);
+        List<WalletTransaction> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletTransaction.class));
+        if (cached != null) {
+            return Flux.fromIterable(cached);
+        }
+        return walletApi.queryCorporationWalletTransactionsResponse(corporationId, division, EsiClientConfig.SERENITY, fromId, accessToken)
+                .mapNotNull(response -> {
+                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                    List<WalletTransaction> domain = response.getBody() == null ? List.of()
+                            : response.getBody().stream().map(esiWalletTransactionConverter::toDomain).toList();
+                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                    return domain;
+                })
+                .flatMapIterable(Function.identity());
     }
 
     /**
