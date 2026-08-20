@@ -51,6 +51,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.WalletJournal
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.WalletTransactionsResponse;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -1438,5 +1439,161 @@ class EsiApiServiceTest {
         assertThat(r).hasSize(1);
         assertThat(r.get(0).getItemId()).isEqualTo(999L);
         verify(assetsApi).queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString());
+    }
+
+    // ─═ 015/Phase3:T014 旅程(SC-001 miss→回填→hit→不真调) ═─
+
+    @Test
+    @DisplayName("SC-001 旅程:同一 key 首次 miss → 真调回填,TTL 内二次 hit → 不真调(总真调次数=1)")
+    void assets_sameKey_firstMissBackfill_secondHit_noRealCall() {
+        authAs(USER_ID);
+        String key = assetsKey(1);
+        // 首次:缓存未命中;二次:同 key 已回填(缓存命中,T 与 T0 展开见下)
+        when(cacheGateway.get(key)).thenReturn(null).thenReturn("[{\"itemId\":500}]");
+        when(cacheGateway.setIfAbsent(eq(key + ":lock"), eq(true), anyLong(), eq(TimeUnit.MILLISECONDS))).thenReturn(true);
+        when(assetsApi.queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(assetResponse(500L)))));
+
+        // 第一次:miss → 真调回填
+        List<Assets> first = esiApiService.queryCharactersAssets(CID, 1, "Bearer x").collectList().block();
+        assertThat(first).hasSize(1);
+        assertThat(first.get(0).getItemId()).isEqualTo(500L);
+
+        // 第二次:同一 key 命中已回填缓存 → 返回缓存值,不真调
+        List<Assets> second = esiApiService.queryCharactersAssets(CID, 1, "Bearer x").collectList().block();
+        assertThat(second).hasSize(1);
+        assertThat(second.get(0).getItemId()).isEqualTo(500L);
+
+        // 全程仅真调一次;第二次走缓存复用
+        verify(assetsApi, times(1)).queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString());
+    }
+
+    // ─═ 015/Phase3:T016 IDOR 用户隔离(SC-001 重点) ═─
+
+    @Test
+    @DisplayName("SC-001 IDOR:两 userId 同一 characterId → 缓存键隔离,各自 miss 真调、互不命中")
+    void assets_twoUsers_sameCharacter_isolatedKeys_eachRealCalls() {
+        int userB = USER_ID + 1;
+        String uri = "/characters/" + CID + "/assets/";
+        String keyA = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID, uri, 1);
+        String keyB = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userB, uri, 1);
+        // 键必须按 userId 隔离:同 characterId 不同用户不共用键(IDOR 根因,FR-004)
+        assertThat(keyA).isNotEqualTo(keyB);
+
+        // 用户 A:未命中 → 真调回填
+        authAs(USER_ID);
+        when(cacheGateway.get(keyA)).thenReturn(null);
+        when(cacheGateway.setIfAbsent(eq(keyA + ":lock"), eq(true), anyLong(), eq(TimeUnit.MILLISECONDS))).thenReturn(true);
+        when(assetsApi.queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(assetResponse(10L)))));
+
+        List<Assets> a = esiApiService.queryCharactersAssets(CID, 1, "Bearer x").collectList().block();
+        assertThat(a).hasSize(1);
+        assertThat(a.get(0).getItemId()).isEqualTo(10L);
+
+        // 用户 B 同一 characterId:不同缓存键 → 未命中,A 的回填不使其命中,各自真调
+        SecurityContextHolder.clearContext();
+        authAs(userB);
+        when(cacheGateway.get(keyB)).thenReturn(null);
+        when(cacheGateway.setIfAbsent(eq(keyB + ":lock"), eq(true), anyLong(), eq(TimeUnit.MILLISECONDS))).thenReturn(true);
+
+        List<Assets> b = esiApiService.queryCharactersAssets(CID, 1, "Bearer x").collectList().block();
+        assertThat(b).hasSize(1);
+        assertThat(b.get(0).getItemId()).isEqualTo(10L);
+
+        // 两个用户各自真调一次(互不共享缓存,IDOR 不成立)
+        verify(assetsApi, times(2)).queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString());
+        // A/B 回填到各自 userId 的隔离键(而非互相覆盖)
+        ArgumentCaptor<String> kc = ArgumentCaptor.forClass(String.class);
+        verify(cacheGateway, times(2)).set(kc.capture(), any(), anyLong(), eq(TimeUnit.SECONDS));
+        assertThat(kc.getAllValues()).containsExactlyInAnyOrder(keyA, keyB);
+    }
+
+    // ─═ 015/Phase3:T018 SC-002 并发不穿透(重点,排队式) ═─
+
+    @Test
+    @DisplayName("SC-002 并发不穿透:10 相同已过期键 → 仅首请求抢锁真调回填,其余复用其回填,总真调=1")
+    void assets_tenConcurrentSameExpiredKey_onlyOneRealCall() {
+        int waiters = 9; // 1 首请求 + 9 等待并发 = 10
+        String cached = "[{\"itemId\":100}]";
+        authAs(USER_ID);
+        String key = assetsKey(1);
+
+        // get 序列:首请求 miss;随后每条等待方 先 miss(初始判读) 再 await 轮询命中已回填缓存
+        java.util.List<String> getSeq = new ArrayList<>();
+        getSeq.add(null);
+        for (int i = 0; i < waiters; i++) {
+            getSeq.add(null);
+            getSeq.add(cached);
+        }
+        when(cacheGateway.get(key)).thenReturn(getSeq.get(0), getSeq.subList(1, getSeq.size()).toArray(new String[0]));
+        // tryClaim 序列:首请求抢到锁(true),其余等待方未抢到(false) → 轮询复用,不重复真调
+        java.util.List<Boolean> claimSeq = new ArrayList<>();
+        claimSeq.add(true);
+        for (int i = 0; i < waiters; i++) claimSeq.add(false);
+        when(cacheGateway.setIfAbsent(eq(key + ":lock"), eq(true), anyLong(), eq(TimeUnit.MILLISECONDS)))
+                .thenReturn(claimSeq.get(0), claimSeq.subList(1, claimSeq.size()).toArray(new Boolean[0]));
+        when(assetsApi.queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(assetResponse(100L)))));
+
+        // 首请求:真调回填
+        List<Assets> first = esiApiService.queryCharactersAssets(CID, 1, "Bearer x").collectList().block();
+        assertThat(first).hasSize(1);
+
+        // 其余并发请求:未抢锁,await 轮询命中已回填缓存,各自返回缓存值
+        for (int i = 0; i < waiters; i++) {
+            List<Assets> r = esiApiService.queryCharactersAssets(CID, 1, "Bearer x").collectList().block();
+            assertThat(r).hasSize(1);
+            assertThat(r.get(0).getItemId()).isEqualTo(100L);
+        }
+
+        // SC-002 核心:10 并发同键总真调仅 1 次,防穿透成立
+        verify(assetsApi, times(1)).queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString());
+        verify(assetsApi, never()).queryCharactersAssets(eq(CID), anyString(), eq(1), anyString());
+    }
+
+    // ─═ 015/Phase3:T017 SC-003 强刷窗口归零(EsiApiService 侧;limiter 自身计数见其单元测试) ═─
+
+    @Test
+    @DisplayName("SC-003 归零:本轮 force 消耗;配额耗尽落缓存;窗口过后 limiter 重新有额度 → force 再真调取新鲜")
+    void forceRefresh_windowExpiry_requota_reallowsFresh() {
+        authAs(USER_ID);
+        String key = assetsKey(1);
+        when(cacheGateway.setIfAbsent(eq(key + ":lock"), eq(true), anyLong(), eq(TimeUnit.MILLISECONDS))).thenReturn(true);
+        // tryAcquire 序列:窗口1 有额度 → 配额耗尽 → 窗口2(过期重新计数)有额度
+        when(forceRefreshLimiter.tryAcquire(any(String.class), any(), anyInt())).thenReturn(true, false, true);
+        when(assetsApi.queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(assetResponse(111L)))));
+
+        // 窗口 1:force 有额度 → 真调回填新鲜的 111
+        List<Assets> w1 = esiApiService.queryCharactersAssets(CID, 1, "Bearer x", true).collectList().block();
+        assertThat(w1).hasSize(1);
+        assertThat(w1.get(0).getItemId()).isEqualTo(111L);
+
+        // 同窗口内配额耗尽(tryAcquire=false)→ 落回缓存命中,返回已回填的 111,不真调
+        when(cacheGateway.get(key)).thenReturn("[{\"itemId\":111}]");
+        List<Assets> w2 = esiApiService.queryCharactersAssets(CID, 1, "Bearer x", true).collectList().block();
+        assertThat(w2).hasSize(1);
+        assertThat(w2.get(0).getItemId()).isEqualTo(111L);
+        verify(assetsApi, times(1)).queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString());
+
+        // 窗口 2(过期归零后重新有额度):force 再真调取新鲜 333,忽略陈旧缓存
+        when(assetsApi.queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(assetResponse(333L)))));
+        List<Assets> w3 = esiApiService.queryCharactersAssets(CID, 1, "Bearer x", true).collectList().block();
+        assertThat(w3).hasSize(1);
+        assertThat(w3.get(0).getItemId()).isEqualTo(333L);
+
+        verify(assetsApi, times(2)).queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString());
     }
 }
