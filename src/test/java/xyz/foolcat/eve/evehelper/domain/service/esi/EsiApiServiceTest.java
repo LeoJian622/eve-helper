@@ -39,6 +39,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCache;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCacheProperties;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.ForceRefreshLimiter;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AssetResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.IndustryJobPlacedResponse;
@@ -58,6 +59,7 @@ import java.util.stream.Collectors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -109,6 +111,9 @@ class EsiApiServiceTest {
 
     @MockBean
     WalletApi walletApi;
+
+    @MockBean
+    ForceRefreshLimiter forceRefreshLimiter;
 
     @Autowired
     private EsiApiService esiApiService;
@@ -1276,5 +1281,77 @@ class EsiApiServiceTest {
         String group1 = pubNamesKey(List.of(34, 35));
         String group2 = pubNamesKey(List.of(34, 36));
         assertThat(group1).isNotEqualTo(group2);
+    }
+
+    // ─═ 015/T013:强刷限流接入(forceRefresh 三态) ═─
+
+    @Test
+    @DisplayName("强刷:forceRefresh=true 且有额度 → 忽略缓存,真调一次并回填")
+    void forceRefresh_true_hasQuota_ignoresCacheAndCalls() {
+        authAs(USER_ID);
+        String key = assetsKey(1);
+        // 预先塞缓存(若无强刷会命中)
+        when(cacheGateway.get(key)).thenReturn("[{\"itemId\":100}]");
+        when(forceRefreshLimiter.tryAcquire(any(String.class), any(), anyInt())).thenReturn(true);
+        when(assetsApi.queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(assetResponse(999L)))));
+
+        List<Assets> result = esiApiService.queryCharactersAssets(CID, 1, "Bearer x", true).collectList().block();
+
+        // 强刷有额度 → 仍真调(命中缓存被忽略),返回真调数据
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getItemId()).isEqualTo(999L);
+        verify(assetsApi).queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString());
+        verify(forceRefreshLimiter).tryAcquire(eq(key), any(), anyInt());
+    }
+
+    @Test
+    @DisplayName("强刷:forceRefresh=true 但超限 → 走缓存命中,不真调")
+    void forceRefresh_true_overLimit_returnsCache() {
+        authAs(USER_ID);
+        String key = assetsKey(1);
+        when(cacheGateway.get(key)).thenReturn("[{\"itemId\":100}]");
+        when(forceRefreshLimiter.tryAcquire(any(String.class), any(), anyInt())).thenReturn(false);
+
+        List<Assets> result = esiApiService.queryCharactersAssets(CID, 1, "Bearer x", true).collectList().block();
+
+        // 超限 → 落回缓存判读路径,命中返回缓存数据,不真调
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getItemId()).isEqualTo(100L);
+        verify(assetsApi, never()).queryCharactersAssetsResponse(any(), anyString(), any(), anyString());
+    }
+
+    @Test
+    @DisplayName("强刷:默认 forceRefresh=false → 命中缓存不真调,不触碰限流")
+    void forceRefresh_false_hitsCache_noLimiterTouch() {
+        authAs(USER_ID);
+        String key = assetsKey(1);
+        when(cacheGateway.get(key)).thenReturn("[{\"itemId\":100}]");
+
+        List<Assets> result = esiApiService.queryCharactersAssets(CID, 1, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getItemId()).isEqualTo(100L);
+        verify(assetsApi, never()).queryCharactersAssetsResponse(any(), anyString(), any(), anyString());
+        verify(forceRefreshLimiter, never()).tryAcquire(any(String.class), any(), anyInt());
+    }
+
+    @Test
+    @DisplayName("强刷 maxPage:forceRefresh=true 且有额度 → 忽略 getInt 缓存,真调含头入口并回填")
+    void forceRefreshMaxPage_true_hasQuota_ignoresCacheAndCalls() {
+        authAs(USER_ID);
+        String key = assetsKey(1);
+        when(cacheGateway.get(key)).thenReturn(12);
+        when(forceRefreshLimiter.tryAcquire(any(String.class), any(), anyInt())).thenReturn(true);
+        when(assetsApi.queryCharactersAssetsMaxPageResponse(eq(CID), eq("serenity"), anyString()))
+                .thenReturn(new PageTotalApi.PageCountResult(20, maxAge300()));
+
+        Integer mp = esiApiService.queryCharactersAssetsMaxPage(CID, "Bearer x", true);
+
+        assertThat(mp).isEqualTo(20);
+        verify(assetsApi).queryCharactersAssetsMaxPageResponse(eq(CID), eq("serenity"), anyString());
+        verify(cacheGateway).set(eq(key), eq(20), eq(300L), eq(TimeUnit.SECONDS));
     }
 }
