@@ -61,6 +61,13 @@ class EsiResponseCacheTest {
         assertThat(key).isEqualTo("esi:resp:serenity:pub:/universe/types/34/:0");
     }
 
+    @Test
+    @DisplayName("键构造:pageToken 字符串后缀(如 maxPage 独立键)")
+    void cacheKey_maxPageToken() {
+        String key = cache.cacheKey("serenity", 42, "/characters/7/assets/", "maxPage");
+        assertThat(key).isEqualTo("esi:resp:serenity:42:/characters/7/assets/:maxPage");
+    }
+
     // ── getList 类型往返 ──
 
     private JavaType assetsType() {

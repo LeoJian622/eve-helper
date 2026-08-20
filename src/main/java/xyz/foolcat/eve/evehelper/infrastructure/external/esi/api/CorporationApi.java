@@ -111,6 +111,24 @@ public class CorporationApi {
     }
 
     /**
+     * 军团拥有的蓝图最大页数(含响应头,015/T009 maxPage TTL 来源通路)。
+     *
+     * <p>调 {@link PageTotalApi#queryMaxPageWithHeaders} 同时取最大页数与响应头
+     * (含 {@code Cache-Control: max-age}),供包裹层为 maxPage 计算缓存 TTL。
+     * 原 {@link #queryCorporationBlueprintsMaxPage} 保留、零破坏。</p>
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团拥有的蓝图最大页数(含响应头)")
+    public PageTotalApi.PageCountResult queryCorporationBlueprintsMaxPageResponse(Integer corporationId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/blueprints/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPageWithHeaders(accessesToken, uri, esiClient);
+    }
+
+    /**
      * 军团拥有的蓝图
      *
      * @param corporationId 军团ID

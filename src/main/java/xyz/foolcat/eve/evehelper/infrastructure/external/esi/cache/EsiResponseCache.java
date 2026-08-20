@@ -51,8 +51,20 @@ public class EsiResponseCache {
      * @param page       页码；非分页接口传 0
      */
     public String cacheKey(String datasource, Integer userId, String uri, int page) {
+        return cacheKey(datasource, userId, uri, String.valueOf(page));
+    }
+
+    /**
+     * 构造缓存键(page 段为任意字符串 token)。
+     * <p>
+     * 供 maxPage 等无页码语义的读结果使用独立 {@code :maxPage} 后缀,
+     * 避免与列表首页共用同键互相覆盖(T009 采纳评审 M1)。int 版委托本方法。</p>
+     *
+     * @param pageToken 页码或语义 token(如 {@code "maxPage"})
+     */
+    public String cacheKey(String datasource, Integer userId, String uri, String pageToken) {
         String scope = userId == null ? PUB : String.valueOf(userId);
-        return KEY_PREFIX + ":" + datasource + ":" + scope + ":" + uri + ":" + page;
+        return KEY_PREFIX + ":" + datasource + ":" + scope + ":" + uri + ":" + pageToken;
     }
 
     /**
