@@ -17,8 +17,10 @@ import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.IndustryJob;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.InvTypes;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.MiningDetail;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
@@ -40,8 +42,10 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCa
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AssetResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.IndustryJobPlacedResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.Id2NameResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ObserverMiningLedgerResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.StructuresInformationResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.TypeInfoResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.WalletJournalResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.WalletTransactionsResponse;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
@@ -49,6 +53,7 @@ import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -121,6 +126,7 @@ class EsiApiServiceTest {
     private static final String LANG = "es";
     private static final int DIVISION = 2;
     private static final Long FROM_ID = 555444L;
+    private static final Integer TYPE_ID = 34;
     private static final String STATUS_KEY = "esi_auth_status:" + CID;
     private static final String LOCK_KEY = "esi_refresh_lock:" + CID;
     private static final String ACCESS_TOKEN_KEY = "esi_access_token:" + USER_ID + ":" + CID;
@@ -1135,5 +1141,140 @@ class EsiApiServiceTest {
         verify(cacheGateway).set(kc.capture(), vc.capture(), eq(3600L), eq(TimeUnit.SECONDS));
         assertThat(kc.getValue()).isEqualTo(key);
         assertThat(vc.getValue()).isInstanceOf(String.class);
+    }
+
+    // ─═ 015/T012:公开数据包裹(pub 全局共享,不查 UserUtil、不限流) ═─
+
+    private static TypeInfoResponse typeResp() {
+        return new TypeInfoResponse();
+    }
+
+    private static Id2NameResponse id2Name(int id) {
+        Id2NameResponse r = new Id2NameResponse();
+        r.setId(id);
+        r.setName("name-" + id);
+        return r;
+    }
+
+    private String pubTypeKey(Integer typeId, String lang) {
+        return esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), null,
+                "/universe/types/" + typeId + "/" + lang + "/", 0);
+    }
+
+    private String pubNamesKey(List<Integer> ids) {
+        String encoded = ids.stream().sorted().map(String::valueOf).collect(Collectors.joining("-"));
+        return esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), null,
+                "/universe/names/" + encoded + "/", 0);
+    }
+
+    @Test
+    @DisplayName("物品类型 pub:缓存命中 → 返回单值,不真调(公开数据不受用户隔离影响)")
+    void universeType_cacheHit_noRealCall() {
+        authAs(USER_ID);
+        String key = pubTypeKey(TYPE_ID, "es");
+        when(cacheGateway.get(key)).thenReturn("[{\"typeId\":" + TYPE_ID + "}]");
+
+        InvTypes result = esiApiService.queryUniverseType(TYPE_ID, "es").block();
+
+        assertThat(result).isNotNull();
+        verify(universeApi, never()).queryUniverseTypeResponse(any(), anyString(), anyString());
+        verify(universeApi, never()).queryUniverseType(any(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("物品类型 pub:未命中 → 真调一次并按 max-age 回填(单元素列表;userId 段为 pub)")
+    void universeType_cacheMiss_realCallAndBackfill() {
+        authAs(USER_ID);
+        String key = pubTypeKey(TYPE_ID, "es");
+        assertThat(key).contains(":pub:").endsWith(":0");
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(universeApi.queryUniverseTypeResponse(eq(TYPE_ID), eq("serenity"), eq("es")))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(typeResp())));
+
+        InvTypes result = esiApiService.queryUniverseType(TYPE_ID, "es").block();
+
+        assertThat(result).isNotNull();
+        verify(universeApi).queryUniverseTypeResponse(eq(TYPE_ID), eq("serenity"), eq("es"));
+        ArgumentCaptor<String> kc = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Object> vc = ArgumentCaptor.forClass(Object.class);
+        verify(cacheGateway).set(kc.capture(), vc.capture(), eq(3600L), eq(TimeUnit.SECONDS));
+        assertThat(kc.getValue()).isEqualTo(key);
+        assertThat(vc.getValue()).isInstanceOf(String.class);
+    }
+
+    @Test
+    @DisplayName("物品类型 pub:全局共享 — 两个不同用户/未认证二次调用命中同一 pub 缓存,只真调一次")
+    void universeType_pubSharedAcrossUsers() {
+        // 用户 A:未命中 → 真调回填
+        authAs(USER_ID);
+        String key = pubTypeKey(TYPE_ID, "es");
+        when(universeApi.queryUniverseTypeResponse(eq(TYPE_ID), eq("serenity"), eq("es")))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(typeResp())));
+        when(cacheGateway.get(key)).thenReturn(null).thenReturn("[{\"typeId\":" + TYPE_ID + "}]");
+
+        assertThat(esiApiService.queryUniverseType(TYPE_ID, "es").block()).isNotNull();
+
+        // 用户 B(未认证,无 SecurityContext):第二次命中同 pub 键,不真调
+        SecurityContextHolder.clearContext();
+        assertThat(esiApiService.queryUniverseType(TYPE_ID, "es").block()).isNotNull();
+
+        verify(universeApi, times(1)).queryUniverseTypeResponse(eq(TYPE_ID), eq("serenity"), eq("es"));
+    }
+
+    @Test
+    @DisplayName("物品类型 pub:M1 隔离 — language 不同 → 缓存键不同")
+    void universeTypeKey_differsByLanguage() {
+        String zh = pubTypeKey(TYPE_ID, "zh");
+        String en = pubTypeKey(TYPE_ID, "en");
+        assertThat(zh).isNotEqualTo(en);
+    }
+
+    @Test
+    @DisplayName("ID→名称 pub:缓存命中 → 返回列表,不真调")
+    void universeNames_cacheHit_noRealCall() {
+        authAs(USER_ID);
+        String key = pubNamesKey(List.of(34, 35));
+        when(cacheGateway.get(key)).thenReturn("[{\"name\":\"name-34\"},{\"name\":\"name-35\"}]");
+
+        List<UniverseName> result = esiApiService.queryUniverseNames(List.of(34, 35)).collectList().block();
+
+        assertThat(result).hasSize(2);
+        verify(universeApi, never()).queryUniverseNamesResponse(any(), anyString());
+        verify(universeApi, never()).queryUniverseNames(any(), anyString());
+    }
+
+    @Test
+    @DisplayName("ID→名称 pub:未命中 → 真调一次并按 max-age 回填(ids 排序编码进键)")
+    void universeNames_cacheMiss_realCallAndBackfill() {
+        authAs(USER_ID);
+        String key = pubNamesKey(List.of(34, 35));
+        assertThat(key).contains(":pub:");
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(universeApi.queryUniverseNamesResponse(eq(List.of(34, 35)), eq("serenity")))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(id2Name(34), id2Name(35)))));
+
+        List<UniverseName> result = esiApiService.queryUniverseNames(List.of(34, 35)).collectList().block();
+
+        assertThat(result).hasSize(2);
+        verify(universeApi).queryUniverseNamesResponse(eq(List.of(34, 35)), eq("serenity"));
+        ArgumentCaptor<String> kc = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Object> vc = ArgumentCaptor.forClass(Object.class);
+        verify(cacheGateway).set(kc.capture(), vc.capture(), eq(3600L), eq(TimeUnit.SECONDS));
+        assertThat(kc.getValue()).isEqualTo(key);
+        assertThat(vc.getValue()).isInstanceOf(String.class);
+    }
+
+    @Test
+    @DisplayName("ID→名称 pub:M1 隔离 — ids 组不同 → 缓存键不同")
+    void universeNamesKey_differsByIdsGroup() {
+        String group1 = pubNamesKey(List.of(34, 35));
+        String group2 = pubNamesKey(List.of(34, 36));
+        assertThat(group1).isNotEqualTo(group2);
     }
 }

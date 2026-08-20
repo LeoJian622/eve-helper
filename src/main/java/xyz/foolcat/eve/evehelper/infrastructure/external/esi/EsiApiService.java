@@ -48,6 +48,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CharacterPublicInfoResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.Id2NameResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.TypeInfoResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.WalletJournalResponse;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
@@ -683,8 +684,25 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Mono<InvTypes> queryUniverseType(Integer typeId, String language) {
-        return universeApi.queryUniverseType(typeId, EsiClientConfig.SERENITY, language)
-                .map(esiInvTypesConverter::toDomain);
+        // 公开数据:userId 段置 pub 全局共享(不查 UserUtil、不做强刷限流);language 进键
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), null,
+                "/universe/types/" + typeId + "/" + language + "/", 0);
+        // 组件无 getObject:用单元素列表语义读(命中=非空单元素)
+        List<InvTypes> cached = esiResponseCache.getList(key, objectMapper.constructType(InvTypes.class));
+        if (cached != null && !cached.isEmpty()) {
+            return Mono.just(cached.get(0));
+        }
+        return universeApi.queryUniverseTypeResponse(typeId, EsiClientConfig.SERENITY, language)
+                .mapNotNull(response -> {
+                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                    // 单值 body 先转领域类型,再包成单元素列表回填(与 getList 语义对齐;空 body → 空列表)
+                    TypeInfoResponse body = response.getBody();
+                    InvTypes domain = body == null ? null : esiInvTypesConverter.toDomain(body);
+                    List<InvTypes> wrapper = domain == null ? List.of() : List.of(domain);
+                    esiResponseCache.put(key, wrapper, ttl);   // ttl null → put 内部跳过
+                    return wrapper;
+                })
+                .flatMap(list -> list.isEmpty() ? Mono.empty() : Mono.just(list.get(0)));
     }
 
     // ── 采矿观察 ──
@@ -791,8 +809,31 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Flux<UniverseName> queryUniverseNames(List<Integer> ids) {
-        return universeApi.queryUniverseNames(ids, EsiClientConfig.SERENITY)
-                .map(esiUniverseNameConverter::toDomain);
+        // 公开数据:userId 段置 pub 全局共享(不查 UserUtil、不限流);ids 排序确定编码进键
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), null,
+                encodeIds(ids), 0);
+        List<UniverseName> cached = esiResponseCache.getList(key, objectMapper.constructType(UniverseName.class));
+        if (cached != null) {
+            return Flux.fromIterable(cached);
+        }
+        return universeApi.queryUniverseNamesResponse(ids, EsiClientConfig.SERENITY)
+                .mapNotNull(response -> {
+                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                    // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                    List<UniverseName> domain = response.getBody() == null ? List.of()
+                            : response.getBody().stream().map(esiUniverseNameConverter::toDomain).toList();
+                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                    return domain;
+                })
+                .flatMapIterable(Function.identity());
+    }
+
+    /**
+     * ids 集合确定性编码进缓存键:排序后按序拼接,保证"同组同键、异组异键"(顺序无关)。
+     */
+    private String encodeIds(List<Integer> ids) {
+        String encoded = ids.stream().sorted().map(String::valueOf).collect(Collectors.joining("-"));
+        return "/universe/names/" + encoded + "/";
     }
 
     // ── 钱包流水 ──
