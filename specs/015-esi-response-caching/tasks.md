@@ -42,7 +42,7 @@ description: "Task list for ESI 响应缓存特性 (015)"
 - [x] T009 `[US1]` 工业/蓝图类包裹 — `queryCharacterIndustryJobs` / `queryCorporationIndustryJobs` / `queryCorporationBlueprintsMaxPage` / `queryCorporationIndustryJobsMaxPage`。**commit 4b6ce91+ae4b990，评审 APPROVE；maxPage 用独立 :maxPage 键（采纳 T008 M1）；遗留 MEDIUM：include_completed 未入键（人物侧跨变体互命中风险）**
 - [x] T010 `[US1]` 采矿/建筑类包裹 — `queryCorporationMiningObserver` / `*MaxPage` / `queryCorporationStructures` / `*MaxPage`。**commit 6590c70+5a6ec52，评审 APPROVE；language/observerId 进键规避 MEDIUM-1，structures 含头入口重发 ACCEPT_LANGUAGE**
 - [x] T011 `[US1]` 钱包流水/交易类包裹 — `queryCharacter/CorporationWalletJournal`(+MaxPage×2)、`queryCharacter/CorporationWalletTransactions`。**commit 0f173b7+3774019，评审 APPROVE（含 TDD 逆序过程性瑕疵记录）；division/fromId 进键、流水三参 converter 回填、交易游标双形态键**
-- [ ] T012 `[US5]` 公开数据包裹（pub 共享） — `queryUniverseType` / `queryUniverseNames`：userId 段置 `pub`，二次调用免真调（全局共享）。
+- [x] T012 `[US5]` 公开数据包裹（pub 共享） — `queryUniverseType` / `queryUniverseNames`：userId 段置 `pub`，二次调用免真调（全局共享）。**commit e189d4e+320501f，评审 APPROVE；userId=null 置 pub、不查 UserUtil、单值 InvTypes 单元素列表语义、language/ids 进键；TDD 纪律恢复；遗留 MEDIUM：type 空列表命中判据**
 - [ ] T013 `[US4]` 强刷限流接入 — 强刷参数据 `ForceRefreshLimiter.tryAcquire`，超限返回现有缓存；公开类不强刷限流。
 
 **Checkpoint**: 12 类查询全部走缓存判读。
