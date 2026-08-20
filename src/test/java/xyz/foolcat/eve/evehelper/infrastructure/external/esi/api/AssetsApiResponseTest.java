@@ -124,6 +124,20 @@ class AssetsApiResponseTest {
     }
 
     @Test
+    @DisplayName("非 403 的其它 4xx(401) → 抛 ESI_AUTHORIZATION_FAILURE(区分 403-vs-其它4xx)")
+    void charactersResponse_other4xx_mapsAuthorizationFailure() {
+        ClientResponse unauthorized = ClientResponse.create(HttpStatus.UNAUTHORIZED).build();
+        AssetsApi api = new AssetsApi(clientReturning(unauthorized), new PageTotalApi());
+
+        assertThatThrownBy(() -> api
+                .queryCharactersAssetsResponse(1, "tranquility", 1, "Bearer x")
+                .block())
+                .isInstanceOf(EsiException.class)
+                .isInstanceOfSatisfying(EsiException.class, e ->
+                        assertThat(e.getResultCode()).isEqualTo(ResultCode.ESI_AUTHORIZATION_FAILURE));
+    }
+
+    @Test
     @DisplayName("原 Flux 方法不回归:仍解析为 Flux<AssetResponse>")
     void originalFluxMethods_unaffected() {
         AssetsApi api = new AssetsApi(clientReturning(okWithAssets()), new PageTotalApi());
