@@ -44,8 +44,9 @@ description: "Task list for ESI 响应缓存特性 (015)"
 - [x] T011 `[US1]` 钱包流水/交易类包裹 — `queryCharacter/CorporationWalletJournal`(+MaxPage×2)、`queryCharacter/CorporationWalletTransactions`。**commit 0f173b7+3774019，评审 APPROVE（含 TDD 逆序过程性瑕疵记录）；division/fromId 进键、流水三参 converter 回填、交易游标双形态键**
 - [x] T012 `[US5]` 公开数据包裹（pub 共享） — `queryUniverseType` / `queryUniverseNames`：userId 段置 `pub`，二次调用免真调（全局共享）。**commit e189d4e+320501f，评审 APPROVE；userId=null 置 pub、不查 UserUtil、单值 InvTypes 单元素列表语义、language/ids 进键；TDD 纪律恢复；遗留 MEDIUM：type 空列表命中判据**
 - [x] T013 `[US4]` 强刷限流接入 — 强刷参数据 `ForceRefreshLimiter.tryAcquire`，超限返回现有缓存；公开类不强刷限流。**commit 4ef1732+ef81352，评审 APPROVE；端口加 forceRefresh 重载(16 鉴权方法,user 批准)+ 抽 doXxx 核心单拷；Phase2 由此收官**
+- [x] T013b `[US2/FR-008]` 防穿透接入包裹（前置补齐） — 全部 18 查询未命中真调路径接入 `tryClaim/releaseClaim` setIfAbsent 串行化：持锁真调回填、未抢锁有界轮询复用、超时 fail-open；强刷有额度路径同入。**commit 60ccc18（初版，评审 CONDITIONAL）+ 8e09d5e（R1 fix，H1 轮询预算 10×100ms→50×100ms≈5s 对齐 ESI_DATA_TIMEOUT；L1 强刷未抢锁不读陈旧缓存；TDD 先红；自发布置；再评审确认全绿）。Phase3 T018(SC-002) 前置达成**
 
-**Checkpoint**: 12 类查询全部走缓存判读。
+**Checkpoint**: 12 类查询全部走缓存判读 + FR-008 防穿透入役。
 
 ---
 
