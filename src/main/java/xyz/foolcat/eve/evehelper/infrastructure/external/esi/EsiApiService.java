@@ -1,6 +1,7 @@
 package xyz.foolcat.eve.evehelper.infrastructure.external.esi;
 
 import cn.hutool.core.util.StrUtil;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
@@ -61,6 +62,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -166,6 +168,14 @@ public class EsiApiService implements EsiGateway {
      * 需覆盖临界区最坏耗时:token 刷新 5s + updateRefreshToken 内两次 ESI 调用(各 5s)+ DB 回写。
      */
     private static final long REFRESH_LOCK_TTL_SECONDS = 20;
+
+    /**
+     * 防并发穿透占位锁 TTL(FR-008):覆盖真调 + 回填最坏耗时,参照 refresh 锁 20s
+     * <p>
+     * EsiResponseCache.tryClaim/releaseClaim 用 {@code key:lock} 的 setIfAbsent 原子占位,
+     * 持锁方承担真实 ESI 调用并回填,未抢到锁的并发请求有界轮询复用其回填结果。
+     */
+    private static final Duration CLAIM_TTL = Duration.ofSeconds(REFRESH_LOCK_TTL_SECONDS);
 
     /**
      * 争用时等待持锁方填充缓存的轮询次数与间隔(合计约 1 秒)
@@ -562,11 +572,9 @@ public class EsiApiService implements EsiGateway {
                 return cached;
             }
         }
-        PageTotalApi.PageCountResult count = assetsApi.queryCharactersAssetsMaxPageResponse(
-                characterId, EsiClientConfig.SERENITY, accessToken);
-        Duration ttl = esiCacheTtlExtractor.extract(count.headers());
-        esiResponseCache.put(key, count.maxPage(), ttl);   // ttl null → put 内部跳过
-        return count.maxPage();
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doMaxPageWithClaim(key, () -> assetsApi.queryCharactersAssetsMaxPageResponse(
+                characterId, EsiClientConfig.SERENITY, accessToken));
     }
 
     @Override
@@ -596,16 +604,17 @@ public class EsiApiService implements EsiGateway {
                 return Flux.fromIterable(cached);
             }
         }
-        return assetsApi.queryCharactersAssetsResponse(characterId, EsiClientConfig.SERENITY, page, accessToken)
-                .mapNotNull(response -> {
-                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
-                    // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
-                    List<Assets> domain = response.getBody() == null ? List.of()
-                            : response.getBody().stream().map(esiAssetsConverter::toDomain).toList();
-                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
-                    return domain;
-                })
-                .flatMapIterable(Function.identity());
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, Assets.class, () ->
+                assetsApi.queryCharactersAssetsResponse(characterId, EsiClientConfig.SERENITY, page, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                            List<Assets> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream().map(esiAssetsConverter::toDomain).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     // ── 蓝图 ──
@@ -637,11 +646,9 @@ public class EsiApiService implements EsiGateway {
                 return cached;
             }
         }
-        PageTotalApi.PageCountResult count = corporationApi.queryCorporationBlueprintsMaxPageResponse(
-                corporationId, EsiClientConfig.SERENITY, accessToken);
-        Duration ttl = esiCacheTtlExtractor.extract(count.headers());
-        esiResponseCache.put(key, count.maxPage(), ttl);   // ttl null → put 内部跳过
-        return count.maxPage();
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doMaxPageWithClaim(key, () -> corporationApi.queryCorporationBlueprintsMaxPageResponse(
+                corporationId, EsiClientConfig.SERENITY, accessToken));
     }
 
     // ── 工业 ──
@@ -673,11 +680,9 @@ public class EsiApiService implements EsiGateway {
                 return cached;
             }
         }
-        PageTotalApi.PageCountResult count = industryApi.queryCorporationIndustryJobsMaxPageResponse(
-                corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken);
-        Duration ttl = esiCacheTtlExtractor.extract(count.headers());
-        esiResponseCache.put(key, count.maxPage(), ttl);   // ttl null → put 内部跳过
-        return count.maxPage();
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doMaxPageWithClaim(key, () -> industryApi.queryCorporationIndustryJobsMaxPageResponse(
+                corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken));
     }
 
     @Override
@@ -707,16 +712,17 @@ public class EsiApiService implements EsiGateway {
                 return Flux.fromIterable(cached);
             }
         }
-        return industryApi.queryCorporationIndustryJobsResponse(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
-                .mapNotNull(response -> {
-                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
-                    // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
-                    List<IndustryJob> domain = response.getBody() == null ? List.of()
-                            : response.getBody().stream().map(resp -> esiIndustryJobConverter.toDomain(resp, corporationId)).toList();
-                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
-                    return domain;
-                })
-                .flatMapIterable(Function.identity());
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, IndustryJob.class, () ->
+                industryApi.queryCorporationIndustryJobsResponse(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                            List<IndustryJob> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream().map(resp -> esiIndustryJobConverter.toDomain(resp, corporationId)).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     @Override
@@ -746,16 +752,17 @@ public class EsiApiService implements EsiGateway {
                 return Flux.fromIterable(cached);
             }
         }
-        return industryApi.queryCharacterIndustryJobsResponse(characterId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
-                .mapNotNull(response -> {
-                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
-                    // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
-                    List<IndustryJob> domain = response.getBody() == null ? List.of()
-                            : response.getBody().stream().map(resp -> esiIndustryJobConverter.toDomain(resp, null)).toList();
-                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
-                    return domain;
-                })
-                .flatMapIterable(Function.identity());
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, IndustryJob.class, () ->
+                industryApi.queryCharacterIndustryJobsResponse(characterId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                            List<IndustryJob> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream().map(resp -> esiIndustryJobConverter.toDomain(resp, null)).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     // ── 物品类型 ──
@@ -770,17 +777,19 @@ public class EsiApiService implements EsiGateway {
         if (cached != null && !cached.isEmpty()) {
             return Mono.just(cached.get(0));
         }
-        return universeApi.queryUniverseTypeResponse(typeId, EsiClientConfig.SERENITY, language)
-                .mapNotNull(response -> {
-                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
-                    // 单值 body 先转领域类型,再包成单元素列表回填(与 getList 语义对齐;空 body → 空列表)
-                    TypeInfoResponse body = response.getBody();
-                    InvTypes domain = body == null ? null : esiInvTypesConverter.toDomain(body);
-                    List<InvTypes> wrapper = domain == null ? List.of() : List.of(domain);
-                    esiResponseCache.put(key, wrapper, ttl);   // ttl null → put 内部跳过
-                    return wrapper;
-                })
-                .flatMap(list -> list.isEmpty() ? Mono.empty() : Mono.just(list.get(0)));
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, InvTypes.class, () ->
+                universeApi.queryUniverseTypeResponse(typeId, EsiClientConfig.SERENITY, language)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            // 单值 body 先转领域类型,再包成单元素列表回填(与 getList 语义对齐;空 body → 空列表)
+                            TypeInfoResponse body = response.getBody();
+                            InvTypes domain = body == null ? null : esiInvTypesConverter.toDomain(body);
+                            List<InvTypes> wrapper = domain == null ? List.of() : List.of(domain);
+                            esiResponseCache.put(key, wrapper, ttl);   // ttl null → put 内部跳过
+                            return wrapper;
+                        }))
+                .next();
     }
 
     // ── 采矿观察 ──
@@ -812,11 +821,9 @@ public class EsiApiService implements EsiGateway {
                 return cached;
             }
         }
-        PageTotalApi.PageCountResult count = industryApi.queryCorporationMiningObserverMaxPageResponse(
-                corporationId, EsiClientConfig.SERENITY, observerId, accessToken);
-        Duration ttl = esiCacheTtlExtractor.extract(count.headers());
-        esiResponseCache.put(key, count.maxPage(), ttl);   // ttl null → put 内部跳过
-        return count.maxPage();
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doMaxPageWithClaim(key, () -> industryApi.queryCorporationMiningObserverMaxPageResponse(
+                corporationId, EsiClientConfig.SERENITY, observerId, accessToken));
     }
 
     @Override
@@ -847,16 +854,17 @@ public class EsiApiService implements EsiGateway {
                 return Flux.fromIterable(cached);
             }
         }
-        return industryApi.queryCorporationMiningObserverResponse(corporationId, EsiClientConfig.SERENITY, observerId, page, accessToken)
-                .mapNotNull(response -> {
-                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
-                    // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
-                    List<MiningDetail> domain = response.getBody() == null ? List.of()
-                            : response.getBody().stream().map(esiMiningDetailConverter::toDomain).toList();
-                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
-                    return domain;
-                })
-                .flatMapIterable(Function.identity());
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, MiningDetail.class, () ->
+                industryApi.queryCorporationMiningObserverResponse(corporationId, EsiClientConfig.SERENITY, observerId, page, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                            List<MiningDetail> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream().map(esiMiningDetailConverter::toDomain).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     // ── 建筑 ──
@@ -888,11 +896,9 @@ public class EsiApiService implements EsiGateway {
                 return cached;
             }
         }
-        PageTotalApi.PageCountResult count = corporationApi.queryCorporationStructuresMaxPageResponse(
-                corporationId, EsiClientConfig.SERENITY, accessToken);
-        Duration ttl = esiCacheTtlExtractor.extract(count.headers());
-        esiResponseCache.put(key, count.maxPage(), ttl);   // ttl null → put 内部跳过
-        return count.maxPage();
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doMaxPageWithClaim(key, () -> corporationApi.queryCorporationStructuresMaxPageResponse(
+                corporationId, EsiClientConfig.SERENITY, accessToken));
     }
 
     @Override
@@ -923,16 +929,17 @@ public class EsiApiService implements EsiGateway {
                 return Flux.fromIterable(cached);
             }
         }
-        return corporationApi.queryCorporationStructuresResponse(corporationId, EsiClientConfig.SERENITY, language, page, accessToken)
-                .mapNotNull(response -> {
-                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
-                    // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
-                    List<Structure> domain = response.getBody() == null ? List.of()
-                            : response.getBody().stream().map(esiStructureConverter::toDomain).toList();
-                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
-                    return domain;
-                })
-                .flatMapIterable(Function.identity());
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, Structure.class, () ->
+                corporationApi.queryCorporationStructuresResponse(corporationId, EsiClientConfig.SERENITY, language, page, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                            List<Structure> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream().map(esiStructureConverter::toDomain).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     // ── 名称解析 ──
@@ -946,16 +953,17 @@ public class EsiApiService implements EsiGateway {
         if (cached != null) {
             return Flux.fromIterable(cached);
         }
-        return universeApi.queryUniverseNamesResponse(ids, EsiClientConfig.SERENITY)
-                .mapNotNull(response -> {
-                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
-                    // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
-                    List<UniverseName> domain = response.getBody() == null ? List.of()
-                            : response.getBody().stream().map(esiUniverseNameConverter::toDomain).toList();
-                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
-                    return domain;
-                })
-                .flatMapIterable(Function.identity());
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, UniverseName.class, () ->
+                universeApi.queryUniverseNamesResponse(ids, EsiClientConfig.SERENITY)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                            List<UniverseName> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream().map(esiUniverseNameConverter::toDomain).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     /**
@@ -978,6 +986,93 @@ public class EsiApiService implements EsiGateway {
      */
     private int forceRefreshLimit() {
         return esiResponseCacheProperties.getForceRefreshLimit();
+    }
+
+    // ── 防并发穿透(FR-008):未命中真调前 setIfAbsent 串行化,复用回填结果 ──
+
+    /**
+     * 列表查询的防穿透包裹:持锁承担真调回填并释放;未抢锁有界轮询读缓存命中复用;超时 fail-open 真调。
+     * <p>
+     * 真调异常照常上抛勿吞;占位锁经 {@code doFinally} 在流终止(回填后)释放。
+     */
+    private <T> Flux<T> doListWithClaim(String key, Class<T> elementType, Supplier<Mono<List<T>>> realCaller) {
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed) {
+            List<T> filled = awaitCachedList(key, objectMapper.constructType(elementType));
+            if (filled != null) {
+                return Flux.fromIterable(filled);
+            }
+        }
+        Flux<T> out = realCaller.get().flatMapIterable(Function.identity());
+        return claimed ? out.doFinally(sig -> esiResponseCache.releaseClaim(key)) : out;
+    }
+
+    /**
+     * maxPage(Integer)查询的防穿透包裹:同列表语义,轮询用 getInt;同步真调用 try/finally 释放。
+     */
+    private Integer doMaxPageWithClaim(String key, Supplier<PageTotalApi.PageCountResult> realCaller) {
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed) {
+            Integer filled = awaitCachedInt(key);
+            if (filled != null) {
+                return filled;
+            }
+        }
+        if (claimed) {
+            try {
+                return fillMaxPage(key, realCaller.get());
+            } finally {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+        return fillMaxPage(key, realCaller.get());
+    }
+
+    /**
+     * maxPage 真调结果回填,返回 maxPage。
+     */
+    private Integer fillMaxPage(String key, PageTotalApi.PageCountResult count) {
+        Duration ttl = esiCacheTtlExtractor.extract(count.headers());
+        esiResponseCache.put(key, count.maxPage(), ttl);   // ttl null → put 内部跳过
+        return count.maxPage();
+    }
+
+    /**
+     * 有界轮询读列表缓存(未抢锁方等待持锁方回填)。窗口内返回缓存即命中;超时返回 null。
+     */
+    private <T> List<T> awaitCachedList(String key, JavaType elementType) {
+        for (int i = 0; i < LOCK_WAIT_ATTEMPTS; i++) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(LOCK_WAIT_INTERVAL_MILLIS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+            List<T> cached = esiResponseCache.getList(key, elementType);
+            if (cached != null) {
+                return cached;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 有界轮询读 maxPage 缓存(未抢锁方等待持锁方回填)。超时返回 null(fail-open 真调)。
+     */
+    private Integer awaitCachedInt(String key) {
+        for (int i = 0; i < LOCK_WAIT_ATTEMPTS; i++) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(LOCK_WAIT_INTERVAL_MILLIS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+            Integer cached = esiResponseCache.getInt(key);
+            if (cached != null) {
+                return cached;
+            }
+        }
+        return null;
     }
 
     // ── 钱包流水 ──
@@ -1009,11 +1104,9 @@ public class EsiApiService implements EsiGateway {
                 return cached;
             }
         }
-        PageTotalApi.PageCountResult count = walletApi.queryCorporationWalletJournalMaxPageResponse(
-                corporationId, division, EsiClientConfig.SERENITY, accessToken);
-        Duration ttl = esiCacheTtlExtractor.extract(count.headers());
-        esiResponseCache.put(key, count.maxPage(), ttl);   // ttl null → put 内部跳过
-        return count.maxPage();
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doMaxPageWithClaim(key, () -> walletApi.queryCorporationWalletJournalMaxPageResponse(
+                corporationId, division, EsiClientConfig.SERENITY, accessToken));
     }
 
     @Override
@@ -1044,17 +1137,18 @@ public class EsiApiService implements EsiGateway {
                 return Flux.fromIterable(cached);
             }
         }
-        return walletApi.queryCorporationWalletJournalResponse(corporationId, division, EsiClientConfig.SERENITY, page, accessToken)
-                .mapNotNull(response -> {
-                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
-                    // 空 body → 空列表回填;三参转换在回填时计算(含 resolveWalletCharacter 赏金角色名解析)
-                    List<WalletJournal> domain = response.getBody() == null ? List.of()
-                            : response.getBody().stream()
-                            .map(w -> esiWalletJournalConverter.toDomain(w, corporationId, resolveWalletCharacter(w))).toList();
-                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
-                    return domain;
-                })
-                .flatMapIterable(Function.identity());
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, WalletJournal.class, () ->
+                walletApi.queryCorporationWalletJournalResponse(corporationId, division, EsiClientConfig.SERENITY, page, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            // 空 body → 空列表回填;三参转换在回填时计算(含 resolveWalletCharacter 赏金角色名解析)
+                            List<WalletJournal> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream()
+                                    .map(w -> esiWalletJournalConverter.toDomain(w, corporationId, resolveWalletCharacter(w))).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     @Override
@@ -1083,11 +1177,9 @@ public class EsiApiService implements EsiGateway {
                 return cached;
             }
         }
-        PageTotalApi.PageCountResult count = walletApi.queryCharacterWalletJournalMaxPageResponse(
-                characterId, EsiClientConfig.SERENITY, accessToken);
-        Duration ttl = esiCacheTtlExtractor.extract(count.headers());
-        esiResponseCache.put(key, count.maxPage(), ttl);   // ttl null → put 内部跳过
-        return count.maxPage();
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doMaxPageWithClaim(key, () -> walletApi.queryCharacterWalletJournalMaxPageResponse(
+                characterId, EsiClientConfig.SERENITY, accessToken));
     }
 
     @Override
@@ -1117,16 +1209,17 @@ public class EsiApiService implements EsiGateway {
                 return Flux.fromIterable(cached);
             }
         }
-        return walletApi.queryCharacterWalletJournalResponse(characterId, EsiClientConfig.SERENITY, page, accessToken)
-                .mapNotNull(response -> {
-                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
-                    List<WalletJournal> domain = response.getBody() == null ? List.of()
-                            : response.getBody().stream()
-                            .map(w -> esiWalletJournalConverter.toDomain(w, characterId, resolveWalletCharacter(w))).toList();
-                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
-                    return domain;
-                })
-                .flatMapIterable(Function.identity());
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, WalletJournal.class, () ->
+                walletApi.queryCharacterWalletJournalResponse(characterId, EsiClientConfig.SERENITY, page, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            List<WalletJournal> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream()
+                                    .map(w -> esiWalletJournalConverter.toDomain(w, characterId, resolveWalletCharacter(w))).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     // ── 钱包交易 ──
@@ -1160,15 +1253,16 @@ public class EsiApiService implements EsiGateway {
                 return Flux.fromIterable(cached);
             }
         }
-        return walletApi.queryCharacterWalletTransactionsResponse(characterId, EsiClientConfig.SERENITY, fromId, accessToken)
-                .mapNotNull(response -> {
-                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
-                    List<WalletTransaction> domain = response.getBody() == null ? List.of()
-                            : response.getBody().stream().map(esiWalletTransactionConverter::toDomain).toList();
-                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
-                    return domain;
-                })
-                .flatMapIterable(Function.identity());
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, WalletTransaction.class, () ->
+                walletApi.queryCharacterWalletTransactionsResponse(characterId, EsiClientConfig.SERENITY, fromId, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            List<WalletTransaction> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream().map(esiWalletTransactionConverter::toDomain).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     @Override
@@ -1200,15 +1294,16 @@ public class EsiApiService implements EsiGateway {
                 return Flux.fromIterable(cached);
             }
         }
-        return walletApi.queryCorporationWalletTransactionsResponse(corporationId, division, EsiClientConfig.SERENITY, fromId, accessToken)
-                .mapNotNull(response -> {
-                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
-                    List<WalletTransaction> domain = response.getBody() == null ? List.of()
-                            : response.getBody().stream().map(esiWalletTransactionConverter::toDomain).toList();
-                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
-                    return domain;
-                })
-                .flatMapIterable(Function.identity());
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, WalletTransaction.class, () ->
+                walletApi.queryCorporationWalletTransactionsResponse(corporationId, division, EsiClientConfig.SERENITY, fromId, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            List<WalletTransaction> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream().map(esiWalletTransactionConverter::toDomain).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     /**

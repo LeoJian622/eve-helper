@@ -1220,6 +1220,8 @@ class EsiApiServiceTest {
                         .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
                         .body(typeResp())));
         when(cacheGateway.get(key)).thenReturn(null).thenReturn("[{\"typeId\":" + TYPE_ID + "}]");
+        // 首请求承担真调需抢到占位锁(FR-008 防穿透)
+        when(cacheGateway.setIfAbsent(eq(key + ":lock"), eq(true), anyLong(), eq(TimeUnit.MILLISECONDS))).thenReturn(true);
 
         assertThat(esiApiService.queryUniverseType(TYPE_ID, "es").block()).isNotNull();
 
@@ -1293,6 +1295,8 @@ class EsiApiServiceTest {
         // 预先塞缓存(若无强刷会命中)
         when(cacheGateway.get(key)).thenReturn("[{\"itemId\":100}]");
         when(forceRefreshLimiter.tryAcquire(any(String.class), any(), anyInt())).thenReturn(true);
+        // 强刷有额度路径同样经防穿透抢锁(FR-008)
+        when(cacheGateway.setIfAbsent(eq(key + ":lock"), eq(true), anyLong(), eq(TimeUnit.MILLISECONDS))).thenReturn(true);
         when(assetsApi.queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString()))
                 .thenReturn(Mono.just(ResponseEntity.ok()
                         .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
@@ -1345,6 +1349,7 @@ class EsiApiServiceTest {
         String key = assetsKey(1);
         when(cacheGateway.get(key)).thenReturn(12);
         when(forceRefreshLimiter.tryAcquire(any(String.class), any(), anyInt())).thenReturn(true);
+        when(cacheGateway.setIfAbsent(eq(key + ":lock"), eq(true), anyLong(), eq(TimeUnit.MILLISECONDS))).thenReturn(true);
         when(assetsApi.queryCharactersAssetsMaxPageResponse(eq(CID), eq("serenity"), anyString()))
                 .thenReturn(new PageTotalApi.PageCountResult(20, maxAge300()));
 
@@ -1353,5 +1358,64 @@ class EsiApiServiceTest {
         assertThat(mp).isEqualTo(20);
         verify(assetsApi).queryCharactersAssetsMaxPageResponse(eq(CID), eq("serenity"), anyString());
         verify(cacheGateway).set(eq(key), eq(20), eq(300L), eq(TimeUnit.SECONDS));
+    }
+
+    // ─═ 015/T013b:FR-008 防并发穿透(未命中 setIfAbsent 串行化真调) ═─
+
+    @Test
+    @DisplayName("防穿透:持锁方真调回填 → 释放占位锁(删除 key:lock)")
+    void antiPenetration_claimed_releaseClaimAfterBackfill() {
+        authAs(USER_ID);
+        String key = assetsKey(1);
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(cacheGateway.setIfAbsent(eq(key + ":lock"), eq(true), anyLong(), eq(TimeUnit.MILLISECONDS))).thenReturn(true);
+        when(assetsApi.queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(assetResponse(100L)))));
+
+        List<Assets> r = esiApiService.queryCharactersAssets(CID, 1, "Bearer x").collectList().block();
+
+        assertThat(r).hasSize(1);
+        verify(assetsApi).queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString());
+        // 持锁方回填后必须释放占位锁
+        verify(cacheGateway).delete(key + ":lock");
+    }
+
+    @Test
+    @DisplayName("防穿透:未抢到锁(tryClaim false)→ 有界轮询读缓存命中,不重复真调")
+    void antiPenetration_notClaimed_pollHit_noRealCall() {
+        authAs(USER_ID);
+        String key = assetsKey(1);
+        // 初次读缓存未命中;抢锁失败后轮询读到回填结果
+        when(cacheGateway.get(key)).thenReturn(null).thenReturn("[{\"itemId\":200}]");
+        when(cacheGateway.setIfAbsent(eq(key + ":lock"), eq(true), anyLong(), eq(TimeUnit.MILLISECONDS))).thenReturn(false);
+
+        List<Assets> r = esiApiService.queryCharactersAssets(CID, 1, "Bearer x").collectList().block();
+
+        assertThat(r).hasSize(1);
+        assertThat(r.get(0).getItemId()).isEqualTo(200L);
+        // 未抢到锁且轮询命中 → 复用回填,不触发第二次真调
+        verify(assetsApi, never()).queryCharactersAssetsResponse(any(), anyString(), any(), anyString());
+    }
+
+    @Test
+    @DisplayName("防穿透:未抢到锁且轮询超时 → fail-open fallback 真调一次")
+    void antiPenetration_notClaimed_pollTimeout_fallbackRealCall() {
+        authAs(USER_ID);
+        String key = assetsKey(1);
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(cacheGateway.setIfAbsent(eq(key + ":lock"), eq(true), anyLong(), eq(TimeUnit.MILLISECONDS))).thenReturn(false);
+        when(assetsApi.queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(assetResponse(300L)))));
+
+        List<Assets> r = esiApiService.queryCharactersAssets(CID, 1, "Bearer x").collectList().block();
+
+        assertThat(r).hasSize(1);
+        assertThat(r.get(0).getItemId()).isEqualTo(300L);
+        // 轮询超时按 fail-open 真调一次,不阻塞也不报争用错误
+        verify(assetsApi).queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString());
     }
 }
