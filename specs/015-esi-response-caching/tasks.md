@@ -43,7 +43,7 @@ description: "Task list for ESI 响应缓存特性 (015)"
 - [x] T010 `[US1]` 采矿/建筑类包裹 — `queryCorporationMiningObserver` / `*MaxPage` / `queryCorporationStructures` / `*MaxPage`。**commit 6590c70+5a6ec52，评审 APPROVE；language/observerId 进键规避 MEDIUM-1，structures 含头入口重发 ACCEPT_LANGUAGE**
 - [x] T011 `[US1]` 钱包流水/交易类包裹 — `queryCharacter/CorporationWalletJournal`(+MaxPage×2)、`queryCharacter/CorporationWalletTransactions`。**commit 0f173b7+3774019，评审 APPROVE（含 TDD 逆序过程性瑕疵记录）；division/fromId 进键、流水三参 converter 回填、交易游标双形态键**
 - [x] T012 `[US5]` 公开数据包裹（pub 共享） — `queryUniverseType` / `queryUniverseNames`：userId 段置 `pub`，二次调用免真调（全局共享）。**commit e189d4e+320501f，评审 APPROVE；userId=null 置 pub、不查 UserUtil、单值 InvTypes 单元素列表语义、language/ids 进键；TDD 纪律恢复；遗留 MEDIUM：type 空列表命中判据**
-- [ ] T013 `[US4]` 强刷限流接入 — 强刷参数据 `ForceRefreshLimiter.tryAcquire`，超限返回现有缓存；公开类不强刷限流。
+- [x] T013 `[US4]` 强刷限流接入 — 强刷参数据 `ForceRefreshLimiter.tryAcquire`，超限返回现有缓存；公开类不强刷限流。**commit 4ef1732+ef81352，评审 APPROVE；端口加 forceRefresh 重载(16 鉴权方法,user 批准)+ 抽 doXxx 核心单拷；Phase2 由此收官**
 
 **Checkpoint**: 12 类查询全部走缓存判读。
 
