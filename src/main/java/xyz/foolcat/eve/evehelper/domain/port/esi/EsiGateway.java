@@ -78,9 +78,23 @@ public interface EsiGateway {
     Integer queryCharactersAssetsMaxPage(Integer characterId, String accessToken);
 
     /**
+     * 查询角色资产总页数(可选强制刷新)。
+     *
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     */
+    Integer queryCharactersAssetsMaxPage(Integer characterId, String accessToken, boolean forceRefresh);
+
+    /**
      * 查询角色指定页资产。
      */
     Flux<Assets> queryCharactersAssets(Integer characterId, int page, String accessToken);
+
+    /**
+     * 查询角色指定页资产(可选强制刷新)。
+     *
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     */
+    Flux<Assets> queryCharactersAssets(Integer characterId, int page, String accessToken, boolean forceRefresh);
 
     // ── 蓝图 ──
 
@@ -88,6 +102,11 @@ public interface EsiGateway {
      * 查询军团蓝图总页数。
      */
     Integer queryCorporationBlueprintsMaxPage(Integer corporationId, String accessToken);
+
+    /**
+     * 查询军团蓝图总页数(可选强制刷新)。
+     */
+    Integer queryCorporationBlueprintsMaxPage(Integer corporationId, String accessToken, boolean forceRefresh);
 
     // ── 工业 ──
 
@@ -97,14 +116,29 @@ public interface EsiGateway {
     Integer queryCorporationIndustryJobsMaxPage(Integer corporationId, boolean includeCompleted, String accessToken);
 
     /**
+     * 查询军团工业任务总页数(可选强制刷新)。
+     */
+    Integer queryCorporationIndustryJobsMaxPage(Integer corporationId, boolean includeCompleted, String accessToken, boolean forceRefresh);
+
+    /**
      * 查询军团工业任务。
      */
     Flux<IndustryJob> queryCorporationIndustryJobs(Integer corporationId, boolean includeCompleted, String accessToken);
 
     /**
+     * 查询军团工业任务(可选强制刷新)。
+     */
+    Flux<IndustryJob> queryCorporationIndustryJobs(Integer corporationId, boolean includeCompleted, String accessToken, boolean forceRefresh);
+
+    /**
      * 查询角色工业任务。
      */
     Flux<IndustryJob> queryCharacterIndustryJobs(Integer characterId, boolean includeCompleted, String accessToken);
+
+    /**
+     * 查询角色工业任务(可选强制刷新)。
+     */
+    Flux<IndustryJob> queryCharacterIndustryJobs(Integer characterId, boolean includeCompleted, String accessToken, boolean forceRefresh);
 
     // ── 物品类型 ──
 
@@ -123,9 +157,19 @@ public interface EsiGateway {
     Integer queryCorporationMiningObserverMaxPage(Integer corporationId, Long observerId, String accessToken);
 
     /**
+     * 查询军团采矿观察员总页数(可选强制刷新)。
+     */
+    Integer queryCorporationMiningObserverMaxPage(Integer corporationId, Long observerId, String accessToken, boolean forceRefresh);
+
+    /**
      * 查询军团采矿观察员台账。
      */
     Flux<MiningDetail> queryCorporationMiningObserver(Integer corporationId, Long observerId, int page, String accessToken);
+
+    /**
+     * 查询军团采矿观察员台账(可选强制刷新)。
+     */
+    Flux<MiningDetail> queryCorporationMiningObserver(Integer corporationId, Long observerId, int page, String accessToken, boolean forceRefresh);
 
     // ── 建筑 ──
 
@@ -135,11 +179,21 @@ public interface EsiGateway {
     Integer queryCorporationStructuresMaxPage(Integer corporationId, String accessToken);
 
     /**
+     * 查询军团建筑总页数(可选强制刷新)。
+     */
+    Integer queryCorporationStructuresMaxPage(Integer corporationId, String accessToken, boolean forceRefresh);
+
+    /**
      * 查询军团建筑。
      *
      * @param language 语言(如 zh)
      */
     Flux<Structure> queryCorporationStructures(Integer corporationId, String language, int page, String accessToken);
+
+    /**
+     * 查询军团建筑(可选强制刷新)。
+     */
+    Flux<Structure> queryCorporationStructures(Integer corporationId, String language, int page, String accessToken, boolean forceRefresh);
 
     // ── 名称解析 ──
 
@@ -156,9 +210,19 @@ public interface EsiGateway {
     Integer queryCorporationWalletJournalMaxPage(Integer corporationId, int division, String accessToken);
 
     /**
+     * 查询军团钱包流水总页数(可选强制刷新)。
+     */
+    Integer queryCorporationWalletJournalMaxPage(Integer corporationId, int division, String accessToken, boolean forceRefresh);
+
+    /**
      * 查询军团钱包流水。
      */
     Flux<WalletJournal> queryCorporationWalletJournal(Integer corporationId, int division, int page, String accessToken);
+
+    /**
+     * 查询军团钱包流水(可选强制刷新)。
+     */
+    Flux<WalletJournal> queryCorporationWalletJournal(Integer corporationId, int division, int page, String accessToken, boolean forceRefresh);
 
     /**
      * 查询人物钱包流水总页数(单分账)。
@@ -166,9 +230,19 @@ public interface EsiGateway {
     Integer queryCharacterWalletJournalMaxPage(Integer characterId, String accessToken);
 
     /**
+     * 查询人物钱包流水总页数(单分账,可选强制刷新)。
+     */
+    Integer queryCharacterWalletJournalMaxPage(Integer characterId, String accessToken, boolean forceRefresh);
+
+    /**
      * 查询人物钱包流水指定页(单分账)。
      */
     Flux<WalletJournal> queryCharacterWalletJournal(Integer characterId, int page, String accessToken);
+
+    /**
+     * 查询人物钱包流水指定页(单分账,可选强制刷新)。
+     */
+    Flux<WalletJournal> queryCharacterWalletJournal(Integer characterId, int page, String accessToken, boolean forceRefresh);
 
     // ── 钱包交易 ──
 
@@ -182,6 +256,11 @@ public interface EsiGateway {
     Flux<WalletTransaction> queryCharacterWalletTransactions(Integer characterId, Long fromId, String accessToken);
 
     /**
+     * 查询人物钱包交易(可选强制刷新)。
+     */
+    Flux<WalletTransaction> queryCharacterWalletTransactions(Integer characterId, Long fromId, String accessToken, boolean forceRefresh);
+
+    /**
      * 查询军团钱包交易(from_id 游标,首页传 null 表示最新)。
      *
      * @param corporationId 军团 ID
@@ -190,4 +269,9 @@ public interface EsiGateway {
      * @param accessToken   授权 Token
      */
     Flux<WalletTransaction> queryCorporationWalletTransactions(Integer corporationId, Integer division, Long fromId, String accessToken);
+
+    /**
+     * 查询军团钱包交易(可选强制刷新)。
+     */
+    Flux<WalletTransaction> queryCorporationWalletTransactions(Integer corporationId, Integer division, Long fromId, String accessToken, boolean forceRefresh);
 }

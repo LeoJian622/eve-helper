@@ -537,6 +537,15 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Integer queryCharactersAssetsMaxPage(Integer characterId, String accessToken) {
+        return doQueryCharactersAssetsMaxPage(characterId, accessToken, false);
+    }
+
+    @Override
+    public Integer queryCharactersAssetsMaxPage(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharactersAssetsMaxPage(characterId, accessToken, forceRefresh);
+    }
+
+    private Integer doQueryCharactersAssetsMaxPage(Integer characterId, String accessToken, boolean forceRefresh) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
@@ -545,9 +554,13 @@ public class EsiApiService implements EsiGateway {
         // maxPage 与列表首页共用同一缓存键(page=1);值类型(getInt vs getList)由键下内容决定
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/characters/" + characterId + "/assets/", 1);
-        Integer cached = esiResponseCache.getInt(key);
-        if (cached != null) {
-            return cached;
+        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
+            // force + 有额度:忽略缓存,直接真调回填
+        } else {
+            Integer cached = esiResponseCache.getInt(key);
+            if (cached != null) {
+                return cached;
+            }
         }
         PageTotalApi.PageCountResult count = assetsApi.queryCharactersAssetsMaxPageResponse(
                 characterId, EsiClientConfig.SERENITY, accessToken);
@@ -558,6 +571,15 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Flux<Assets> queryCharactersAssets(Integer characterId, int page, String accessToken) {
+        return doQueryCharactersAssets(characterId, page, accessToken, false);
+    }
+
+    @Override
+    public Flux<Assets> queryCharactersAssets(Integer characterId, int page, String accessToken, boolean forceRefresh) {
+        return doQueryCharactersAssets(characterId, page, accessToken, forceRefresh);
+    }
+
+    private Flux<Assets> doQueryCharactersAssets(Integer characterId, int page, String accessToken, boolean forceRefresh) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
@@ -566,9 +588,13 @@ public class EsiApiService implements EsiGateway {
         }
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/characters/" + characterId + "/assets/", page);
-        List<Assets> cached = esiResponseCache.getList(key, objectMapper.constructType(Assets.class));
-        if (cached != null) {
-            return Flux.fromIterable(cached);
+        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
+            // force + 有额度:忽略缓存,直接真调回填
+        } else {
+            List<Assets> cached = esiResponseCache.getList(key, objectMapper.constructType(Assets.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
         }
         return assetsApi.queryCharactersAssetsResponse(characterId, EsiClientConfig.SERENITY, page, accessToken)
                 .mapNotNull(response -> {
@@ -586,6 +612,15 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Integer queryCorporationBlueprintsMaxPage(Integer corporationId, String accessToken) {
+        return doQueryCorporationBlueprintsMaxPage(corporationId, accessToken, false);
+    }
+
+    @Override
+    public Integer queryCorporationBlueprintsMaxPage(Integer corporationId, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationBlueprintsMaxPage(corporationId, accessToken, forceRefresh);
+    }
+
+    private Integer doQueryCorporationBlueprintsMaxPage(Integer corporationId, String accessToken, boolean forceRefresh) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
@@ -594,9 +629,13 @@ public class EsiApiService implements EsiGateway {
         // maxPage 用独立 :maxPage 键,不与列表首页 page=1 共用(避免互相覆盖震荡,T008 评审 M1)
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/blueprints/", "maxPage");
-        Integer cached = esiResponseCache.getInt(key);
-        if (cached != null) {
-            return cached;
+        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
+            // force + 有额度:忽略缓存,直接真调回填
+        } else {
+            Integer cached = esiResponseCache.getInt(key);
+            if (cached != null) {
+                return cached;
+            }
         }
         PageTotalApi.PageCountResult count = corporationApi.queryCorporationBlueprintsMaxPageResponse(
                 corporationId, EsiClientConfig.SERENITY, accessToken);
@@ -609,6 +648,15 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Integer queryCorporationIndustryJobsMaxPage(Integer corporationId, boolean includeCompleted, String accessToken) {
+        return doQueryCorporationIndustryJobsMaxPage(corporationId, includeCompleted, accessToken, false);
+    }
+
+    @Override
+    public Integer queryCorporationIndustryJobsMaxPage(Integer corporationId, boolean includeCompleted, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationIndustryJobsMaxPage(corporationId, includeCompleted, accessToken, forceRefresh);
+    }
+
+    private Integer doQueryCorporationIndustryJobsMaxPage(Integer corporationId, boolean includeCompleted, String accessToken, boolean forceRefresh) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
@@ -617,9 +665,13 @@ public class EsiApiService implements EsiGateway {
         // 军团工业列表统一归一化 uri;maxPage 用独立 :maxPage 键
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/industry/jobs/", "maxPage");
-        Integer cached = esiResponseCache.getInt(key);
-        if (cached != null) {
-            return cached;
+        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
+            // force + 有额度:忽略缓存,直接真调回填
+        } else {
+            Integer cached = esiResponseCache.getInt(key);
+            if (cached != null) {
+                return cached;
+            }
         }
         PageTotalApi.PageCountResult count = industryApi.queryCorporationIndustryJobsMaxPageResponse(
                 corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken);
@@ -630,6 +682,15 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Flux<IndustryJob> queryCorporationIndustryJobs(Integer corporationId, boolean includeCompleted, String accessToken) {
+        return doQueryCorporationIndustryJobs(corporationId, includeCompleted, accessToken, false);
+    }
+
+    @Override
+    public Flux<IndustryJob> queryCorporationIndustryJobs(Integer corporationId, boolean includeCompleted, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationIndustryJobs(corporationId, includeCompleted, accessToken, forceRefresh);
+    }
+
+    private Flux<IndustryJob> doQueryCorporationIndustryJobs(Integer corporationId, boolean includeCompleted, String accessToken, boolean forceRefresh) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
@@ -638,9 +699,13 @@ public class EsiApiService implements EsiGateway {
         }
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/industry/jobs/", 0);
-        List<IndustryJob> cached = esiResponseCache.getList(key, objectMapper.constructType(IndustryJob.class));
-        if (cached != null) {
-            return Flux.fromIterable(cached);
+        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
+            // force + 有额度:忽略缓存,直接真调回填
+        } else {
+            List<IndustryJob> cached = esiResponseCache.getList(key, objectMapper.constructType(IndustryJob.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
         }
         return industryApi.queryCorporationIndustryJobsResponse(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
                 .mapNotNull(response -> {
@@ -656,6 +721,15 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Flux<IndustryJob> queryCharacterIndustryJobs(Integer characterId, boolean includeCompleted, String accessToken) {
+        return doQueryCharacterIndustryJobs(characterId, includeCompleted, accessToken, false);
+    }
+
+    @Override
+    public Flux<IndustryJob> queryCharacterIndustryJobs(Integer characterId, boolean includeCompleted, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterIndustryJobs(characterId, includeCompleted, accessToken, forceRefresh);
+    }
+
+    private Flux<IndustryJob> doQueryCharacterIndustryJobs(Integer characterId, boolean includeCompleted, String accessToken, boolean forceRefresh) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
@@ -664,9 +738,13 @@ public class EsiApiService implements EsiGateway {
         }
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/characters/" + characterId + "/industry/jobs/", 0);
-        List<IndustryJob> cached = esiResponseCache.getList(key, objectMapper.constructType(IndustryJob.class));
-        if (cached != null) {
-            return Flux.fromIterable(cached);
+        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
+            // force + 有额度:忽略缓存,直接真调回填
+        } else {
+            List<IndustryJob> cached = esiResponseCache.getList(key, objectMapper.constructType(IndustryJob.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
         }
         return industryApi.queryCharacterIndustryJobsResponse(characterId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
                 .mapNotNull(response -> {
@@ -709,6 +787,15 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Integer queryCorporationMiningObserverMaxPage(Integer corporationId, Long observerId, String accessToken) {
+        return doQueryCorporationMiningObserverMaxPage(corporationId, observerId, accessToken, false);
+    }
+
+    @Override
+    public Integer queryCorporationMiningObserverMaxPage(Integer corporationId, Long observerId, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationMiningObserverMaxPage(corporationId, observerId, accessToken, forceRefresh);
+    }
+
+    private Integer doQueryCorporationMiningObserverMaxPage(Integer corporationId, Long observerId, String accessToken, boolean forceRefresh) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
@@ -717,9 +804,13 @@ public class EsiApiService implements EsiGateway {
         // observerId 进归一化 uri(变体参数必须进键,T010 规避 T009 MEDIUM-1);maxPage 用独立 :maxPage 键
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/mining/observers/" + observerId + "/", "maxPage");
-        Integer cached = esiResponseCache.getInt(key);
-        if (cached != null) {
-            return cached;
+        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
+            // force + 有额度:忽略缓存,直接真调回填
+        } else {
+            Integer cached = esiResponseCache.getInt(key);
+            if (cached != null) {
+                return cached;
+            }
         }
         PageTotalApi.PageCountResult count = industryApi.queryCorporationMiningObserverMaxPageResponse(
                 corporationId, EsiClientConfig.SERENITY, observerId, accessToken);
@@ -730,6 +821,15 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Flux<MiningDetail> queryCorporationMiningObserver(Integer corporationId, Long observerId, int page, String accessToken) {
+        return doQueryCorporationMiningObserver(corporationId, observerId, page, accessToken, false);
+    }
+
+    @Override
+    public Flux<MiningDetail> queryCorporationMiningObserver(Integer corporationId, Long observerId, int page, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationMiningObserver(corporationId, observerId, page, accessToken, forceRefresh);
+    }
+
+    private Flux<MiningDetail> doQueryCorporationMiningObserver(Integer corporationId, Long observerId, int page, String accessToken, boolean forceRefresh) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
@@ -739,9 +839,13 @@ public class EsiApiService implements EsiGateway {
         // observerId 进归一化 uri,页面参数用实际 page
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/mining/observers/" + observerId + "/", page);
-        List<MiningDetail> cached = esiResponseCache.getList(key, objectMapper.constructType(MiningDetail.class));
-        if (cached != null) {
-            return Flux.fromIterable(cached);
+        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
+            // force + 有额度:忽略缓存,直接真调回填
+        } else {
+            List<MiningDetail> cached = esiResponseCache.getList(key, objectMapper.constructType(MiningDetail.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
         }
         return industryApi.queryCorporationMiningObserverResponse(corporationId, EsiClientConfig.SERENITY, observerId, page, accessToken)
                 .mapNotNull(response -> {
@@ -759,6 +863,15 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Integer queryCorporationStructuresMaxPage(Integer corporationId, String accessToken) {
+        return doQueryCorporationStructuresMaxPage(corporationId, accessToken, false);
+    }
+
+    @Override
+    public Integer queryCorporationStructuresMaxPage(Integer corporationId, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationStructuresMaxPage(corporationId, accessToken, forceRefresh);
+    }
+
+    private Integer doQueryCorporationStructuresMaxPage(Integer corporationId, String accessToken, boolean forceRefresh) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
@@ -767,9 +880,13 @@ public class EsiApiService implements EsiGateway {
         // 端口签名无 language,maxPage 页数与语言无关 → 用语言无关的 :maxPage 独立键
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/structures/", "maxPage");
-        Integer cached = esiResponseCache.getInt(key);
-        if (cached != null) {
-            return cached;
+        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
+            // force + 有额度:忽略缓存,直接真调回填
+        } else {
+            Integer cached = esiResponseCache.getInt(key);
+            if (cached != null) {
+                return cached;
+            }
         }
         PageTotalApi.PageCountResult count = corporationApi.queryCorporationStructuresMaxPageResponse(
                 corporationId, EsiClientConfig.SERENITY, accessToken);
@@ -780,6 +897,15 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Flux<Structure> queryCorporationStructures(Integer corporationId, String language, int page, String accessToken) {
+        return doQueryCorporationStructures(corporationId, language, page, accessToken, false);
+    }
+
+    @Override
+    public Flux<Structure> queryCorporationStructures(Integer corporationId, String language, int page, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationStructures(corporationId, language, page, accessToken, forceRefresh);
+    }
+
+    private Flux<Structure> doQueryCorporationStructures(Integer corporationId, String language, int page, String accessToken, boolean forceRefresh) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
@@ -789,9 +915,13 @@ public class EsiApiService implements EsiGateway {
         // language 进归一化 uri(变体参数必须进键:T010 规避 T009 MEDIUM-1,换语种不得互命中)
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/structures/" + language + "/", page);
-        List<Structure> cached = esiResponseCache.getList(key, objectMapper.constructType(Structure.class));
-        if (cached != null) {
-            return Flux.fromIterable(cached);
+        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
+            // force + 有额度:忽略缓存,直接真调回填
+        } else {
+            List<Structure> cached = esiResponseCache.getList(key, objectMapper.constructType(Structure.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
         }
         return corporationApi.queryCorporationStructuresResponse(corporationId, EsiClientConfig.SERENITY, language, page, accessToken)
                 .mapNotNull(response -> {
@@ -836,10 +966,33 @@ public class EsiApiService implements EsiGateway {
         return "/universe/names/" + encoded + "/";
     }
 
+    /**
+     * 强刷新时间窗(来自配置,分钟)。
+     */
+    private Duration forceRefreshWindow() {
+        return Duration.ofMinutes(esiResponseCacheProperties.getForceRefreshWindowMinutes());
+    }
+
+    /**
+     * 强刷新单键固定窗口内允许的真实刷新次数(来自配置)。
+     */
+    private int forceRefreshLimit() {
+        return esiResponseCacheProperties.getForceRefreshLimit();
+    }
+
     // ── 钱包流水 ──
 
     @Override
     public Integer queryCorporationWalletJournalMaxPage(Integer corporationId, int division, String accessToken) {
+        return doQueryCorporationWalletJournalMaxPage(corporationId, division, accessToken, false);
+    }
+
+    @Override
+    public Integer queryCorporationWalletJournalMaxPage(Integer corporationId, int division, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationWalletJournalMaxPage(corporationId, division, accessToken, forceRefresh);
+    }
+
+    private Integer doQueryCorporationWalletJournalMaxPage(Integer corporationId, int division, String accessToken, boolean forceRefresh) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
@@ -848,9 +1001,13 @@ public class EsiApiService implements EsiGateway {
         // division 进归一化 uri(变体参数进键,规避 MEDIUM-1);maxPage 用独立 :maxPage 键
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/wallets/" + division + "/journal/", "maxPage");
-        Integer cached = esiResponseCache.getInt(key);
-        if (cached != null) {
-            return cached;
+        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
+            // force + 有额度:忽略缓存,直接真调回填
+        } else {
+            Integer cached = esiResponseCache.getInt(key);
+            if (cached != null) {
+                return cached;
+            }
         }
         PageTotalApi.PageCountResult count = walletApi.queryCorporationWalletJournalMaxPageResponse(
                 corporationId, division, EsiClientConfig.SERENITY, accessToken);
@@ -861,6 +1018,15 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Flux<WalletJournal> queryCorporationWalletJournal(Integer corporationId, int division, int page, String accessToken) {
+        return doQueryCorporationWalletJournal(corporationId, division, page, accessToken, false);
+    }
+
+    @Override
+    public Flux<WalletJournal> queryCorporationWalletJournal(Integer corporationId, int division, int page, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationWalletJournal(corporationId, division, page, accessToken, forceRefresh);
+    }
+
+    private Flux<WalletJournal> doQueryCorporationWalletJournal(Integer corporationId, int division, int page, String accessToken, boolean forceRefresh) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
@@ -870,9 +1036,13 @@ public class EsiApiService implements EsiGateway {
         // division 进归一化 uri
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/corporations/" + corporationId + "/wallets/" + division + "/journal/", page);
-        List<WalletJournal> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletJournal.class));
-        if (cached != null) {
-            return Flux.fromIterable(cached);
+        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
+            // force + 有额度:忽略缓存,直接真调回填
+        } else {
+            List<WalletJournal> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletJournal.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
         }
         return walletApi.queryCorporationWalletJournalResponse(corporationId, division, EsiClientConfig.SERENITY, page, accessToken)
                 .mapNotNull(response -> {
@@ -889,6 +1059,15 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Integer queryCharacterWalletJournalMaxPage(Integer characterId, String accessToken) {
+        return doQueryCharacterWalletJournalMaxPage(characterId, accessToken, false);
+    }
+
+    @Override
+    public Integer queryCharacterWalletJournalMaxPage(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterWalletJournalMaxPage(characterId, accessToken, forceRefresh);
+    }
+
+    private Integer doQueryCharacterWalletJournalMaxPage(Integer characterId, String accessToken, boolean forceRefresh) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
@@ -896,9 +1075,13 @@ public class EsiApiService implements EsiGateway {
         }
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/characters/" + characterId + "/wallet/journal/", "maxPage");
-        Integer cached = esiResponseCache.getInt(key);
-        if (cached != null) {
-            return cached;
+        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
+            // force + 有额度:忽略缓存,直接真调回填
+        } else {
+            Integer cached = esiResponseCache.getInt(key);
+            if (cached != null) {
+                return cached;
+            }
         }
         PageTotalApi.PageCountResult count = walletApi.queryCharacterWalletJournalMaxPageResponse(
                 characterId, EsiClientConfig.SERENITY, accessToken);
@@ -909,6 +1092,15 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Flux<WalletJournal> queryCharacterWalletJournal(Integer characterId, int page, String accessToken) {
+        return doQueryCharacterWalletJournal(characterId, page, accessToken, false);
+    }
+
+    @Override
+    public Flux<WalletJournal> queryCharacterWalletJournal(Integer characterId, int page, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterWalletJournal(characterId, page, accessToken, forceRefresh);
+    }
+
+    private Flux<WalletJournal> doQueryCharacterWalletJournal(Integer characterId, int page, String accessToken, boolean forceRefresh) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
@@ -917,9 +1109,13 @@ public class EsiApiService implements EsiGateway {
         }
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/characters/" + characterId + "/wallet/journal/", page);
-        List<WalletJournal> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletJournal.class));
-        if (cached != null) {
-            return Flux.fromIterable(cached);
+        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
+            // force + 有额度:忽略缓存,直接真调回填
+        } else {
+            List<WalletJournal> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletJournal.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
         }
         return walletApi.queryCharacterWalletJournalResponse(characterId, EsiClientConfig.SERENITY, page, accessToken)
                 .mapNotNull(response -> {
@@ -937,6 +1133,15 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Flux<WalletTransaction> queryCharacterWalletTransactions(Integer characterId, Long fromId, String accessToken) {
+        return doQueryCharacterWalletTransactions(characterId, fromId, accessToken, false);
+    }
+
+    @Override
+    public Flux<WalletTransaction> queryCharacterWalletTransactions(Integer characterId, Long fromId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterWalletTransactions(characterId, fromId, accessToken, forceRefresh);
+    }
+
+    private Flux<WalletTransaction> doQueryCharacterWalletTransactions(Integer characterId, Long fromId, String accessToken, boolean forceRefresh) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
@@ -947,9 +1152,13 @@ public class EsiApiService implements EsiGateway {
         String base = "/characters/" + characterId + "/wallet/transactions/";
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 fromId == null ? base : base + "?from_id=" + fromId, 0);
-        List<WalletTransaction> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletTransaction.class));
-        if (cached != null) {
-            return Flux.fromIterable(cached);
+        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
+            // force + 有额度:忽略缓存,直接真调回填
+        } else {
+            List<WalletTransaction> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletTransaction.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
         }
         return walletApi.queryCharacterWalletTransactionsResponse(characterId, EsiClientConfig.SERENITY, fromId, accessToken)
                 .mapNotNull(response -> {
@@ -964,6 +1173,15 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Flux<WalletTransaction> queryCorporationWalletTransactions(Integer corporationId, Integer division, Long fromId, String accessToken) {
+        return doQueryCorporationWalletTransactions(corporationId, division, fromId, accessToken, false);
+    }
+
+    @Override
+    public Flux<WalletTransaction> queryCorporationWalletTransactions(Integer corporationId, Integer division, Long fromId, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationWalletTransactions(corporationId, division, fromId, accessToken, forceRefresh);
+    }
+
+    private Flux<WalletTransaction> doQueryCorporationWalletTransactions(Integer corporationId, Integer division, Long fromId, String accessToken, boolean forceRefresh) {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
@@ -974,9 +1192,13 @@ public class EsiApiService implements EsiGateway {
         String base = "/corporations/" + corporationId + "/wallets/" + division + "/transactions/";
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 fromId == null ? base : base + "?from_id=" + fromId, 0);
-        List<WalletTransaction> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletTransaction.class));
-        if (cached != null) {
-            return Flux.fromIterable(cached);
+        if (forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit())) {
+            // force + 有额度:忽略缓存,直接真调回填
+        } else {
+            List<WalletTransaction> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletTransaction.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
         }
         return walletApi.queryCorporationWalletTransactionsResponse(corporationId, division, EsiClientConfig.SERENITY, fromId, accessToken)
                 .mapNotNull(response -> {
