@@ -1,6 +1,7 @@
 package xyz.foolcat.eve.evehelper.infrastructure.external.esi;
 
 import cn.hutool.core.util.StrUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiAssetsConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiIndustryJobConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiInvTypesConverter;
@@ -36,6 +38,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCa
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.ForceRefreshLimiter;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.AssetsApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CharacterApi;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.PageTotalApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CorporationApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UniverseApi;
@@ -56,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -115,6 +119,8 @@ public class EsiApiService implements EsiGateway {
     private final ForceRefreshLimiter forceRefreshLimiter;
 
     private final EsiResponseCacheProperties esiResponseCacheProperties;
+
+    private final ObjectMapper objectMapper;
 
     /**
      * ESI 授权状态缓存键前缀
@@ -530,13 +536,49 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Integer queryCharactersAssetsMaxPage(Integer characterId, String accessToken) {
-        return assetsApi.queryCharactersAssetsMaxPage(characterId, EsiClientConfig.SERENITY, accessToken);
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return assetsApi.queryCharactersAssetsMaxPage(characterId, EsiClientConfig.SERENITY, accessToken);
+        }
+        // maxPage 与列表首页共用同一缓存键(page=1);值类型(getInt vs getList)由键下内容决定
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/assets/", 1);
+        Integer cached = esiResponseCache.getInt(key);
+        if (cached != null) {
+            return cached;
+        }
+        PageTotalApi.PageCountResult count = assetsApi.queryCharactersAssetsMaxPageResponse(
+                characterId, EsiClientConfig.SERENITY, accessToken);
+        Duration ttl = esiCacheTtlExtractor.extract(count.headers());
+        esiResponseCache.put(key, count.maxPage(), ttl);   // ttl null → put 内部跳过
+        return count.maxPage();
     }
 
     @Override
     public Flux<Assets> queryCharactersAssets(Integer characterId, int page, String accessToken) {
-        return assetsApi.queryCharactersAssets(characterId, EsiClientConfig.SERENITY, page, accessToken)
-                .map(esiAssetsConverter::toDomain);
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return assetsApi.queryCharactersAssets(characterId, EsiClientConfig.SERENITY, page, accessToken)
+                    .map(esiAssetsConverter::toDomain);
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/assets/", page);
+        List<Assets> cached = esiResponseCache.getList(key, objectMapper.constructType(Assets.class));
+        if (cached != null) {
+            return Flux.fromIterable(cached);
+        }
+        return assetsApi.queryCharactersAssetsResponse(characterId, EsiClientConfig.SERENITY, page, accessToken)
+                .mapNotNull(response -> {
+                    Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                    // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                    List<Assets> domain = response.getBody() == null ? List.of()
+                            : response.getBody().stream().map(esiAssetsConverter::toDomain).toList();
+                    esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                    return domain;
+                })
+                .flatMapIterable(Function.identity());
     }
 
     // ── 蓝图 ──

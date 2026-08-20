@@ -1,29 +1,43 @@
 package xyz.foolcat.eve.evehelper.domain.service.esi;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.AssetsApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CharacterApi;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.PageTotalApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UniverseApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCache;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCacheProperties;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AssetResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -66,8 +80,17 @@ class EsiApiServiceTest {
     @MockBean
     UniverseApi universeApi;
 
+    @MockBean
+    AssetsApi assetsApi;
+
     @Autowired
     private EsiApiService esiApiService;
+
+    @Autowired
+    private EsiResponseCache esiResponseCache;
+
+    @Autowired
+    private EsiResponseCacheProperties esiResponseCacheProperties;
 
     private static final Integer USER_ID = 100;
     private static final Integer CID = 95465499;
@@ -211,5 +234,183 @@ class EsiApiServiceTest {
         assertEquals(EsiAuthStatus.UNKNOWN, status);
         verify(cacheGateway).set(eq(STATUS_KEY), eq("UNKNOWN"), anyLong(), eq(TimeUnit.SECONDS));
         verify(cacheGateway).delete(LOCK_KEY);
+    }
+
+    // ─═ 015/T008:角色资产查询接入缓存判读(列表 + maxPage) ═─
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
+
+    /**
+     * 以指定 userId 认证(主体为 Number,UserUtil 走 instanceof Number 分支)。
+     */
+    private void authAs(Integer userId) {
+        SecurityContextHolder.getContext()
+                .setAuthentication(new UsernamePasswordAuthenticationToken(userId, null));
+    }
+
+    /**
+     * 匿名上下文(主体为 String,UserUtil 返回 -1)。
+     */
+    private void authAsAnonymous() {
+        SecurityContextHolder.getContext()
+                .setAuthentication(new UsernamePasswordAuthenticationToken("anonymousUser", null));
+    }
+
+    /**
+     * 构造与 {@link EsiApiService#queryCharactersAssets} 内部一致的列表缓存键(含 datasource/userId/uri/page)。
+     */
+    private String assetsKey(int page) {
+        return esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID,
+                "/characters/" + CID + "/assets/", page);
+    }
+
+    private static AssetResponse assetResponse(long itemId) {
+        AssetResponse ar = new AssetResponse();
+        ar.setItemId(itemId);
+        ar.setTypeId(34);
+        return ar;
+    }
+
+    private static HttpHeaders maxAge300() {
+        HttpHeaders h = new HttpHeaders();
+        h.setCacheControl("public, max-age=300");
+        return h;
+    }
+
+    // ── 列表:缓存命中/未命中/无头/未认证 ──
+
+    @Test
+    @DisplayName("资产列表:缓存命中 → 返回缓存数据,不触发 AssetsApi 真调(SC-001)")
+    void characterAssets_cacheHit_noRealCall() {
+        authAs(USER_ID);
+        String key = assetsKey(1);
+        when(cacheGateway.get(key)).thenReturn("[{\"itemId\":100,\"typeId\":34}]");
+
+        List<Assets> result = esiApiService.queryCharactersAssets(CID, 1, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getItemId()).isEqualTo(100L);
+        verify(assetsApi, never()).queryCharactersAssetsResponse(any(), anyString(), any(), anyString());
+        verify(assetsApi, never()).queryCharactersAssets(any(), anyString(), any(), anyString());
+    }
+
+    @Test
+    @DisplayName("资产列表:未命中 → 真调一次并按 max-age 回填")
+    void characterAssets_cacheMiss_realCallAndBackfill() {
+        authAs(USER_ID);
+        String key = assetsKey(1);
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(assetsApi.queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok()
+                        .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                        .body(List.of(assetResponse(200L)))));
+
+        List<Assets> result = esiApiService.queryCharactersAssets(CID, 1, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getItemId()).isEqualTo(200L);
+        // 真调一次
+        verify(assetsApi).queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString());
+        // 回填:set(key, JSON序列化列表, 3600s, SECONDS)
+        ArgumentCaptor<String> kc = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Object> vc = ArgumentCaptor.forClass(Object.class);
+        verify(cacheGateway).set(kc.capture(), vc.capture(), eq(3600L), eq(TimeUnit.SECONDS));
+        assertThat(kc.getValue()).isEqualTo(key);
+        assertThat(vc.getValue()).isInstanceOf(String.class);
+    }
+
+    @Test
+    @DisplayName("资产列表:无响应头 → 每次真调,不回填缓存")
+    void characterAssets_noHeader_realCallEveryTime() {
+        authAs(USER_ID);
+        String key = assetsKey(1);
+        when(cacheGateway.get(key)).thenReturn(null);
+        // 无 Cache-Control 头
+        when(assetsApi.queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString()))
+                .thenReturn(Mono.just(ResponseEntity.ok().body(List.of(assetResponse(300L)))));
+
+        esiApiService.queryCharactersAssets(CID, 1, "Bearer x").collectList().block();
+        esiApiService.queryCharactersAssets(CID, 1, "Bearer x").collectList().block();
+
+        verify(assetsApi, times(2)).queryCharactersAssetsResponse(eq(CID), eq("serenity"), eq(1), anyString());
+        verify(cacheGateway, never()).set(anyString(), any(), anyLong(), eq(TimeUnit.SECONDS));
+    }
+
+    @Test
+    @DisplayName("资产列表:未认证(userId=-1) → 直接真调原 Flux 入口,不进缓存")
+    void characterAssets_unauthenticated_directRealCall() {
+        authAsAnonymous();
+        when(assetsApi.queryCharactersAssets(eq(CID), eq("serenity"), eq(1), anyString()))
+                .thenReturn(Flux.just(assetResponse(400L)));
+
+        List<Assets> result = esiApiService.queryCharactersAssets(CID, 1, "Bearer x").collectList().block();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getItemId()).isEqualTo(400L);
+        verify(assetsApi).queryCharactersAssets(eq(CID), eq("serenity"), eq(1), anyString());
+        verify(cacheGateway, never()).get(anyString());
+    }
+
+    // ── maxPage:缓存命中/未命中/无头/未认证 ──
+
+    @Test
+    @DisplayName("资产 maxPage:缓存命中 → 直接返回,不真调")
+    void characterAssetsMaxPage_cacheHit_noRealCall() {
+        authAs(USER_ID);
+        String key = assetsKey(1);
+        when(cacheGateway.get(key)).thenReturn(20);
+
+        Integer mp = esiApiService.queryCharactersAssetsMaxPage(CID, "Bearer x");
+
+        assertThat(mp).isEqualTo(20);
+        verify(assetsApi, never()).queryCharactersAssetsMaxPage(any(), anyString(), anyString());
+        verify(assetsApi, never()).queryCharactersAssetsMaxPageResponse(any(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("资产 maxPage:未命中 → 真调含头入口并按 max-age 回填 Integer")
+    void characterAssetsMaxPage_cacheMiss_realCallAndBackfill() {
+        authAs(USER_ID);
+        String key = assetsKey(1);
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(assetsApi.queryCharactersAssetsMaxPageResponse(eq(CID), eq("serenity"), anyString()))
+                .thenReturn(new PageTotalApi.PageCountResult(5, maxAge300()));
+
+        Integer mp = esiApiService.queryCharactersAssetsMaxPage(CID, "Bearer x");
+
+        assertThat(mp).isEqualTo(5);
+        verify(assetsApi).queryCharactersAssetsMaxPageResponse(eq(CID), eq("serenity"), anyString());
+        verify(cacheGateway).set(eq(key), eq(5), eq(300L), eq(TimeUnit.SECONDS));
+    }
+
+    @Test
+    @DisplayName("资产 maxPage:无响应头 → 不回填,真调结果照常返回")
+    void characterAssetsMaxPage_noHeader_noCacheWrite() {
+        authAs(USER_ID);
+        String key = assetsKey(1);
+        when(cacheGateway.get(key)).thenReturn(null);
+        when(assetsApi.queryCharactersAssetsMaxPageResponse(eq(CID), eq("serenity"), anyString()))
+                .thenReturn(new PageTotalApi.PageCountResult(3, new HttpHeaders()));
+
+        Integer mp = esiApiService.queryCharactersAssetsMaxPage(CID, "Bearer x");
+
+        assertThat(mp).isEqualTo(3);
+        verify(cacheGateway, never()).set(anyString(), any(), anyLong(), eq(TimeUnit.SECONDS));
+    }
+
+    @Test
+    @DisplayName("资产 maxPage:未认证 → 直接真调原方法,不进缓存")
+    void characterAssetsMaxPage_unauthenticated_directRealCall() {
+        authAsAnonymous();
+        when(assetsApi.queryCharactersAssetsMaxPage(eq(CID), eq("serenity"), anyString())).thenReturn(7);
+
+        Integer mp = esiApiService.queryCharactersAssetsMaxPage(CID, "Bearer x");
+
+        assertThat(mp).isEqualTo(7);
+        verify(assetsApi).queryCharactersAssetsMaxPage(eq(CID), eq("serenity"), anyString());
+        verify(cacheGateway, never()).get(anyString());
     }
 }
