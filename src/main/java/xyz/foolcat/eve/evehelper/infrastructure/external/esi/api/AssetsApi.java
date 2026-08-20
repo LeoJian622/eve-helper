@@ -66,6 +66,29 @@ public class AssetsApi {
     }
 
     /**
+     * 人物资产清单最大页数(含响应头,015/T008 maxPage TTL 来源通路)。
+     *
+     * <p>调用 {@link PageTotalApi#queryMaxPageWithHeaders} 同时取最大页数与响应头
+     * (含 {@code Cache-Control: max-age}),供包裹层为 maxPage 计算缓存 TTL。
+     * 原 {@link #queryCharactersAssetsMaxPage} 保留、零破坏。</p>
+     *
+     * @param characterId   人物ID
+     * @param datasource    服务器
+     * @param accessesToken 授权Token
+     * @return 最大页数与响应头的结果
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-人物资产清单最大页数(含响应头)")
+    public PageTotalApi.PageCountResult queryCharactersAssetsMaxPageResponse(Integer characterId, String datasource, String accessesToken) {
+        String uri = "/characters/" + characterId + "/assets/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPageWithHeaders(accessesToken, uri, esiClient);
+    }
+
+    /**
      *
      * 获取人物资产清单
      *

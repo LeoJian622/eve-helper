@@ -138,6 +138,35 @@ class AssetsApiResponseTest {
     }
 
     @Test
+    @DisplayName("人物资产 maxPage 含头:返回 maxPage + 响应头(X-Pages 与 Cache-Control)")
+    void charactersMaxPageResponse_headerAndMaxPage() {
+        ClientResponse ok = ClientResponse.create(HttpStatus.OK)
+                .header("X-Pages", "5")
+                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=300")
+                .build();
+        AssetsApi api = new AssetsApi(clientReturning(ok), new PageTotalApi());
+
+        PageTotalApi.PageCountResult r = api.queryCharactersAssetsMaxPageResponse(1, "tranquility", "Bearer x");
+
+        assertThat(r.maxPage()).isEqualTo(5);
+        assertThat(r.headers().getFirst("X-Pages")).isEqualTo("5");
+        // 缓存 TTL 来源:Cache-Control 头必须透出给包裹层
+        assertThat(r.headers().getFirst(HttpHeaders.CACHE_CONTROL)).contains("max-age=300");
+    }
+
+    @Test
+    @DisplayName("人物资产 maxPage 含头:缺少 X-Pages 头 → 抛 ESI_SERVER_FAILURE")
+    void charactersMaxPageResponse_missingXPages_throwsServerFailure() {
+        ClientResponse ok = ClientResponse.create(HttpStatus.OK).build();
+        AssetsApi api = new AssetsApi(clientReturning(ok), new PageTotalApi());
+
+        assertThatThrownBy(() -> api.queryCharactersAssetsMaxPageResponse(1, "tranquility", "Bearer x"))
+                .isInstanceOf(EsiException.class)
+                .isInstanceOfSatisfying(EsiException.class, e ->
+                        assertThat(e.getResultCode()).isEqualTo(ResultCode.ESI_SERVER_FAILURE));
+    }
+
+    @Test
     @DisplayName("原 Flux 方法不回归:仍解析为 Flux<AssetResponse>")
     void originalFluxMethods_unaffected() {
         AssetsApi api = new AssetsApi(clientReturning(okWithAssets()), new PageTotalApi());
