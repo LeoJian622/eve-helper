@@ -5,14 +5,22 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiStatusUtil;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
+
+import java.time.Duration;
+import java.util.List;
 
 /**
  * ESI 军团接口
@@ -21,6 +29,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
  * date 2023-10-25 14:55
  */
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Tag(name = "ESI 军团接口")
@@ -29,6 +38,11 @@ public class CorporationApi {
     private final WebClient esiClient;
 
     private final PageTotalApi pageTotalApi;
+
+    /**
+     * ESI 数据接口调用超时(宪法:外部调用 5s 超时)
+     */
+    private static final Duration ESI_DATA_TIMEOUT = Duration.ofSeconds(5);
 
     /**
      * 军团公开信息
@@ -108,6 +122,24 @@ public class CorporationApi {
     public Integer queryCorporationBlueprintsMaxPage(Integer corporationId, String datasource, String accessesToken) {
         String uri = "/corporations/" + corporationId + "/blueprints/?datasource=" + datasource + "&page=1";
         return pageTotalApi.queryMaxPage(accessesToken, uri,  esiClient);
+    }
+
+    /**
+     * 军团拥有的蓝图最大页数(含响应头,015/T009 maxPage TTL 来源通路)。
+     *
+     * <p>调 {@link PageTotalApi#queryMaxPageWithHeaders} 同时取最大页数与响应头
+     * (含 {@code Cache-Control: max-age}),供包裹层为 maxPage 计算缓存 TTL。
+     * 原 {@link #queryCorporationBlueprintsMaxPage} 保留、零破坏。</p>
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团拥有的蓝图最大页数(含响应头)")
+    public PageTotalApi.PageCountResult queryCorporationBlueprintsMaxPageResponse(Integer corporationId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/blueprints/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPageWithHeaders(accessesToken, uri, esiClient);
     }
 
     /**
@@ -650,6 +682,23 @@ public class CorporationApi {
     }
 
     /**
+     * 军团建筑信息最大页数(含响应头,015/T010 maxPage TTL 来源通路)。
+     *
+     * <p>调 {@link PageTotalApi#queryMaxPageWithHeaders} 同时取最大页数与响应头,
+     * 供包裹层为 maxPage 计算缓存 TTL。原 {@link #queryCorporationStructuresMaxPage} 保留、零破坏。</p>
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团建筑信息最大页数(含响应头)")
+    public PageTotalApi.PageCountResult queryCorporationStructuresMaxPageResponse(Integer corporationId, String datasource, String accessesToken) {
+        String uri = "/corporations/" + corporationId + "/structures/?datasource=" + datasource + "&page=1";
+        return pageTotalApi.queryMaxPageWithHeaders(accessesToken, uri, esiClient);
+    }
+
+    /**
      * 军团建筑信息
      *
      * @param corporationId 军团ID
@@ -675,6 +724,43 @@ public class CorporationApi {
                 .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
                 .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(StructuresInformationResponse.class);
+    }
+
+    /**
+     * 军团建筑信息(含响应头,015/T010 复制 T008 模式)。
+     *
+     * <p>关键:除 {@code Cache-Control} 外,必须**显式重发 {@code Accept-Language} 请求头**
+     * (不能只靠 uri 里的 language 查询参数)——否则换语种时会被 WebClient 默认 Accept 头覆盖,
+     * ESI 按默认语言返回,缓存将跨语言命中错误变体。4xx/5xx 分支复刻 {@link PageTotalApi#queryMaxPage} 先例。</p>
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "language", description = "语言", required = true),
+            @Parameter(name = "page", description = "页码", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团建筑信息(含响应头)")
+    public Mono<ResponseEntity<List<StructuresInformationResponse>>> queryCorporationStructuresResponse(Integer corporationId, String datasource, String language, Integer page, String accessesToken) {
+        return esiClient.get().uri("/corporations/{corporation_id}/structures/?datasource={datasource}&language={language}&page={page}", corporationId, datasource, language, page)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .header(HttpHeaders.ACCEPT_LANGUAGE, language)
+                .exchangeToMono(response -> {
+                    HttpStatusCode httpStatusCode = response.statusCode();
+                    if (httpStatusCode.is4xxClientError()) {
+                        if (EsiStatusUtil.isForbidden(httpStatusCode)) {
+                            log.warn("ESI 军团建筑权限不足(403): corporationId={}", corporationId);
+                            return Mono.error(EsiStatusUtil.forbiddenAgent());
+                        }
+                        return Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE));
+                    }
+                    if (httpStatusCode.is5xxServerError()) {
+                        log.warn("ESI 军团建筑服务端错误(5xx): corporationId={}, status={}", corporationId, httpStatusCode.value());
+                        return Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE));
+                    }
+                    return response.toEntity(new ParameterizedTypeReference<List<StructuresInformationResponse>>() {
+                    });
+                }).timeout(ESI_DATA_TIMEOUT);
     }
 
     /**

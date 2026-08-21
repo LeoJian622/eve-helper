@@ -5,15 +5,22 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiStatusUtil;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 
+import java.time.Duration;
 import java.util.List;
 
 /**
@@ -23,6 +30,7 @@ import java.util.List;
  * date 2023-11-18 22:37
  */
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Tag(name = "ESI 宇宙相关信息接口")
@@ -30,6 +38,11 @@ public class UniverseApi {
 
     private final WebClient esiClient;
     private final PageTotalApi pageTotalApi;
+
+    /**
+     * ESI 数据接口调用超时(宪法:外部调用 5s 超时)
+     */
+    private static final Duration ESI_DATA_TIMEOUT = Duration.ofSeconds(5);
 
     /**
      * 获取人物民族
@@ -363,6 +376,39 @@ public class UniverseApi {
     }
 
     /**
+     * 根据ID获取名称和分类(含响应头,015/T012 公开数据 pub 共享)。
+     *
+     * <p>POST 含头入口:body 为 {@code List<Id2NameResponse>}。公开数据,无 Authorization 头。
+     * 4xx/5xx 分支复刻 {@link PageTotalApi#queryMaxPage} 先例。</p>
+     */
+    @Parameters({
+            @Parameter(name = "ids", description = "ID列表", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+    })
+    @Operation(summary = "ESI-根据ID获取名称和分类(含响应头)")
+    public Mono<ResponseEntity<List<Id2NameResponse>>> queryUniverseNamesResponse(List<Integer> ids, String datasource) {
+        return esiClient.post().uri("/universe/names/?datasource={datasource}", datasource)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Mono.just(ids), List.class)
+                .exchangeToMono(response -> {
+                    HttpStatusCode httpStatusCode = response.statusCode();
+                    if (httpStatusCode.is4xxClientError()) {
+                        if (EsiStatusUtil.isForbidden(httpStatusCode)) {
+                            log.warn("ESI 宇宙名称解析权限不足(403)");
+                            return Mono.error(EsiStatusUtil.forbiddenAgent());
+                        }
+                        return Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE));
+                    }
+                    if (httpStatusCode.is5xxServerError()) {
+                        log.warn("ESI 宇宙名称解析服务端错误(5xx): status={}", httpStatusCode.value());
+                        return Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE));
+                    }
+                    return response.toEntity(new ParameterizedTypeReference<List<Id2NameResponse>>() {
+                    });
+                }).timeout(ESI_DATA_TIMEOUT);
+    }
+
+    /**
      * 行星详情
      *
      * @param planetId   行星ID
@@ -680,5 +726,37 @@ public class UniverseApi {
                 .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
                 .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(TypeInfoResponse.class);
+    }
+
+    /**
+     * 物品类型详情(含响应头,015/T012 公开数据 pub 共享)。
+     *
+     * <p>GET 含头入口:body 为单值 {@code TypeInfoResponse}。显式重发 {@code Accept-Language}
+     * (语言进缓存键,换语言不得互命中)。公开数据,无 Authorization 头。</p>
+     */
+    @Parameters({
+            @Parameter(name = "typeId", description = "物品类型ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "language", description = "语言", required = true),
+    })
+    @Operation(summary = "ESI-物品类型详情(含响应头)")
+    public Mono<ResponseEntity<TypeInfoResponse>> queryUniverseTypeResponse(Integer typeId, String datasource, String language) {
+        return esiClient.get().uri("/universe/types/{type_id}/?datasource={datasource}&language={language}", typeId, datasource, language)
+                .header(HttpHeaders.ACCEPT_LANGUAGE, language)
+                .exchangeToMono(response -> {
+                    HttpStatusCode httpStatusCode = response.statusCode();
+                    if (httpStatusCode.is4xxClientError()) {
+                        if (EsiStatusUtil.isForbidden(httpStatusCode)) {
+                            log.warn("ESI 物品类型详情权限不足(403): typeId={}", typeId);
+                            return Mono.error(EsiStatusUtil.forbiddenAgent());
+                        }
+                        return Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE));
+                    }
+                    if (httpStatusCode.is5xxServerError()) {
+                        log.warn("ESI 物品类型详情服务端错误(5xx): typeId={}, status={}", typeId, httpStatusCode.value());
+                        return Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE));
+                    }
+                    return response.toEntity(TypeInfoResponse.class);
+                }).timeout(ESI_DATA_TIMEOUT);
     }
 }

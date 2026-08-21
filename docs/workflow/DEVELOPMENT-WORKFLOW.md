@@ -23,7 +23,7 @@
 
 | 阶段 | 名称 | 主力工具 | 门禁（不满足不得进入下一阶段） |
 |------|------|----------|-------------------------------|
-| P0 | 会话启动与前置条件 | `ecc:resume-session`、`ecc:checkpoint` | git 仓库可用（无 `.git` 则先 `git init` + 初始提交） |
+| P0 | 会话启动与前置条件 | `ecc:resume-session`、`ecc:checkpoint` | git 仓库可用（无 `.git` 则先 `git init` + 初始提交）；**特性轨必须先建/检出独立特性分支 `<NNN>-<feature>`**（宪法 V.1，禁止直接在 `springboot3.0`/`main` 主干提交特性实现） |
 | P1 | 需求与规格 | `superpowers:brainstorming` → `/speckit-specify` → `/speckit-clarify` | **G1**：用户明确批准 `spec.md` |
 | P2 | 设计规划 | `/speckit-plan`（套用 `superpowers:writing-plans` 粒度标准）、`/speckit-analyze` | **G2**：用户明确批准 `plan.md` |
 | P3 | 任务拆解 | `/speckit-tasks`、`/speckit-checklist` | **G3**：质量清单全部通过 |

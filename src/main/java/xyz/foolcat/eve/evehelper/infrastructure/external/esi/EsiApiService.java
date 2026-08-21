@@ -1,6 +1,8 @@
 package xyz.foolcat.eve.evehelper.infrastructure.external.esi;
 
 import cn.hutool.core.util.StrUtil;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiAssetsConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiIndustryJobConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiInvTypesConverter;
@@ -30,8 +33,13 @@ import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiStructureConver
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiUniverseNameConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiWalletJournalConverter;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiWalletTransactionConverter;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiCacheTtlExtractor;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCache;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCacheProperties;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.ForceRefreshLimiter;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.AssetsApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CharacterApi;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.PageTotalApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CorporationApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UniverseApi;
@@ -41,6 +49,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CharacterPublicInfoResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.Id2NameResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.TypeInfoResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.WalletJournalResponse;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
@@ -52,6 +61,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -104,6 +115,16 @@ public class EsiApiService implements EsiGateway {
 
     private final EsiWalletTransactionConverter esiWalletTransactionConverter;
 
+    private final EsiResponseCache esiResponseCache;
+
+    private final EsiCacheTtlExtractor esiCacheTtlExtractor;
+
+    private final ForceRefreshLimiter forceRefreshLimiter;
+
+    private final EsiResponseCacheProperties esiResponseCacheProperties;
+
+    private final ObjectMapper objectMapper;
+
     /**
      * ESI 授权状态缓存键前缀
      */
@@ -147,6 +168,28 @@ public class EsiApiService implements EsiGateway {
      * 需覆盖临界区最坏耗时:token 刷新 5s + updateRefreshToken 内两次 ESI 调用(各 5s)+ DB 回写。
      */
     private static final long REFRESH_LOCK_TTL_SECONDS = 20;
+
+    /**
+     * 防并发穿透占位锁 TTL(FR-008):覆盖真调 + 回填最坏耗时,参照 refresh 锁 20s
+     * <p>
+     * EsiResponseCache.tryClaim/releaseClaim 用 {@code key:lock} 的 setIfAbsent 原子占位,
+     * 持锁方承担真实 ESI 调用并回填,未抢到锁的并发请求有界轮询复用其回填结果。
+     */
+    private static final Duration CLAIM_TTL = Duration.ofSeconds(REFRESH_LOCK_TTL_SECONDS);
+
+    /**
+     * 防穿透未抢锁方的有界轮询预算(H1 修正):~5s,与 ESI_DATA_TIMEOUT(5s)对齐。
+     * <p>
+     * 真实 ESI 真调常 &gt;1s,原 10×100ms≈1s 预算在持锁方真调期间就耗尽,并发请求各自
+     * fallback 真调 → N~N 恰好绕过防穿透(SC-002 10→1 不成立)。扩至 50×100ms≈5s 覆盖真实
+     * 真调全程(真调上限 5s timeout),总量 &lt;= CLAIM_TTL(20s)。仅争用路径(claimed=false)付费。</p>
+     */
+    private static final int CLAIM_WAIT_ATTEMPTS = 50;
+
+    /**
+     * 防穿透轮询间隔,毫秒(25 行内以 100ms 节奏,合计 5s)。
+     */
+    private static final long CLAIM_WAIT_INTERVAL_MILLIS = 100;
 
     /**
      * 争用时等待持锁方填充缓存的轮询次数与间隔(合计约 1 秒)
@@ -518,119 +561,751 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Integer queryCharactersAssetsMaxPage(Integer characterId, String accessToken) {
-        return assetsApi.queryCharactersAssetsMaxPage(characterId, EsiClientConfig.SERENITY, accessToken);
+        return doQueryCharactersAssetsMaxPage(characterId, accessToken, false);
+    }
+
+    @Override
+    public Integer queryCharactersAssetsMaxPage(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharactersAssetsMaxPage(characterId, accessToken, forceRefresh);
+    }
+
+    private Integer doQueryCharactersAssetsMaxPage(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return assetsApi.queryCharactersAssetsMaxPage(characterId, EsiClientConfig.SERENITY, accessToken);
+        }
+        // maxPage 与列表首页共用同一缓存键(page=1);值类型(getInt vs getList)由键下内容决定
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/assets/", 1);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            Integer cached = esiResponseCache.getInt(key);
+            if (cached != null) {
+                return cached;
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doMaxPageWithClaim(key, forceGranted, () -> assetsApi.queryCharactersAssetsMaxPageResponse(
+                characterId, EsiClientConfig.SERENITY, accessToken));
     }
 
     @Override
     public Flux<Assets> queryCharactersAssets(Integer characterId, int page, String accessToken) {
-        return assetsApi.queryCharactersAssets(characterId, EsiClientConfig.SERENITY, page, accessToken)
-                .map(esiAssetsConverter::toDomain);
+        return doQueryCharactersAssets(characterId, page, accessToken, false);
+    }
+
+    @Override
+    public Flux<Assets> queryCharactersAssets(Integer characterId, int page, String accessToken, boolean forceRefresh) {
+        return doQueryCharactersAssets(characterId, page, accessToken, forceRefresh);
+    }
+
+    private Flux<Assets> doQueryCharactersAssets(Integer characterId, int page, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return assetsApi.queryCharactersAssets(characterId, EsiClientConfig.SERENITY, page, accessToken)
+                    .map(esiAssetsConverter::toDomain);
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/assets/", page);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<Assets> cached = esiResponseCache.getList(key, objectMapper.constructType(Assets.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, Assets.class, forceGranted, () ->
+                assetsApi.queryCharactersAssetsResponse(characterId, EsiClientConfig.SERENITY, page, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                            List<Assets> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream().map(esiAssetsConverter::toDomain).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     // ── 蓝图 ──
 
     @Override
     public Integer queryCorporationBlueprintsMaxPage(Integer corporationId, String accessToken) {
-        return corporationApi.queryCorporationBlueprintsMaxPage(corporationId, EsiClientConfig.SERENITY, accessToken);
+        return doQueryCorporationBlueprintsMaxPage(corporationId, accessToken, false);
+    }
+
+    @Override
+    public Integer queryCorporationBlueprintsMaxPage(Integer corporationId, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationBlueprintsMaxPage(corporationId, accessToken, forceRefresh);
+    }
+
+    private Integer doQueryCorporationBlueprintsMaxPage(Integer corporationId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return corporationApi.queryCorporationBlueprintsMaxPage(corporationId, EsiClientConfig.SERENITY, accessToken);
+        }
+        // maxPage 用独立 :maxPage 键,不与列表首页 page=1 共用(避免互相覆盖震荡,T008 评审 M1)
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/blueprints/", "maxPage");
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            Integer cached = esiResponseCache.getInt(key);
+            if (cached != null) {
+                return cached;
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doMaxPageWithClaim(key, forceGranted, () -> corporationApi.queryCorporationBlueprintsMaxPageResponse(
+                corporationId, EsiClientConfig.SERENITY, accessToken));
     }
 
     // ── 工业 ──
 
     @Override
     public Integer queryCorporationIndustryJobsMaxPage(Integer corporationId, boolean includeCompleted, String accessToken) {
-        return industryApi.queryCorporationIndustryJobsMaxPage(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken);
+        return doQueryCorporationIndustryJobsMaxPage(corporationId, includeCompleted, accessToken, false);
+    }
+
+    @Override
+    public Integer queryCorporationIndustryJobsMaxPage(Integer corporationId, boolean includeCompleted, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationIndustryJobsMaxPage(corporationId, includeCompleted, accessToken, forceRefresh);
+    }
+
+    private Integer doQueryCorporationIndustryJobsMaxPage(Integer corporationId, boolean includeCompleted, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return industryApi.queryCorporationIndustryJobsMaxPage(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken);
+        }
+        // 军团工业列表统一归一化 uri;maxPage 用独立 :maxPage 键
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/industry/jobs/", "maxPage");
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            Integer cached = esiResponseCache.getInt(key);
+            if (cached != null) {
+                return cached;
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doMaxPageWithClaim(key, forceGranted, () -> industryApi.queryCorporationIndustryJobsMaxPageResponse(
+                corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken));
     }
 
     @Override
     public Flux<IndustryJob> queryCorporationIndustryJobs(Integer corporationId, boolean includeCompleted, String accessToken) {
-        return industryApi.queryCorporationIndustryJobs(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
-                .map(resp -> esiIndustryJobConverter.toDomain(resp, corporationId));
+        return doQueryCorporationIndustryJobs(corporationId, includeCompleted, accessToken, false);
+    }
+
+    @Override
+    public Flux<IndustryJob> queryCorporationIndustryJobs(Integer corporationId, boolean includeCompleted, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationIndustryJobs(corporationId, includeCompleted, accessToken, forceRefresh);
+    }
+
+    private Flux<IndustryJob> doQueryCorporationIndustryJobs(Integer corporationId, boolean includeCompleted, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return industryApi.queryCorporationIndustryJobs(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
+                    .map(resp -> esiIndustryJobConverter.toDomain(resp, corporationId));
+        }
+        // includeCompleted 入键,避免 true/false 变体互相命中(T009/H2)
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/industry/jobs/?include_completed=" + includeCompleted, 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<IndustryJob> cached = esiResponseCache.getList(key, objectMapper.constructType(IndustryJob.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, IndustryJob.class, forceGranted, () ->
+                industryApi.queryCorporationIndustryJobsResponse(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                            List<IndustryJob> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream().map(resp -> esiIndustryJobConverter.toDomain(resp, corporationId)).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     @Override
     public Flux<IndustryJob> queryCharacterIndustryJobs(Integer characterId, boolean includeCompleted, String accessToken) {
-        return industryApi.queryCharacterIndustryJobs(characterId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
-                .map(resp -> esiIndustryJobConverter.toDomain(resp, null));
+        return doQueryCharacterIndustryJobs(characterId, includeCompleted, accessToken, false);
+    }
+
+    @Override
+    public Flux<IndustryJob> queryCharacterIndustryJobs(Integer characterId, boolean includeCompleted, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterIndustryJobs(characterId, includeCompleted, accessToken, forceRefresh);
+    }
+
+    private Flux<IndustryJob> doQueryCharacterIndustryJobs(Integer characterId, boolean includeCompleted, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return industryApi.queryCharacterIndustryJobs(characterId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
+                    .map(resp -> esiIndustryJobConverter.toDomain(resp, null));
+        }
+        // includeCompleted 入键,避免 true/false 变体互相命中(T009/H2)
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/industry/jobs/?include_completed=" + includeCompleted, 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<IndustryJob> cached = esiResponseCache.getList(key, objectMapper.constructType(IndustryJob.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, IndustryJob.class, forceGranted, () ->
+                industryApi.queryCharacterIndustryJobsResponse(characterId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                            List<IndustryJob> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream().map(resp -> esiIndustryJobConverter.toDomain(resp, null)).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     // ── 物品类型 ──
 
     @Override
     public Mono<InvTypes> queryUniverseType(Integer typeId, String language) {
-        return universeApi.queryUniverseType(typeId, EsiClientConfig.SERENITY, language)
-                .map(esiInvTypesConverter::toDomain);
+        // 公开数据:userId 段置 pub 全局共享(不查 UserUtil、不做强刷限流);language 进键
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), null,
+                "/universe/types/" + typeId + "/" + language + "/", 0);
+        // 组件无 getObject:用单元素列表语义读(命中=非空单元素)
+        List<InvTypes> cached = esiResponseCache.getList(key, objectMapper.constructType(InvTypes.class));
+        if (cached != null && !cached.isEmpty()) {
+            return Mono.just(cached.get(0));
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, InvTypes.class, false, () ->
+                universeApi.queryUniverseTypeResponse(typeId, EsiClientConfig.SERENITY, language)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            // 单值 body 先转领域类型,再包成单元素列表回填(与 getList 语义对齐;空 body → 空列表)
+                            TypeInfoResponse body = response.getBody();
+                            InvTypes domain = body == null ? null : esiInvTypesConverter.toDomain(body);
+                            List<InvTypes> wrapper = domain == null ? List.of() : List.of(domain);
+                            esiResponseCache.put(key, wrapper, ttl);   // ttl null → put 内部跳过
+                            return wrapper;
+                        }))
+                .next();
     }
 
     // ── 采矿观察 ──
 
     @Override
     public Integer queryCorporationMiningObserverMaxPage(Integer corporationId, Long observerId, String accessToken) {
-        return industryApi.queryCorporationMiningObserverMaxPage(corporationId, observerId, EsiClientConfig.SERENITY, accessToken);
+        return doQueryCorporationMiningObserverMaxPage(corporationId, observerId, accessToken, false);
+    }
+
+    @Override
+    public Integer queryCorporationMiningObserverMaxPage(Integer corporationId, Long observerId, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationMiningObserverMaxPage(corporationId, observerId, accessToken, forceRefresh);
+    }
+
+    private Integer doQueryCorporationMiningObserverMaxPage(Integer corporationId, Long observerId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return industryApi.queryCorporationMiningObserverMaxPage(corporationId, observerId, EsiClientConfig.SERENITY, accessToken);
+        }
+        // observerId 进归一化 uri(变体参数必须进键,T010 规避 T009 MEDIUM-1);maxPage 用独立 :maxPage 键
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/mining/observers/" + observerId + "/", "maxPage");
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            Integer cached = esiResponseCache.getInt(key);
+            if (cached != null) {
+                return cached;
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doMaxPageWithClaim(key, forceGranted, () -> industryApi.queryCorporationMiningObserverMaxPageResponse(
+                corporationId, EsiClientConfig.SERENITY, observerId, accessToken));
     }
 
     @Override
     public Flux<MiningDetail> queryCorporationMiningObserver(Integer corporationId, Long observerId, int page, String accessToken) {
-        return industryApi.queryCorporationMiningObserver(corporationId, EsiClientConfig.SERENITY, observerId, page, accessToken)
-                .map(esiMiningDetailConverter::toDomain);
+        return doQueryCorporationMiningObserver(corporationId, observerId, page, accessToken, false);
+    }
+
+    @Override
+    public Flux<MiningDetail> queryCorporationMiningObserver(Integer corporationId, Long observerId, int page, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationMiningObserver(corporationId, observerId, page, accessToken, forceRefresh);
+    }
+
+    private Flux<MiningDetail> doQueryCorporationMiningObserver(Integer corporationId, Long observerId, int page, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return industryApi.queryCorporationMiningObserver(corporationId, EsiClientConfig.SERENITY, observerId, page, accessToken)
+                    .map(esiMiningDetailConverter::toDomain);
+        }
+        // observerId 进归一化 uri,页面参数用实际 page
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/mining/observers/" + observerId + "/", page);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<MiningDetail> cached = esiResponseCache.getList(key, objectMapper.constructType(MiningDetail.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, MiningDetail.class, forceGranted, () ->
+                industryApi.queryCorporationMiningObserverResponse(corporationId, EsiClientConfig.SERENITY, observerId, page, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                            List<MiningDetail> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream().map(esiMiningDetailConverter::toDomain).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     // ── 建筑 ──
 
     @Override
     public Integer queryCorporationStructuresMaxPage(Integer corporationId, String accessToken) {
-        return corporationApi.queryCorporationStructuresMaxPage(corporationId, EsiClientConfig.SERENITY, accessToken);
+        return doQueryCorporationStructuresMaxPage(corporationId, accessToken, false);
+    }
+
+    @Override
+    public Integer queryCorporationStructuresMaxPage(Integer corporationId, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationStructuresMaxPage(corporationId, accessToken, forceRefresh);
+    }
+
+    private Integer doQueryCorporationStructuresMaxPage(Integer corporationId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return corporationApi.queryCorporationStructuresMaxPage(corporationId, EsiClientConfig.SERENITY, accessToken);
+        }
+        // 端口签名无 language,maxPage 页数与语言无关 → 用语言无关的 :maxPage 独立键
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/structures/", "maxPage");
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            Integer cached = esiResponseCache.getInt(key);
+            if (cached != null) {
+                return cached;
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doMaxPageWithClaim(key, forceGranted, () -> corporationApi.queryCorporationStructuresMaxPageResponse(
+                corporationId, EsiClientConfig.SERENITY, accessToken));
     }
 
     @Override
     public Flux<Structure> queryCorporationStructures(Integer corporationId, String language, int page, String accessToken) {
-        return corporationApi.queryCorporationStructures(corporationId, EsiClientConfig.SERENITY, language, page, accessToken)
-                .map(esiStructureConverter::toDomain);
+        return doQueryCorporationStructures(corporationId, language, page, accessToken, false);
+    }
+
+    @Override
+    public Flux<Structure> queryCorporationStructures(Integer corporationId, String language, int page, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationStructures(corporationId, language, page, accessToken, forceRefresh);
+    }
+
+    private Flux<Structure> doQueryCorporationStructures(Integer corporationId, String language, int page, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return corporationApi.queryCorporationStructures(corporationId, EsiClientConfig.SERENITY, language, page, accessToken)
+                    .map(esiStructureConverter::toDomain);
+        }
+        // language 进归一化 uri(变体参数必须进键:T010 规避 T009 MEDIUM-1,换语种不得互命中)
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/structures/" + language + "/", page);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<Structure> cached = esiResponseCache.getList(key, objectMapper.constructType(Structure.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, Structure.class, forceGranted, () ->
+                corporationApi.queryCorporationStructuresResponse(corporationId, EsiClientConfig.SERENITY, language, page, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                            List<Structure> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream().map(esiStructureConverter::toDomain).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     // ── 名称解析 ──
 
     @Override
     public Flux<UniverseName> queryUniverseNames(List<Integer> ids) {
-        return universeApi.queryUniverseNames(ids, EsiClientConfig.SERENITY)
-                .map(esiUniverseNameConverter::toDomain);
+        // 公开数据:userId 段置 pub 全局共享(不查 UserUtil、不限流);ids 排序确定编码进键
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), null,
+                encodeIds(ids), 0);
+        List<UniverseName> cached = esiResponseCache.getList(key, objectMapper.constructType(UniverseName.class));
+        if (cached != null) {
+            return Flux.fromIterable(cached);
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, UniverseName.class, false, () ->
+                universeApi.queryUniverseNamesResponse(ids, EsiClientConfig.SERENITY)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            // 空 body → 空列表回填(命中时空列表与未命中应以 !=null 区分)
+                            List<UniverseName> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream().map(esiUniverseNameConverter::toDomain).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
+    }
+
+    /**
+     * ids 集合确定性编码进缓存键:排序后按序拼接,保证"同组同键、异组异键"(顺序无关)。
+     */
+    private String encodeIds(List<Integer> ids) {
+        String encoded = ids.stream().sorted().map(String::valueOf).collect(Collectors.joining("-"));
+        return "/universe/names/" + encoded + "/";
+    }
+
+    /**
+     * 强刷新时间窗(来自配置,分钟)。
+     */
+    private Duration forceRefreshWindow() {
+        return Duration.ofMinutes(esiResponseCacheProperties.getForceRefreshWindowMinutes());
+    }
+
+    /**
+     * 强刷新单键固定窗口内允许的真实刷新次数(来自配置)。
+     */
+    private int forceRefreshLimit() {
+        return esiResponseCacheProperties.getForceRefreshLimit();
+    }
+
+    // ── 防并发穿透(FR-008):未命中真调前 setIfAbsent 串行化,复用回填结果 ──
+
+    /**
+     * 列表查询的防穿透包裹:持锁承担真调回填并释放;未抢锁有界轮询读缓存命中复用;超时 fail-open 真调。
+     * <p>
+     * 真调异常照常上抛勿吞;占位锁经 {@code doFinally} 在流终止(回填后)释放。
+     */
+    private <T> Flux<T> doListWithClaim(String key, Class<T> elementType, boolean forceGranted, Supplier<Mono<List<T>>> realCaller) {
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            // 未抢锁且非强刷:有界轮询复用持锁方回填结果(~5s),命中则不重复真调
+            List<T> filled = awaitCachedList(key, objectMapper.constructType(elementType));
+            if (filled != null) {
+                return Flux.fromIterable(filled);
+            }
+        }
+        // 持锁承担真调;或强刷有额度未抢锁(保新鲜,直接真调不读陈旧缓存);或轮询超时 fail-open
+        Flux<T> out = realCaller.get().flatMapIterable(Function.identity());
+        return claimed ? out.doFinally(sig -> esiResponseCache.releaseClaim(key)) : out;
+    }
+
+    /**
+     * maxPage(Integer)查询的防穿透包裹:同列表语义,轮询用 getInt;同步真调用 try/finally 释放。
+     */
+    private Integer doMaxPageWithClaim(String key, boolean forceGranted, Supplier<PageTotalApi.PageCountResult> realCaller) {
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            Integer filled = awaitCachedInt(key);
+            if (filled != null) {
+                return filled;
+            }
+        }
+        if (claimed) {
+            try {
+                return fillMaxPage(key, realCaller.get());
+            } finally {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+        return fillMaxPage(key, realCaller.get());
+    }
+
+    /**
+     * maxPage 真调结果回填,返回 maxPage。
+     */
+    private Integer fillMaxPage(String key, PageTotalApi.PageCountResult count) {
+        Duration ttl = esiCacheTtlExtractor.extract(count.headers());
+        esiResponseCache.put(key, count.maxPage(), ttl);   // ttl null → put 内部跳过
+        return count.maxPage();
+    }
+
+    /**
+     * 有界轮询读列表缓存(未抢锁方等待持锁方回填)。窗口内返回缓存即命中;超时返回 null。
+     */
+    private <T> List<T> awaitCachedList(String key, JavaType elementType) {
+        for (int i = 0; i < CLAIM_WAIT_ATTEMPTS; i++) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(CLAIM_WAIT_INTERVAL_MILLIS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+            List<T> cached = esiResponseCache.getList(key, elementType);
+            if (cached != null) {
+                return cached;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 有界轮询读 maxPage 缓存(未抢锁方等待持锁方回填)。超时返回 null(fail-open 真调)。
+     */
+    private Integer awaitCachedInt(String key) {
+        for (int i = 0; i < CLAIM_WAIT_ATTEMPTS; i++) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(CLAIM_WAIT_INTERVAL_MILLIS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return null;
+            }
+            Integer cached = esiResponseCache.getInt(key);
+            if (cached != null) {
+                return cached;
+            }
+        }
+        return null;
     }
 
     // ── 钱包流水 ──
 
     @Override
     public Integer queryCorporationWalletJournalMaxPage(Integer corporationId, int division, String accessToken) {
-        return walletApi.queryCorporationWalletJournalMaxPage(corporationId, division, EsiClientConfig.SERENITY, accessToken);
+        return doQueryCorporationWalletJournalMaxPage(corporationId, division, accessToken, false);
+    }
+
+    @Override
+    public Integer queryCorporationWalletJournalMaxPage(Integer corporationId, int division, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationWalletJournalMaxPage(corporationId, division, accessToken, forceRefresh);
+    }
+
+    private Integer doQueryCorporationWalletJournalMaxPage(Integer corporationId, int division, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return walletApi.queryCorporationWalletJournalMaxPage(corporationId, division, EsiClientConfig.SERENITY, accessToken);
+        }
+        // division 进归一化 uri(变体参数进键,规避 MEDIUM-1);maxPage 用独立 :maxPage 键
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/wallets/" + division + "/journal/", "maxPage");
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            Integer cached = esiResponseCache.getInt(key);
+            if (cached != null) {
+                return cached;
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doMaxPageWithClaim(key, forceGranted, () -> walletApi.queryCorporationWalletJournalMaxPageResponse(
+                corporationId, division, EsiClientConfig.SERENITY, accessToken));
     }
 
     @Override
     public Flux<WalletJournal> queryCorporationWalletJournal(Integer corporationId, int division, int page, String accessToken) {
-        return walletApi.queryCorporationWalletJournal(corporationId, division, EsiClientConfig.SERENITY, page, accessToken)
-                .map(wallet -> esiWalletJournalConverter.toDomain(wallet, corporationId, resolveWalletCharacter(wallet)));
+        return doQueryCorporationWalletJournal(corporationId, division, page, accessToken, false);
+    }
+
+    @Override
+    public Flux<WalletJournal> queryCorporationWalletJournal(Integer corporationId, int division, int page, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationWalletJournal(corporationId, division, page, accessToken, forceRefresh);
+    }
+
+    private Flux<WalletJournal> doQueryCorporationWalletJournal(Integer corporationId, int division, int page, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return walletApi.queryCorporationWalletJournal(corporationId, division, EsiClientConfig.SERENITY, page, accessToken)
+                    .map(wallet -> esiWalletJournalConverter.toDomain(wallet, corporationId, resolveWalletCharacter(wallet)));
+        }
+        // division 进归一化 uri
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/corporations/" + corporationId + "/wallets/" + division + "/journal/", page);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<WalletJournal> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletJournal.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, WalletJournal.class, forceGranted, () ->
+                walletApi.queryCorporationWalletJournalResponse(corporationId, division, EsiClientConfig.SERENITY, page, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            // 空 body → 空列表回填;三参转换在回填时计算(含 resolveWalletCharacter 赏金角色名解析)
+                            List<WalletJournal> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream()
+                                    .map(w -> esiWalletJournalConverter.toDomain(w, corporationId, resolveWalletCharacter(w))).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     @Override
     public Integer queryCharacterWalletJournalMaxPage(Integer characterId, String accessToken) {
-        return walletApi.queryCharacterWalletJournalMaxPage(characterId, EsiClientConfig.SERENITY, accessToken);
+        return doQueryCharacterWalletJournalMaxPage(characterId, accessToken, false);
+    }
+
+    @Override
+    public Integer queryCharacterWalletJournalMaxPage(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterWalletJournalMaxPage(characterId, accessToken, forceRefresh);
+    }
+
+    private Integer doQueryCharacterWalletJournalMaxPage(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return walletApi.queryCharacterWalletJournalMaxPage(characterId, EsiClientConfig.SERENITY, accessToken);
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/wallet/journal/", "maxPage");
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            Integer cached = esiResponseCache.getInt(key);
+            if (cached != null) {
+                return cached;
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doMaxPageWithClaim(key, forceGranted, () -> walletApi.queryCharacterWalletJournalMaxPageResponse(
+                characterId, EsiClientConfig.SERENITY, accessToken));
     }
 
     @Override
     public Flux<WalletJournal> queryCharacterWalletJournal(Integer characterId, int page, String accessToken) {
-        return walletApi.queryCharacterWalletJournal(characterId, EsiClientConfig.SERENITY, page, accessToken)
-                .map(wallet -> esiWalletJournalConverter.toDomain(wallet, characterId, resolveWalletCharacter(wallet)));
+        return doQueryCharacterWalletJournal(characterId, page, accessToken, false);
+    }
+
+    @Override
+    public Flux<WalletJournal> queryCharacterWalletJournal(Integer characterId, int page, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterWalletJournal(characterId, page, accessToken, forceRefresh);
+    }
+
+    private Flux<WalletJournal> doQueryCharacterWalletJournal(Integer characterId, int page, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return walletApi.queryCharacterWalletJournal(characterId, EsiClientConfig.SERENITY, page, accessToken)
+                    .map(wallet -> esiWalletJournalConverter.toDomain(wallet, characterId, resolveWalletCharacter(wallet)));
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/wallet/journal/", page);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<WalletJournal> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletJournal.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, WalletJournal.class, forceGranted, () ->
+                walletApi.queryCharacterWalletJournalResponse(characterId, EsiClientConfig.SERENITY, page, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            List<WalletJournal> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream()
+                                    .map(w -> esiWalletJournalConverter.toDomain(w, characterId, resolveWalletCharacter(w))).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     // ── 钱包交易 ──
 
     @Override
     public Flux<WalletTransaction> queryCharacterWalletTransactions(Integer characterId, Long fromId, String accessToken) {
-        return walletApi.queryCharacterWalletTransactions(characterId, EsiClientConfig.SERENITY, fromId, accessToken)
-                .map(esiWalletTransactionConverter::toDomain);
+        return doQueryCharacterWalletTransactions(characterId, fromId, accessToken, false);
+    }
+
+    @Override
+    public Flux<WalletTransaction> queryCharacterWalletTransactions(Integer characterId, Long fromId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterWalletTransactions(characterId, fromId, accessToken, forceRefresh);
+    }
+
+    private Flux<WalletTransaction> doQueryCharacterWalletTransactions(Integer characterId, Long fromId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return walletApi.queryCharacterWalletTransactions(characterId, EsiClientConfig.SERENITY, fromId, accessToken)
+                    .map(esiWalletTransactionConverter::toDomain);
+        }
+        // fromId 是游标须进键:null 与非 null 由归一化 uri 是否含 from_id 段区分(M06 规避 MEDIUM-1)
+        String base = "/characters/" + characterId + "/wallet/transactions/";
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                fromId == null ? base : base + "?from_id=" + fromId, 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<WalletTransaction> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletTransaction.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, WalletTransaction.class, forceGranted, () ->
+                walletApi.queryCharacterWalletTransactionsResponse(characterId, EsiClientConfig.SERENITY, fromId, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            List<WalletTransaction> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream().map(esiWalletTransactionConverter::toDomain).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     @Override
     public Flux<WalletTransaction> queryCorporationWalletTransactions(Integer corporationId, Integer division, Long fromId, String accessToken) {
-        return walletApi.queryCorporationWalletTransactions(corporationId, division, EsiClientConfig.SERENITY, fromId, accessToken)
-                .map(esiWalletTransactionConverter::toDomain);
+        return doQueryCorporationWalletTransactions(corporationId, division, fromId, accessToken, false);
+    }
+
+    @Override
+    public Flux<WalletTransaction> queryCorporationWalletTransactions(Integer corporationId, Integer division, Long fromId, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationWalletTransactions(corporationId, division, fromId, accessToken, forceRefresh);
+    }
+
+    private Flux<WalletTransaction> doQueryCorporationWalletTransactions(Integer corporationId, Integer division, Long fromId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            return walletApi.queryCorporationWalletTransactions(corporationId, division, EsiClientConfig.SERENITY, fromId, accessToken)
+                    .map(esiWalletTransactionConverter::toDomain);
+        }
+        // division 进归一化 uri;fromId null/非 null 由 from_id 段区分
+        String base = "/corporations/" + corporationId + "/wallets/" + division + "/transactions/";
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                fromId == null ? base : base + "?from_id=" + fromId, 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<WalletTransaction> cached = esiResponseCache.getList(key, objectMapper.constructType(WalletTransaction.class));
+            if (cached != null) {
+                return Flux.fromIterable(cached);
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        return doListWithClaim(key, WalletTransaction.class, forceGranted, () ->
+                walletApi.queryCorporationWalletTransactionsResponse(corporationId, division, EsiClientConfig.SERENITY, fromId, accessToken)
+                        .mapNotNull(response -> {
+                            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+                            List<WalletTransaction> domain = response.getBody() == null ? List.of()
+                                    : response.getBody().stream().map(esiWalletTransactionConverter::toDomain).toList();
+                            esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
+                            return domain;
+                        }));
     }
 
     /**
