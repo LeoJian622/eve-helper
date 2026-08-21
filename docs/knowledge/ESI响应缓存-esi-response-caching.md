@@ -1,4 +1,5 @@
 # ESI 响应缓存（按失效时间跳过真实调用）
+# ESI Response Caching (Skip Real Calls by Expiry Time)
 
 > 面向开发者：理清 `EsiApiService` 12 类业务查询如何按 ESI 响应头声明的缓存失效时间命中 Redis、跳过真实 ESI 调用，以及强刷限流 / 防并发穿透 / 用户隔离 / 公开数据共享的完整机制。
 > 关联代码集中在 `infrastructure/external/esi/cache/`（4 组件）、`infrastructure/external/esi/EsiApiService.java`（统一包裹点）、`infrastructure/external/esi/api/`（含响应头入口）。
@@ -40,6 +41,61 @@
 - 语义：`forceRefresh=true` + 有额度 → **忽略缓存读**、直接真调回填；`forceRefresh=true` + 超限 → 落回缓存判读（命中→缓存，未命中→真调回填，该真调不额外占 force 计数）；默认 `false` → 命中不真调。
 - 限流：每键每 `forceRefreshWindowMinutes`(60) 次最多 `forceRefreshLimit`(5) 次强制刷新。
 
+### 4.1 API 接口层强制刷新参数
+
+所有 ESI 同步接口均支持通过 HTTP 请求参数 `forceRefresh` 控制是否强制刷新（忽略缓存）：
+
+- **参数名**：`forceRefresh`
+- **类型**：`boolean`
+- **默认值**：`false`（使用缓存）
+- **是否必填**：否
+
+**调用示例**：
+
+```bash
+# 资产同步（默认使用缓存）
+POST /assets/12345/sync
+
+# 资产同步（强制刷新，忽略缓存）
+POST /assets/12345/sync?forceRefresh=true
+
+# 工业同步（强制刷新）
+POST /job/char/12345/complete?forceRefresh=true
+
+# 月矿同步（强制刷新）
+POST /mining/12345/67890?forceRefresh=true
+
+# 钱包流水同步（强制刷新）
+POST /wallet/journal/12345/sync?forceRefresh=true
+
+# 钱包交易军团同步（强制刷新）
+POST /wallet/transaction/corp/12345/sync?forceRefresh=true
+```
+
+**支持的接口**：
+- `POST /assets/{cid}/sync` - 资产同步
+- `POST /job/{type}/{id}/{complete}` - 工业制造同步
+- `POST /mining/{characterId}/{observerId}` - 月矿采掘同步
+- `POST /wallet/journal/{cid}/sync` - 人物钱包流水同步
+- `POST /wallet/journal/corp/{characterId}/sync` - 军团钱包流水同步
+- `POST /wallet/transaction/{cid}/sync` - 人物钱包交易同步
+- `POST /wallet/transaction/corp/{characterId}/sync` - 军团钱包交易同步
+
+**定时任务**：`IndustryTask.updateIndustryJobs()` 调用工业同步时 `forceRefresh=true`，确保定时任务每次执行都获取最新 ESI 数据。
+
+**参数透传链路**：
+```
+Controller (@RequestParam forceRefresh)
+  ↓
+ApplicationService (forceRefresh 参数)
+  ↓
+DomainService (forceRefresh 参数)
+  ↓
+EsiGateway (forceRefresh 重载方法)
+  ↓
+EsiApiService (缓存判读逻辑)
+```
+
 ## 5. 防并发穿透（FR-008，T013b）
 
 未命中真调路径存在缓存击穿风险（并发涌进同一过期键）。解决：`EsiResponseCache.tryClaim` 用 `setIfAbsent(key+":lock", …)` 原子占位：
@@ -76,7 +132,10 @@
 ## 8. 已知权衡（收尾遗留）
 
 - `EsiApiServiceTest` 全量约 163s：大头是 access-token 超时类用例真实等待（非本特性引入）；部分 cache-miss 用例因 `tryClaim` 未 stub→false 走 5s 轮询，亦占时间。T020 全量评估，不影响正确性。
-- 待收尾 MEDIUM/LOW：T008 资产 maxPage 仍与列表 page=1 同键（待统一 `:maxPage` 口径）；T009 工业 `include_completed` 未入键（人物侧跨 true/false 互命中风险）；T012 type 空列表命中判据 `!isEmpty()` 使空缓存永不生效（可用 `isPresent` 区分空结果与缺失）；force 超限未命中回填子例未测。
+- ~~T008 资产 maxPage 仍与列表 page=1 同键~~ → **已修复**：资产 maxPage 使用独立 `:maxPage` 键（与蓝图/建筑一致），避免与列表 page=1 互相驱逐（commit `a40f505`）。
+- ~~T009 工业 `include_completed` 未入键~~ → **已修复**：工业 `include_completed` 已入缓存键（`?include_completed=true/false`），避免人物侧跨 true/false 互命中风险（commit `a40f505`）。
+- T012 type 空列表命中判据 `!isEmpty()` 使空缓存永不生效（可用 `isPresent` 区分空结果与缺失）。
+- force 超限未命中回填子例未测。
 
 ## 9. 相关文档
 
