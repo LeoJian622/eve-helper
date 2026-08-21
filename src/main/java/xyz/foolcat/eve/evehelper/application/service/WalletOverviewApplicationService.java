@@ -4,11 +4,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.application.security.AccessGuard;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletOverviewVO;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
+import xyz.foolcat.eve.evehelper.domain.repository.system.EveAccountRepository;
 import xyz.foolcat.eve.evehelper.domain.repository.system.WalletJournalRepository;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
+import java.text.ParseException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -41,6 +48,9 @@ public class WalletOverviewApplicationService {
 
     private final WalletJournalRepository walletJournalRepository;
     private final AccessGuard accessGuard;
+    private final EsiGateway esiGateway;
+    private final AuthorizeUtil authorizeUtil;
+    private final EveAccountRepository eveAccountRepository;
 
     /**
      * 人物钱包总览。
@@ -65,6 +75,8 @@ public class WalletOverviewApplicationService {
         accessGuard.requireOwnership(String.valueOf(cid), "钱包总览");
 
         Long ownerId = cid.longValue();
+        // 016:currentBalance 改由 ESI 直查(/characters/{id}/wallet/),不再从 journal 聚合取
+        Double cb = fetchCharacterBalance(cid);
         // 人物总览:division 传 null 不过滤(硬性裁定),userId 也传 null(FR-004 人物维共享,不加 user_id 谓词)
         var aggregate = walletJournalRepository.selectOverviewAggregate(ownerId, null, null, rStart, rEnd);
         List<WalletOverviewVO.CategorySummary> categories =
@@ -74,7 +86,6 @@ public class WalletOverviewApplicationService {
                 walletJournalRepository.selectOverviewTrend(ownerId, null, null, rStart, rEnd, granularity);
 
         // 空聚合防御:无流水时仓储返回零值聚合;极端下聚合为 null 时回退为零值,list 为空
-        Double cb = aggregate == null ? 0.0 : aggregate.currentBalance();
         Double ti = aggregate == null ? 0.0 : aggregate.totalIncome();
         Double te = aggregate == null ? 0.0 : aggregate.totalExpense();
         Double nf = aggregate == null ? 0.0 : aggregate.netFlow();
@@ -113,6 +124,9 @@ public class WalletOverviewApplicationService {
         // 透传 selectOverview* 仓储按 user_id 过滤,军团总览只有同步者数据可见
         Long scope = accessGuard.corporationScope("军团钱包总览");
 
+        // 016:军团余额改由 ESI 直查(/corporations/{id}/wallets/),取各分账实时余额
+        List<WalletDivisionBalance> esiBalances = fetchCorporationBalances(corpId, scope);
+
         Long ownerId = corpId.longValue();
         // 单分账带 division 过滤,全量无过滤;收支/类目/趋势沿用人物三条查询
         var aggregate = walletJournalRepository.selectOverviewAggregate(ownerId, division, scope, rStart, rEnd);
@@ -122,23 +136,33 @@ public class WalletOverviewApplicationService {
         List<WalletOverviewVO.TrendPoint> trend =
                 walletJournalRepository.selectOverviewTrend(ownerId, division, scope, rStart, rEnd, granularity);
 
-        Double cb = aggregate == null ? 0.0 : aggregate.currentBalance();
         Double ti = aggregate == null ? 0.0 : aggregate.totalIncome();
         Double te = aggregate == null ? 0.0 : aggregate.totalExpense();
         Double nf = aggregate == null ? 0.0 : aggregate.netFlow();
         Long jc = aggregate == null ? 0L : aggregate.journalCount();
         OffsetDateTime asOf = aggregate == null ? null : aggregate.asOfTime();
 
+        // ESI 余额按 division 建索引,供全量/单分账共用
+        Map<Integer, Double> balanceByDivision = new HashMap<>();
+        if (esiBalances != null) {
+            for (WalletDivisionBalance b : esiBalances) {
+                balanceByDivision.put(b.division(), b.balance() == null ? 0.0 : b.balance());
+            }
+        }
+
+        Double cb;
         List<WalletOverviewVO.DivisionSummary> divs = null;
         if (division == null) {
-            // 军团全量:分账分布合并为 1..7 补零;currentBalance = 各分账最新余额之和(覆盖聚合值)
-            divs = mergeCorpDivisions(
-                    walletJournalRepository.selectOverviewDivisionBalances(ownerId, scope),
+            // 军团全量:分账分布合并为 1..7 补零;currentBalance = 各分账 ESI 余额之和
+            divs = mergeCorpDivisions(balanceByDivision,
                     walletJournalRepository.selectOverviewDivisionFlow(ownerId, scope, rStart, rEnd));
             cb = 0.0;
             for (WalletOverviewVO.DivisionSummary d : divs) {
                 cb += d.balance();
             }
+        } else {
+            // 单分账:直接从 ESI 余额取该 division 值,无数据回退 0
+            cb = balanceByDivision.getOrDefault(division, 0.0);
         }
 
         return new WalletOverviewVO(
@@ -153,16 +177,10 @@ public class WalletOverviewApplicationService {
     }
 
     /**
-     * 军团全量分账分布:余额按 division 与收支按 division 归并,按 1..7 补零成有序列表。
+     * 军团全量分账分布:余额按 division(Map 入参,016 由 ESI 提供)与收支按 division 归并,按 1..7 补零成有序列表。
      */
     private List<WalletOverviewVO.DivisionSummary> mergeCorpDivisions(
-            List<WalletOverviewVO.DivisionSummary> balances, List<WalletOverviewVO.DivisionSummary> flow) {
-        Map<Integer, Double> balanceByDiv = new HashMap<>();
-        if (balances != null) {
-            for (WalletOverviewVO.DivisionSummary d : balances) {
-                balanceByDiv.put(d.division(), d.balance() == null ? 0.0 : d.balance());
-            }
-        }
+            Map<Integer, Double> balanceByDiv, List<WalletOverviewVO.DivisionSummary> flow) {
         Map<Integer, WalletOverviewVO.DivisionSummary> flowByDiv = new HashMap<>();
         if (flow != null) {
             for (WalletOverviewVO.DivisionSummary d : flow) {
@@ -171,13 +189,76 @@ public class WalletOverviewApplicationService {
         }
         List<WalletOverviewVO.DivisionSummary> result = new ArrayList<>(7);
         for (int div = 1; div <= 7; div++) {
-            double bal = balanceByDiv.getOrDefault(div, 0.0);
+            double bal = balanceByDiv == null ? 0.0 : balanceByDiv.getOrDefault(div, 0.0);
             WalletOverviewVO.DivisionSummary f = flowByDiv.get(div);
             double inc = f == null ? 0.0 : (f.income() == null ? 0.0 : f.income());
             double exp = f == null ? 0.0 : (f.expense() == null ? 0.0 : f.expense());
             result.add(new WalletOverviewVO.DivisionSummary(div, bal, inc, exp));
         }
         return result;
+    }
+
+    /**
+     * 016:人物钱包余额直查 ESI。
+     *
+     * <p>通过 authorize 拿 EveAccount → getAccessToken → queryCharacterWalletBalance。
+     * 任何环节失败(balance 取不到/授权失败/网络异常)回退 0,不影响总览其余字段。</p>
+     */
+    private Double fetchCharacterBalance(Integer cid) {
+        try {
+            EveAccount account = authorizeUtil.authorize(cid);
+            String token = esiGateway.getAccessToken(cid, account.getUserId());
+            Double balance = esiGateway.queryCharacterWalletBalance(cid, token);
+            return balance == null ? 0.0 : balance;
+        } catch (ParseException e) {
+            log.warn("人物钱包余额 ESI 查询失败(JWT): cid={}", cid, e);
+            return 0.0;
+        } catch (RuntimeException e) {
+            log.warn("人物钱包余额 ESI 查询失败: cid={}", cid, e);
+            return 0.0;
+        }
+    }
+
+    /**
+     * 016:军团钱包各分账余额直查 ESI。
+     *
+     * <p>从 scope(userId)反查该用户在该军团的角色 → getAccessToken → queryCorporationWalletBalances。
+     * scope 为 null(管理员/ROOT)时以 SYSTEM_USER_ID 的角色列表为候选(全局查找)。</p>
+     */
+    private List<WalletDivisionBalance> fetchCorporationBalances(Integer corpId, Long scope) {
+        int lookupUserId = scope == null ? GlobalConstants.SYSTEM_USER_ID : scope.intValue();
+        Integer charId = resolveCharIdInCorp(corpId, lookupUserId);
+        if (charId == null) {
+            log.warn("军团钱包余额 ESI 查询:找不到军团 {} 的关联角色(userId={}),回退空余额", corpId, lookupUserId);
+            return Collections.emptyList();
+        }
+        try {
+            EveAccount account = authorizeUtil.authorize(charId);
+            String token = esiGateway.getAccessToken(charId, account.getUserId());
+            List<WalletDivisionBalance> balances = esiGateway.queryCorporationWalletBalances(corpId, token);
+            return balances == null ? Collections.emptyList() : balances;
+        } catch (ParseException e) {
+            log.warn("军团钱包余额 ESI 查询失败(JWT): corpId={}, charId={}", corpId, charId, e);
+            return Collections.emptyList();
+        } catch (RuntimeException e) {
+            log.warn("军团钱包余额 ESI 查询失败: corpId={}, charId={}", corpId, charId, e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * 从指定用户的角色列表中查找属于目标军团的角色ID。
+     */
+    private Integer resolveCharIdInCorp(Integer corpId, int userId) {
+        List<EveAccount> accounts = eveAccountRepository.getAccountList(userId);
+        if (accounts == null) {
+            return null;
+        }
+        return accounts.stream()
+                .filter(a -> corpId.equals(a.getCorpId()))
+                .map(EveAccount::getCharacterId)
+                .findFirst()
+                .orElse(null);
     }
 
     private boolean isValidRange(String range) {

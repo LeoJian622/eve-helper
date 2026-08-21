@@ -21,6 +21,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
+import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
@@ -575,9 +576,9 @@ public class EsiApiService implements EsiGateway {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
             return assetsApi.queryCharactersAssetsMaxPage(characterId, EsiClientConfig.SERENITY, accessToken);
         }
-        // maxPage 与列表首页共用同一缓存键(page=1);值类型(getInt vs getList)由键下内容决定
+        // maxPage 用独立 :maxPage 键,不与列表首页 page=1 共用(避免互相覆盖震荡,T008 评审 M1 修复回归)
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
-                "/characters/" + characterId + "/assets/", 1);
+                "/characters/" + characterId + "/assets/", "maxPage");
         boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
         if (!forceGranted) {
             Integer cached = esiResponseCache.getInt(key);
@@ -1306,6 +1307,20 @@ public class EsiApiService implements EsiGateway {
                             esiResponseCache.put(key, domain, ttl);   // ttl null → put 内部跳过
                             return domain;
                         }));
+    }
+
+    // ── 钱包余额(直查,overview 实时通路) ──
+
+    @Override
+    public Double queryCharacterWalletBalance(Integer characterId, String accessToken) {
+        return walletApi.queryCharacterWallet(characterId, EsiClientConfig.SERENITY, accessToken).block();
+    }
+
+    @Override
+    public List<WalletDivisionBalance> queryCorporationWalletBalances(Integer corporationId, String accessToken) {
+        return walletApi.queryCorporationWallet(corporationId, EsiClientConfig.SERENITY, accessToken)
+                .map(r -> new WalletDivisionBalance(r.getDivision(), r.getBalance()))
+                .collectList().block();
     }
 
     /**

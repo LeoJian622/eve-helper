@@ -12,6 +12,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
+import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 
 import java.text.ParseException;
@@ -274,4 +275,24 @@ public interface EsiGateway {
      * 查询军团钱包交易(可选强制刷新)。
      */
     Flux<WalletTransaction> queryCorporationWalletTransactions(Integer corporationId, Integer division, Long fromId, String accessToken, boolean forceRefresh);
+
+    // ── 钱包余额(直查) ──
+
+    /**
+     * 查询人物钱包当前余额(直调 ESI /characters/{id}/wallet/)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 当前余额(ISK)
+     */
+    Double queryCharacterWalletBalance(Integer characterId, String accessToken);
+
+    /**
+     * 查询军团钱包各分账余额(直调 ESI /corporations/{id}/wallets/)。
+     *
+     * @param corporationId 军团 ID
+     * @param accessToken   授权 Token
+     * @return 各分账余额列表(1..7,但 ESI 仅返回有数据的分账)
+     */
+    List<WalletDivisionBalance> queryCorporationWalletBalances(Integer corporationId, String accessToken);
 }
