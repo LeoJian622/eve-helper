@@ -92,7 +92,7 @@ class MiningDetailWriteUserIdTest {
         when(universeNameService.getUniverseName(any())).thenReturn(new HashMap<>());
 
         // ── Act ──
-        miningDetailService.saveObserverMining(CHARACTER_ID, OBSERVER_ID);
+        miningDetailService.saveObserverMining(CHARACTER_ID, OBSERVER_ID, false);
 
         // ── Assert:userId 回填发生在传入 saveOrUpdateBatch 之前 ──
         ArgumentCaptor<List<MiningDetail>> captor = ArgumentCaptor.forClass(List.class);

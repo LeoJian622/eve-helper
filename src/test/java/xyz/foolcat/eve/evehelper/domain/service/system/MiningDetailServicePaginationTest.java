@@ -74,7 +74,7 @@ class MiningDetailServicePaginationTest {
         when(universeNameService.getUniverseName(any())).thenReturn(new java.util.HashMap<>());
         when(miningDetailRepository.saveOrUpdateBatch(any())).thenReturn(1);
 
-        miningDetailService.saveObserverMining(100, 200L);
+        miningDetailService.saveObserverMining(100, 200L, false);
 
         ArgumentCaptor<Integer> pageCaptor = ArgumentCaptor.forClass(Integer.class);
         verify(esiApiService, times(3)).queryCorporationMiningObserver(eq(42), eq(200L), pageCaptor.capture(), anyString());

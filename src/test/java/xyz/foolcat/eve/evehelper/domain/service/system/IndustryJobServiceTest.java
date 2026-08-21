@@ -22,7 +22,7 @@ class IndustryJobServiceTest {
 
     @Test
     void batchInsertOrUpdateFromEsi() throws ParseException {
-        industryJobService.batchInsertOrUpdateFromEsi(2112818290,true,true);
-        industryJobService.batchInsertOrUpdateFromEsi(2112818290,true,false);
+        industryJobService.batchInsertOrUpdateFromEsi(2112818290,true,true,false);
+        industryJobService.batchInsertOrUpdateFromEsi(2112818290,true,false,false);
     }
 }

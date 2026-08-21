@@ -105,7 +105,7 @@ class WalletTransactionServiceTest {
             when(esiApiService.queryCharacterWalletTransactions(eq(characterId), eq(10L), eq(token)))
                     .thenReturn(Flux.empty());
 
-            walletTransactionService.syncCharacterTransactions(characterId);
+            walletTransactionService.syncCharacterTransactions(characterId, false);
 
             // 保存一次,含全部 4 条,顺序保留(100,50,25,10)
             ArgumentCaptor<List<WalletTransaction>> captor = ArgumentCaptor.forClass(List.class);
@@ -132,7 +132,7 @@ class WalletTransactionServiceTest {
             when(esiApiService.queryCharacterWalletTransactions(eq(characterId), isNull(), eq(token)))
                     .thenReturn(Flux.empty());
 
-            walletTransactionService.syncCharacterTransactions(characterId);
+            walletTransactionService.syncCharacterTransactions(characterId, false);
 
             verify(walletTransactionRepository, times(0)).saveOrUpdateBatch(any());
         }
@@ -148,7 +148,7 @@ class WalletTransactionServiceTest {
             when(esiApiService.queryCharacterWalletTransactions(eq(characterId), any(), eq(token)))
                     .thenReturn(Flux.just(tx(1L)));
 
-            walletTransactionService.syncCharacterTransactions(characterId);
+            walletTransactionService.syncCharacterTransactions(characterId, false);
 
             ArgumentCaptor<List<WalletTransaction>> captor = ArgumentCaptor.forClass(List.class);
             verify(walletTransactionRepository).saveOrUpdateBatch(captor.capture());
@@ -176,7 +176,7 @@ class WalletTransactionServiceTest {
                         .thenAnswer(inv -> inv.getArgument(2) == null ? Flux.just(tx(div * 100L)) : Flux.empty());
             }
 
-            walletTransactionService.syncCorporationTransactions(corpId);
+            walletTransactionService.syncCorporationTransactions(corpId, false);
 
             ArgumentCaptor<List<WalletTransaction>> captor = ArgumentCaptor.forClass(List.class);
             verify(walletTransactionRepository, times(7)).saveOrUpdateBatch(captor.capture());
@@ -209,7 +209,7 @@ class WalletTransactionServiceTest {
                 }
             }
 
-            assertThatThrownBy(() -> walletTransactionService.syncCorporationTransactions(corpId))
+            assertThatThrownBy(() -> walletTransactionService.syncCorporationTransactions(corpId, false))
                     .isInstanceOf(EveHelperException.class)
                     .hasMessageContaining("2");
 

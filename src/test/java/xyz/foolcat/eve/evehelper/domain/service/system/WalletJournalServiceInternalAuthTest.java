@@ -75,7 +75,7 @@ class WalletJournalServiceInternalAuthTest {
         when(authorizeUtil.authorizeInternal(GlobalConstants.SYSTEM_USER_ID, characterId))
                 .thenThrow(new EveHelperException(ResultCode.USER_ACCOUNT_NOT_EXIST));
 
-        assertThatThrownBy(() -> walletJournalService.syncCorporationJournal(characterId))
+        assertThatThrownBy(() -> walletJournalService.syncCorporationJournal(characterId, false))
                 .isInstanceOf(EveHelperException.class)
                 .satisfies(e -> assertThat(((EveHelperException) e).resultCode)
                         .isEqualTo(ResultCode.USER_ACCOUNT_NOT_EXIST));
@@ -99,7 +99,7 @@ class WalletJournalServiceInternalAuthTest {
         when(esiApiService.queryCorporationWalletJournal(validCorpId, 1, 1, token)).thenReturn(Flux.empty());
         // division 2..7:maxPage 未 mock → null → 0 页空,均成功,无失败隔离。
 
-        walletJournalService.syncCorporationJournal(characterId);
+        walletJournalService.syncCorporationJournal(characterId, false);
 
         // 内部路径也以角色行派生 corpId 驱动 ESI(owner 定位不旁路);7 个 division 均用解析 corpId
         verify(esiApiService, org.mockito.Mockito.times(7))

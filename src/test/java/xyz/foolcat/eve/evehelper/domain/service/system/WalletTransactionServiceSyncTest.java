@@ -102,7 +102,7 @@ class WalletTransactionServiceSyncTest {
                     .thenReturn(Flux.empty());
         }
 
-        Map<Integer, Boolean> results = walletTransactionService.syncCorporationTransactions(characterId);
+        Map<Integer, Boolean> results = walletTransactionService.syncCorporationTransactions(characterId, false);
 
         assertThat(results).hasSize(7).allSatisfy((d, ok) -> assertThat(ok).isTrue());
 
@@ -131,7 +131,7 @@ class WalletTransactionServiceSyncTest {
         Integer userId = 100;
         when(authorizeUtil.authorize(characterId)).thenReturn(account(userId, null));
 
-        assertThatThrownBy(() -> walletTransactionService.syncCorporationTransactions(characterId))
+        assertThatThrownBy(() -> walletTransactionService.syncCorporationTransactions(characterId, false))
                 .isInstanceOf(EsiException.class)
                 .satisfies(e -> assertThat(((EsiException) e).getResultCode())
                         .isEqualTo(ResultCode.ESI_AUTH_PERMISSION_LOW));
@@ -156,7 +156,7 @@ class WalletTransactionServiceSyncTest {
                     .thenReturn(Flux.empty());
         }
 
-        walletTransactionService.syncCorporationTransactions(characterId);
+        walletTransactionService.syncCorporationTransactions(characterId, false);
 
         Long syncUserId = userId.longValue();
         ArgumentCaptor<List<WalletTransaction>> captor = ArgumentCaptor.forClass(List.class);

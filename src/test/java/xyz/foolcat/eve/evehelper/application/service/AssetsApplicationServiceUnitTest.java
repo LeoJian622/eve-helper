@@ -28,6 +28,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
@@ -97,19 +98,19 @@ class AssetsApplicationServiceUnitTest {
     @Test
     @DisplayName("同步本人角色 -> 调用 saveAndUpdateAsserts")
     void syncAssets_success() throws Exception {
-        assetsApplicationService.syncAssets(Integer.valueOf(OWNED_CHARACTER_ID));
+        assetsApplicationService.syncAssets(Integer.valueOf(OWNED_CHARACTER_ID), false);
 
-        verify(assetsService).saveAndUpdateAsserts(Integer.valueOf(OWNED_CHARACTER_ID));
+        verify(assetsService).saveAndUpdateAsserts(Integer.valueOf(OWNED_CHARACTER_ID), false);
     }
 
     @Test
     @DisplayName("同步抛 ParseException -> 转 EveHelperException")
     void syncAssets_parseError_throws() throws Exception {
         doThrow(new ParseException("bad", 0)).when(assetsService)
-                .saveAndUpdateAsserts(Integer.valueOf(OWNED_CHARACTER_ID));
+                .saveAndUpdateAsserts(Integer.valueOf(OWNED_CHARACTER_ID), false);
 
         assertThrows(EveHelperException.class,
-                () -> assetsApplicationService.syncAssets(Integer.valueOf(OWNED_CHARACTER_ID)));
+                () -> assetsApplicationService.syncAssets(Integer.valueOf(OWNED_CHARACTER_ID), false));
     }
 
     @Test
@@ -174,10 +175,10 @@ class AssetsApplicationServiceUnitTest {
     @DisplayName("同步他人角色资产被拒绝，不触发 ESI 调用（越权写防御）")
     void syncAssets_rejectsOtherOwner() throws Exception {
         EveHelperException ex = assertThrows(EveHelperException.class,
-                () -> assetsApplicationService.syncAssets(9999));
+                () -> assetsApplicationService.syncAssets(9999, false));
 
         assertEquals(ResultCode.ACCESS_UNAUTHORIZED.getCode(), ex.getResultCode().getCode());
-        verify(assetsService, never()).saveAndUpdateAsserts(anyInt());
+        verify(assetsService, never()).saveAndUpdateAsserts(anyInt(), anyBoolean());
     }
 
     @Test
@@ -186,8 +187,8 @@ class AssetsApplicationServiceUnitTest {
         SecurityContextHolder.clearContext();
 
         assertThrows(EveHelperException.class,
-                () -> assetsApplicationService.syncAssets(Integer.valueOf(OWNED_CHARACTER_ID)));
+                () -> assetsApplicationService.syncAssets(Integer.valueOf(OWNED_CHARACTER_ID), false));
 
-        verify(assetsService, never()).saveAndUpdateAsserts(anyInt());
+        verify(assetsService, never()).saveAndUpdateAsserts(anyInt(), anyBoolean());
     }
 }

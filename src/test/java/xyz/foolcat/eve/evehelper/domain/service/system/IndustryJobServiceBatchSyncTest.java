@@ -91,7 +91,7 @@ class IndustryJobServiceBatchSyncTest {
                 .thenReturn(Flux.just(job(1001L), job(1002L)));
         when(invTypesService.getNameByTypeIds(anyList())).thenReturn(Map.of(1, "蓝图", 2, "产物"));
 
-        industryJobService.batchInsertOrUpdateFromEsi(cid, true, true);
+        industryJobService.batchInsertOrUpdateFromEsi(cid, true, true, false);
 
         Long syncUserId = userId.longValue();
         ArgumentCaptor<List<IndustryJob>> captor = ArgumentCaptor.forClass(List.class);

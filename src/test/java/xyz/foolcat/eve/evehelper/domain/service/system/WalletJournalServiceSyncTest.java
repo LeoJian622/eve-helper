@@ -102,7 +102,7 @@ class WalletJournalServiceSyncTest {
                     .thenReturn(Flux.just(journal(d * 100L)));
         }
 
-        walletJournalService.syncCorporationJournal(characterId);
+        walletJournalService.syncCorporationJournal(characterId, false);
 
         // ── token 身份 = 角色ID ──
         verify(authorizeUtil).authorize(characterId);
@@ -129,7 +129,7 @@ class WalletJournalServiceSyncTest {
         Integer userId = 100;
         when(authorizeUtil.authorize(characterId)).thenReturn(account(userId, null));
 
-        assertThatThrownBy(() -> walletJournalService.syncCorporationJournal(characterId))
+        assertThatThrownBy(() -> walletJournalService.syncCorporationJournal(characterId, false))
                 .isInstanceOf(EsiException.class)
                 .satisfies(e -> assertThat(((EsiException) e).getResultCode())
                         .isEqualTo(ResultCode.ESI_AUTH_PERMISSION_LOW));
@@ -153,7 +153,7 @@ class WalletJournalServiceSyncTest {
                     .thenReturn(Flux.just(journal(d * 100L)));
         }
 
-        walletJournalService.syncCorporationJournal(characterId);
+        walletJournalService.syncCorporationJournal(characterId, false);
 
         Long syncUserId = userId.longValue();
         ArgumentCaptor<List<WalletJournal>> captor = ArgumentCaptor.forClass(List.class);

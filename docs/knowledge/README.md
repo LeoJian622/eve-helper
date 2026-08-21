@@ -11,7 +11,7 @@
 
 ## 文档模板
 
-参照 [login-lifecycle.md](./login-lifecycle.md) 的结构，新文档按需裁剪：
+参照 [登录生命周期-login-lifecycle.md](./登录生命周期-login-lifecycle.md) 的结构，新文档按需裁剪：
 
 ```markdown
 # <模块名> 全生命周期流程
@@ -50,6 +50,14 @@
 
 | 文档 | 模块 | 最后更新 |
 |------|------|----------|
-| [login-lifecycle.md](./login-lifecycle.md) | 认证（注册/登录/请求认证/刷新/登出 + ESI 授权绑定） | 2026-08-14 |
-| [esi-authorization-binding.md](./esi-authorization-binding.md) | ESI 授权绑定（OAuth 绑定/token 刷新/授权状态判定） | 2026-08-17 |
-| [rbac-authorization.md](./rbac-authorization.md) | RBAC 权限体系（数据模型/规则缓存/请求鉴权/角色生效链路） | 2026-08-17 |
+| [登录生命周期-login-lifecycle.md](./登录生命周期-login-lifecycle.md) | 认证（注册/登录/请求认证/刷新/登出全链路） | 2026-08-21（复核确认） |
+| [ESI授权绑定-esi-authorization-binding.md](./ESI授权绑定-esi-authorization-binding.md) | ESI 授权绑定（OAuth 绑定/token 刷新/授权状态判定；修正 doGetAccessToken 与 persistRefreshedToken 两条路径差异） | 2026-08-21 |
+| [RBAC权限体系-rbac-authorization.md](./RBAC权限体系-rbac-authorization.md) | RBAC 权限体系（数据模型/规则缓存/请求鉴权/角色生效链路） | 2026-08-21（复核确认） |
+| [人物钱包流水-wallet-journal-character.md](./人物钱包流水-wallet-journal-character.md) | 人物钱包 journal 同步与分页倒序查询（含015缓存判读层） | 2026-08-21 |
+| [钱包交易流水-wallet-transaction.md](./钱包交易流水-wallet-transaction.md) | 钱包交易同步与查询（含015缓存判读层） | 2026-08-21 |
+| [资产聚合查询-asset-aggregate-query.md](./资产聚合查询-asset-aggregate-query.md) | 资产聚合查询（纯DB聚合，不经缓存判读层） | 2026-08-21（复核确认） |
+| [军团钱包流水-corporation-wallet-journal.md](./军团钱包流水-corporation-wallet-journal.md) | 军团钱包 journal 同步与查询（聚合端点纯DB） | 2026-08-21（复核确认） |
+| [钱包总览-wallet-overview.md](./钱包总览-wallet-overview.md) | 钱包总览聚合（纯DB聚合，不经缓存层） | 2026-08-21（复核确认） |
+| [ESI人物授权403-esi-char-auth-403.md](./ESI人物授权403-esi-char-auth-403.md) | ESI 人物授权基准与403映射（处理链路未受015影响） | 2026-08-21（复核确认） |
+| [ESI数据用户归属-esi-data-user-binding.md](./ESI数据用户归属-esi-data-user-binding.md) | ESI 数据用户归属（双锁模型/8表user_id/存量迁移） | 2026-08-21（复核确认） |
+| [ESI响应缓存-esi-response-caching.md](./ESI响应缓存-esi-response-caching.md) | ESI响应缓存（修正资产maxPage仍用page=1入键的不一致标注） | 2026-08-21 |

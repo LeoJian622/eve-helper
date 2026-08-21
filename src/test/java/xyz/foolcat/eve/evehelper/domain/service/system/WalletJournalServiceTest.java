@@ -89,7 +89,7 @@ class WalletJournalServiceTest {
                         .thenReturn(Flux.just(journal((long) (d * 100))));
             }
 
-            walletJournalService.syncCorporationJournal(corpId);
+            walletJournalService.syncCorporationJournal(corpId, false);
 
             ArgumentCaptor<List<WalletJournal>> captor = ArgumentCaptor.forClass(List.class);
             verify(walletJournalRepository, times(7)).saveOrUpdateBatch(captor.capture());
@@ -121,7 +121,7 @@ class WalletJournalServiceTest {
                 }
             }
 
-            assertThatThrownBy(() -> walletJournalService.syncCorporationJournal(corpId))
+            assertThatThrownBy(() -> walletJournalService.syncCorporationJournal(corpId, false))
                     .isInstanceOf(EveHelperException.class)
                     .hasMessageContaining("3");
 
@@ -146,7 +146,7 @@ class WalletJournalServiceTest {
             when(esiApiService.queryCharacterWalletJournal(characterId, 1, token))
                     .thenReturn(Flux.just(journal(1001L), journal(1002L)));
 
-            walletJournalService.syncCharacterJournal(characterId);
+            walletJournalService.syncCharacterJournal(characterId, false);
 
             ArgumentCaptor<List<WalletJournal>> captor = ArgumentCaptor.forClass(List.class);
             verify(walletJournalRepository).saveOrUpdateBatch(captor.capture());
