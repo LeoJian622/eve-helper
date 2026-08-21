@@ -712,8 +712,9 @@ public class EsiApiService implements EsiGateway {
             return industryApi.queryCorporationIndustryJobs(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
                     .map(resp -> esiIndustryJobConverter.toDomain(resp, corporationId));
         }
+        // includeCompleted 入键,避免 true/false 变体互相命中(T009/H2)
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
-                "/corporations/" + corporationId + "/industry/jobs/", 0);
+                "/corporations/" + corporationId + "/industry/jobs/?include_completed=" + includeCompleted, 0);
         boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
         if (!forceGranted) {
             List<IndustryJob> cached = esiResponseCache.getList(key, objectMapper.constructType(IndustryJob.class));
@@ -751,8 +752,9 @@ public class EsiApiService implements EsiGateway {
             return industryApi.queryCharacterIndustryJobs(characterId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
                     .map(resp -> esiIndustryJobConverter.toDomain(resp, null));
         }
+        // includeCompleted 入键,避免 true/false 变体互相命中(T009/H2)
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
-                "/characters/" + characterId + "/industry/jobs/", 0);
+                "/characters/" + characterId + "/industry/jobs/?include_completed=" + includeCompleted, 0);
         boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
         if (!forceGranted) {
             List<IndustryJob> cached = esiResponseCache.getList(key, objectMapper.constructType(IndustryJob.class));

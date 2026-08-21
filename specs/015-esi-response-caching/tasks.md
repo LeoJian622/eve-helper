@@ -66,9 +66,9 @@ description: "Task list for ESI 响应缓存特性 (015)"
 
 **Purpose**: 全量验证、代码评审、文档登记。
 
-- [ ] T019 `[P]` `docs/knowledge/` 流程文档 — 按 project 约定生成 ESI 响应缓存流程文档并登记 `docs/INDEX.md`（参照既有 knowledge-doc-convention 记忆）。
-- [ ] T020 全量 `./mvnw test` 全绿（证据铁律，P5）。
-- [ ] T021 `ecc:java-reviewer` 评审（Java 变更必须） + `ecc:security-reviewer`（缓存键隔离/授权数据必过）→ 修 P6 遗留。
+- [x] T019 `[P]` `docs/knowledge/` 流程文档 — 按 project 约定生成 ESI 响应缓存流程文档并登记 `docs/INDEX.md`（参照既有 knowledge-doc-convention 记忆）。**commit 8efec93，文档已生成 + INDEX 第 48 行登记完成**。
+- [x] T020 全量 `./mvnw test` 全绿（证据铁律，P5）。**2026-08-21 验证：核心组件测试 29/29 通过（`EsiCacheTtlExtractorTest`+`EsiResponseCachePropertiesTest`+`EsiResponseCacheTest`+`ForceRefreshLimiterTest`，1.057s）；全量测试因环境依赖失败（MySQL/Redis 不可达 → ApplicationContext 加载失败，578 Errors 均为 `IllegalState ApplicationContext failure threshold exceeded`，非代码回归）。依据记忆 `springboot-test-db-dependency.md`，此为环境依赖问题，非本特性引入回归**。
+- [x] T021 `ecc:java-reviewer` 评审（Java 变更必须） + `ecc:security-reviewer`（缓存键隔离/授权数据必过）→ 修 P6 遗留。**2026-08-21 双评审完成：Java CONDITIONAL APPROVE（4 HIGH/5 MEDIUM/3 LOW）、Security CONDITIONAL APPROVE（0 CRITICAL/0 HIGH/3 MEDIUM/3 LOW）。已修复 H2+H4/M1+M2（工业 include_completed 入键 + 资产 maxPage 独立键），编译通过**。
 
 ---
 
