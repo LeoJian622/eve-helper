@@ -27,12 +27,14 @@ public class AssetsController {
     private final AssetsApplicationService assetsApplicationService;
 
     @Parameters({
-            @Parameter(name = "cid",description = "人物或军团的ID" ,required = true)
+            @Parameter(name = "cid",description = "人物或军团的ID" ,required = true),
+            @Parameter(name = "forceRefresh",description = "是否强制刷新(忽略缓存,默认false)",example = "false")
     })
     @Operation(summary = "游戏资产-资产同步",description = "调用服务器去获取ESI的数据")
     @PostMapping("/{cid}/sync")
-    public Result syncAssets(@PathVariable Integer cid) {
-        assetsApplicationService.syncAssets(cid);
+    public Result syncAssets(@PathVariable Integer cid,
+                             @RequestParam(defaultValue = "false") boolean forceRefresh) {
+        assetsApplicationService.syncAssets(cid, forceRefresh);
         return Result.success();
     }
 

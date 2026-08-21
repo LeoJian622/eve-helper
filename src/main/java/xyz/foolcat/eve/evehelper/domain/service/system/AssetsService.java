@@ -71,9 +71,10 @@ public class AssetsService {
     /**
      * 与ESI资产数据进行同步并返回
      *
-     * @param cid 角色ID
+     * @param cid          角色ID
+     * @param forceRefresh 是否强制刷新(忽略缓存)
      */
-    public void saveAndUpdateAsserts(Integer cid) throws ParseException {
+    public void saveAndUpdateAsserts(Integer cid, boolean forceRefresh) throws ParseException {
 
         /*
          * 获取游戏人物信息及授权
@@ -85,13 +86,13 @@ public class AssetsService {
         /*
          * 获取总页数
          */
-        Integer maxPage = esiApiService.queryCharactersAssetsMaxPage(eveAccount.getCharacterId(), accessToken);
+        Integer maxPage = esiApiService.queryCharactersAssetsMaxPage(eveAccount.getCharacterId(), accessToken, forceRefresh);
 
         /*
          * 从ESI获取资产列表
          */
         List<Assets> assets = Stream.iterate(1, i -> i + 1).limit(maxPage)
-                .map(page -> esiApiService.queryCharactersAssets(eveAccount.getCharacterId(), page, accessToken).collectList())
+                .map(page -> esiApiService.queryCharactersAssets(eveAccount.getCharacterId(), page, accessToken, forceRefresh).collectList())
                 .sequential()
                 .collect(Collectors.toList())
                 .stream().flatMap(asset -> Objects.requireNonNull(asset.block()).stream())

@@ -42,13 +42,14 @@ public class AssetsApplicationService {
     /**
      * 从 ESI 同步资产数据。
      *
-     * @param cid 人物或军团 ID
+     * @param cid          人物或军团 ID
+     * @param forceRefresh 是否强制刷新(忽略缓存)
      */
-    public void syncAssets(Integer cid) {
+    public void syncAssets(Integer cid, boolean forceRefresh) {
         // 归属校验先于业务逻辑:cid 为用户可控入参,须先确认该人物/军团属于当前用户(防御 IDOR)
         accessGuard.requireOwnership(String.valueOf(cid), "资产同步");
         try {
-            assetsService.saveAndUpdateAsserts(cid);
+            assetsService.saveAndUpdateAsserts(cid, forceRefresh);
         } catch (ParseException e) {
             log.error("资产同步失败: cid={}", cid, e);
             throw new EveHelperException("资产同步失败", e);
