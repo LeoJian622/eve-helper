@@ -40,7 +40,7 @@ public class IndustryTask {
     public void updateIndustryJobs() {
         log.info("update industry jobs");
         try {
-            industryJobService.batchInsertOrUpdateFromEsi(TaskConstant.CHARACTER_ID, true, true, false);
+            industryJobService.batchInsertOrUpdateFromEsi(TaskConstant.CHARACTER_ID, true, true, true);
 
         } catch (ParseException e) {
             log.error("【工业】定时更新工业信息失败：{}", e.getMessage());
