@@ -48,16 +48,17 @@ public class WalletJournalApplicationService {
     /**
      * 手动同步某人物钱包流水(ESI -> DB,幂等 upsert)。
      *
-     * @param cid 人物ID
+     * @param cid          人物ID
+     * @param forceRefresh 是否强制刷新(忽略缓存)
      */
-    public void syncCharacterJournal(Integer cid) {
+    public void syncCharacterJournal(Integer cid, boolean forceRefresh) {
         // 归属校验先于业务逻辑:cid 为用户可控入参,须先确认该人物属于当前用户(防御 IDOR)
         accessGuard.requireOwnership(String.valueOf(cid), "钱包流水同步");
         // 冷却限流:同一人物冷却期内不允许重复同步,防 ESI 限流滥用
         String cooldownKey = SYNC_COOLDOWN_PREFIX + "char:" + cid;
         requireSyncCooldown(cooldownKey);
         try {
-            walletJournalService.syncCharacterJournal(cid);
+            walletJournalService.syncCharacterJournal(cid, forceRefresh);
         } catch (ParseException e) {
             log.error("钱包流水同步失败: cid={}", cid, e);
             throw new EveHelperException("钱包流水同步失败", e);
@@ -70,16 +71,17 @@ public class WalletJournalApplicationService {
      * <p><b>013 US1</b>:入参统一为<b>角色ID(characterId)</b>;归属校验(requireOwnership)基于该角色
      * 是否属于当前用户(防 IDOR),目标军团ID由领域服务从该角色 eve_account 行派生 —— 调用方无法指定任意军团。</p>
      *
-     * @param characterId 角色ID(该角色的 eve_account 行须含关联军团)
+     * @param characterId  角色ID(该角色的 eve_account 行须含关联军团)
+     * @param forceRefresh 是否强制刷新(忽略缓存)
      */
-    public void syncCorporationJournal(Integer characterId) {
+    public void syncCorporationJournal(Integer characterId, boolean forceRefresh) {
         // 归属校验先于业务逻辑:characterId 为用户可控入参,须先确认该角色属于当前用户(防御 IDOR)
         accessGuard.requireOwnership(String.valueOf(characterId), "军团钱包流水同步");
         // 冷却限流:同一角色冷却期内不允许重复同步,防 ESI 限流滥用
         String cooldownKey = SYNC_COOLDOWN_PREFIX + "corp:" + characterId;
         requireSyncCooldown(cooldownKey);
         try {
-            walletJournalService.syncCorporationJournal(characterId);
+            walletJournalService.syncCorporationJournal(characterId, forceRefresh);
         } catch (ParseException e) {
             log.error("军团钱包流水同步失败: characterId={}", characterId, e);
             throw new EveHelperException("军团钱包流水同步失败", e);

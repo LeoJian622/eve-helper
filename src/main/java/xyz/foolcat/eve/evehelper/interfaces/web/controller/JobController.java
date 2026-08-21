@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import xyz.foolcat.eve.evehelper.application.service.JobApplicationService;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
@@ -30,12 +31,14 @@ public class JobController {
     @Parameters({
             @Parameter(name = "type", description = "枚举值，人物：char; 公司：crop", required = true),
             @Parameter(name = "id", description = "人物或军团的ID", required = true),
-            @Parameter(name = "complete", description = "是否包含已完成任务", required = true)
+            @Parameter(name = "complete", description = "是否包含已完成任务", required = true),
+            @Parameter(name = "forceRefresh", description = "是否强制刷新(忽略缓存,默认false)", example = "false")
     })
     @Operation(summary = "工业制造-制造线数据同步",description = "调用服务器去获取ESI的数据")
     @PostMapping("/{type}/{id}/{complete}")
-    public Result syncJobs(@PathVariable String type, @PathVariable String complete, @PathVariable Integer id) {
-        jobApplicationService.syncJobs(type, id, complete);
+    public Result syncJobs(@PathVariable String type, @PathVariable String complete, @PathVariable Integer id,
+                           @RequestParam(defaultValue = "false") boolean forceRefresh) {
+        jobApplicationService.syncJobs(type, id, complete, forceRefresh);
         return Result.success();
     }
 }

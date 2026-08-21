@@ -35,16 +35,17 @@ public class JobApplicationService {
      * <p>
      * 访问控制:id 为用户可控入参,须先确认该人物/军团属于当前用户(防御 IDOR)。
      *
-     * @param type     枚举值,人物:char; 公司:corporation
-     * @param id       人物或军团 ID
-     * @param complete 是否包含已完成任务
+     * @param type         枚举值,人物:char; 公司:corporation
+     * @param id           人物或军团 ID
+     * @param complete     是否包含已完成任务
+     * @param forceRefresh 是否强制刷新(忽略缓存)
      */
-    public void syncJobs(String type, Integer id, String complete) {
+    public void syncJobs(String type, Integer id, String complete, boolean forceRefresh) {
         accessGuard.requireOwnership(String.valueOf(id), "制造线同步");
         boolean includeCompleted = COMPLETE_FLAG.equals(complete);
         boolean isCorporation = CORP_TYPE.equals(type);
         try {
-            industryJobService.batchInsertOrUpdateFromEsi(id, includeCompleted, isCorporation);
+            industryJobService.batchInsertOrUpdateFromEsi(id, includeCompleted, isCorporation, forceRefresh);
         } catch (ParseException e) {
             log.error("制造线同步失败: type={}, id={}", type, id, e);
             throw new EveHelperException("制造线同步失败", e);

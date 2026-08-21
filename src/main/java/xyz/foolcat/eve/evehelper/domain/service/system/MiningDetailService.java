@@ -39,14 +39,14 @@ public class MiningDetailService  {
         return miningDetailRepository.batchInsert(list);
     }
 
-    public void saveObserverMining(Integer characterId, Long observerId) throws ParseException {
+    public void saveObserverMining(Integer characterId, Long observerId, boolean forceRefresh) throws ParseException {
         EveAccount eveAccount = authorizeUtil.authorize(characterId);
         String accessToken = esiApiService.getAccessToken(characterId, eveAccount.getUserId());
 
-        Integer maxPage = esiApiService.queryCorporationMiningObserverMaxPage(eveAccount.getCorpId(), observerId, accessToken);
+        Integer maxPage = esiApiService.queryCorporationMiningObserverMaxPage(eveAccount.getCorpId(), observerId, accessToken, forceRefresh);
 
         List<MiningDetail> miningDetails = Stream.iterate(1, i -> i + 1).limit(maxPage)
-                .map(i -> esiApiService.queryCorporationMiningObserver(eveAccount.getCorpId(), observerId, i, accessToken)
+                .map(i -> esiApiService.queryCorporationMiningObserver(eveAccount.getCorpId(), observerId, i, accessToken, forceRefresh)
                         .collectList().block())
                 .sequential().filter(Objects::nonNull)
                 .flatMap(Collection::stream)

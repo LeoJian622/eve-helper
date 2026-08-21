@@ -66,7 +66,7 @@ public class IndustryJobService  {
      * @param isCor
      * @throws ParseException
      */
-    public void batchInsertOrUpdateFromEsi(Integer cid, Boolean includeCompleted, Boolean isCor) throws ParseException {
+    public void batchInsertOrUpdateFromEsi(Integer cid, Boolean includeCompleted, Boolean isCor, boolean forceRefresh) throws ParseException {
         /*
          * 获取游戏人物信息及授权
          * 请求路径有 SecurityContext 用 authorize(校验归属);
@@ -87,9 +87,9 @@ public class IndustryJobService  {
             /*
              * 获取公司生产线
              */
-            Integer maxPage = esiApiService.queryCorporationIndustryJobsMaxPage(eveAccount.getCorpId(), includeCompleted, accessToken);
+            Integer maxPage = esiApiService.queryCorporationIndustryJobsMaxPage(eveAccount.getCorpId(), includeCompleted, accessToken, forceRefresh);
 
-            List<IndustryJob> industryJobs = Stream.iterate(1, i -> i + 1).limit(maxPage).map(i -> esiApiService.queryCorporationIndustryJobs(eveAccount.getCorpId(), true, accessToken).collectList().block())
+            List<IndustryJob> industryJobs = Stream.iterate(1, i -> i + 1).limit(maxPage).map(i -> esiApiService.queryCorporationIndustryJobs(eveAccount.getCorpId(), true, accessToken, forceRefresh).collectList().block())
                     .sequential().filter(Objects::nonNull)
                     .flatMap(Collection::stream)
                     .collect(Collectors.toList());
@@ -98,7 +98,7 @@ public class IndustryJobService  {
             /*
              * 获取人物生产线
              */
-            List<IndustryJob> industryJobs = Objects.requireNonNull(esiApiService.queryCharacterIndustryJobs(eveAccount.getCharacterId(), includeCompleted, accessToken).collectList().block())
+            List<IndustryJob> industryJobs = Objects.requireNonNull(esiApiService.queryCharacterIndustryJobs(eveAccount.getCharacterId(), includeCompleted, accessToken, forceRefresh).collectList().block())
                     .stream()
                     .collect(Collectors.toList());
             batchSaveAndSetBlueTypeName(industryJobs, syncUserId);

@@ -74,12 +74,12 @@ public class WalletTransactionService {
      * @param characterId 人物ID
      * @throws java.text.ParseException JWT 解析失败
      */
-    public void syncCharacterTransactions(Integer characterId) throws java.text.ParseException {
+    public void syncCharacterTransactions(Integer characterId, boolean forceRefresh) throws java.text.ParseException {
         EveAccount eveAccount = authorizeAccount(characterId);
         String accessToken = esiGateway.getAccessToken(characterId, eveAccount.getUserId());
 
         List<WalletTransaction> transactions = pullTransactions(
-                fromId -> esiGateway.queryCharacterWalletTransactions(characterId, fromId, accessToken));
+                fromId -> esiGateway.queryCharacterWalletTransactions(characterId, fromId, accessToken, forceRefresh));
         backfillOwner(transactions, OWNER_TYPE_CHARACTER, characterId.longValue(), CHARACTER_DIVISION);
         // US1(014 T009):人物钱包交易随同步者 user_id 落库 —— 人物交易只对当前同步用户可见的归属依据
         Long syncUserId = eveAccount.getUserId() == null ? null : eveAccount.getUserId().longValue();
@@ -111,7 +111,7 @@ public class WalletTransactionService {
      * @return 每 division 同步成败记录(顺序 1..7),仅全部成功时正常返回
      * @throws java.text.ParseException JWT 解析失败
      */
-    public Map<Integer, Boolean> syncCorporationTransactions(Integer characterId) throws java.text.ParseException {
+    public Map<Integer, Boolean> syncCorporationTransactions(Integer characterId, boolean forceRefresh) throws java.text.ParseException {
         EveAccount eveAccount = authorizeAccount(characterId);
         // 目标军团ID恒从已授权角色行派生,入参恒为角色ID,不与军团ID复用
         Integer corpId = eveAccount.getCorpId();
@@ -129,7 +129,7 @@ public class WalletTransactionService {
             final int currentDivision = division;
             try {
                 List<WalletTransaction> transactions = pullTransactions(
-                        fromId -> esiGateway.queryCorporationWalletTransactions(corpId, currentDivision, fromId, accessToken));
+                        fromId -> esiGateway.queryCorporationWalletTransactions(corpId, currentDivision, fromId, accessToken, forceRefresh));
                 backfillOwner(transactions, OWNER_TYPE_CORPORATION, corpId.longValue(), currentDivision);
                 transactions.forEach(t -> t.setUserId(syncUserId));
                 // 空页(无交易)也视为本分账成功;非空才触发保存

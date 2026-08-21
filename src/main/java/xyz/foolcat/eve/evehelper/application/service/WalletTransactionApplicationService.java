@@ -49,16 +49,17 @@ public class WalletTransactionApplicationService {
     /**
      * 手动同步某人物钱包交易(ESI -> DB,幂等 upsert)。
      *
-     * @param cid 人物ID
+     * @param cid          人物ID
+     * @param forceRefresh 是否强制刷新(忽略缓存)
      */
-    public void syncCharacterTransactions(Integer cid) {
+    public void syncCharacterTransactions(Integer cid, boolean forceRefresh) {
         // 归属校验先于业务逻辑:cid 为用户可控入参,须先确认该人物属于当前用户(防御 IDOR)
         accessGuard.requireOwnership(String.valueOf(cid), "钱包交易同步");
         // 冷却限流:同一人物 60 秒内不允许重复同步,防 ESI 限流滥用
         String cooldownKey = SYNC_COOLDOWN_PREFIX + "char:" + cid;
         requireSyncCooldown(cooldownKey);
         try {
-            walletTransactionService.syncCharacterTransactions(cid);
+            walletTransactionService.syncCharacterTransactions(cid, forceRefresh);
         } catch (ParseException e) {
             log.error("钱包交易同步失败: cid={}", cid, e);
             throw new EveHelperException("钱包交易同步失败", e);
@@ -95,17 +96,18 @@ public class WalletTransactionApplicationService {
      * <p><b>013 US1</b>:入参统一为<b>角色ID(characterId)</b>;归属校验(requireOwnership)基于该角色
      * 是否属于当前用户(防 IDOR),目标军团ID由领域服务从该角色 eve_account 行派生 —— 调用方无法指定任意军团。</p>
      *
-     * @param characterId 角色ID(该角色的 eve_account 行须含关联军团)
+     * @param characterId  角色ID(该角色的 eve_account 行须含关联军团)
+     * @param forceRefresh 是否强制刷新(忽略缓存)
      * @return division→是否同步成功(仅全部成功时返回)
      */
-    public Map<Integer, Boolean> syncCorporationTransactions(Integer characterId) {
+    public Map<Integer, Boolean> syncCorporationTransactions(Integer characterId, boolean forceRefresh) {
         // 归属校验先于业务逻辑:characterId 为用户可控入参,须先确认该角色属于当前用户(防御 IDOR)
         accessGuard.requireOwnership(String.valueOf(characterId), "军团钱包交易同步");
         // 冷却限流:同一角色冷却期内不允许重复同步,防 ESI 限流滥用
         String cooldownKey = SYNC_COOLDOWN_PREFIX + "corp:" + characterId;
         requireSyncCooldown(cooldownKey);
         try {
-            return walletTransactionService.syncCorporationTransactions(characterId);
+            return walletTransactionService.syncCorporationTransactions(characterId, forceRefresh);
         } catch (ParseException e) {
             log.error("军团钱包交易同步失败: characterId={}", characterId, e);
             throw new EveHelperException("军团钱包交易同步失败", e);

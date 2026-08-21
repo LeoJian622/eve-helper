@@ -29,13 +29,14 @@ public class MiningApplicationService {
      * <p>
      * 访问控制:characterId 为用户可控入参,须先确认该人物属于当前用户(防御 IDOR)。
      *
-     * @param characterId 人物 ID
-     * @param observerId  月矿堡 ID
+     * @param characterId  人物 ID
+     * @param observerId   月矿堡 ID
+     * @param forceRefresh 是否强制刷新(忽略缓存)
      */
-    public void syncMiningByObserver(Integer characterId, Long observerId) {
+    public void syncMiningByObserver(Integer characterId, Long observerId, boolean forceRefresh) {
         accessGuard.requireOwnership(String.valueOf(characterId), "月矿开采明细同步");
         try {
-            miningDetailService.saveObserverMining(characterId, observerId);
+            miningDetailService.saveObserverMining(characterId, observerId, forceRefresh);
         } catch (ParseException e) {
             log.error("采矿明细同步失败: characterId={}, observerId={}", characterId, observerId, e);
             throw new EveHelperException("采矿明细同步失败", e);

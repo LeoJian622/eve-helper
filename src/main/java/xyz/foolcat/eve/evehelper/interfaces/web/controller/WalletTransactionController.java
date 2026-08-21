@@ -38,8 +38,9 @@ public class WalletTransactionController {
     })
     @Operation(summary = "钱包交易-同步", description = "调用服务器去获取ESI的钱包交易数据")
     @PostMapping("/{cid}/sync")
-    public Result<Void> syncCharacterTransactions(@PathVariable Integer cid) {
-        walletTransactionApplicationService.syncCharacterTransactions(cid);
+    public Result<Void> syncCharacterTransactions(@PathVariable Integer cid,
+                                                  @RequestParam(defaultValue = "false") boolean forceRefresh) {
+        walletTransactionApplicationService.syncCharacterTransactions(cid, forceRefresh);
         return Result.success();
     }
 
@@ -57,12 +58,14 @@ public class WalletTransactionController {
     }
 
     @Parameters({
-            @Parameter(name = "characterId", description = "角色ID(该角色须关联目标军团)", required = true)
+            @Parameter(name = "characterId", description = "角色ID(该角色须关联目标军团)", required = true),
+            @Parameter(name = "forceRefresh", description = "是否强制刷新(忽略缓存,默认false)", example = "false")
     })
     @Operation(summary = "钱包交易-军团同步", description = "调用服务器去获取 ESI 的军团各分账钱包交易数据(1..7 分账幂等 upsert)。军团ID由该角色 eve_account 行派生(013 US1,调用方无法指定任意军团)")
     @PostMapping("/corp/{characterId}/sync")
-    public Result<Map<Integer, Boolean>> syncCorporationTransactions(@PathVariable Integer characterId) {
-        return Result.success(walletTransactionApplicationService.syncCorporationTransactions(characterId));
+    public Result<Map<Integer, Boolean>> syncCorporationTransactions(@PathVariable Integer characterId,
+                                                                     @RequestParam(defaultValue = "false") boolean forceRefresh) {
+        return Result.success(walletTransactionApplicationService.syncCorporationTransactions(characterId, forceRefresh));
     }
 
     @Parameters({

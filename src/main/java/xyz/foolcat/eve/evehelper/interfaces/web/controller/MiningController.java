@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import xyz.foolcat.eve.evehelper.application.service.MiningApplicationService;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
@@ -27,12 +28,14 @@ public class MiningController {
 
     @Parameters({
             @Parameter(name = "characterId", description = "人物ID" ,required = true),
-            @Parameter(name = "observerId", description = "月矿堡ID" ,required = true)
+            @Parameter(name = "observerId", description = "月矿堡ID" ,required = true),
+            @Parameter(name = "forceRefresh", description = "是否强制刷新(忽略缓存,默认false)", example = "false")
     })
     @Operation(summary = "月矿采掘-开采明细同步",description = "调用服务器去获取ESI的数据")
     @PostMapping("/{characterId}/{observerId}")
-    public Result syncMiningByObserver(@PathVariable Integer characterId, @PathVariable Long observerId) {
-        miningApplicationService.syncMiningByObserver(characterId, observerId);
+    public Result syncMiningByObserver(@PathVariable Integer characterId, @PathVariable Long observerId,
+                                       @RequestParam(defaultValue = "false") boolean forceRefresh) {
+        miningApplicationService.syncMiningByObserver(characterId, observerId, forceRefresh);
         return Result.success();
     }
 }

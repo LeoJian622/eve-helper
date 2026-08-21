@@ -114,7 +114,7 @@ public class WalletJournalService {
      *
      * @param characterId 人物ID
      */
-    public void syncCharacterJournal(Integer characterId) throws ParseException {
+    public void syncCharacterJournal(Integer characterId, boolean forceRefresh) throws ParseException {
         /*
           获取游戏人物信息及授权
           请求路径有 SecurityContext 用 authorize(校验归属);
@@ -132,7 +132,7 @@ public class WalletJournalService {
         /*
           获取总页数
          */
-        Integer maxPage = esiApiService.queryCharacterWalletJournalMaxPage(characterId, accessToken);
+        Integer maxPage = esiApiService.queryCharacterWalletJournalMaxPage(characterId, accessToken, forceRefresh);
 
         /*
          * 获取钱包记录
@@ -140,7 +140,7 @@ public class WalletJournalService {
          */
         int pages = maxPage == null ? 0 : maxPage;
         List<WalletJournal> walletJournals = Stream.iterate(1, i -> i + 1).limit(pages)
-                .map(i -> esiApiService.queryCharacterWalletJournal(characterId, i, accessToken)
+                .map(i -> esiApiService.queryCharacterWalletJournal(characterId, i, accessToken, forceRefresh)
                         .collectList().block())
                 .sequential().filter(Objects::nonNull)
                 .flatMap(Collection::stream)
@@ -179,7 +179,7 @@ public class WalletJournalService {
      * @throws ParseException JWT 解析失败
      */
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public void syncCorporationJournal(Integer characterId) throws ParseException {
+    public void syncCorporationJournal(Integer characterId, boolean forceRefresh) throws ParseException {
         EveAccount eveAccount;
         Integer currentUserId = UserUtil.getUserId();
         if (currentUserId != null && currentUserId > 0) {
@@ -201,10 +201,10 @@ public class WalletJournalService {
         for (int division = MIN_CORP_DIVISION; division <= MAX_CORP_DIVISION; division++) {
             final int currentDivision = division;
             try {
-                Integer maxPage = esiApiService.queryCorporationWalletJournalMaxPage(corpId, currentDivision, accessToken);
+                Integer maxPage = esiApiService.queryCorporationWalletJournalMaxPage(corpId, currentDivision, accessToken, forceRefresh);
                 int pages = maxPage == null ? 0 : maxPage;
                 List<WalletJournal> walletJournals = Stream.iterate(1, i -> i + 1).limit(pages)
-                        .map(i -> esiApiService.queryCorporationWalletJournal(corpId, currentDivision, i, accessToken)
+                        .map(i -> esiApiService.queryCorporationWalletJournal(corpId, currentDivision, i, accessToken, forceRefresh)
                                 .collectList().block())
                         .sequential().filter(Objects::nonNull)
                         .flatMap(Collection::stream)
