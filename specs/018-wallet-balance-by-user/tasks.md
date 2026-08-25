@@ -50,10 +50,32 @@
 - **验收**: SQL 语法正确 ✅
 
 ### T7: 验证与评审
-- [x] 运行全量测试，确保无回归
-- [ ] 代码评审（待用户确认）
+- [x] 运行单元测试，确保无回归
+- [x] 代码评审（P6，`ecc:java-reviewer`）
+- [x] 修复评审阻塞项 IMPORTANT-1/3/4/6/8
 - **依赖**: T1-T6
-- **验收**: 编译通过 ✅，单元测试 11/11 ✅
+- **验收**:
+  - 编译：IDE `build_project` `isSuccess=true`，零 problems ✅
+  - 018 单元测试：13/13 通过（failed 0）✅
+  - 017 单元测试：20/20 通过（failed 0，无回归）✅
+  - 集成测试：3/3 Errors —— 本机 MySQL 不可达导致 ApplicationContext 加载失败，
+    属既有环境限制而非代码回归，**该覆盖尚未被任何运行记录证实**（IMPORTANT-7）
+  - 评审记录：[docs/reviews/2026-08-24-018-java-reviewer.md](../../docs/reviews/2026-08-24-018-java-reviewer.md)
+    —— CONDITIONAL APPROVE，无 CRITICAL，8 个 IMPORTANT
+
+### T8: P6 阻塞项修复明细
+
+| 项 | 处置 | 落点 |
+|---|------|------|
+| IMPORTANT-1 ROOT 军团余额恒为 0 | ✅ 已修 | 017 分支 `f09c451`：余额改用入口已授权人物，删除 `resolveCharIdInCorp` 反查 |
+| IMPORTANT-3 division 非法 → 端点 500 | ✅ 已修 | `mergeCorporationBalances` 入表前校验 1..7 + 2 个新测试 |
+| IMPORTANT-4 信任边界外移 | ✅ 已修 | `getUserWalletBalance()` 改无参、服务内自取身份 |
+| IMPORTANT-6 spec 与 RBAC 口径不符 | ✅ 已修 | spec 表述更正 + SQL Step 5 入事务、补执行后校验与缓存刷新提醒 |
+| IMPORTANT-8 017 混入 018 提交 | ✅ 已修 | 017 拆至独立分支 `017-corp-overview-character-entry` |
+| IMPORTANT-2 fail-open 故障不可观测 | ⏳ 延期 | 涉 API 契约变更（VO 增状态位），建议与 spec 修订一并进行 |
+| IMPORTANT-5 ESI/DB 调用放大 | ⏳ 延期 | 部分缓解（017 修复顺带省去一次 authorize/DB）；去重、提前 break、超时、接入 015 缓存待独立立项 |
+| IMPORTANT-7 IT 无有效运行证据 | ⏳ 环境阻塞 | 需 MySQL/Redis 可达环境重跑；建议引入 Testcontainers 或 failsafe 独立 profile |
+| IMPORTANT-6 的 IT 门禁用例 | ⏳ 延期 | "不 mock RBAC" 用例需 Redis 环境，与 IMPORTANT-7 一并处理 |
 
 ## 任务依赖图
 

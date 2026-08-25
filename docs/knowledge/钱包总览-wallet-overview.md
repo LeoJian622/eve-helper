@@ -12,9 +12,19 @@
 | 端点 | 人/军团 | 说明 |
 |------|--------|------|
 | `GET /wallet/overview/{cid}` | 人物 | 人物单主体总览，`divisions` **恒为 null**；`division` 传 null 不过滤 |
-| `GET /wallet/overview/corp/{corpId}?division=N` | 军团 | `division` 空 = 全量（多返回分账分布 1..7，currentBalance=各分账最新余额和）；`division=1..7` = 单分账过滤，`divisions` 不填充 |
+| `GET /wallet/overview/corp/{cid}?division=N` | 军团 | **入参是人物ID**（017 起）：先 `authorize(cid)` 校验归属并反查 `corpId`。`division` 空 = 全量（多返回分账分布 1..7，currentBalance=各分账余额和）；`division=1..7` = 单分账过滤，`divisions` 不填充 |
 
-两个入口的**共同安全前置**：路径 `cid`/`corpId` 是用户可控入参，应用服务在业务逻辑前统一 `accessGuard.requireOwnership(...)` 校验归属，防 IDOR。
+> ⚠ **017 破坏性变更**：军团端点路径**形状未变**但**语义反转**——`{...}` 由军团ID改为人物ID。
+> 旧客户端继续传 corpId 会走到 `getAccountOne(userId, corpId)` 查无此行，得到
+> **HTTP 400 + `AUT00208「账号不存在」`**，与真实原因（参数语义变了）完全无关，排障成本高。
+> 该变更未提供弃用过渡路径，详见 `docs/reviews/2026-08-24-018-java-reviewer.md` IMPORTANT-8。
+
+> ⚠ **016 起 `currentBalance` 改由 ESI 直查**（`/characters/{id}/wallet/`、`/corporations/{id}/wallets/`），
+> 不再从 `wallet_journal` 取；时间过滤仍只作用于收支/类目/趋势。
+
+两个入口的**共同安全前置**：路径参数是用户可控入参，业务逻辑前先做归属校验防 IDOR——人物端点用
+`accessGuard.requireOwnership(...)`，军团端点（017 起）用 `authorizeUtil.authorize(cid)`
+校验人物归属并反查军团ID，再由 `accessGuard.corporationScope(...)` 取军团维度读过滤 scope。
 
 ```
 GET /wallet/overview/{cid}
@@ -24,16 +34,23 @@ GET /wallet/overview/{cid}
        -> resolveRange(range,start,end)                             // 解析时间范围
        -> selectOverviewAggregate / Categories / Trend(division=null)
        -> granularity() 决定趋势桶粒度(日/月)
+       -> 016:currentBalance 由 ESI 人物余额直查
        -> 组装 WalletOverviewVO(divisions=null)
 
-GET /wallet/overview/corp/{corpId}?division=N
-  -> WalletOverviewApplicationService.getCorporationOverview(corpId, division, range, start, end)
-       -> 入参校验(division null/1..7, isValidRange)                // 先于归属
-       -> accessGuard.requireOwnership(corpId, "军团钱包总览")       // 防 IDOR
-       -> resolveRange -> selectOverview{...}
+GET /wallet/overview/corp/{cid}?division=N
+  -> WalletOverviewApplicationService.getCorporationOverview(cid, division, range, start, end)
+       -> 入参校验(cid 非空, division null/1..7, isValidRange)      // 先于归属
+       -> authorizeUtil.authorize(cid) -> account                   // 防 IDOR + 反查 corpId
+            account.corpId 为 null(数据异常) -> USER_ACCOUNT_NOT_EXIST(fail-closed)
+       -> accessGuard.corporationScope("军团钱包总览")               // US2b 军团维度读过滤
+            ROOT -> null(看全量);其他 -> 当前 userId
+       -> 016+017:fetchCorporationBalances(corpId, account)
+            用【入口已授权的这个人物】换 token 查 ESI 分账余额
+            (017 IMPORTANT-1 前是从 scope 反查角色,ROOT 场景会退化为余额恒 0)
+       -> resolveRange -> selectOverview{Aggregate,Categories,Trend}(透传 scope)
        -> division==null 时额外:
-            selectOverviewDivisionBalances / DivisionFlow -> mergeCorpDivisions 归并 1..7 补零
-            cb = 各分账最新余额之和(覆盖聚合值)
+            selectOverviewDivisionFlow -> mergeCorpDivisions 归并 1..7 补零
+            cb = 各分账 ESI 余额之和(覆盖聚合值)
        -> 组装 WalletOverviewVO(divisions=divs 或 null)
 ```
 
