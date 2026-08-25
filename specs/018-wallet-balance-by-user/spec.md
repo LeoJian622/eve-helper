@@ -54,13 +54,15 @@
 
 ### 返回结构
 
-> **字段语义（018 IMPORTANT-2）**：
-> - `characters[].status`：`OK` / `UNAUTHORIZED`（需重新授权）/ `UPSTREAM_ERROR`（ESI 故障）。
+> **字段语义（018 IMPORTANT-2 / 安全审计 MEDIUM-1）**：
+> - `characters[].status`：`OK` / `UNAUTHORIZED`（需重新授权）/ `PERMISSION_DENIED`（人物缺少
+>   军团 Accountant/Director 角色，**重新授权无用**，需军团管理者调权）/ `UPSTREAM_ERROR`（ESI 故障）。
 >   **`status != OK` 时 `balance` 为 `null`**，不再降级为 `0`——那会与真实的零余额同形。
 >   调用方不得把 `null` 或 `0` 直接当作「账上没钱」。
+>   **只有 `UPSTREAM_ERROR` 值得重试**；重试另两种持久性状态会打满 ESI 全应用级 error limit。
 > - `corporations[].partial`：为 `true` 表示有人物查询失败、分账集合不完整，
 >   此时 `totalBalance` 只是已取到分账之和，**不代表军团总资产**。
-> - `corporations[].unavailableCharacterIds`：失败的人物ID，便于定位需重新授权的角色。
+> - `corporations[].unavailableCharacterIds`：失败的人物ID，便于定位需处理的角色。
 >
 > `balance` 为 `null` 属破坏性变更，前端必须处理该情况。
 

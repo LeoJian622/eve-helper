@@ -78,7 +78,31 @@
 | MINOR-1 合并顺序不确定 | ✅ 已修 | `queryAccountList` 加 `order by character_id`，胜出者固定为 characterId 最小者 |
 | MINOR-3 catch (Exception) 过宽 | ✅ 已修 | 随 IMPORTANT-2 一并改为分段捕获 |
 | IMPORTANT-6 的 IT 门禁用例 | ⏳ 延期 | "不 mock RBAC" 用例需向**远程共享 Redis** 写权限规则，有污染他人环境风险，暂缓 |
-| 安全维度独立复核 | ⚠ 未完成 | `ecc:security-reviewer` 两次派遣均零产出卡死（输出文件 0 字节），已停止。G6 目前只有 Java 评审一份记录 |
+| 安全维度独立复核 | ✅ 已完成 | `ecc:security-reviewer` 两次派遣均零产出卡死（输出文件 0 字节），已停止并改用通用代理。记录：[docs/reviews/2026-08-25-018-security-audit.md](../../docs/reviews/2026-08-25-018-security-audit.md) —— CONDITIONAL APPROVE，0 CRITICAL / 1 HIGH / 3 MEDIUM / 2 LOW |
+
+### T10: 安全审计（2026-08-25）处置
+
+审计结论 **CONDITIONAL APPROVE**，0 CRITICAL，无可利用的越权/数据泄漏。
+IDOR、fail-open、token 缓存键、请求内缓存、军团并集、新增字段侧信道六项专项核验全部通过。
+
+| 项 | 处置 | 说明 |
+|---|------|------|
+| MEDIUM-1 `ESI00403` 被误判为 UPSTREAM_ERROR | ✅ 已修 | 新增 `PERMISSION_DENIED` 状态位（未并入 UNAUTHORIZED——对 403 提示「需重新授权」是误导，实际需军团管理者调整角色权限）。该误判会诱使前端重试持久性权限缺失，是 HIGH-1 的放大源 |
+| MEDIUM-3 测试未锚定 `getAccessToken` 的 userId 实参 | ✅ 已修 | 新增 `tokenExchangeAnchoredToOwnerUserId`，断言 `getAccessToken(CID_1, USER_ID)` 与军团查询使用该人物的 token |
+| LOW-2 `EveAccount.toString()` 含 refreshToken | ✅ 已修 | 加 `@ToString(exclude = "refreshToken")` |
+| HIGH-1 之「`.block()` 无超时」 | ✅ 已修 | 两个余额查询加 `.timeout(ESI_DATA_TIMEOUT)`（5s，依宪法「外部调用 5s 超时」）。线程最长被持有 5s，消除无界等待 |
+| HIGH-1 之「限流」「接入 015 缓存」「全局 responseTimeout」 | ⏳ 待决策 | 均有实质副作用，需用户裁定，见下 |
+| MEDIUM-2 RBAC 无自动化验证 | ⏳ 延期 | 审计给出绕开共享 Redis 的方案（`@MockitoBean RedisTemplate` 注入受控规则 hash），可行但未实施 |
+| LOW-1 `authCache` 为 `HashMap` | ⏳ 延期 | 当前安全（两条 stream 均串行，已核验）；风险仅在将来有人加 `.parallel()` |
+
+### T11: 审计推翻的两处先前判断
+
+1. **IMPORTANT-5 的定级**：前一轮列为「性能问题、可延期」，审计判定为**安全（可用性）问题**——任意最低权限已认证用户即可触发，且场景 B 的影响**跨越用户边界**（打满 ESI error limit 后所有用户的所有 ESI 功能一起不可用）。
+2. **已交付修复的有效性**：审计指出 authorize 去重与提前终止对两个 DoS 场景**均无效**——
+   - 「凑满 1..7 提前终止」在最坏的 403 场景**可证明永不触发**：一个 division 都没取到，`merged` 恒为空，所有人物仍被遍历；
+   - authorize 去重只省 DB 单行查询，ESI 调用次数不变。
+   
+   本轮新增的 `tokenExchangeAnchoredToOwnerUserId` 用 `times(2)` **实证**了第二点：`getAccessToken` 仍在人物/军团两条路径各调一次，而它内部（`doGetAccessToken`）在读 Redis 前还会做一次 `getAccountOne` 库查——故 DB 查询实际只从 4N 降到 3N，**而非先前声称的 2N→N**。该数字已在 knowledge 文档中更正。
 
 ### T9: IT 实跑暴露的问题（IMPORTANT-7 闭合过程）
 

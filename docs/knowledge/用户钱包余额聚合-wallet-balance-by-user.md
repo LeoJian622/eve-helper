@@ -114,8 +114,16 @@ GET /wallet/balance
 |------|------|
 | 查询成功 | `balance` 为数值，`status: "OK"` |
 | refreshToken 被撤销 / 归属校验失败 | `balance: null`，`status: "UNAUTHORIZED"` |
+| 人物缺少军团 Accountant/Director 角色（ESI 403） | `balance: null`，`status: "PERMISSION_DENIED"` |
 | ESI 5xx / 超时 / 解析失败 | `balance: null`，`status: "UPSTREAM_ERROR"` |
 | ESI 返回 null 余额（调用成功） | `balance: 0.0`，`status: "OK"` —— 这是**可信的**零余额 |
+
+> ⚠ **只有 `UPSTREAM_ERROR` 值得重试。** `UNAUTHORIZED` 与 `PERMISSION_DENIED` 都是持久性状态，
+> 重试只会反复撞 ESI 4xx 并消耗全应用共享的 error limit（100 errors/60s/IP），超限后**所有用户的
+> 所有 ESI 功能一起不可用**。早期实现把 ESI 403 混入 `UPSTREAM_ERROR`（语义为「重试可能恢复」），
+> 正是该放大链的一环，已于 2026-08-25 安全审计 MEDIUM-1 修正。
+>
+> `PERMISSION_DENIED` 与 `UNAUTHORIZED` 的处置**不同**：前者重新授权无用，需军团管理者调整角色权限。
 
 军团侧另有两个字段：
 
@@ -144,14 +152,20 @@ ESI 服务器失败）归为 `UPSTREAM_ERROR`。**若 `ESI00400` 码值变更须
 | 环节 | 当前次数 | 说明 |
 |------|---------|------|
 | `authorize(cid)` → DB | **N** | 已按 characterId 请求内缓存（原为 2N） |
-| `getAccessToken` | ≤2N | Redis 命中则廉价；未命中触发 refreshToken 轮换 + 分布式锁 |
-| ESI 人物余额 | N | |
-| ESI 军团余额 | ≤N | 分账凑满 1..7 即提前终止（原为无条件遍历） |
+| `getAccessToken` | **2N** | 仍在人物/军团两条路径各调一次，**未去重**；且其内部 `doGetAccessToken` 在读 Redis 前还会做一次 `getAccountOne` 库查 |
+| ESI 人物余额 | N | 已加 5s 超时 |
+| ESI 军团余额 | ≤N | 分账凑满 1..7 即提前终止；已加 5s 超时 |
 
-### 已落地的两项
+> ⚠ **数字更正**：早期文档称 authorize 去重把 DB 查询从 2N 降到 N。这不准确——`getAccessToken`
+> 内部还有 2N 次 `getAccountOne`，故实际是**从 4N 降到 3N**。该事实由单测
+> `tokenExchangeAnchoredToOwnerUserId` 的 `times(2)` 断言钉死（2026-08-25 安全审计 HIGH-1 第 2 点）。
 
-1. **authorize 请求内去重**：同一人物原先被 authorize 两次（人物余额路径 + 军团余额路径），
-   各查一次库；现按 `characterId` 缓存，单次请求内只校验一次。
+### 已落地的三项
+
+1. **超时**（安全审计 HIGH-1）：两个余额查询加 `.timeout(ESI_DATA_TIMEOUT)`（5s，依宪法「外部调用 5s 超时」）。
+   此前裸 `.block()` 在 ESI 侧 TCP 半开或响应停滞时会**无界**持有 Tomcat 工作线程，
+   而 `application.yml` 的 Tomcat max 200 即成为全站可用性上限，恢复需重启。
+2. **authorize 请求内去重**：同一人物原先在人物路径与军团路径各 authorize 一次。
    > 这里**没有**采用"直接用 `getAccountList` 的结果替代 `authorize`"这个更省的方案，原因有两条：
    > ① `authorize` 除查库外还从 SecurityContext 取 userId 做归属校验，替代等于把双重校验降为单重
    > （`getAccountList` 的 `where user_id` 成为唯一防线）——对财务数据不值得；
@@ -159,20 +173,30 @@ ESI 服务器失败）归为 `UPSTREAM_ERROR`。**若 `ESI00400` 码值变更须
    > `getAccountOne` 取 12 列（多 `gmt_create`/`gmt_modified`/`type`/`qq`）。
    > 其中 `type`（注释 `CH:0 EU:1`，即晨曦/欧服）目前**全项目零使用**，故当下无碍；
    > 但若将来用它做多服务器分流，替代方案会静默拿到 `null`。
-2. **分账凑满提前终止**：ESI 单次调用即返回该 token 可见的全部分账；若前一个人物已覆盖 1..7，
+3. **分账凑满提前终止**：ESI 单次调用即返回该 token 可见的全部分账；若前一个人物已覆盖 1..7，
    后续人物的调用零贡献。注意"跳过"不等于"失败"，不会置 `partial`。
+   > ⚠ 该优化在**最坏场景下不生效**：若该军团下所有人物都无 Accountant 权限（ESI 全返 403），
+   > 一个 division 都取不到，`merged` 恒为空，所有人物仍被逐个遍历。见下方 DoS 风险。
 
-### 仍未处理
+### 仍未处理 —— 存在可被任意登录用户触发的 DoS 风险
 
-- **无超时**：`EsiApiService` 中这两个余额方法的 `.block()` 没有 `.timeout(...)`，
-  `esiClient` 也未配 `responseTimeout`。ESI 卡住时请求线程无界等待。
-- **未接入 015 响应缓存**：这两个余额方法是全项目唯一绕过 `esiResponseCache` 的 ESI 查询
-  （016 为"实时通路"刻意如此）。ESI 对 `/characters/{id}/wallet/` 声明 120s 缓存，
-  同一分钟内重复调用拿不到更新数据，只消耗自己的 error limit（100/min per IP）。
+2026-08-25 安全审计将其定级为 **HIGH**（可用性类安全缺陷，非单纯性能问题），两个已验证场景：
 
-⚠ **error limit 连坐风险**：若某用户 3 个人物 token 已失效，每次请求产生 3 次 ESI 4xx；
-前端 5 秒轮询 → 每分钟 36 次错误。多个此类用户叠加即可能触发 ESI **全应用级** error limit 封禁，
-届时**所有用户的所有 ESI 功能一起不可用**。因此不建议对本端点做高频轮询。
+- **场景 A（全站不可用）**：任意持 `USER` 角色的普通账号，以 25 路并发循环调用本端点。
+  8 个绑定人物 ⇒ 最多 16 次串行 ESI 往返 ⇒ 单请求占用线程 5–12 秒 ⇒ 长期占满约 200 个
+  Tomcat 线程 ⇒ accept 队列填满 ⇒ **整个应用对所有用户不可用**。已加的 5s 超时限制了
+  单次调用的上界，但**未消除**并发放大。
+- **场景 B（跨用户破坏）**：某用户 6 个人物同属一军团且均无 Accountant 角色（**正常玩家常态**），
+  每次请求产生 6 次 ESI 403；2 req/s 轮询 ⇒ 720 次 4xx/分钟 ⇒ 触发 ESI
+  **全应用级** error limit（100 errors/60s/IP）⇒ **所有用户的所有 ESI 功能（资产、蓝图、
+  工业、月矿、流水、总览）同时不可用**。一个前端仪表盘的定时刷新就能无意触发。
+  应用目前对 `X-ESI-Error-Limit-Remain` 完全无感知，无法自我熔断。
+
+未落地的对策（需独立立项）：per-user 冷却（本仓库 `WalletJournalApplicationService`
+已有 `requireSyncCooldown` 60s 冷却可复用）、接入 015 `esiResponseCache`、
+403 负缓存、error limit 熔断、`esiClient` 全局 `responseTimeout`。
+
+**因此：不要对本端点做高频轮询。**
 
 ## 9. RBAC 与部署
 

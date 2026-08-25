@@ -556,5 +556,76 @@ class WalletBalanceApplicationServiceTest {
 
             verify(authorizeUtil, times(1)).authorize(CID_1);
         }
+
+        @Test
+        @DisplayName("token 换取锚定 (cid, 当前 userId),且军团查询用该人物的 token(安全审计 MEDIUM-3)")
+        void tokenExchangeAnchoredToOwnerUserId() throws ParseException {
+            authenticateAs(USER_ID);
+            EveAccount account = buildAccount(CID_1, "Alice", CORP_A, "CorpA");
+            when(eveAccountRepository.getAccountList(USER_ID)).thenReturn(List.of(account));
+            stubAuthorize(CID_1);
+            stubAccessToken(CID_1);
+            when(esiGateway.queryCharacterWalletBalance(eq(CID_1), any())).thenReturn(1.0);
+            when(esiGateway.queryCorporationWalletBalances(eq(CORP_A), any()))
+                    .thenReturn(List.of(new WalletDivisionBalance(1, 2.0)));
+
+            applicationService.getUserWalletBalance();
+
+            // userId 实参正是本仓库历史 ESI token 缓存键越权漏洞(f153ed4)所在参数,
+            // 缓存键为 esi_access_token:<userId>:<characterId>。若有人把它换成常量、
+            // SYSTEM_USER_ID 或另一个 account 的 userId(017 IMPORTANT-1 的真实失败模式),
+            // 以下断言必须失败。
+            //
+            // times(2) 而非 times(1):authorize 已按 cid 去重,但 getAccessToken 仍在
+            // 人物余额与军团余额两条路径各调一次。这钉死了一个事实 —— authorize 去重的
+            // 实际收益小于表面:getAccessToken 内部(EsiApiService.doGetAccessToken)
+            // 在读 Redis 前还会做一次 getAccountOne 库查,故 DB 查询只从 4N 降到 3N,
+            // 而非 2N→N(2026-08-25 安全审计 HIGH-1 第 2 点)。token 级去重待独立立项。
+            verify(esiGateway, times(2)).getAccessToken(CID_1, USER_ID);
+            // 军团分账必须用该人物换来的 token,而非任意 token
+            verify(esiGateway).queryCorporationWalletBalances(CORP_A, "Bearer token-" + CID_1);
+        }
+
+        @Test
+        @DisplayName("ESI 403 权限不足 → PERMISSION_DENIED 而非 UPSTREAM_ERROR(安全审计 MEDIUM-1)")
+        void esiPermissionLow_mappedToPermissionDenied() throws ParseException {
+            authenticateAs(USER_ID);
+            EveAccount account = buildAccount(CID_1, "Alice", null, null);
+            when(eveAccountRepository.getAccountList(USER_ID)).thenReturn(List.of(account));
+            stubAuthorize(CID_1);
+            stubAccessToken(CID_1);
+            // 模拟 ESI 403:token 有效但该人物缺少目标军团角色(码 ESI00403)
+            when(esiGateway.queryCharacterWalletBalance(eq(CID_1), any()))
+                    .thenThrow(new EveHelperException(new StubEsiPermissionLowCode()));
+
+            UserWalletBalanceVO result = applicationService.getUserWalletBalance();
+
+            CharacterBalanceVO cb = result.characters().get(0);
+            assertThat(cb.balance()).isNull();
+            // 关键:不得归为 UPSTREAM_ERROR —— 那的语义是"重试可能恢复",
+            // 会诱使前端反复重试持久性权限缺失,每次撞 ESI 403 并消耗全应用 error limit
+            assertThat(cb.status()).isEqualTo(BalanceQueryStatus.PERMISSION_DENIED);
+        }
+    }
+
+    /**
+     * 桩：模拟 infrastructure 层 ResultCode.ESI_AUTH_PERMISSION_LOW("ESI00403")。
+     *
+     * <p>测试位于 application 层，不得 import infrastructure 类型（DDD 分层规则），
+     * 故以实现 {@link xyz.foolcat.eve.evehelper.shared.result.IResultCode} 的桩复现该码值。
+     * 这同时把「码值 ESI00403」这一跨层约定钉死在测试里 —— 若 infrastructure 侧改了码值
+     * 而忘记同步服务内的常量，本用例仍绿但生产会退化，故另见 knowledge 文档中的同步提醒。</p>
+     */
+    private static final class StubEsiPermissionLowCode
+            implements xyz.foolcat.eve.evehelper.shared.result.IResultCode {
+        @Override
+        public String getCode() {
+            return "ESI00403";
+        }
+
+        @Override
+        public String getMsg() {
+            return "该人物缺少目标军团的 Director/Bookkeeper 等角色";
+        }
     }
 }

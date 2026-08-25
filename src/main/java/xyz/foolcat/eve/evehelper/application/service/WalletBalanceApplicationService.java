@@ -60,15 +60,28 @@ public class WalletBalanceApplicationService {
      * （refreshToken 失效或过期）。此处以码字符串比对而非直接引用该枚举，
      * 因为 application 层不得 import infrastructure 类型（DDD 分层规则）。
      * <b>若该码值变更，须同步此处。</b></p>
-     *
-     * <p>不在本集合内的码（如 {@code ESI00500} ESI 服务器失败）归为 UPSTREAM_ERROR：
-     * 与授权无关，重试可能恢复。</p>
      */
     private static final Set<String> REAUTH_REQUIRED_CODES = Set.of(
             ResultCode.ACCESS_UNAUTHORIZED.getCode(),     // AUT00301 未认证/主体不可识别
             ResultCode.USER_ACCOUNT_NOT_EXIST.getCode(),  // AUT00208 归属不符或账号已解绑
             "ESI00400"                                    // ESI 未授权或授权过期
     );
+
+    /**
+     * 表示「权限不足」的错误码（2026-08-25 安全审计 MEDIUM-1）。
+     *
+     * <p>{@code ESI00403} 来自 {@code ResultCode.ESI_AUTH_PERMISSION_LOW}：token 有效，
+     * 但该人物缺少目标军团的 Accountant/Director 等角色，或已离开该军团。</p>
+     *
+     * <p>此前该码落入 UPSTREAM_ERROR，而后者的语义是「重试可能恢复」——这会诱使客户端
+     * 反复重试一个持久性权限缺失，每次都撞 ESI 403 并消耗全应用共享的 error limit
+     * （100 errors/60s/IP），是 DoS 放大链的一环。故单列为 PERMISSION_DENIED，
+     * 让前端能给出正确提示（需军团管理者调整角色权限，而非重新授权）。</p>
+     *
+     * <p>同样以码字符串比对（不得 import infrastructure）；<b>码值变更须同步此处。</b></p>
+     */
+    private static final String ESI_PERMISSION_LOW_CODE = "ESI00403";
+
 
     private final EveAccountRepository eveAccountRepository;
     private final AuthorizeUtil authorizeUtil;
@@ -185,30 +198,40 @@ public class WalletBalanceApplicationService {
     }
 
     /**
-     * 把异常归类为「需重新授权」或「上游故障」。
+     * 把异常归类为「需重新授权」「权限不足」或「上游故障」。
      *
      * <p>依据错误码而非异常类型：ESI 侧异常 {@code EsiException} 与其错误码枚举都定义在
      * infrastructure 层，application 层不得 import（DDD 分层规则），故以 {@link IResultCode}
      * 暴露的码字符串比对。</p>
+     *
+     * <p>三分而非二分的理由见 {@link #ESI_PERMISSION_LOW_CODE}：把持久性的权限缺失
+     * 归为「可重试」会诱发重试风暴并打满 ESI error limit。</p>
      */
     private BalanceQueryStatus classify(EveHelperException e) {
         IResultCode rc = e.resultCode;
         String code = rc == null ? null : rc.getCode();
-        return code != null && REAUTH_REQUIRED_CODES.contains(code)
-                ? BalanceQueryStatus.UNAUTHORIZED
-                : BalanceQueryStatus.UPSTREAM_ERROR;
+        if (code == null) {
+            return BalanceQueryStatus.UPSTREAM_ERROR;
+        }
+        if (REAUTH_REQUIRED_CODES.contains(code)) {
+            return BalanceQueryStatus.UNAUTHORIZED;
+        }
+        if (ESI_PERMISSION_LOW_CODE.equals(code)) {
+            return BalanceQueryStatus.PERMISSION_DENIED;
+        }
+        return BalanceQueryStatus.UPSTREAM_ERROR;
     }
 
     /**
-     * 分级记录失败：授权类问题是用户可自行修复的常态，不打堆栈以免刷屏；
+     * 分级记录失败：授权/权限类问题是用户可自行修复的常态，不打堆栈以免刷屏；
      * 上游故障需要堆栈定位。
      */
     private void logFailure(String what, BalanceQueryStatus status, EveHelperException e, String ctx) {
-        if (status == BalanceQueryStatus.UNAUTHORIZED) {
-            log.warn("{}(需重新授权): {}, code={}", what, ctx,
-                    e.resultCode == null ? "-" : e.resultCode.getCode());
-        } else {
+        if (status == BalanceQueryStatus.UPSTREAM_ERROR) {
             log.warn("{}(上游故障): {}", what, ctx, e);
+        } else {
+            log.warn("{}({}): {}, code={}", what, status.getDescription(), ctx,
+                    e.resultCode == null ? "-" : e.resultCode.getCode());
         }
     }
 
