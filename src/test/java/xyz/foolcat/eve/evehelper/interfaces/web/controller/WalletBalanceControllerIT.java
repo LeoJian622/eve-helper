@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import xyz.foolcat.eve.evehelper.application.cache.UserWalletBalanceCache;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
@@ -51,6 +52,10 @@ class WalletBalanceControllerIT {
     @Autowired
     MockMvc mockMvc;
 
+    /** 真实缓存 bean（不 mock）：使本 IT 一并验证 Redis 序列化往返。 */
+    @Autowired
+    UserWalletBalanceCache balanceCache;
+
     @MockitoBean
     RbacAuthorizationManager rbacAuthorizationManager;
 
@@ -72,6 +77,11 @@ class WalletBalanceControllerIT {
 
     @BeforeEach
     void setUp() {
+        // 安全审计 HIGH-1 引入了 60s 结果缓存。此处注入【真实】缓存 bean 而非 mock，
+        // 使本 IT 同时验证 Redis 序列化往返（record + 枚举）能正确还原；
+        // 但必须逐用例清理，否则同一 userId 的用例会读到前一个用例写入的结果
+        // （首次接入时正是这样失败的：noAccounts 用例读到了 normalQuery 的 TestChar）。
+        balanceCache.evict(USER_ID);
         // RBAC 默认放行
         lenient().when(rbacAuthorizationManager.check(any(), any()))
                 .thenReturn(new org.springframework.security.authorization.AuthorizationDecision(true));

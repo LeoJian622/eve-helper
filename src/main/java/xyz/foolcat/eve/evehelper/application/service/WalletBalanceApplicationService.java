@@ -3,6 +3,7 @@ package xyz.foolcat.eve.evehelper.application.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import xyz.foolcat.eve.evehelper.application.cache.UserWalletBalanceCache;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterBalanceVO;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CorporationBalanceVO;
@@ -86,6 +87,7 @@ public class WalletBalanceApplicationService {
     private final EveAccountRepository eveAccountRepository;
     private final AuthorizeUtil authorizeUtil;
     private final EsiGateway esiGateway;
+    private final UserWalletBalanceCache balanceCache;
 
     /**
      * 获取当前登录用户的钱包余额聚合。
@@ -110,6 +112,28 @@ public class WalletBalanceApplicationService {
             throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);
         }
 
+        // 2026-08-25 安全审计 HIGH-1：结果缓存置于身份校验【之后】、取数之前。
+        // 命中即省掉本次请求的全部 ESI 与 DB 开销，消除任意已认证用户可触发的
+        // 线程池耗尽与 ESI error limit 连坐（详见 UserWalletBalanceCache 类注释）。
+        // 键含 userId，不存在跨用户读到他人财务数据的可能。
+        UserWalletBalanceVO cached = balanceCache.get(userId);
+        if (cached != null) {
+            return cached;
+        }
+
+        UserWalletBalanceVO result = computeUserWalletBalance(userId);
+        // 含失败状态的结果同样写入：否则 403/授权失效场景每次请求仍会真调 ESI，
+        // 那正是 error limit 连坐的成因。代价是用户修好权限后最多等 TTL 到期。
+        balanceCache.put(userId, result);
+        return result;
+    }
+
+    /**
+     * 真实聚合（缓存未命中时执行）。
+     *
+     * @param userId 已校验的当前登录用户ID
+     */
+    private UserWalletBalanceVO computeUserWalletBalance(Integer userId) {
         // 获取用户所有绑定人物
         List<EveAccount> accounts = eveAccountRepository.getAccountList(userId);
         if (accounts == null || accounts.isEmpty()) {

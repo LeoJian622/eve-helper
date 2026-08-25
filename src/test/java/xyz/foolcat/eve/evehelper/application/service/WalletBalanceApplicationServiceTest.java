@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import xyz.foolcat.eve.evehelper.application.cache.UserWalletBalanceCache;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterBalanceVO;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CorporationBalanceVO;
@@ -68,6 +69,9 @@ class WalletBalanceApplicationServiceTest {
 
     @Mock
     private EsiGateway esiGateway;
+
+    @Mock
+    private UserWalletBalanceCache balanceCache;
 
     @InjectMocks
     private WalletBalanceApplicationService applicationService;
@@ -605,6 +609,74 @@ class WalletBalanceApplicationServiceTest {
             // 关键:不得归为 UPSTREAM_ERROR —— 那的语义是"重试可能恢复",
             // 会诱使前端反复重试持久性权限缺失,每次撞 ESI 403 并消耗全应用 error limit
             assertThat(cb.status()).isEqualTo(BalanceQueryStatus.PERMISSION_DENIED);
+        }
+    }
+
+    /* ============================ 结果缓存 ============================ */
+
+    @Nested
+    @DisplayName("聚合结果缓存(安全审计 HIGH-1)")
+    class ResultCacheTest {
+
+        @Test
+        @DisplayName("缓存命中 → 直接返回,不触达仓储与 ESI")
+        void cacheHit_shortCircuitsWithoutEsiOrDb() {
+            UserWalletBalanceVO cached = new UserWalletBalanceVO(
+                    List.of(new CharacterBalanceVO(CID_1, "Alice", 42.0, BalanceQueryStatus.OK)),
+                    List.of());
+            when(balanceCache.get(USER_ID)).thenReturn(cached);
+
+            UserWalletBalanceVO result = applicationService.getUserWalletBalance();
+
+            assertThat(result).isSameAs(cached);
+            // 命中即省掉全部开销:N 次 ESI + N 次 authorize + 2N 次 getAccessToken
+            verifyNoInteractions(eveAccountRepository);
+            verifyNoInteractions(esiGateway);
+            verifyNoInteractions(authorizeUtil);
+        }
+
+        @Test
+        @DisplayName("缓存未命中 → 真算后写入缓存")
+        void cacheMiss_computesAndPopulatesCache() throws ParseException {
+            when(balanceCache.get(USER_ID)).thenReturn(null);
+            EveAccount account = buildAccount(CID_1, "Alice", null, null);
+            when(eveAccountRepository.getAccountList(USER_ID)).thenReturn(List.of(account));
+            stubAuthorize(CID_1);
+            stubAccessToken(CID_1);
+            when(esiGateway.queryCharacterWalletBalance(eq(CID_1), any())).thenReturn(99.0);
+
+            UserWalletBalanceVO result = applicationService.getUserWalletBalance();
+
+            assertThat(result.characters().get(0).balance()).isEqualTo(99.0);
+            verify(balanceCache).put(eq(USER_ID), any(UserWalletBalanceVO.class));
+        }
+
+        @Test
+        @DisplayName("含失败状态的结果也写入缓存(消除 403 重试打满 ESI error limit)")
+        void failedResultAlsoCached() {
+            when(balanceCache.get(USER_ID)).thenReturn(null);
+            EveAccount account = buildAccount(CID_1, "Alice", null, null);
+            when(eveAccountRepository.getAccountList(USER_ID)).thenReturn(List.of(account));
+            when(authorizeUtil.authorize(CID_1))
+                    .thenThrow(new EveHelperException(ResultCode.USER_ACCOUNT_NOT_EXIST));
+
+            UserWalletBalanceVO result = applicationService.getUserWalletBalance();
+
+            assertThat(result.characters().get(0).status()).isEqualTo(BalanceQueryStatus.UNAUTHORIZED);
+            // 关键:失败结果必须缓存,否则 403/授权失效场景每次请求仍会打 ESI,
+            // 这正是安全审计 HIGH-1 场景 B(error limit 连坐)的成因
+            verify(balanceCache).put(eq(USER_ID), any(UserWalletBalanceVO.class));
+        }
+
+        @Test
+        @DisplayName("未认证 → 不读缓存(拒绝先于一切取数)")
+        void unauthenticated_doesNotTouchCache() {
+            SecurityContextHolder.clearContext();
+
+            assertThatThrownBy(() -> applicationService.getUserWalletBalance())
+                    .isInstanceOf(EveHelperException.class);
+
+            verifyNoInteractions(balanceCache);
         }
     }
 

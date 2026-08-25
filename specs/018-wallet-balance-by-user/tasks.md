@@ -91,9 +91,31 @@ IDOR、fail-open、token 缓存键、请求内缓存、军团并集、新增字�
 | MEDIUM-3 测试未锚定 `getAccessToken` 的 userId 实参 | ✅ 已修 | 新增 `tokenExchangeAnchoredToOwnerUserId`，断言 `getAccessToken(CID_1, USER_ID)` 与军团查询使用该人物的 token |
 | LOW-2 `EveAccount.toString()` 含 refreshToken | ✅ 已修 | 加 `@ToString(exclude = "refreshToken")` |
 | HIGH-1 之「`.block()` 无超时」 | ✅ 已修 | 两个余额查询加 `.timeout(ESI_DATA_TIMEOUT)`（5s，依宪法「外部调用 5s 超时」）。线程最长被持有 5s，消除无界等待 |
-| HIGH-1 之「限流」「接入 015 缓存」「全局 responseTimeout」 | ⏳ 待决策 | 均有实质副作用，需用户裁定，见下 |
+| HIGH-1 之「限流」 | ✅ 已修（用户裁定方案 2） | 端点结果缓存 `UserWalletBalanceCache`，键 `wallet:balance:user:<userId>`（含 userId 防越权），TTL 60s，**失败结果同样缓存**（否则 403 场景仍打 ESI）。选缓存而非 per-user 冷却：冷却会拒绝请求，缓存返回稍旧数据，查询端点体验更好；且 ESI 自身声明 120s 缓存，60s 不损新鲜度 |
+| HIGH-1 之「接入 015 缓存」「全局 responseTimeout」 | ⏳ 延期 | 端点级缓存已覆盖本端点；per-ESI-call 缓存可让其他端点受益，全局超时会影响大资产分页等慢查询，均需单独评估 |
 | MEDIUM-2 RBAC 无自动化验证 | ⏳ 延期 | 审计给出绕开共享 Redis 的方案（`@MockitoBean RedisTemplate` 注入受控规则 hash），可行但未实施 |
 | LOW-1 `authCache` 为 `HashMap` | ⏳ 延期 | 当前安全（两条 stream 均串行，已核验）；风险仅在将来有人加 `.parallel()` |
+
+### T12: HIGH-1 缓存方案的落地细节与实测发现
+
+| 项 | 内容 |
+|---|------|
+| 组件 | `application/cache/UserWalletBalanceCache`（新建 `application/cache` 包） |
+| 键 | `wallet:balance:user:<userId>` —— 与既有 12 个键前缀无冲突；**含 userId 段实现用户隔离**（`f153ed4` 教训） |
+| TTL | 60s（ESI 对两个余额端点自身声明 120s 缓存，故 60s 内真调本来也拿不到更新数据） |
+| 缓存位置 | **身份校验之后、取数之前** —— 未认证请求不触达缓存（有测试固化） |
+| 失败结果 | **同样缓存**。这是消除 error limit 连坐的必要条件；代价是用户修好权限后最多等 60s |
+| 序列化 | 统一以 JSON 字符串存取。全局 `RedisTemplate` 用 `Jackson2JsonRedisSerializer<Object>`，反序列化到 `Object` 无类型头时会还原成 `LinkedHashMap`，故显式按 `UserWalletBalanceVO` 还原（同 015 `EsiResponseCache`） |
+| fail-open | 读/写/序列化任一异常均按未命中处理，不因缓存故障阻断业务 |
+
+**实测发现（IT 首次接入即暴露）**：`noAccounts_returnsEmptyStructure` 读到了前一个用例
+`normalQuery_returnsCorrectStructure` 写入真实 Redis 的 `TestChar` 数据。这既证明**缓存与
+真实 Redis 的序列化往返工作正常**（record + 枚举可正确还原），也暴露了缓存会造成**用例间污染**。
+处置：为缓存组件增加 `evict(userId)`，IT 在 `@BeforeEach` 清理；IT 注入**真实**缓存 bean
+而非 mock，使其持续验证序列化往返。
+
+**效果**：场景 A 单用户已无法靠重复请求放大（60s 内仅首次真调）；场景 B 从 720 次 4xx/分钟
+降至约 6 次/分钟，**降低两个数量级**。
 
 ### T11: 审计推翻的两处先前判断
 
