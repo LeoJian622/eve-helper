@@ -106,3 +106,55 @@ UPDATE sys_permission
 SET url_perm = 'GET:/wallet/overview/corp/{cid}',
     gmt_modified = NOW()
 WHERE url_perm = 'GET:/wallet/overview/corp/{corpId}';
+
+-- ---------------------------------------------------------------------
+-- Step 5(018 追加): 登记用户钱包余额聚合端点的 RBAC 权限。
+--   端点: GET:/wallet/balance (WalletBalanceController)
+--   权限: 绑定到 ADMIN 与 USER 两个角色。
+--     ⚠ 注意这是【白名单式】授权,而非"任何已认证用户皆可访问":
+--       RbacAuthorizationManager 为 fail-closed,自定义角色(如 GUEST/CORP_MEMBER)
+--       的已认证用户若未在此列出,访问该端点会得到 403。
+--       如需放开给全部登录用户,应改为对 sys_role 全表授权或走白名单机制,
+--       而不是在此追加角色 code。
+--   幂等: 事务内先删后插,可重复执行。
+-- ---------------------------------------------------------------------
+START TRANSACTION;
+
+DELETE srp
+FROM sys_role_permission srp
+         INNER JOIN sys_permission sp ON srp.permission_id = sp.id
+WHERE sp.url_perm = 'GET:/wallet/balance';
+
+DELETE
+FROM sys_permission
+WHERE url_perm = 'GET:/wallet/balance';
+
+INSERT INTO sys_permission (name, url_perm, gmt_create, gmt_modified)
+VALUES ('用户钱包余额聚合', 'GET:/wallet/balance', NOW(), NOW());
+
+INSERT INTO sys_role_permission (role_id, permission_id, gmt_create, gmt_modified)
+SELECT sr.id, sp.id, NOW(), NOW()
+FROM sys_role sr, sys_permission sp
+WHERE sp.url_perm = 'GET:/wallet/balance'
+  AND sr.code IN ('ADMIN', 'USER');
+
+COMMIT;
+
+-- ---------------------------------------------------------------------
+-- Step 5 执行后校验(必跑): 确认两个角色绑定都已写入。
+--   期望 2 行(ADMIN 与 USER 各一)。
+--   ⚠ 若少于 2 行,说明目标库缺少对应 sys_role.code —— 上面的 INSERT ... SELECT
+--     在角色不存在时【静默少插且不报错】,必须人工核对后补齐。
+-- ---------------------------------------------------------------------
+-- SELECT sp.url_perm, sr.code
+-- FROM sys_permission sp
+--          JOIN sys_role_permission srp ON srp.permission_id = sp.id
+--          JOIN sys_role sr ON sr.id = srp.role_id
+-- WHERE sp.url_perm = 'GET:/wallet/balance';
+
+-- ---------------------------------------------------------------------
+-- ⚠ 最后一步(不可省): 刷新权限缓存使规则生效。
+--   RbacAuthorizationManager 的 URL-权限-角色映射缓存在 Redis(URL_PERM_ROLES_KEY),
+--   仅执行本脚本不会让新权限立即生效,须调用 refreshPermRolesRules
+--   (或对应管理入口)重建缓存。Step 4 的 UPDATE 同理。
+-- ---------------------------------------------------------------------

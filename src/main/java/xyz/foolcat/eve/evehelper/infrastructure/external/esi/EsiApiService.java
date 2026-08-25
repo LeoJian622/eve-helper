@@ -148,6 +148,16 @@ public class EsiApiService implements EsiGateway {
     private static final Duration ESI_REFRESH_TIMEOUT = Duration.ofSeconds(5);
 
     /**
+     * ESI 数据查询超时（宪法:外部调用 5s 超时）。
+     *
+     * <p>2026-08-25 安全审计 HIGH-1：钱包余额直查（overview/balance 实时通路）原先裸 {@code .block()}
+     * 无超时，而这两个方法在 Tomcat 工作线程上被每人物调用一次。ESI 侧一旦出现 TCP 半开或响应停滞，
+     * 线程被<b>无界</b>持有；`application.yml` 的 Tomcat max 200 即成为全站可用性上限，
+     * 恢复需重启。加超时使线程最长被持有 5s。</p>
+     */
+    private static final Duration ESI_DATA_TIMEOUT = Duration.ofSeconds(5);
+
+    /**
      * accessToken 在 Redis 中的缓存时长,秒(19 分钟,略短于 ESI 20 分钟有效期)
      */
     private static final long ACCESS_TOKEN_CACHE_TTL_SECONDS = 19 * 60;
@@ -1313,14 +1323,18 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Double queryCharacterWalletBalance(Integer characterId, String accessToken) {
-        return walletApi.queryCharacterWallet(characterId, EsiClientConfig.SERENITY, accessToken).block();
+        return walletApi.queryCharacterWallet(characterId, EsiClientConfig.SERENITY, accessToken)
+                .timeout(ESI_DATA_TIMEOUT)
+                .block();
     }
 
     @Override
     public List<WalletDivisionBalance> queryCorporationWalletBalances(Integer corporationId, String accessToken) {
         return walletApi.queryCorporationWallet(corporationId, EsiClientConfig.SERENITY, accessToken)
                 .map(r -> new WalletDivisionBalance(r.getDivision(), r.getBalance()))
-                .collectList().block();
+                .collectList()
+                .timeout(ESI_DATA_TIMEOUT)
+                .block();
     }
 
     /**

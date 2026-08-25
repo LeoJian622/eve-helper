@@ -320,5 +320,12 @@
            user_id
     from eve_account
     where user_id = #{userId,jdbcType=INTEGER}
+    <!-- 018 MINOR-1:显式排序保证结果集顺序确定。
+         军团分账余额合并(mergeCorporationBalances)按 putIfAbsent 取"首个胜出",
+         胜出者取决于本查询的行序;InnoDB 不保证无 order by 时的行序(受执行计划、
+         行更新、page split 影响),同一份数据两次请求可能选中不同人物的 token,
+         导致线上出现"同一分账余额时而 100 时而 999"且无从排查。
+         取 character_id 最小者为稳定胜出者。 -->
+    order by character_id
     </select>
 </mapper>
