@@ -54,6 +54,16 @@
 
 ### 返回结构
 
+> **字段语义（018 IMPORTANT-2）**：
+> - `characters[].status`：`OK` / `UNAUTHORIZED`（需重新授权）/ `UPSTREAM_ERROR`（ESI 故障）。
+>   **`status != OK` 时 `balance` 为 `null`**，不再降级为 `0`——那会与真实的零余额同形。
+>   调用方不得把 `null` 或 `0` 直接当作「账上没钱」。
+> - `corporations[].partial`：为 `true` 表示有人物查询失败、分账集合不完整，
+>   此时 `totalBalance` 只是已取到分账之和，**不代表军团总资产**。
+> - `corporations[].unavailableCharacterIds`：失败的人物ID，便于定位需重新授权的角色。
+>
+> `balance` 为 `null` 属破坏性变更，前端必须处理该情况。
+
 ```json
 {
   "code": "200",
@@ -63,12 +73,14 @@
       {
         "characterId": 123,
         "characterName": "Alice",
-        "balance": 1000000.00
+        "balance": 1000000.00,
+        "status": "OK"
       },
       {
         "characterId": 456,
         "characterName": "Bob",
-        "balance": 500000.00
+        "balance": null,
+        "status": "UNAUTHORIZED"
       }
     ],
     "corporations": [
@@ -79,7 +91,9 @@
         "divisions": [
           { "division": 1, "balance": 3000000.00 },
           { "division": 2, "balance": 2000000.00 }
-        ]
+        ],
+        "partial": false,
+        "unavailableCharacterIds": []
       }
     ]
   }

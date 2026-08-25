@@ -137,10 +137,14 @@ class WalletBalanceControllerIT {
                 .andExpect(jsonPath("$.data.characters[0].characterId").value(CID_1))
                 .andExpect(jsonPath("$.data.characters[0].characterName").value("TestChar"))
                 .andExpect(jsonPath("$.data.characters[0].balance").value(1000000.0))
+                .andExpect(jsonPath("$.data.characters[0].status").value("OK"))
                 .andExpect(jsonPath("$.data.corporations").isArray())
                 .andExpect(jsonPath("$.data.corporations[0].corpId").value(CORP_A))
                 .andExpect(jsonPath("$.data.corporations[0].corpName").value("TestCorp"))
-                .andExpect(jsonPath("$.data.corporations[0].totalBalance").value(500000.0));
+                .andExpect(jsonPath("$.data.corporations[0].totalBalance").value(500000.0))
+                // 018 IMPORTANT-2:成功路径 partial 为 false、失败人物列表为空
+                .andExpect(jsonPath("$.data.corporations[0].partial").value(false))
+                .andExpect(jsonPath("$.data.corporations[0].unavailableCharacterIds").isEmpty());
     }
 
     @Test

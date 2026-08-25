@@ -86,9 +86,12 @@ GET /wallet/balance
 2. **某个角色失败不影响其他角色**：单角色的取数包在 `try/catch` 内，失败记 warn 后继续下一个。
 3. **`division` 必须落在 1..7**，否则跳过并记 warn（见下节）。
 
-### 已知局限：合并的"首个胜出"顺序不确定（MINOR-1，未修）
+### 合并的"首个胜出"顺序已固定（MINOR-1 已修）
 
-`putIfAbsent` 的胜出者取决于 `charsInCorp` 的顺序，而该顺序来自 `queryAccountList` 的结果集顺序——**该 SQL 没有 `ORDER BY`**，InnoDB 不保证行序。同一份数据两次请求可能选中不同人物的 token。排查线上"为什么这次是 100 下次是 999"时需知道这一点。建议后续给该查询加 `order by character_id`。
+`putIfAbsent` 的胜出者取决于 `charsInCorp` 的顺序，而该顺序来自 `queryAccountList` 的结果集顺序。
+该 SQL 原先**没有 `ORDER BY`**，InnoDB 不保证行序（受执行计划、行更新、page split 影响），
+同一份数据两次请求可能选中不同人物的 token，线上会出现「同一分账余额时而 100 时而 999」且无从排查。
+现已加 `order by character_id`，胜出者固定为 **characterId 最小者**，结果可复现。
 
 ## 6. division 合法性防御（018 IMPORTANT-3）
 
@@ -101,43 +104,75 @@ GET /wallet/balance
 
 故合并前置校验 `division == null || < 1 || > 7` 即跳过并记 warn。回归测试：`nullDivision_skippedWithoutNpe`、`outOfRangeDivision_skipped`。
 
-## 7. 已知局限：故障不可观测（IMPORTANT-2，延期未修）
+## 7. 故障可观测：status 与 partial（018 IMPORTANT-2 已落地）
 
-**这是使用本端点时最需要留意的一点。** 人物与军团的取数都包在 `catch (Exception)` 里，失败一律降级为 `0.0` / 空列表：
+**这是使用本端点时最需要留意的字段。** 早期实现把人物与军团的取数都包在 `catch (Exception)` 里，
+失败一律降级为 `0.0` / 空列表，导致「余额真的是 0」与「我们没查到」在返回结构上**完全同形**。
+现已改为显式状态：
 
-| 场景 | 实际情况 | 返回 |
+| 场景 | 返回 |
+|------|------|
+| 查询成功 | `balance` 为数值，`status: "OK"` |
+| refreshToken 被撤销 / 归属校验失败 | `balance: null`，`status: "UNAUTHORIZED"` |
+| ESI 5xx / 超时 / 解析失败 | `balance: null`，`status: "UPSTREAM_ERROR"` |
+| ESI 返回 null 余额（调用成功） | `balance: 0.0`，`status: "OK"` —— 这是**可信的**零余额 |
+
+军团侧另有两个字段：
+
+- `partial`：为 `true` 表示该军团下有人物查询失败，分账集合不完整。此时 `totalBalance`
+  只是已取到分账之和，**不代表军团总资产**。例如 7 个分账中 4 个失败时会系统性低估。
+- `unavailableCharacterIds`：失败的人物ID，便于定位需要重新授权的角色。
+
+> ⚠ 调用方（尤其展示 ISK 资产的前端）**不得**把 `null` 或 `0` 直接当作「账上没钱」，
+> 必须先看 `status` / `partial`。`balance` 可为 `null` 属破坏性变更。
+
+### 状态归类的实现约束
+
+区分 `UNAUTHORIZED` 与 `UPSTREAM_ERROR` 是按**错误码字符串**判定的，而非异常类型：
+`EsiException` 与其错误码枚举都定义在 infrastructure 层，application 层不得 import
+（DDD 分层规则）。判据集合 `REAUTH_REQUIRED_CODES` 含 `AUT00301`（未认证）、
+`AUT00208`（归属不符/账号已解绑）、`ESI00400`（ESI 未授权或过期）；其余（含 `ESI00500`
+ESI 服务器失败）归为 `UPSTREAM_ERROR`。**若 `ESI00400` 码值变更须同步该常量。**
+
+日志按状态分级：授权类失败是用户可自行修复的常态，只记 warn 不打堆栈以免刷屏；
+上游故障打堆栈便于定位。
+
+## 8. 调用开销与已知局限（IMPORTANT-5 部分落地）
+
+设 N = 用户绑定人物数、M = 关联军团数：
+
+| 环节 | 当前次数 | 说明 |
 |------|---------|------|
-| refreshToken 在 EVE 官网被撤销 | 该人物无法查询 | `balance: 0.0`，无任何提示需重新授权 |
-| 军团唯一有 Accountant 的人物 token 过期 | 一个分账都读不到 | `totalBalance: 0.0`、`divisions: []` |
-| 7 个分账中 4 个查询失败 | 只拿到 3 个 | `totalBalance` 是这 3 个之和，**系统性低估且无告警** |
-
-即"余额真的是 0"与"我们没查到"在返回结构上**完全同形**。调用方（尤其是展示 ISK 资产的前端）不应把 0 直接当作"账上没钱"。
-
-方向上这是 fail-closed 的——归属校验失败时返回的是 0 而不是他人数据，不构成越权；问题纯粹是**可观测性**。修复方案（VO 增加 `status` 状态位 + `partial` 标记）涉及 API 契约变更，已记为 follow-up。
-
-相关的次要问题（MINOR-3）：`catch (Exception)` 比 016 的分段捕获（`ParseException` / `RuntimeException` 分开）是纪律退化，会一并吞掉 `IllegalStateException` 等编程错误，使 bug 表现为"余额 0"而非快速失败。
-
-## 8. 已知局限：ESI/DB 调用放大（IMPORTANT-5，部分缓解）
-
-设 N = 用户绑定人物数：
-
-| 环节 | 次数 | 备注 |
-|------|------|------|
-| `authorize(cid)` → `getAccountOne` → DB | **2N** | 人物路径 + 军团路径各一次 |
-| `getAccessToken` | 2N | Redis 命中则廉价；未命中触发 refreshToken 轮换 + 分布式锁 |
+| `authorize(cid)` → DB | **N** | 已按 characterId 请求内缓存（原为 2N） |
+| `getAccessToken` | ≤2N | Redis 命中则廉价；未命中触发 refreshToken 轮换 + 分布式锁 |
 | ESI 人物余额 | N | |
-| ESI 军团余额 | N | **按人物数重复，不按军团数** |
+| ESI 军团余额 | ≤N | 分账凑满 1..7 即提前终止（原为无条件遍历） |
 
-四点值得注意：
+### 已落地的两项
 
-1. **N+1**：`getAccountList(userId)` 已把全部 `EveAccount` 载入内存，`authorize` 却又为每个 cid 各查一次库拿同一行。8 个人物 = 16 次多余的单行查询。
-2. **无提前终止**：无条件遍历军团下所有人物。若第一个人物已返回 1..7 全部 division，后续调用零贡献。（`merged.size() >= 7` 即可 break）
-3. **无超时**：`EsiApiService` 中这两个余额方法的 `.block()` 没有 `.timeout(...)`，`esiClient` 也未配 `responseTimeout`。ESI 卡住时请求线程无界等待。8 人物 2 军团 ≈ 16 次串行 ESI 调用，端点 P95 可达 5–12 秒，会占满 Tomcat 线程。
-4. **未接入 015 响应缓存**：这两个余额方法是全项目唯一绕过 `esiResponseCache` 的 ESI 查询（016 为"实时通路"刻意如此），而 018 把它放大了 2N 倍。ESI 对 `/characters/{id}/wallet/` 声明 120s 缓存，同一分钟内重复调用拿不到更新数据，只消耗自己的 error limit（100/min per IP）。
+1. **authorize 请求内去重**：同一人物原先被 authorize 两次（人物余额路径 + 军团余额路径），
+   各查一次库；现按 `characterId` 缓存，单次请求内只校验一次。
+   > 这里**没有**采用"直接用 `getAccountList` 的结果替代 `authorize`"这个更省的方案，原因有两条：
+   > ① `authorize` 除查库外还从 SecurityContext 取 userId 做归属校验，替代等于把双重校验降为单重
+   > （`getAccountList` 的 `where user_id` 成为唯一防线）——对财务数据不值得；
+   > ② 两个查询的 SELECT 字段集并不一致：`queryAccountList` 只取 8 列，
+   > `getAccountOne` 取 12 列（多 `gmt_create`/`gmt_modified`/`type`/`qq`）。
+   > 其中 `type`（注释 `CH:0 EU:1`，即晨曦/欧服）目前**全项目零使用**，故当下无碍；
+   > 但若将来用它做多服务器分流，替代方案会静默拿到 `null`。
+2. **分账凑满提前终止**：ESI 单次调用即返回该 token 可见的全部分账；若前一个人物已覆盖 1..7，
+   后续人物的调用零贡献。注意"跳过"不等于"失败"，不会置 `partial`。
 
-⚠ **error limit 连坐风险**：若某用户 3 个人物 token 已失效，每次请求产生 3 次 ESI 4xx；前端 5 秒轮询 → 每分钟 36 次错误。多个此类用户叠加即可能触发 ESI **全应用级** error limit 封禁，届时**所有用户的所有 ESI 功能一起不可用**。因此不建议对本端点做高频轮询。
+### 仍未处理
 
-017 的 IMPORTANT-1 修复顺带消除了军团总览路径上的一次多余 `authorize`，但本端点的上述 4 点仍待独立立项处理。
+- **无超时**：`EsiApiService` 中这两个余额方法的 `.block()` 没有 `.timeout(...)`，
+  `esiClient` 也未配 `responseTimeout`。ESI 卡住时请求线程无界等待。
+- **未接入 015 响应缓存**：这两个余额方法是全项目唯一绕过 `esiResponseCache` 的 ESI 查询
+  （016 为"实时通路"刻意如此）。ESI 对 `/characters/{id}/wallet/` 声明 120s 缓存，
+  同一分钟内重复调用拿不到更新数据，只消耗自己的 error limit（100/min per IP）。
+
+⚠ **error limit 连坐风险**：若某用户 3 个人物 token 已失效，每次请求产生 3 次 ESI 4xx；
+前端 5 秒轮询 → 每分钟 36 次错误。多个此类用户叠加即可能触发 ESI **全应用级** error limit 封禁，
+届时**所有用户的所有 ESI 功能一起不可用**。因此不建议对本端点做高频轮询。
 
 ## 9. RBAC 与部署
 

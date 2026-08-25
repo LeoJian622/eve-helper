@@ -73,9 +73,12 @@
 | IMPORTANT-6 spec 与 RBAC 口径不符 | ✅ 已修 | spec 表述更正 + SQL Step 5 入事务、补执行后校验与缓存刷新提醒 |
 | IMPORTANT-7 IT 无有效运行证据 | ✅ 已解决 | 环境可达后实跑，暴露并修正 3 处错误断言（见下）；018 IT 3/3、017 IT 12/12 |
 | IMPORTANT-8 017 混入 018 提交 | ✅ 已修 | 017 拆至独立分支 `017-corp-overview-character-entry` |
-| IMPORTANT-2 fail-open 故障不可观测 | ⏳ 延期 | 涉 API 契约变更（VO 增状态位），建议与 spec 修订一并进行。**IT 修复过程中获得真实实例证据**（见下） |
-| IMPORTANT-5 ESI/DB 调用放大 | ⏳ 延期 | 部分缓解（017 修复顺带省去一次 authorize/DB）；去重、提前 break、超时、接入 015 缓存待独立立项 |
+| IMPORTANT-2 fail-open 故障不可观测 | ✅ 已修 | 用户裁定方案 A：VO 增 `status`（OK/UNAUTHORIZED/UPSTREAM_ERROR），失败时 `balance` 为 null；军团增 `partial` + `unavailableCharacterIds`；catch 分段并按状态分级记日志（同时解决 MINOR-3） |
+| IMPORTANT-5 ESI/DB 调用放大 | 🔶 部分落地 | 已做：authorize 请求内去重（2N→N）、分账凑满 1..7 提前终止。**未做**：`.block()` 加 timeout、接入 015 响应缓存 —— 需独立立项 |
+| MINOR-1 合并顺序不确定 | ✅ 已修 | `queryAccountList` 加 `order by character_id`，胜出者固定为 characterId 最小者 |
+| MINOR-3 catch (Exception) 过宽 | ✅ 已修 | 随 IMPORTANT-2 一并改为分段捕获 |
 | IMPORTANT-6 的 IT 门禁用例 | ⏳ 延期 | "不 mock RBAC" 用例需向**远程共享 Redis** 写权限规则，有污染他人环境风险，暂缓 |
+| 安全维度独立复核 | ⚠ 未完成 | `ecc:security-reviewer` 两次派遣均零产出卡死（输出文件 0 字节），已停止。G6 目前只有 Java 评审一份记录 |
 
 ### T9: IT 实跑暴露的问题（IMPORTANT-7 闭合过程）
 

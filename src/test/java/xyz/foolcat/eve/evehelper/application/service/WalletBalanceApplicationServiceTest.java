@@ -19,7 +19,9 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.repository.system.EveAccountRepository;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.shared.kernel.enums.BalanceQueryStatus;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
+import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
 import java.text.ParseException;
 import java.util.Collections;
@@ -31,6 +33,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -273,6 +276,65 @@ class WalletBalanceApplicationServiceTest {
             // 至少返回角色B的数据
             assertThat(corpBalance.divisions()).isNotEmpty();
             assertThat(corpBalance.totalBalance()).isEqualTo(500.0);
+            // 018 IMPORTANT-2:角色A失败使分账集合不完整,须标记 partial 并列出失败人物,
+            // 否则 totalBalance=500 与"军团账上真的只有 500"无法区分
+            assertThat(corpBalance.partial()).isTrue();
+            assertThat(corpBalance.unavailableCharacterIds()).containsExactly(CID_1);
+        }
+
+        @Test
+        @DisplayName("全部分账均取到 → partial 为 false,失败列表为空")
+        void allDivisionsResolved_notPartial() throws ParseException {
+            EveAccount char1 = buildAccount(CID_1, "Alice", CORP_A, "CorpA");
+            when(eveAccountRepository.getAccountList(USER_ID)).thenReturn(List.of(char1));
+
+            stubAuthorize(CID_1);
+            stubAccessToken(CID_1);
+            when(esiGateway.queryCharacterWalletBalance(eq(CID_1), any())).thenReturn(1.0);
+            when(esiGateway.queryCorporationWalletBalances(eq(CORP_A), any()))
+                    .thenReturn(List.of(new WalletDivisionBalance(1, 100.0)));
+
+            UserWalletBalanceVO result = applicationService.getUserWalletBalance();
+
+            CorporationBalanceVO corpBalance = result.corporations().get(0);
+            assertThat(corpBalance.partial()).isFalse();
+            assertThat(corpBalance.unavailableCharacterIds()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("首个人物已覆盖 division 1..7 → 后续人物不再调用 ESI(018 IMPORTANT-5 提前终止)")
+        void firstCharacterCoversAllDivisions_laterCharactersSkipped() throws ParseException {
+            EveAccount char1 = buildAccount(CID_1, "Alice", CORP_A, "CorpA");
+            EveAccount char2 = buildAccount(CID_2, "Bob", CORP_A, "CorpA");
+            when(eveAccountRepository.getAccountList(USER_ID)).thenReturn(List.of(char1, char2));
+
+            stubAuthorize(CID_1);
+            stubAuthorize(CID_2);
+            stubAccessToken(CID_1);
+            stubAccessToken(CID_2);
+            when(esiGateway.queryCharacterWalletBalance(eq(CID_1), any())).thenReturn(1.0);
+            when(esiGateway.queryCharacterWalletBalance(eq(CID_2), any())).thenReturn(2.0);
+
+            // 首个人物一次返回全部 7 个分账,后续人物的军团调用对结果零贡献
+            when(esiGateway.queryCorporationWalletBalances(eq(CORP_A), any()))
+                    .thenReturn(List.of(
+                            new WalletDivisionBalance(1, 10.0),
+                            new WalletDivisionBalance(2, 20.0),
+                            new WalletDivisionBalance(3, 30.0),
+                            new WalletDivisionBalance(4, 40.0),
+                            new WalletDivisionBalance(5, 50.0),
+                            new WalletDivisionBalance(6, 60.0),
+                            new WalletDivisionBalance(7, 70.0)));
+
+            UserWalletBalanceVO result = applicationService.getUserWalletBalance();
+
+            CorporationBalanceVO corpBalance = result.corporations().get(0);
+            assertThat(corpBalance.divisions()).hasSize(7);
+            assertThat(corpBalance.totalBalance()).isEqualTo(280.0);
+            // 军团分账查询只发生一次:第二个人物被提前终止跳过,省下一次 ESI 配额
+            verify(esiGateway, times(1)).queryCorporationWalletBalances(eq(CORP_A), any());
+            // 且未标记 partial —— 跳过不等于失败
+            assertThat(corpBalance.partial()).isFalse();
         }
 
         @Test
@@ -423,8 +485,8 @@ class WalletBalanceApplicationServiceTest {
         }
 
         @Test
-        @DisplayName("人物余额查询失败 → 回退为 0")
-        void characterBalanceFetchFails_fallbackToZero() throws ParseException {
+        @DisplayName("人物余额上游故障 → balance 为 null + UPSTREAM_ERROR(018 IMPORTANT-2)")
+        void characterBalanceUpstreamError_nullWithStatus() throws ParseException {
             authenticateAs(USER_ID);
             EveAccount account = buildAccount(CID_1, "Alice", null, null);
             when(eveAccountRepository.getAccountList(USER_ID)).thenReturn(List.of(account));
@@ -436,7 +498,63 @@ class WalletBalanceApplicationServiceTest {
             UserWalletBalanceVO result = applicationService.getUserWalletBalance();
 
             assertThat(result.characters()).hasSize(1);
-            assertThat(result.characters().get(0).balance()).isEqualTo(0.0);
+            CharacterBalanceVO cb = result.characters().get(0);
+            // 关键:不再降级为 0.0,否则与真实的零余额同形
+            assertThat(cb.balance()).isNull();
+            assertThat(cb.status()).isEqualTo(BalanceQueryStatus.UPSTREAM_ERROR);
+        }
+
+        @Test
+        @DisplayName("人物授权失效(归属校验抛 AUT00208) → balance 为 null + UNAUTHORIZED(018 IMPORTANT-2)")
+        void characterUnauthorized_nullWithStatus() {
+            authenticateAs(USER_ID);
+            EveAccount account = buildAccount(CID_1, "Alice", null, null);
+            when(eveAccountRepository.getAccountList(USER_ID)).thenReturn(List.of(account));
+            // 归属校验失败(账号已解绑/不属于当前用户)
+            when(authorizeUtil.authorize(CID_1))
+                    .thenThrow(new EveHelperException(ResultCode.USER_ACCOUNT_NOT_EXIST));
+
+            UserWalletBalanceVO result = applicationService.getUserWalletBalance();
+
+            CharacterBalanceVO cb = result.characters().get(0);
+            assertThat(cb.balance()).isNull();
+            // 授权类失败须与上游故障区分,前者用户可自行重新授权
+            assertThat(cb.status()).isEqualTo(BalanceQueryStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("ESI 返回 null 余额 → 视为可信的 0 而非失败(status 仍为 OK)")
+        void esiReturnsNullBalance_treatedAsTrustedZero() throws ParseException {
+            authenticateAs(USER_ID);
+            EveAccount account = buildAccount(CID_1, "Alice", null, null);
+            when(eveAccountRepository.getAccountList(USER_ID)).thenReturn(List.of(account));
+            stubAuthorize(CID_1);
+            stubAccessToken(CID_1);
+            when(esiGateway.queryCharacterWalletBalance(eq(CID_1), any())).thenReturn(null);
+
+            UserWalletBalanceVO result = applicationService.getUserWalletBalance();
+
+            CharacterBalanceVO cb = result.characters().get(0);
+            assertThat(cb.balance()).isEqualTo(0.0);
+            assertThat(cb.status()).isEqualTo(BalanceQueryStatus.OK);
+        }
+
+        @Test
+        @DisplayName("同一人物在单次请求内只 authorize 一次(018 IMPORTANT-5 去重)")
+        void sameCharacterAuthorizedOnlyOncePerRequest() throws ParseException {
+            authenticateAs(USER_ID);
+            // 有军团的人物会同时走人物余额路径与军团余额路径,原实现会 authorize 两次
+            EveAccount account = buildAccount(CID_1, "Alice", CORP_A, "CorpA");
+            when(eveAccountRepository.getAccountList(USER_ID)).thenReturn(List.of(account));
+            stubAuthorize(CID_1);
+            stubAccessToken(CID_1);
+            when(esiGateway.queryCharacterWalletBalance(eq(CID_1), any())).thenReturn(1.0);
+            when(esiGateway.queryCorporationWalletBalances(eq(CORP_A), any()))
+                    .thenReturn(List.of(new WalletDivisionBalance(1, 2.0)));
+
+            applicationService.getUserWalletBalance();
+
+            verify(authorizeUtil, times(1)).authorize(CID_1);
         }
     }
 }
