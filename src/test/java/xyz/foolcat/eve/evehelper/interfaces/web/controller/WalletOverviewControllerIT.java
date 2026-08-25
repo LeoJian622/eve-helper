@@ -91,9 +91,10 @@ class WalletOverviewControllerIT {
         lenient().when(authorizeUtil.authorize(anyInt())).thenReturn(account);
         lenient().when(esiGateway.getAccessToken(anyInt(), anyInt())).thenReturn("Bearer test");
         lenient().when(esiGateway.queryCharacterWalletBalance(eq(CID), any())).thenReturn(0.0);
-        // SYSTEM_USER_ID=1 的角色列表(ROOT/管理员场景下 lookupUserId=1)
-        lenient().when(eveAccountRepository.getAccountList(1)).thenReturn(List.of(account));
-        lenient().when(eveAccountRepository.getAccountList(7)).thenReturn(List.of(account));
+        // 017 IMPORTANT-1:军团余额已改为直接用入口 authorize(cid) 的账号换 token,
+        // 服务不再从 scope/SYSTEM_USER_ID 反查角色,故此处不再 stub getAccountList
+        // (原先的 getAccountList(1) stub 让 SYSTEM_USER_ID 恰好"拥有"该角色,
+        //  掩盖了 ROOT 场景下军团余额恒为 0 的缺陷)。
         lenient().when(esiGateway.queryCorporationWalletBalances(eq(CORP), any())).thenReturn(List.of());
     }
 

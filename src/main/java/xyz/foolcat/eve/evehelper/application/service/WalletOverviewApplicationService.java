@@ -8,10 +8,8 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletOverviewVO;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
-import xyz.foolcat.eve.evehelper.domain.repository.system.EveAccountRepository;
 import xyz.foolcat.eve.evehelper.domain.repository.system.WalletJournalRepository;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
-import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
@@ -50,7 +48,6 @@ public class WalletOverviewApplicationService {
     private final AccessGuard accessGuard;
     private final EsiGateway esiGateway;
     private final AuthorizeUtil authorizeUtil;
-    private final EveAccountRepository eveAccountRepository;
 
     /**
      * 人物钱包总览。
@@ -138,7 +135,8 @@ public class WalletOverviewApplicationService {
         Long scope = accessGuard.corporationScope("军团钱包总览");
 
         // 016:军团余额改由 ESI 直查(/corporations/{id}/wallets/),取各分账实时余额
-        List<WalletDivisionBalance> esiBalances = fetchCorporationBalances(corpId, scope);
+        // 017 IMPORTANT-1:用入口已授权的 account 换 token,不从 scope 反查角色
+        List<WalletDivisionBalance> esiBalances = fetchCorporationBalances(corpId, account);
 
         Long ownerId = corpId.longValue();
         // 单分账带 division 过滤,全量无过滤;收支/类目/趋势沿用人物三条查询
@@ -235,18 +233,22 @@ public class WalletOverviewApplicationService {
     /**
      * 016:军团钱包各分账余额直查 ESI。
      *
-     * <p>从 scope(userId)反查该用户在该军团的角色 → getAccessToken → queryCorporationWalletBalances。
-     * scope 为 null(管理员/ROOT)时以 SYSTEM_USER_ID 的角色列表为候选(全局查找)。</p>
+     * <p>017 IMPORTANT-1 修复:直接用入口已 authorize 的人物换取 token,不再从 scope 反查角色。</p>
+     *
+     * <p>原实现从 scope 反查(resolveCharIdInCorp)有两处缺陷:
+     * ① ROOT/ADMIN 的 corporationScope 返回 null → 退化为查 SYSTEM_USER_ID 的账号列表,
+     *    而系统用户在该军团通常没有角色 → charId 为 null → 余额恒为 0,且 HTTP 200 无错误提示;
+     * ② 非 ROOT 用户 findFirst() 可能挑到与请求 cid 不同的角色,而不同角色对军团钱包的
+     *    ESI 读权限并不相同,返回的分账集合会与调用者指定的人物不一致。
+     * 入口 cid 已由 authorize 完成归属校验、account.corpId 已确认所属军团,直接复用即正确,
+     * 并顺带省掉一次多余的 authorize/DB 单行查询。</p>
+     *
+     * @param corpId  军团ID(由 account.corpId 反查得到)
+     * @param account 入口 authorize(cid) 返回的已授权人物账号
      */
-    private List<WalletDivisionBalance> fetchCorporationBalances(Integer corpId, Long scope) {
-        int lookupUserId = scope == null ? GlobalConstants.SYSTEM_USER_ID : scope.intValue();
-        Integer charId = resolveCharIdInCorp(corpId, lookupUserId);
-        if (charId == null) {
-            log.warn("军团钱包余额 ESI 查询:找不到军团 {} 的关联角色(userId={}),回退空余额", corpId, lookupUserId);
-            return Collections.emptyList();
-        }
+    private List<WalletDivisionBalance> fetchCorporationBalances(Integer corpId, EveAccount account) {
+        Integer charId = account.getCharacterId();
         try {
-            EveAccount account = authorizeUtil.authorize(charId);
             String token = esiGateway.getAccessToken(charId, account.getUserId());
             List<WalletDivisionBalance> balances = esiGateway.queryCorporationWalletBalances(corpId, token);
             return balances == null ? Collections.emptyList() : balances;
@@ -257,21 +259,6 @@ public class WalletOverviewApplicationService {
             log.warn("军团钱包余额 ESI 查询失败: corpId={}, charId={}", corpId, charId, e);
             return Collections.emptyList();
         }
-    }
-
-    /**
-     * 从指定用户的角色列表中查找属于目标军团的角色ID。
-     */
-    private Integer resolveCharIdInCorp(Integer corpId, int userId) {
-        List<EveAccount> accounts = eveAccountRepository.getAccountList(userId);
-        if (accounts == null) {
-            return null;
-        }
-        return accounts.stream()
-                .filter(a -> corpId.equals(a.getCorpId()))
-                .map(EveAccount::getCharacterId)
-                .findFirst()
-                .orElse(null);
     }
 
     private boolean isValidRange(String range) {

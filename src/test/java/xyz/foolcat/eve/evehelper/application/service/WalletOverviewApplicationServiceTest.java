@@ -15,7 +15,6 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletOverviewAggregate;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletOverviewVO;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
-import xyz.foolcat.eve.evehelper.domain.repository.system.EveAccountRepository;
 import xyz.foolcat.eve.evehelper.domain.repository.system.WalletJournalRepository;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
@@ -71,15 +70,15 @@ class WalletOverviewApplicationServiceTest {
     @Mock
     private AuthorizeUtil authorizeUtil;
 
-    @Mock
-    private EveAccountRepository eveAccountRepository;
-
     @InjectMocks
     private WalletOverviewApplicationService applicationService;
 
     /**
      * 016:为 fetchCharacterBalance / fetchCorporationBalances 提供通用 lenient stub,
      * 使不聚焦余额路径的测试不受影响(balance 默认 0)。
+     *
+     * <p>017 IMPORTANT-1 起,军团余额直接用入口 authorize(cid) 返回的账号换 token,
+     * 服务已不再依赖 EveAccountRepository 反查角色,故无需再 stub getAccountList。</p>
      */
     @BeforeEach
     void setupEsiBalanceDefaults() throws ParseException {
@@ -90,8 +89,6 @@ class WalletOverviewApplicationServiceTest {
         lenient().when(authorizeUtil.authorize(CID)).thenReturn(account);
         lenient().when(esiGateway.getAccessToken(eq(CID), anyInt())).thenReturn("Bearer token");
         lenient().when(esiGateway.queryCharacterWalletBalance(eq(CID), any())).thenReturn(0.0);
-        // 军团:返回一个属于目标军团的角色,供 fetchCorporationBalances 找到 charId
-        lenient().when(eveAccountRepository.getAccountList(777)).thenReturn(List.of(account));
         lenient().when(esiGateway.queryCorporationWalletBalances(eq(CORP), any())).thenReturn(List.of());
     }
 
@@ -282,7 +279,7 @@ class WalletOverviewApplicationServiceTest {
 
             applicationService.getCorporationOverview(CID, null, null, null, null);
 
-            // 人物维度归属:authorize 校验并反查 corpId(至少 1 次;fetchCorporationBalances 内部还会 authorize 同一 CID 取 ESI token,共 2 次)
+            // 人物维度归属:authorize 校验并反查 corpId(017 IMPORTANT-1 后余额复用同一 account,不再二次 authorize)
             verify(authorizeUtil, atLeastOnce()).authorize(CID);
             // US2b:军团维度读改为 corporationScope 取 scope 透传仓储,不再 requireOwnership
             verify(accessGuard).corporationScope("军团钱包总览");
@@ -303,6 +300,28 @@ class WalletOverviewApplicationServiceTest {
             // corpId 为 null 时 fail-closed,不触达后续军团查询路径
             verifyNoInteractions(accessGuard);
             verifyNoInteractions(walletJournalRepository);
+        }
+
+        @Test
+        @DisplayName("ROOT(corporationScope 返回 null)仍用入口 cid 的 token 查余额,不退化为 0(017 IMPORTANT-1)")
+        void rootScope_usesEntryCharacterToken_balanceNotZero() throws ParseException {
+            // ROOT/ADMIN:corporationScope 返回 null 表示"看全量",不做 user_id 过滤。
+            // 原实现在此分支退化为查 SYSTEM_USER_ID(1) 的账号列表,而系统用户在该军团通常无角色,
+            // 于是 charId 为 null → 余额恒为 0。修复后直接用入口已 authorize 的人物换 token。
+            when(accessGuard.corporationScope("军团钱包总览")).thenReturn(null);
+            when(esiGateway.queryCorporationWalletBalances(eq(CORP), any()))
+                    .thenReturn(List.of(new WalletDivisionBalance(1, 500.0)));
+            when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), eq(1), isNull(), isNull(), isNull()))
+                    .thenReturn(new WalletOverviewAggregate(0.0, 0.0, 0.0, 0.0, 0L, null));
+            when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any(), any())).thenReturn(List.of());
+            when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any(), any())).thenReturn(List.of());
+
+            WalletOverviewVO vo = applicationService.getCorporationOverview(CID, 1, null, null, null);
+
+            // 余额取自 ESI 的 500,而非"找不到角色"退化出的 0
+            assertThat(vo.currentBalance()).isEqualTo(500.0);
+            // 换取 token 用的是入口已 authorize 的人物,而非从 scope 反查出的任意角色
+            verify(esiGateway).getAccessToken(CID, 1);
         }
 
         @Test
