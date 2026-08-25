@@ -6,7 +6,7 @@
 --   (selectOverviewAggregate/Categories/Trend/DivisionBalances/DivisionFlow)按 owner(+division)
 --   过滤并常带 date 区间,owner 单列索引只能锁 owner 行再内存扫 date。
 -- 归属: specs/012-wallet-overview —— 12 final-review Minor#1 follow-up(复合索引)
--- 关联端点: GET:/wallet/overview/{cid}、GET:/wallet/overview/corp/{corpId}
+-- 关联端点: GET:/wallet/overview/{cid}、GET:/wallet/overview/corp/{cid}
 -- 幂等: 用 information_schema 判 INDEX_NAME 是否存在,不存在才 CREATE,可重复执行。
 -- 执行: 在 eve_helper 运行库执行本脚本即生效;零锁表风险链入正常窗口即可(建索引非 instant 但表读频率低)。
 -- =====================================================================

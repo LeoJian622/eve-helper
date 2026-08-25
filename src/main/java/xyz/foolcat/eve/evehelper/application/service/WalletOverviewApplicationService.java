@@ -102,24 +102,37 @@ public class WalletOverviewApplicationService {
     /**
      * 军团钱包总览。
      *
-     * @param corpId   军团ID
+     * <p>按人物维度入口:通过人物ID归属校验后反查军团ID,再执行军团总览业务。
+     * 人物ID同时完成归属校验(authorize)与军团定位(EveAccount.corpId),
+     * 消除直接暴露军团ID的 IDOR 风险。</p>
+     *
+     * @param cid      人物ID(归属校验 + 反查军团ID)
      * @param division 军团分账(1..7);null 为全量(分账分布 1..7,currentBalance=各分账最新余额和)
      * @param range    预设时间范围(today/last7d/last30d/last90d/year),与 start/end 二选一;都空为全量
      * @param start    起始时间(可空)
      * @param end      结束时间(可空)
      * @return 军团钱包总览读模型(全量 divisions 为 1..7 分账分布,单分账 divisions=null)
      */
-    public WalletOverviewVO getCorporationOverview(Integer corpId, Integer division, String range, Date start, Date end) {
+    public WalletOverviewVO getCorporationOverview(Integer cid, Integer division, String range, Date start, Date end) {
         // 入参边界校验先于归属校验:非法入参直接拒绝,不触达越权探测路径
-        if (corpId == null || !isValidCorpDivision(division) || !isValidRange(range)
+        if (cid == null || !isValidCorpDivision(division) || !isValidRange(range)
                 || (range != null && (start != null || end != null))) {
-            log.warn("军团钱包总览参数不合法: corpId={}, division={}, range={}, hasStart={}, hasEnd={}",
-                    corpId, division, range, start != null, end != null);
+            log.warn("军团钱包总览参数不合法: cid={}, division={}, range={}, hasStart={}, hasEnd={}",
+                    cid, division, range, start != null, end != null);
             throw new EveHelperException(ResultCode.PARAM_ERROR);
         }
         Date[] resolved = resolveRange(range, start, end);
         Date rStart = resolved[0];
         Date rEnd = resolved[1];
+        // 人物维度归属:authorize 校验该人物属于当前用户,同时反查军团ID
+        EveAccount account = authorizeUtil.authorize(cid);
+        Integer corpId = account.getCorpId();
+        // 防御:人物未绑定军团(数据异常)时 corpId 为 null,后续 longValue()/仓储查询会 NPE 或静默零值;
+        // fail-closed 显式拒绝,提示账号状态不完整(区别于参数错误的 400 与越权的 403)
+        if (corpId == null) {
+            log.warn("军团钱包总览:人物 {} 未绑定军团(account.corpId=null),拒绝访问", cid);
+            throw new EveHelperException(ResultCode.USER_ACCOUNT_NOT_EXIST);
+        }
         // 军团维度读过滤(US2b):corporationScope 返回当前同步者 userId(ROOT=null 看全量),
         // 透传 selectOverview* 仓储按 user_id 过滤,军团总览只有同步者数据可见
         Long scope = accessGuard.corporationScope("军团钱包总览");

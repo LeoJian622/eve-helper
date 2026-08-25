@@ -31,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -91,7 +92,6 @@ class WalletOverviewApplicationServiceTest {
         lenient().when(esiGateway.queryCharacterWalletBalance(eq(CID), any())).thenReturn(0.0);
         // 军团:返回一个属于目标军团的角色,供 fetchCorporationBalances 找到 charId
         lenient().when(eveAccountRepository.getAccountList(777)).thenReturn(List.of(account));
-        lenient().when(authorizeUtil.authorize(CID)).thenReturn(account);
         lenient().when(esiGateway.queryCorporationWalletBalances(eq(CORP), any())).thenReturn(List.of());
     }
 
@@ -251,7 +251,7 @@ class WalletOverviewApplicationServiceTest {
         @DisplayName("division 越界(0/8)抛 PARAM_ERROR,不触达归属校验")
         void invalidDivision_rejectedBeforeOwnership() {
             for (int bad : new int[]{0, 8}) {
-                assertThatThrownBy(() -> applicationService.getCorporationOverview(CORP, bad, null, null, null))
+                assertThatThrownBy(() -> applicationService.getCorporationOverview(CID, bad, null, null, null))
                         .isInstanceOf(EveHelperException.class)
                         .hasMessageContaining("参数");
             }
@@ -260,8 +260,8 @@ class WalletOverviewApplicationServiceTest {
         }
 
         @Test
-        @DisplayName("corpId 为空抛 PARAM_ERROR,不触达归属校验")
-        void nullCorpId_rejectedBeforeOwnership() {
+        @DisplayName("cid 为空抛 PARAM_ERROR,不触达归属校验")
+        void nullCid_rejectedBeforeOwnership() {
             assertThatThrownBy(() -> applicationService.getCorporationOverview(null, null, null, null, null))
                     .isInstanceOf(EveHelperException.class)
                     .hasMessageContaining("参数");
@@ -270,8 +270,8 @@ class WalletOverviewApplicationServiceTest {
         }
 
         @Test
-        @DisplayName("合法军团入参后调用 corporationScope 取 scope,并透传仓储(016:余额改走 ESI)")
-        void validCorpInput_callsCorporationScope() {
+        @DisplayName("合法人物入参后 authorize 反查 corpId,调用 corporationScope 取 scope,并透传仓储(016:余额改走 ESI)")
+        void validCidInput_authorizesAndCallsCorporationScope() {
             when(accessGuard.corporationScope("军团钱包总览")).thenReturn(777L);
             when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), isNull(), eq(777L), isNull(), isNull()))
                     .thenReturn(new WalletOverviewAggregate(0.0, 0.0, 0.0, 0.0, 0L, null));
@@ -280,10 +280,29 @@ class WalletOverviewApplicationServiceTest {
             // 016:selectOverviewDivisionBalances 已移除(改走 ESI),仅保留 flow
             when(walletJournalRepository.selectOverviewDivisionFlow(eq((long) CORP), eq(777L), isNull(), isNull())).thenReturn(List.of());
 
-            applicationService.getCorporationOverview(CORP, null, null, null, null);
+            applicationService.getCorporationOverview(CID, null, null, null, null);
 
+            // 人物维度归属:authorize 校验并反查 corpId(至少 1 次;fetchCorporationBalances 内部还会 authorize 同一 CID 取 ESI token,共 2 次)
+            verify(authorizeUtil, atLeastOnce()).authorize(CID);
             // US2b:军团维度读改为 corporationScope 取 scope 透传仓储,不再 requireOwnership
             verify(accessGuard).corporationScope("军团钱包总览");
+        }
+
+        @Test
+        @DisplayName("人物已授权但 corpId 为 null(数据异常)→ USER_ACCOUNT_NOT_EXIST,不触达 corporationScope(017 IMPORTANT-2)")
+        void nullCorpId_afterAuthorize_rejected() {
+            EveAccount noCorpAccount = new EveAccount();
+            noCorpAccount.setCharacterId(CID);
+            noCorpAccount.setUserId(1);
+            noCorpAccount.setCorpId(null); // 数据异常:人物未绑定军团
+            when(authorizeUtil.authorize(CID)).thenReturn(noCorpAccount);
+
+            assertThatThrownBy(() -> applicationService.getCorporationOverview(CID, null, null, null, null))
+                    .isInstanceOf(EveHelperException.class)
+                    .hasMessageContaining("账号");
+            // corpId 为 null 时 fail-closed,不触达后续军团查询路径
+            verifyNoInteractions(accessGuard);
+            verifyNoInteractions(walletJournalRepository);
         }
 
         @Test
@@ -304,7 +323,7 @@ class WalletOverviewApplicationServiceTest {
                             new WalletOverviewVO.DivisionSummary(1, 0.0, 10.0, 5.0),
                             new WalletOverviewVO.DivisionSummary(3, 0.0, 20.0, 8.0)));
 
-            WalletOverviewVO vo = applicationService.getCorporationOverview(CORP, null, null, null, null);
+            WalletOverviewVO vo = applicationService.getCorporationOverview(CID, null, null, null, null);
 
             assertThat(vo.divisions()).isNotNull();
             assertThat(vo.divisions()).hasSize(7);
@@ -338,7 +357,7 @@ class WalletOverviewApplicationServiceTest {
             when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any(), any())).thenReturn(List.of());
             when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any(), any())).thenReturn(List.of());
 
-            WalletOverviewVO vo = applicationService.getCorporationOverview(CORP, 3, null, null, null);
+            WalletOverviewVO vo = applicationService.getCorporationOverview(CID, 3, null, null, null);
 
             verify(walletJournalRepository).selectOverviewAggregate(eq((long) CORP), eq(3), eq(777L), isNull(), isNull());
             verify(walletJournalRepository).selectOverviewCategories(eq((long) CORP), eq(3), eq(777L), isNull(), isNull());
@@ -366,7 +385,7 @@ class WalletOverviewApplicationServiceTest {
                 when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any(), any()))
                         .thenReturn(List.of());
 
-                WalletOverviewVO vo = applicationService.getCorporationOverview(CORP, div, null, null, null);
+                WalletOverviewVO vo = applicationService.getCorporationOverview(CID, div, null, null, null);
 
                 verify(walletJournalRepository)
                         .selectOverviewAggregate(eq((long) CORP), eq(div), eq(777L), isNull(), isNull());

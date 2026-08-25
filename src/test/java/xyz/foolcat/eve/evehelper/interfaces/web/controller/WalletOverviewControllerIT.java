@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,6 +14,7 @@ import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
@@ -23,15 +23,14 @@ import xyz.foolcat.eve.evehelper.domain.repository.system.EveAccountRepository;
 import xyz.foolcat.eve.evehelper.domain.service.security.ResourceOwnershipPolicy;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.RbacAuthorizationManager;
+import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
+import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -60,19 +59,19 @@ class WalletOverviewControllerIT {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
-    @MockBean
+    @MockitoBean
     RbacAuthorizationManager rbacAuthorizationManager;
 
-    @MockBean
+    @MockitoBean
     ResourceOwnershipPolicy resourceOwnershipPolicy;
 
-    @MockBean
+    @MockitoBean
     AuthorizeUtil authorizeUtil;
 
-    @MockBean
+    @MockitoBean
     EsiGateway esiGateway;
 
-    @MockBean
+    @MockitoBean
     EveAccountRepository eveAccountRepository;
 
     @BeforeEach
@@ -254,7 +253,7 @@ class WalletOverviewControllerIT {
         // div5 单条
         insertCorpJournal(304L, 5, 300.0, 300.0, LocalDate.of(2026, 1, 5), "market_sale");
 
-        mockMvc.perform(get("/wallet/overview/corp/" + CORP).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/wallet/overview/corp/" + CID).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 // 全量标量(无 division 过滤):income=1800, expense=200, net=1600, count=4
                 .andExpect(jsonPath("$.data.totalIncome").value(1800.0))
@@ -293,7 +292,7 @@ class WalletOverviewControllerIT {
         insertCorpJournal(401L, 1, 1000.0, 1000.0, LocalDate.of(2026, 1, 2), "bounty_prizes");
         insertCorpJournal(402L, 3, 500.0, 500.0, LocalDate.of(2026, 1, 4), "market_sale");
 
-        mockMvc.perform(get("/wallet/overview/corp/" + CORP)
+        mockMvc.perform(get("/wallet/overview/corp/" + CID)
                         .param("division", "3")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -319,7 +318,7 @@ class WalletOverviewControllerIT {
         insertCorpJournal(504L, 5, 900.0, 900.0, LocalDate.of(2026, 1, 5), "market_sale");
 
         // division=1:仅含 div1 数据(div3/div5/div7 不入)
-        mockMvc.perform(get("/wallet/overview/corp/" + CORP)
+        mockMvc.perform(get("/wallet/overview/corp/" + CID)
                         .param("division", "1")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -330,7 +329,7 @@ class WalletOverviewControllerIT {
                 .andExpect(jsonPath("$.data.divisions").doesNotExist());
 
         // division=7:仅含 div7 数据
-        mockMvc.perform(get("/wallet/overview/corp/" + CORP)
+        mockMvc.perform(get("/wallet/overview/corp/" + CID)
                         .param("division", "7")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -345,27 +344,30 @@ class WalletOverviewControllerIT {
     void corpOverview_invalidDivision_badRequest() throws Exception {
         loginAsAdmin();
 
-        mockMvc.perform(get("/wallet/overview/corp/" + CORP).param("division", "0")
+        mockMvc.perform(get("/wallet/overview/corp/" + CID).param("division", "0")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
-        mockMvc.perform(get("/wallet/overview/corp/" + CORP).param("division", "8")
+        mockMvc.perform(get("/wallet/overview/corp/" + CID).param("division", "8")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("军团越权访问 -> 200 + 零数据(016:无关联角色时余额/流水均空)")
-    void corpOverview_foreignCorp_returnsZeroed() throws Exception {
+    @DisplayName("非 ROOT 用户查询不拥有的人物 → 400(USER_ACCOUNT_NOT_EXIST,与生产 authorize 行为一致)")
+    void corpOverview_foreignCharacter_badRequest() throws Exception {
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(
                         (long) 7, null, List.of(new SimpleGrantedAuthority("USER"))));
         when(resourceOwnershipPolicy.isOwnedBy(any(), any())).thenReturn(false);
 
-        // 016:USER 访问无关联角色的军团 → 余额/流水均空,不再抛 403(scope 过滤后查询返回空)
+        // 精确 stub:user 7 不拥有角色 999999,authorize 抛 USER_ACCOUNT_NOT_EXIST
+        // (覆盖 setUp 中 lenient authorize(anyInt()) 的宽松 stub)
+        doThrow(new EveHelperException(ResultCode.USER_ACCOUNT_NOT_EXIST))
+                .when(authorizeUtil).authorize(999999);
+
+        // 生产行为:authorize(999999) → 抛异常 → GlobalExceptionHandler 映射为 400
         mockMvc.perform(get("/wallet/overview/corp/999999").contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.currentBalance").value(0.0))
-                .andExpect(jsonPath("$.data.journalCount").value(0));
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -373,7 +375,7 @@ class WalletOverviewControllerIT {
     void corpOverview_empty_zeroedDivisions() throws Exception {
         loginAsAdmin();
 
-        mockMvc.perform(get("/wallet/overview/corp/" + CORP).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/wallet/overview/corp/" + CID).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.currentBalance").value(0.0))
                 .andExpect(jsonPath("$.data.journalCount").value(0))
