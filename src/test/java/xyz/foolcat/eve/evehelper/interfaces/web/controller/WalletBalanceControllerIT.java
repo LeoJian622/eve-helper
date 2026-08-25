@@ -17,7 +17,9 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.repository.system.EveAccountRepository;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.RbacAuthorizationManager;
+import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
 import java.util.Collections;
 import java.util.List;
@@ -58,6 +60,16 @@ class WalletBalanceControllerIT {
     @MockitoBean
     EveAccountRepository eveAccountRepository;
 
+    /**
+     * AuthorizeUtil 必须 mock:真实实现会按 (userId, characterId) 查 eve_account 表，
+     * 测试库中不存在该组合时抛"账号不存在"，而该异常会被应用服务 fail-open 的 catch
+     * 吞成余额 0.0（见 IMPORTANT-2），使断言失败且原因不显。
+     * 本类是控制器层集成测试，关注路由/认证/序列化契约；归属校验本身由
+     * AuthorizeUtil 单测与 CharacterPrivacyIT 覆盖。同时避免向远程共享测试库写入数据。
+     */
+    @MockitoBean
+    AuthorizeUtil authorizeUtil;
+
     @BeforeEach
     void setUp() {
         // RBAC 默认放行
@@ -78,12 +90,21 @@ class WalletBalanceControllerIT {
     }
 
     @Test
-    @DisplayName("未认证 → 401")
-    void unauthenticated_returns401() throws Exception {
+    @DisplayName("未认证 → 403 + AUT00301(应用服务身份兜底)")
+    void unauthenticated_returnsForbidden() throws Exception {
         SecurityContextHolder.clearContext();
 
+        // 口径说明:本项目 ACCESS_UNAUTHORIZED 由 GlobalExceptionHandler 映射为 HTTP 403
+        // (而非语义上更贴切的 401),该映射对全部端点生效,属既有约定。
+        //
+        // 另注:本用例 mock 了 RbacAuthorizationManager 无条件放行,且
+        // JwtAuthorizationTokenFilter 对"无 Authorization 头"是放行进链,
+        // 因此请求实际到达了控制器,最终由应用服务的身份自取(UserUtil 返回 -1)拦下。
+        // 即本用例验证的是【应用服务的身份兜底】,而非认证过滤器链本身;
+        // 真实环境下 RBAC 会更早拦截。断言错误码以区分"兜底生效"与"任意 403"。
         mockMvc.perform(get("/wallet/balance"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value(ResultCode.ACCESS_UNAUTHORIZED.getCode()));
     }
 
     @Test
@@ -100,6 +121,9 @@ class WalletBalanceControllerIT {
 
         when(eveAccountRepository.getAccountList(USER_ID)).thenReturn(List.of(account));
 
+        // 归属校验 mock:返回同一 account，使 fetchCharacterBalance 能取到 userId 换 token
+        when(authorizeUtil.authorize(CID_1)).thenReturn(account);
+
         // stub ESI
         lenient().when(esiGateway.getAccessToken(eq(CID_1), anyInt())).thenReturn("Bearer token");
         when(esiGateway.queryCharacterWalletBalance(eq(CID_1), any())).thenReturn(1000000.0);
@@ -108,7 +132,7 @@ class WalletBalanceControllerIT {
 
         mockMvc.perform(get("/wallet/balance"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("0000000"))
+                .andExpect(jsonPath("$.code").value(ResultCode.SUCCESS.getCode()))
                 .andExpect(jsonPath("$.data.characters").isArray())
                 .andExpect(jsonPath("$.data.characters[0].characterId").value(CID_1))
                 .andExpect(jsonPath("$.data.characters[0].characterName").value("TestChar"))
@@ -127,7 +151,7 @@ class WalletBalanceControllerIT {
 
         mockMvc.perform(get("/wallet/balance"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.code").value("0000000"))
+                .andExpect(jsonPath("$.code").value(ResultCode.SUCCESS.getCode()))
                 .andExpect(jsonPath("$.data.characters").isEmpty())
                 .andExpect(jsonPath("$.data.corporations").isEmpty());
     }

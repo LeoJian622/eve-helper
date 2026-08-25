@@ -56,7 +56,7 @@
 
 ```json
 {
-  "code": "0000000",
+  "code": "200",
   "message": "ok",
   "data": {
     "characters": [

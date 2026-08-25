@@ -154,10 +154,22 @@ sys_role_permission: 绑定到 sys_role.code IN ('ADMIN', 'USER')
 2. **角色缺失会静默少插**：`INSERT ... SELECT` 依赖目标库存在 `code='ADMIN'`/`'USER'` 的行；若某环境缺 `USER` 角色，只会插入 ADMIN 一行且**不报错**。故脚本内附「Step 5 执行后校验」查询，期望返回 2 行，务必核对。
 3. **必须刷新 Redis 权限缓存**：URL-权限-角色映射缓存在 `URL_PERM_ROLES_KEY`，仅执行 SQL 不会让新权限生效，需调用 `refreshPermRolesRules`（或对应管理入口）。
 
-### 测试覆盖的缺口（IMPORTANT-6 / IMPORTANT-7）
+### 测试覆盖与状态码口径
 
-- `WalletBalanceControllerIT` 把 `RbacAuthorizationManager` 整体 mock 成无条件放行，因此**上述 RBAC 配置问题没有任何测试能发现**。补一个不 mock RBAC 的门禁用例需要 Redis 环境，已记为 follow-up。
-- 该 IT 的 3 个用例在本机因 MySQL 不可达全部 Errors（`Failed to load ApplicationContext`），**其覆盖尚未被任何可核验的运行记录证实**。项目未配 `maven-failsafe-plugin`，`*IT` 的执行完全依赖本地 DB。建议引入 Testcontainers 或把 IT 拆到独立 profile。
+- `WalletBalanceControllerIT` 3 个用例已在 MySQL/Redis 可达环境实跑通过（3/3）。首次真实运行时
+  3 个全部失败，暴露出三处**断言错误**（成功码应为 `200` 而非 `0000000`；未认证是 **403** 而非 401；
+  未 mock `AuthorizeUtil` 导致真实 DB 查询失败被 fail-open 吞成余额 0）。详见
+  `specs/018-wallet-balance-by-user/tasks.md` T9。
+- **状态码口径**：本项目 `ACCESS_UNAUTHORIZED` 由 `GlobalExceptionHandler` 映射为 **HTTP 403**
+  （而非语义上更贴切的 401），该映射对全部端点生效，属既有约定（相关讨论见评审 MINOR-7）。
+  所以"未带 JWT 访问本端点"得到的是 403 + `AUT00301`，不是 401。
+- **RBAC 门禁仍无自动化覆盖**：IT 把 `RbacAuthorizationManager` 整体 mock 成无条件放行，
+  因此上述 RBAC 配置问题（SQL 未执行、缓存未刷新、角色缺失）**没有任何测试能发现**。
+  补"不 mock RBAC"的用例需要向测试 Redis 写权限规则，而测试环境是**远程共享主机**
+  （`192.168.12.249`），写入有污染他人环境的风险，故暂缓。
+- 项目未配 `maven-failsafe-plugin`，`*IT` 的执行完全依赖测试主机可达。若该主机不可达，
+  IT 会以 `Failed to load ApplicationContext` 形式集体报错——那是环境问题，不是代码回归。
+  建议后续引入 Testcontainers 或把 IT 拆到独立 profile，使 CI 能稳定给出证据。
 
 ## 10. 与相邻特性的关系
 

@@ -240,3 +240,45 @@ URL **形状不变**、**语义反转**：`GET /wallet/overview/corp/{x}` 的 `{
 
 **建议本轮顺手修**：MINOR-1/2/3/5/6/9（改动量均 10 行内；其中 MINOR-6 的 `verify(esiGateway).getAccessToken(CID_1, USER_ID)` 恰为本仓库历史高频的 userId 实参越权问题提供回归保护）
 **列入 follow-up**：MINOR-4/7/8
+
+---
+
+## 补记（2026-08-25）：IMPORTANT-7 闭合，两项疑虑被实测推翻
+
+评审时测试主机不可达，IT 只能以 `Failed to load ApplicationContext` 集体报错，故评审只能判定
+「该覆盖从未被观测过」。次日该主机（`192.168.12.249` MySQL:3307 / Redis:6379）恢复可达，实跑结果：
+
+**首次运行 3 个用例全部失败** —— 评审的判断成立，且问题比预想更多。三处均为**测试断言错误**，
+生产代码无需改动：
+
+| # | 现象 | 根因 | 处置 |
+|---|------|------|------|
+| 1 | `$.code` expected `0000000` but was `200` | `ResultCode.SUCCESS` 的 code 是 `"200"`；`spec.md:59` 的响应示例同样写错 | 断言改用 `ResultCode.SUCCESS.getCode()`，spec 示例同步修正 |
+| 2 | Status expected `401` but was `403` | `GlobalExceptionHandler:204-205` 把 `ACCESS_UNAUTHORIZED` 映射为 403（全项目既有约定） | 改断言 403 + 错误码 `AUT00301`，并注明该用例实际验证的是应用服务身份兜底 |
+| 3 | `characters[0].balance` expected `1000000.0` but was `0.0` | IT 未 mock `AuthorizeUtil`，真实实现按 `(userId, characterId)` 查 `eve_account`；测试库无该组合 → 抛「账号不存在」→ **被 fail-open 的 catch 吞成 0.0** | 增加 `@MockitoBean AuthorizeUtil` 并 stub（测试库为远程共享主机，不写入数据） |
+
+修正后：**018 IT 3/3 通过、017 IT 12/12 通过**（failed 0，exitCode 0）。
+
+### 两项疑虑被推翻
+
+评审在 IMPORTANT-7 中提出两点「无法在本环境实测，需验证后再定级」的怀疑，现给出实测结论：
+
+1. **`mockAuthenticated()` 直写 `SecurityContextHolder` 会被 `SecurityContextHolderFilter` 覆盖？**
+   → **不成立**。两个已认证用例的 `status().isOk()` 均通过，说明主体在过滤器链内可见。
+   评审建议改用 `@WithMockUser` / `SecurityMockMvcRequestPostProcessors.authentication(...)` 仍是更稳妥的写法，
+   但当前写法并未失效，故降级为风格建议。
+
+2. **401 断言「对任何原因的 401 都成立」，无法区分认证生效与配置错误？**
+   → **比评审预想的更糟**：该响应根本不是 401 而是 403，断言从一开始就不可能通过。
+   评审建议的「补断言错误码」已采纳（断言 `AUT00301`）。
+
+### 仍未闭合
+
+- **IMPORTANT-6 的 RBAC 门禁用例**：IT 仍将 `RbacAuthorizationManager` mock 成无条件放行，
+  故 SQL 未执行 / 缓存未刷新 / 角色缺失这三类配置问题依旧没有测试能发现。补该用例需向
+  **远程共享 Redis** 写权限规则，有污染他人环境风险，暂缓。
+- **IMPORTANT-7 的项目级建议**：`pom.xml` 仍无 `maven-failsafe-plugin`，`*IT` 执行完全依赖测试主机可达。
+  引入 Testcontainers 或拆独立 profile 的建议保留。
+- 第 3 项根因是 **IMPORTANT-2 的真实实例证据**：一次本应暴露测试配置缺陷的归属校验失败，
+  被静默降级为「余额 0」，排查时唯一线索是断言数字不对，异常本身不出现在响应中。
+  这为「故障不可观测」的实际代价提供了具体例证，建议据此提升 IMPORTANT-2 的处理优先级。
