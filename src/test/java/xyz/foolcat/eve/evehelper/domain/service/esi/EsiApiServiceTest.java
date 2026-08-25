@@ -306,6 +306,14 @@ class EsiApiServiceTest {
                 "/characters/" + CID + "/assets/", page);
     }
 
+    /**
+     * 构造与 {@link EsiApiService#queryCharactersAssetsMaxPage} 内部一致的 maxPage 独立缓存键。
+     */
+    private String assetsMaxPageKey() {
+        return esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), USER_ID,
+                "/characters/" + CID + "/assets/", "maxPage");
+    }
+
     private static AssetResponse assetResponse(long itemId) {
         AssetResponse ar = new AssetResponse();
         ar.setItemId(itemId);
@@ -399,7 +407,7 @@ class EsiApiServiceTest {
     @DisplayName("资产 maxPage:缓存命中 → 直接返回,不真调")
     void characterAssetsMaxPage_cacheHit_noRealCall() {
         authAs(USER_ID);
-        String key = assetsKey(1);
+        String key = assetsMaxPageKey();
         when(cacheGateway.get(key)).thenReturn(20);
 
         Integer mp = esiApiService.queryCharactersAssetsMaxPage(CID, "Bearer x");
@@ -410,10 +418,13 @@ class EsiApiServiceTest {
     }
 
     @Test
-    @DisplayName("资产 maxPage:未命中 → 真调含头入口并按 max-age 回填 Integer")
+    @DisplayName("资产 maxPage:未命中 → 真调含头入口并按 max-age 回填 Integer(:maxPage 独立键)")
     void characterAssetsMaxPage_cacheMiss_realCallAndBackfill() {
         authAs(USER_ID);
-        String key = assetsKey(1);
+        String key = assetsMaxPageKey();
+        // maxPage 独立键必须与列表首页 page=1 键不同(T008 评审 M1 修复回归)
+        assertThat(key).endsWith(":maxPage");
+        assertThat(key).isNotEqualTo(assetsKey(1));
         when(cacheGateway.get(key)).thenReturn(null);
         when(assetsApi.queryCharactersAssetsMaxPageResponse(eq(CID), eq("serenity"), anyString()))
                 .thenReturn(new PageTotalApi.PageCountResult(5, maxAge300()));
@@ -429,7 +440,7 @@ class EsiApiServiceTest {
     @DisplayName("资产 maxPage:无响应头 → 不回填,真调结果照常返回")
     void characterAssetsMaxPage_noHeader_noCacheWrite() {
         authAs(USER_ID);
-        String key = assetsKey(1);
+        String key = assetsMaxPageKey();
         when(cacheGateway.get(key)).thenReturn(null);
         when(assetsApi.queryCharactersAssetsMaxPageResponse(eq(CID), eq("serenity"), anyString()))
                 .thenReturn(new PageTotalApi.PageCountResult(3, new HttpHeaders()));

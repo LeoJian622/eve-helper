@@ -82,7 +82,7 @@ class WalletTransactionCharacterSyncUserIdTest {
                 .thenReturn(Flux.empty());
 
         // ── Act ──
-        walletTransactionService.syncCharacterTransactions(CHARACTER_ID);
+        walletTransactionService.syncCharacterTransactions(CHARACTER_ID, false);
 
         // ── Assert:ownerType/ownerId/division/userId 回填发生在传入 saveOrUpdateBatch 之前 ──
         ArgumentCaptor<List<WalletTransaction>> captor = ArgumentCaptor.forClass(List.class);

@@ -15,25 +15,28 @@
 两个同步入口的应用层**共同安全前置**：路径 `cid`/`corpId` 是用户可控入参，`accessGuard.requireOwnership(cid|corpId, ...)` 在进入业务逻辑前校验归属，防 IDOR。
 
 ```
-人物同步: POST /wallet/transaction/{cid}/sync
-  -> WalletTransactionApplicationService.syncCharacterTransactions
+人物同步: POST /wallet/transaction/{cid}/sync?forceRefresh=false
+  -> WalletTransactionApplicationService.syncCharacterTransactions(cid, forceRefresh)
        -> accessGuard.requireOwnership(cid)                 // 防 IDOR
-       -> WalletTransactionService.syncCharacterTransactions
+       -> requireSyncCooldown(cooldownKey)                  // Redis 冷却限流(60s)
+       -> WalletTransactionService.syncCharacterTransactions(cid, forceRefresh)
             -> authorize / authorizeInternal                // 归属校验(eve_account 属于当前用户/系统)
             -> getAccessToken(cId, userId)
-            -> pullTransactions(from_id 游标)                // 首页 null,以末条 transactionId 续拉更旧,空页/达上限终止
-            -> 回填 ownerType='character'/ownerId/division=0
+            -> pullTransactions(fromId -> esiGateway.queryCharacterWalletTransactions(cid, fromId, token, forceRefresh))
+            -> 回填 ownerType='character'/ownerId/division=0/userId=syncUserId
             -> walletTransactionRepository.saveOrUpdateBatch // 幂等 upsert(复合唯一键)
 
-军团同步: POST /wallet/transaction/corp/{corpId}/sync
-  -> WalletTransactionApplicationService.syncCorporationTransactions
-       -> accessGuard.requireOwnership(corpId)              // 防 IDOR(ResourceOwnershipPolicy 支持军团ID)
-       -> WalletTransactionService.syncCorporationTransactions
+军团同步: POST /wallet/transaction/corp/{characterId}/sync?forceRefresh=false
+  -> WalletTransactionApplicationService.syncCorporationTransactions(characterId, forceRefresh)
+       -> accessGuard.requireOwnership(characterId)         // 防 IDOR(ResourceOwnershipPolicy 支持角色ID)
+       -> requireSyncCooldown(cooldownKey)                  // Redis 冷却限流
+       -> WalletTransactionService.syncCorporationTransactions(characterId, forceRefresh)
+            -> authorize 解析 corpId = eveAccount.getCorpId()  // 013 US1:军团ID从角色行派生
             -> 遍历 division 1..7,逐一:
-                 -> pullTransactions(from_id 游标)            // 每 division 独立游标
-                 -> 回填 ownerType='corporation'/ownerId/division=<当前>
+                 -> pullTransactions(fromId -> esiGateway.queryCorporationWalletTransactions(corpId, division, fromId, token, forceRefresh))
+                 -> 回填 ownerType='corporation'/ownerId=corpId/division=<当前>/userId=syncUserId
                  -> saveOrUpdateBatch                          // 幂等 upsert
-                 -> 单 division try/catch 隔离(失败仅记结果,不回滚已成功分账)
+                 -> 单 division try/catch 隔离(失败仅记结果,不回滚已成功分账;ESI 403/5xx 透传)
             -> 任一失败 -> 汇总抛 EveHelperException(含失败 division 明细),但已成功 division 已在 DB
 ```
 
@@ -44,10 +47,12 @@
 `WalletTransactionApplicationService` 外层：
 
 ```java
-public void syncCharacterTransactions(Integer cid) {
+public void syncCharacterTransactions(Integer cid, boolean forceRefresh) {
     accessGuard.requireOwnership(String.valueOf(cid), "钱包交易同步");  // 防 IDOR
+    String cooldownKey = SYNC_COOLDOWN_PREFIX + "char:" + cid;
+    requireSyncCooldown(cooldownKey);  // Redis 冷却限流(60s)
     try {
-        walletTransactionService.syncCharacterTransactions(cid);
+        walletTransactionService.syncCharacterTransactions(cid, forceRefresh);
     } catch (ParseException e) {
         throw new EveHelperException("钱包交易同步失败", e);
     }
@@ -126,6 +131,16 @@ if (!failedDivisions.isEmpty()) {
 
 - **不整体回滚**：单 division 失败仅记录，其余 6 个成功分账数据已在 DB。
 - **错误可定位**：汇总异常体 `msg` 含失败 division 清单（IT 断言 `containsString("[3]")`）。
+- **ESI 系统性错误透传**：`EsiException`（403/400/5xx）不进入 division 隔离，直接上抛由全局异常处理器映射（013 US3）。
+
+### 2.5 ESI 响应缓存判读（015 特性新增）
+
+与 009 journal 共享同一缓存机制（详见 [wallet-journal-character.md §2.3](./wallet-journal-character.md)），差异点：
+
+- **缓存键含 fromId 游标**：交易流水用 `from_id` 游标分页（非 page），缓存键为 `datasource + userId + "/characters/{cid}/wallet/transactions/" + (fromId == null ? "" : "?from_id=" + fromId)`；每个游标位置独立缓存
+- **含响应头入口**：`WalletApi.queryCharacterWalletTransactionsResponse` / `queryCorporationWalletTransactionsResponse` 返回 `ResponseEntity`，供提取 Cache-Control/Expires TTL
+- **forceRefresh 参数**：Controller → AppService → DomainService → EsiGateway 全链路透传，`true` 时跳过缓存读（受 `forceRefreshLimiter` 限流保护）
+- **未认证路径不缓存**：`userId == null` 时直接真调 WalletApi（安全优先）
 
 ## 3. 查询链路（真实物理分页）
 
@@ -168,8 +183,10 @@ order by `date` desc   -- date 为 MySQL 保留字,须反引号
 
 | 要点 | 说明 |
 |------|------|
-| 四端点均应用层 requireOwnership | 人物/军团同步、人物/军团查询入口 `accessGuard.requireOwnership(cid|corpId)`，防 IDOR；未认证 401 / 无权 403，fail-closed；军团由 `ResourceOwnershipPolicy` 原生支持 |
+| 四端点均应用层 requireOwnership | 人物/军团同步、人物/军团查询入口 `accessGuard.requireOwnership(cid|characterId)`，防 IDOR；未认证 401 / 无权 403，fail-closed；军团由 `ResourceOwnershipPolicy` 原生支持 |
+| Redis 冷却限流（同步） | `requireSyncCooldown`，默认 60 秒冷却（`wallet:sync:char:{cid}` / `wallet:sync:corp:{characterId}`），防 ESI 限流滥用 |
 | 入参校验先于归属校验 | 分页 `current/size/division` 校验在 `requireOwnership` **之前**，防越权探测（避免无权者借参数错误列出数据存在性） |
+| ESI 响应缓存（015） | 已认证请求走 Redis 缓存判读，TTL 由 ESI 响应头决定；`forceRefresh=true` 跳过缓存读（受 `forceRefreshLimiter` 限流）；未认证路径不缓存；缓存键含 fromId 游标 |
 | 双层授权（同步） | 应用层 `requireOwnership` + 领域层 `WalletTransactionService` 内 `authorize/authorizeInternal` 归属校验 |
 | 幂等 upsert | 复合唯一键 `UNIQUE(owner_type, owner_id, division, transaction_id)` 触发 `ON DUPLICATE KEY UPDATE`，重复同步不产生重复行（区别于 journal 的 PRIMARY(id)） |
 | 军团 division 失败隔离 | 类级无 `@Transactional`，每 division 独立提交；单 division 失败不整体回滚、已成功分账保留，异常 `msg` 指明失败 division |
@@ -189,8 +206,14 @@ order by `date` desc   -- date 为 MySQL 保留字,须反引号
 | 分页/批量 SQL | `src/main/resources/mappers/system/WalletTransactionMapper.xml` |
 | 批量 upsert | `infrastructure/persistence/.../WalletTransactionMapper.java`（insertOrUpdateSelective） |
 | 组装器 / 响应 VO | `application/assembler/system/WalletTransactionAssembler.java`、`application/dto/response/WalletTransactionVO.java` |
-| ESI 端口 | `domain/port/esi/EsiGateway.java`（queryCharacter/CorporationWalletTransactions，from_id） |
-| ESI 适配 / 转换器 | `infrastructure/external/esi/EsiApiService.java`、`infrastructure/assembler/esi/EsiWalletTransactionConverter.java` |
+| ESI 端口 | `domain/port/esi/EsiGateway.java`（queryCharacter/CorporationWalletTransactions，含 `forceRefresh` 重载） |
+| ESI API（含响应头入口） | `infrastructure/external/esi/api/WalletApi.java`（`queryCharacter/CorporationWalletTransactionsResponse`） |
+| ESI 适配 / 转换器 | `infrastructure/external/esi/EsiApiService.java`（缓存判读 + TTL 回填）、`infrastructure/assembler/esi/EsiWalletTransactionConverter.java` |
 | 建表迁移 | `src/SQL/convert/010_wallet_transaction_create.sql` |
 | 归属校验 | `application/security/AccessGuard.java`、`domain/util/AuthorizeUtil.java` |
 | 页向量复制 | `shared/util/PageResultUtil.java` |
+| 缓存网关 / TTL 提取 / 限流 | 同 [wallet-journal-character.md](./wallet-journal-character.md) §6 |
+
+---
+
+**最后更新**: 2026-08-21（015 特性:添加 forceRefresh 参数、ESI 响应缓存判读说明、军团同步路径修正为角色ID）

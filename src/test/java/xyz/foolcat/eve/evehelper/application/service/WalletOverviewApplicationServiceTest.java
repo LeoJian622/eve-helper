@@ -1,5 +1,6 @@
 package xyz.foolcat.eve.evehelper.application.service;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -9,11 +10,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import xyz.foolcat.eve.evehelper.application.security.AccessGuard;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletOverviewAggregate;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletOverviewVO;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.repository.system.WalletJournalRepository;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 
+import java.text.ParseException;
 import java.time.OffsetDateTime;
 import java.util.Date;
 import java.util.List;
@@ -21,8 +27,11 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -55,8 +64,33 @@ class WalletOverviewApplicationServiceTest {
     @Mock
     private WalletJournalRepository walletJournalRepository;
 
+    @Mock
+    private EsiGateway esiGateway;
+
+    @Mock
+    private AuthorizeUtil authorizeUtil;
+
     @InjectMocks
     private WalletOverviewApplicationService applicationService;
+
+    /**
+     * 016:为 fetchCharacterBalance / fetchCorporationBalances 提供通用 lenient stub,
+     * 使不聚焦余额路径的测试不受影响(balance 默认 0)。
+     *
+     * <p>017 IMPORTANT-1 起,军团余额直接用入口 authorize(cid) 返回的账号换 token,
+     * 服务已不再依赖 EveAccountRepository 反查角色,故无需再 stub getAccountList。</p>
+     */
+    @BeforeEach
+    void setupEsiBalanceDefaults() throws ParseException {
+        EveAccount account = new EveAccount();
+        account.setCharacterId(CID);
+        account.setUserId(1);
+        account.setCorpId(CORP);
+        lenient().when(authorizeUtil.authorize(CID)).thenReturn(account);
+        lenient().when(esiGateway.getAccessToken(eq(CID), anyInt())).thenReturn("Bearer token");
+        lenient().when(esiGateway.queryCharacterWalletBalance(eq(CID), any())).thenReturn(0.0);
+        lenient().when(esiGateway.queryCorporationWalletBalances(eq(CORP), any())).thenReturn(List.of());
+    }
 
     /* ============================ 入参边界 ============================ */
 
@@ -214,7 +248,7 @@ class WalletOverviewApplicationServiceTest {
         @DisplayName("division 越界(0/8)抛 PARAM_ERROR,不触达归属校验")
         void invalidDivision_rejectedBeforeOwnership() {
             for (int bad : new int[]{0, 8}) {
-                assertThatThrownBy(() -> applicationService.getCorporationOverview(CORP, bad, null, null, null))
+                assertThatThrownBy(() -> applicationService.getCorporationOverview(CID, bad, null, null, null))
                         .isInstanceOf(EveHelperException.class)
                         .hasMessageContaining("参数");
             }
@@ -223,8 +257,8 @@ class WalletOverviewApplicationServiceTest {
         }
 
         @Test
-        @DisplayName("corpId 为空抛 PARAM_ERROR,不触达归属校验")
-        void nullCorpId_rejectedBeforeOwnership() {
+        @DisplayName("cid 为空抛 PARAM_ERROR,不触达归属校验")
+        void nullCid_rejectedBeforeOwnership() {
             assertThatThrownBy(() -> applicationService.getCorporationOverview(null, null, null, null, null))
                     .isInstanceOf(EveHelperException.class)
                     .hasMessageContaining("参数");
@@ -233,69 +267,116 @@ class WalletOverviewApplicationServiceTest {
         }
 
         @Test
-        @DisplayName("合法军团入参后调用 corporationScope 取 scope,并透传仓储")
-        void validCorpInput_callsCorporationScope() {
+        @DisplayName("合法人物入参后 authorize 反查 corpId,调用 corporationScope 取 scope,并透传仓储(016:余额改走 ESI)")
+        void validCidInput_authorizesAndCallsCorporationScope() {
             when(accessGuard.corporationScope("军团钱包总览")).thenReturn(777L);
             when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), isNull(), eq(777L), isNull(), isNull()))
                     .thenReturn(new WalletOverviewAggregate(0.0, 0.0, 0.0, 0.0, 0L, null));
             when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any(), any())).thenReturn(List.of());
             when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any(), any())).thenReturn(List.of());
-            when(walletJournalRepository.selectOverviewDivisionBalances((long) CORP, 777L)).thenReturn(List.of());
+            // 016:selectOverviewDivisionBalances 已移除(改走 ESI),仅保留 flow
             when(walletJournalRepository.selectOverviewDivisionFlow(eq((long) CORP), eq(777L), isNull(), isNull())).thenReturn(List.of());
 
-            applicationService.getCorporationOverview(CORP, null, null, null, null);
+            applicationService.getCorporationOverview(CID, null, null, null, null);
 
+            // 人物维度归属:authorize 校验并反查 corpId(017 IMPORTANT-1 后余额复用同一 account,不再二次 authorize)
+            verify(authorizeUtil, atLeastOnce()).authorize(CID);
             // US2b:军团维度读改为 corporationScope 取 scope 透传仓储,不再 requireOwnership
             verify(accessGuard).corporationScope("军团钱包总览");
         }
 
         @Test
-        @DisplayName("军团全量:分账 1..7 补零,收支/余额按 division 归并,currentBalance=各分账余额和")
-        void fullOverview_divisionsMergedAndBalanceSummed() {
+        @DisplayName("人物已授权但 corpId 为 null(数据异常)→ USER_ACCOUNT_NOT_EXIST,不触达 corporationScope(017 IMPORTANT-2)")
+        void nullCorpId_afterAuthorize_rejected() {
+            EveAccount noCorpAccount = new EveAccount();
+            noCorpAccount.setCharacterId(CID);
+            noCorpAccount.setUserId(1);
+            noCorpAccount.setCorpId(null); // 数据异常:人物未绑定军团
+            when(authorizeUtil.authorize(CID)).thenReturn(noCorpAccount);
+
+            assertThatThrownBy(() -> applicationService.getCorporationOverview(CID, null, null, null, null))
+                    .isInstanceOf(EveHelperException.class)
+                    .hasMessageContaining("账号");
+            // corpId 为 null 时 fail-closed,不触达后续军团查询路径
+            verifyNoInteractions(accessGuard);
+            verifyNoInteractions(walletJournalRepository);
+        }
+
+        @Test
+        @DisplayName("ROOT(corporationScope 返回 null)仍用入口 cid 的 token 查余额,不退化为 0(017 IMPORTANT-1)")
+        void rootScope_usesEntryCharacterToken_balanceNotZero() throws ParseException {
+            // ROOT/ADMIN:corporationScope 返回 null 表示"看全量",不做 user_id 过滤。
+            // 原实现在此分支退化为查 SYSTEM_USER_ID(1) 的账号列表,而系统用户在该军团通常无角色,
+            // 于是 charId 为 null → 余额恒为 0。修复后直接用入口已 authorize 的人物换 token。
+            when(accessGuard.corporationScope("军团钱包总览")).thenReturn(null);
+            when(esiGateway.queryCorporationWalletBalances(eq(CORP), any()))
+                    .thenReturn(List.of(new WalletDivisionBalance(1, 500.0)));
+            when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), eq(1), isNull(), isNull(), isNull()))
+                    .thenReturn(new WalletOverviewAggregate(0.0, 0.0, 0.0, 0.0, 0L, null));
+            when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any(), any())).thenReturn(List.of());
+            when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any(), any())).thenReturn(List.of());
+
+            WalletOverviewVO vo = applicationService.getCorporationOverview(CID, 1, null, null, null);
+
+            // 余额取自 ESI 的 500,而非"找不到角色"退化出的 0
+            assertThat(vo.currentBalance()).isEqualTo(500.0);
+            // 换取 token 用的是入口已 authorize 的人物,而非从 scope 反查出的任意角色
+            verify(esiGateway).getAccessToken(CID, 1);
+        }
+
+        @Test
+        @DisplayName("军团全量:分账 1..7 补零,收支按 division 归并,currentBalance=ESI 各分账余额和(016)")
+        void fullOverview_divisionsMergedAndBalanceSummed() throws ParseException {
             when(accessGuard.corporationScope("军团钱包总览")).thenReturn(777L);
+            // 016:分账余额改由 ESI 直查,不再从仓储 selectOverviewDivisionBalances 取
+            when(esiGateway.queryCorporationWalletBalances(eq(CORP), any()))
+                    .thenReturn(List.of(
+                            new WalletDivisionBalance(1, 100.0),
+                            new WalletDivisionBalance(3, 50.0)));
             WalletOverviewAggregate agg = new WalletOverviewAggregate(999.0, 300.0, 100.0, 200.0, 5L, OffsetDateTime.now());
             when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), isNull(), eq(777L), isNull(), isNull())).thenReturn(agg);
             when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any(), any())).thenReturn(List.of());
             when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any(), any())).thenReturn(List.of());
-            when(walletJournalRepository.selectOverviewDivisionBalances((long) CORP, 777L))
-                    .thenReturn(List.of(
-                            new WalletOverviewVO.DivisionSummary(1, 100.0, 0.0, 0.0),
-                            new WalletOverviewVO.DivisionSummary(3, 50.0, 0.0, 0.0)));
             when(walletJournalRepository.selectOverviewDivisionFlow(eq((long) CORP), eq(777L), isNull(), isNull()))
                     .thenReturn(List.of(
                             new WalletOverviewVO.DivisionSummary(1, 0.0, 10.0, 5.0),
                             new WalletOverviewVO.DivisionSummary(3, 0.0, 20.0, 8.0)));
 
-            WalletOverviewVO vo = applicationService.getCorporationOverview(CORP, null, null, null, null);
+            WalletOverviewVO vo = applicationService.getCorporationOverview(CID, null, null, null, null);
 
             assertThat(vo.divisions()).isNotNull();
             assertThat(vo.divisions()).hasSize(7);
-            // 有数据分账:div1/div3 归并 balance+income+expense
+            // 有数据分账:div1/div3 归并 ESI balance + DB income/expense
             assertThat(vo.divisions().get(0)).isEqualTo(new WalletOverviewVO.DivisionSummary(1, 100.0, 10.0, 5.0));
             assertThat(vo.divisions().get(2)).isEqualTo(new WalletOverviewVO.DivisionSummary(3, 50.0, 20.0, 8.0));
             // 无数据分账补零:div2、div4-7
             assertThat(vo.divisions().get(1)).isEqualTo(new WalletOverviewVO.DivisionSummary(2, 0.0, 0.0, 0.0));
             assertThat(vo.divisions().get(3)).isEqualTo(new WalletOverviewVO.DivisionSummary(4, 0.0, 0.0, 0.0));
             assertThat(vo.divisions().get(6)).isEqualTo(new WalletOverviewVO.DivisionSummary(7, 0.0, 0.0, 0.0));
-            // currentBalance = 分账余额和 150,覆盖 aggregate 的 999
+            // currentBalance = ESI 分账余额和 150,覆盖 aggregate 的 999
             assertThat(vo.currentBalance()).isEqualTo(150.0);
             // 其余标量透传 aggregate(无 division 过滤)
             assertThat(vo.totalIncome()).isEqualTo(300.0);
             assertThat(vo.totalExpense()).isEqualTo(100.0);
             assertThat(vo.netFlow()).isEqualTo(200.0);
             assertThat(vo.journalCount()).isEqualTo(5L);
+            // 016:不再调用 selectOverviewDivisionBalances(已改走 ESI)
+            verify(walletJournalRepository, never()).selectOverviewDivisionBalances(any(), any());
         }
 
         @Test
-        @DisplayName("军团单分账:三聚合带 division 过滤,divisions=null,不查分账分布")
-        void singleDivision_divisionFilteredNoDivisions() {
+        @DisplayName("军团单分账:三聚合带 division 过滤,divisions=null,余额来自 ESI(016)")
+        void singleDivision_divisionFilteredNoDivisions() throws ParseException {
             when(accessGuard.corporationScope("军团钱包总览")).thenReturn(777L);
+            // 016:单分账余额从 ESI 取 div=3 的 balance
+            when(esiGateway.queryCorporationWalletBalances(eq(CORP), any()))
+                    .thenReturn(List.of(new WalletDivisionBalance(3, 50.0)));
             WalletOverviewAggregate agg = new WalletOverviewAggregate(50.0, 20.0, 0.0, 20.0, 1L, null);
             when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), eq(3), eq(777L), isNull(), isNull())).thenReturn(agg);
             when(walletJournalRepository.selectOverviewCategories(any(), any(), any(), any(), any())).thenReturn(List.of());
             when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any(), any())).thenReturn(List.of());
 
-            WalletOverviewVO vo = applicationService.getCorporationOverview(CORP, 3, null, null, null);
+            WalletOverviewVO vo = applicationService.getCorporationOverview(CID, 3, null, null, null);
 
             verify(walletJournalRepository).selectOverviewAggregate(eq((long) CORP), eq(3), eq(777L), isNull(), isNull());
             verify(walletJournalRepository).selectOverviewCategories(eq((long) CORP), eq(3), eq(777L), isNull(), isNull());
@@ -304,14 +385,17 @@ class WalletOverviewApplicationServiceTest {
             verify(walletJournalRepository, never()).selectOverviewDivisionBalances(any(), any());
             verify(walletJournalRepository, never()).selectOverviewDivisionFlow(any(), any(), any(), any());
             assertThat(vo.divisions()).isNull();
+            // 016:余额来自 ESI,不再从 aggregate.currentBalance
             assertThat(vo.currentBalance()).isEqualTo(50.0);
         }
 
         @Test
         @DisplayName("军团单分账边界:division=1 与 7 合法不抛,三聚合带对应 division 过滤,divisions=null")
-        void singleDivision_boundaries_div1And7Legal() {
+        void singleDivision_boundaries_div1And7Legal() throws ParseException {
             for (int div : new int[]{1, 7}) {
                 when(accessGuard.corporationScope("军团钱包总览")).thenReturn(777L);
+                when(esiGateway.queryCorporationWalletBalances(eq(CORP), any()))
+                        .thenReturn(List.of(new WalletDivisionBalance(div, 10.0)));
                 WalletOverviewAggregate agg = new WalletOverviewAggregate(10.0, 5.0, 0.0, 5.0, 1L, null);
                 when(walletJournalRepository.selectOverviewAggregate(eq((long) CORP), eq(div), eq(777L), isNull(), isNull()))
                         .thenReturn(agg);
@@ -320,7 +404,7 @@ class WalletOverviewApplicationServiceTest {
                 when(walletJournalRepository.selectOverviewTrend(any(), any(), any(), any(), any(), any()))
                         .thenReturn(List.of());
 
-                WalletOverviewVO vo = applicationService.getCorporationOverview(CORP, div, null, null, null);
+                WalletOverviewVO vo = applicationService.getCorporationOverview(CID, div, null, null, null);
 
                 verify(walletJournalRepository)
                         .selectOverviewAggregate(eq((long) CORP), eq(div), eq(777L), isNull(), isNull());
@@ -328,6 +412,7 @@ class WalletOverviewApplicationServiceTest {
                 verify(walletJournalRepository, never()).selectOverviewDivisionBalances(any(), any());
                 verify(walletJournalRepository, never()).selectOverviewDivisionFlow(any(), any(), any(), any());
                 assertThat(vo.divisions()).isNull();
+                // 016:余额来自 ESI
                 assertThat(vo.currentBalance()).isEqualTo(10.0);
             }
         }
@@ -340,8 +425,10 @@ class WalletOverviewApplicationServiceTest {
     class Assembly {
 
         @Test
-        @DisplayName("仓储聚合 → VO 字段透传,divisions=null,categories/trend 透传")
-        void repoReturnsAggregate_voPassesThrough() {
+        @DisplayName("仓储聚合(收支/类目/趋势)+ ESI 余额 → VO 字段组装,divisions=null(016)")
+        void repoReturnsAggregate_voPassesThrough() throws ParseException {
+            // 016:currentBalance 改由 ESI 直查
+            when(esiGateway.queryCharacterWalletBalance(eq(CID), any())).thenReturn(100.0);
             OffsetDateTime asOf = OffsetDateTime.now();
             WalletOverviewAggregate agg = new WalletOverviewAggregate(
                     100.0, 200.0, 50.0, 150.0, 7L, asOf);
@@ -356,6 +443,7 @@ class WalletOverviewApplicationServiceTest {
 
             WalletOverviewVO vo = applicationService.getCharacterOverview(CID, null, null, null);
 
+            // 016:currentBalance 来自 ESI,与 aggregate.currentBalance 解耦
             assertThat(vo.currentBalance()).isEqualTo(100.0);
             assertThat(vo.totalIncome()).isEqualTo(200.0);
             assertThat(vo.totalExpense()).isEqualTo(50.0);
@@ -368,8 +456,9 @@ class WalletOverviewApplicationServiceTest {
         }
 
         @Test
-        @DisplayName("空聚合(仓储零值 + 空类别/趋势)→ VO 零值,divisions=null")
+        @DisplayName("空聚合(仓储零值 + 空类别/趋势)+ ESI 余额 0 → VO 零值,divisions=null")
         void repoEmptyAggregate_voZeroed() {
+            // @BeforeEach 已 stub ESI balance 返回 0.0
             WalletOverviewAggregate emptyAgg = new WalletOverviewAggregate(0.0, 0.0, 0.0, 0.0, 0L, null);
             when(walletJournalRepository.selectOverviewAggregate(eq((long) CID), isNull(), isNull(), isNull(), isNull()))
                     .thenReturn(emptyAgg);

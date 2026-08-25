@@ -76,7 +76,7 @@ class WalletJournalCharacterSyncUserIdTest {
         when(esiApiService.queryCharacterWalletJournal(CHARACTER_ID, 1, "Bearer t")).thenReturn(Flux.just(j1));
 
         // ── Act ──
-        walletJournalService.syncCharacterJournal(CHARACTER_ID);
+        walletJournalService.syncCharacterJournal(CHARACTER_ID, false);
 
         // ── Assert:ownerId/division/userId 回填发生在传入 saveOrUpdateBatch 之前 ──
         ArgumentCaptor<List<WalletJournal>> captor = ArgumentCaptor.forClass(List.class);

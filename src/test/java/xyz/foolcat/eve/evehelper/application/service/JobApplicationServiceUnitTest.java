@@ -87,9 +87,9 @@ class JobApplicationServiceUnitTest {
     void syncJobs_character() throws Exception {
         loginAsOwnerOf(OWN_CHARACTER_ID, OWN_CORP_ID);
 
-        jobApplicationService.syncJobs("char", OWN_CHARACTER_ID, "running");
+        jobApplicationService.syncJobs("char", OWN_CHARACTER_ID, "running", false);
 
-        verify(industryJobService).batchInsertOrUpdateFromEsi(OWN_CHARACTER_ID, false, false);
+        verify(industryJobService).batchInsertOrUpdateFromEsi(OWN_CHARACTER_ID, false, false, false);
     }
 
     @Test
@@ -97,9 +97,9 @@ class JobApplicationServiceUnitTest {
     void syncJobs_corporationComplete() throws Exception {
         loginAsOwnerOf(OWN_CHARACTER_ID, OWN_CORP_ID);
 
-        jobApplicationService.syncJobs("corporation", OWN_CORP_ID, "complete");
+        jobApplicationService.syncJobs("corporation", OWN_CORP_ID, "complete", false);
 
-        verify(industryJobService).batchInsertOrUpdateFromEsi(OWN_CORP_ID, true, true);
+        verify(industryJobService).batchInsertOrUpdateFromEsi(OWN_CORP_ID, true, true, false);
     }
 
     @Test
@@ -107,10 +107,10 @@ class JobApplicationServiceUnitTest {
     void syncJobs_parseError_throws() throws Exception {
         loginAsOwnerOf(OWN_CHARACTER_ID, OWN_CORP_ID);
         doThrow(new ParseException("bad", 0)).when(industryJobService)
-                .batchInsertOrUpdateFromEsi(OWN_CHARACTER_ID, false, false);
+                .batchInsertOrUpdateFromEsi(OWN_CHARACTER_ID, false, false, false);
 
         assertThrows(EveHelperException.class,
-                () -> jobApplicationService.syncJobs("char", OWN_CHARACTER_ID, "running"));
+                () -> jobApplicationService.syncJobs("char", OWN_CHARACTER_ID, "running", false));
     }
 
     @Test
@@ -119,20 +119,20 @@ class JobApplicationServiceUnitTest {
         loginAsOwnerOf(OWN_CHARACTER_ID, OWN_CORP_ID);
 
         EveHelperException ex = assertThrows(EveHelperException.class,
-                () -> jobApplicationService.syncJobs("char", OTHER_CHARACTER_ID, "complete"));
+                () -> jobApplicationService.syncJobs("char", OTHER_CHARACTER_ID, "complete", false));
 
         assertEquals(ResultCode.ACCESS_UNAUTHORIZED.getCode(), ex.getResultCode().getCode());
-        verify(industryJobService, never()).batchInsertOrUpdateFromEsi(anyInt(), anyBoolean(), anyBoolean());
+        verify(industryJobService, never()).batchInsertOrUpdateFromEsi(anyInt(), anyBoolean(), anyBoolean(), anyBoolean());
     }
 
     @Test
     @DisplayName("未认证访问 -> 拒绝，且不得触达 ESI 同步（fail-closed）")
     void unauthenticated_throws() throws Exception {
         EveHelperException ex = assertThrows(EveHelperException.class,
-                () -> jobApplicationService.syncJobs("char", OWN_CHARACTER_ID, "complete"));
+                () -> jobApplicationService.syncJobs("char", OWN_CHARACTER_ID, "complete", false));
 
         assertEquals(ResultCode.ACCESS_UNAUTHORIZED.getCode(), ex.getResultCode().getCode());
-        verify(industryJobService, never()).batchInsertOrUpdateFromEsi(anyInt(), anyBoolean(), anyBoolean());
+        verify(industryJobService, never()).batchInsertOrUpdateFromEsi(anyInt(), anyBoolean(), anyBoolean(), anyBoolean());
     }
 
     @Test
@@ -140,9 +140,9 @@ class JobApplicationServiceUnitTest {
     void rootSyncOther_allowed() throws Exception {
         loginAsJwt(CURRENT_USER_ID, GlobalConstants.ROOT_ROLE_CODE);
 
-        jobApplicationService.syncJobs("char", OTHER_CHARACTER_ID, "complete");
+        jobApplicationService.syncJobs("char", OTHER_CHARACTER_ID, "complete", false);
 
-        verify(industryJobService).batchInsertOrUpdateFromEsi(OTHER_CHARACTER_ID, true, false);
+        verify(industryJobService).batchInsertOrUpdateFromEsi(OTHER_CHARACTER_ID, true, false, false);
         verify(eveAccountService, never()).getAccountList(any());
     }
 }

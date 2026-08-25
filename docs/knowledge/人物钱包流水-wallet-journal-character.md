@@ -13,14 +13,15 @@
 两个入口的**共同安全前置**：路径 `cid` 是用户可控入参，应用服务在进入业务逻辑前统一 `accessGuard.requireOwnership(cid, ...)` 校验该人物属于当前用户，防 IDOR。
 
 ```
-求同步: POST /wallet/journal/{cid}/sync
-  -> WalletJournalApplicationService.syncCharacterJournal
+求同步: POST /wallet/journal/{cid}/sync?forceRefresh=false
+  -> WalletJournalApplicationService.syncCharacterJournal(cid, forceRefresh)
        -> accessGuard.requireOwnership(cid)               // 防 IDOR(无权 -> ACCESS_UNAUTHORIZED)
-       -> WalletJournalService.syncCharacterJournal
+       -> requireSyncCooldown(cooldownKey)                // Redis 冷却限流(60s)
+       -> WalletJournalService.syncCharacterJournal(cid, forceRefresh)
             -> authorize / authorizeInternal              // 归属校验(eve_account 属于当前用户/系统身份)
             -> getAccessToken(cId, userId)
-            -> queryCharacterWalletJournalMaxPage(cId)    // 总页数
-            -> Stream.iterate(1..maxPage) 串行分页 queryCharacterWalletJournal(cId, page)
+            -> queryCharacterWalletJournalMaxPage(cId, token, forceRefresh)  // 总页数(含缓存判读,§2.3)
+            -> Stream.iterate(1..maxPage) 串行分页 queryCharacterWalletJournal(cId, page, token, forceRefresh)
             -> saveOrUpdateBatch                          // 幂等 upsert(PK id)
 
 查询: GET /wallet/journal/{cid}?current=&size=
@@ -35,10 +36,11 @@
 
 ### 2.1 归属校验
 
-`WalletJournalApplicationService.syncCharacterJournal`：
+`WalletJournalApplicationService.syncCharacterJournal(cid, forceRefresh)`：
 
 1. `accessGuard.requireOwnership(String.valueOf(cid), "钱包流水同步")` —— 应用层归属校验（ROOT 豁免、未认证/无权 fail-closed 拒绝）。
-2. 进入 `walletJournalService.syncCharacterJournal(cid)`；`ParseException` 包装为 `EveHelperException("钱包流水同步失败")`（不暴露内部异常给客户端）。
+2. `requireSyncCooldown(SYNC_COOLDOWN_PREFIX + "char:" + cid)` —— Redis 冷却限流（默认 60 秒，测试 profile 可设为 0 禁用）。
+3. 进入 `walletJournalService.syncCharacterJournal(cid, forceRefresh)`；`ParseException` 包装为 `EveHelperException("钱包流水同步失败")`（不暴露内部异常给客户端）。
 
 `WalletJournalService.syncCharacterJournal` 内再做一层授权：
 
@@ -59,12 +61,21 @@ String accessToken = esiApiService.getAccessToken(cId, eveAccount.getUserId());
 ### 2.2 串行分页拉取 + 幂等 upsert
 
 ```java
-Integer maxPage = esiApiService.queryCharacterWalletJournalMaxPage(cId, accessToken);
-List<WalletJournal> walletJournals = Stream.iterate(1, i -> i + 1).limit(maxPage)
-        .map(i -> esiApiService.queryCharacterWalletJournal(cId, i, accessToken).collectList().block())
+Integer maxPage = esiApiService.queryCharacterWalletJournalMaxPage(cId, accessToken, forceRefresh);
+int pages = maxPage == null ? 0 : maxPage;  // null 防御:无数据/错误路径按 0 页处理
+List<WalletJournal> walletJournals = Stream.iterate(1, i -> i + 1).limit(pages)
+        .map(i -> esiApiService.queryCharacterWalletJournal(cId, i, accessToken, forceRefresh).collectList().block())
         .sequential().filter(Objects::nonNull).flatMap(Collection::stream)
         .collect(Collectors.toList());
-walletJournalRepository.saveOrUpdateBatch(walletJournals);
+// 回填 ownerId + division=0 + userId(同步者归属,014 US1)
+walletJournals.forEach(j -> {
+    j.setOwnerId(cId.longValue());
+    j.setDivision(0);
+    j.setUserId(syncUserId);
+});
+if (!walletJournals.isEmpty()) {
+    walletJournalRepository.saveOrUpdateBatch(walletJournals);
+}
 ```
 
 - **串行分页**：从第 1 页 `block()` 逐一拉取到 `maxPage`，拼接成列表。
@@ -78,6 +89,34 @@ walletJournals.forEach(wj -> walletJournalMapper.insertOrUpdateSelective(poConve
 > ⚠️ **幂等依赖 `PRIMARY(id)`**：MyBatis 生成 SQL 的 `ON DUPLICATE KEY UPDATE` 只有在主键或唯一键冲突时才生效。`wallet_journal.id` 在实况库已是主键，幂等依赖之；009 特性规划中「加 `UNIQUE(id, owner_id)`」的候选方案已由 D2 裁决**废弃**（单角色场景 `id` 已全局唯一，无需复合唯一键）。改动表结构前须先确认 `id` 仍是主键。
 
 - **失败不写脏数据**：`WalletJournalService` 类级 `@Transactional(rollbackFor = RuntimeException.class)`——若 ESI 中途异常（`block()` 抛错 / `ParseException`），事务回滚，不落半截流水。
+
+### 2.3 ESI 响应缓存判读（015 特性新增）
+
+`EsiApiService` 在调用 `WalletApi` 前插入缓存判读层，对已认证请求（`userId > 0`）生效：
+
+```
+EsiApiService.queryCharacterWalletJournal*(characterId, page, accessToken, forceRefresh)
+  ├─ 未认证(userId null/<=0) → 直接真调 WalletApi(无缓存,安全优先)
+  └─ 已认证:
+       ├─ 构造 Redis 键: esiResponseCache.cacheKey(datasource, userId, "/characters/{cid}/wallet/journal/", page)
+       ├─ forceRefresh=true 且通过限流(forceRefreshLimiter) → 跳过缓存读,直接进入真调
+       ├─ 否则查 Redis 缓存:
+       │    ├─ 命中 → 直接返回 Flux.fromIterable(cached),跳过 ESI 真调
+       │    └─ 未命中 → 进入真调
+       └─ 真调:
+            ├─ 防穿透:doListWithClaim/doMaxPageWithClaim 持锁回填,未抢锁有界轮询复用
+            ├─ 调 WalletApi.queryCharacterWalletJournalResponse(含响应头入口)
+            ├─ 从 ResponseEntity 提取 Cache-Control/Expires → esiCacheTtlExtractor.extract(headers) → TTL Duration
+            ├─ 转换 ESI 响应 → 领域对象
+            └─ esiResponseCache.put(key, domain, ttl) 回填缓存(ttl null → 跳过 put)
+```
+
+要点：
+- **`forceRefresh` 参数**：Controller 入口 `@RequestParam(defaultValue = "false")`，透传至 EsiApiService；`true` 时跳过缓存读（受 `forceRefreshLimiter` 限流保护，防滥用）
+- **TTL 来源**：ESI 响应头 `Cache-Control: max-age=N` 或 `Expires`，由 `esiCacheTtlExtractor` 解析为 `Duration`；无响应头 → TTL null → 不缓存（下次仍真调）
+- **WalletApi 含响应头入口**：`queryCharacterWalletJournalResponse` / `queryCharacterWalletJournalMaxPageResponse` 返回 `ResponseEntity`，供提取响应头；原 `queryCharacterWalletJournal` / `queryCharacterWalletJournalMaxPage` 保留（零破坏，供无需缓存路径使用）
+- **缓存键归一化**：`datasource + userId + uri + page`，确保不同用户/页码/数据源隔离
+- **未认证路径不缓存**：`userId == null` 时直接真调，避免缓存污染（定时任务等无上下文场景）
 
 ## 3. 查询链路（真实物理分页）
 
@@ -126,7 +165,9 @@ order by `date` desc   -- date 为 MySQL 保留字,须反引号
 | 要点 | 说明 |
 |------|------|
 | 两端点均应用层 requireOwnership | `syncCharacterJournal` 与 `queryPage` 入口处 `accessGuard.requireOwnership(cid)`，防 IDOR；未认证 401 / 无权 403，fail-closed |
+| Redis 冷却限流（同步） | `requireSyncCooldown`，默认 60 秒冷却（`wallet:journal:sync:char:{cid}`），防 ESI 限流滥用 |
 | 双层授权（同步） | 应用层 `requireOwnership` + 领域层 `WalletJournalService` 内 `authorize/authorizeInternal` 归属校验（`eve_account` 记录属于当前用户/系统身份），EsiApiService 拉取前二者都通过 |
+| ESI 响应缓存（015） | 已认证请求走 Redis 缓存判读，TTL 由 ESI 响应头决定；`forceRefresh=true` 跳过缓存读（受 `forceRefreshLimiter` 限流）；未认证路径不缓存（安全优先） |
 | 幂等 upsert | `PRIMARY(id)` 触发 `ON DUPLICATE KEY UPDATE`，重复同步不产生重复行 |
 | ESI 失败不写脏数据 | 类级 `@Transactional`，异常回滚 |
 | 物理分页 total 正确 | 参照实现（§3.2），避免 assets 的 total=0 缺陷 |
@@ -144,6 +185,15 @@ order by `date` desc   -- date 为 MySQL 保留字,须反引号
 | 分页/批量 SQL | `src/main/resources/mappers/system/WalletJournalMapper.xml` |
 | 组装器 | `application/assembler/system/WalletJournalAssembler.java` |
 | 响应 VO | `application/dto/response/WalletJournalVO.java` |
-| ESI 端口 | `domain/port/esi/EsiGateway.java`（`queryCharacterWalletJournal*`） |
+| ESI 端口 | `domain/port/esi/EsiGateway.java`（`queryCharacterWalletJournal*`，含 `forceRefresh` 重载） |
+| ESI API（含响应头入口） | `infrastructure/external/esi/api/WalletApi.java`（`queryCharacterWalletJournalResponse` / `queryCharacterWalletJournalMaxPageResponse`） |
+| ESI 缓存适配 | `infrastructure/external/esi/EsiApiService.java`（`doQueryCharacterWalletJournal*` — 缓存判读 + TTL 回填） |
 | 归属校验 | `application/security/AccessGuard.java`、`domain/util/AuthorizeUtil.java` |
 | 页向量复制 | `shared/util/PageResultUtil.java` |
+| 缓存网关 | `domain/port/cache/CacheGateway.java`（ESI 响应缓存 + 冷却限流底层） |
+| 缓存 TTL 提取 | `infrastructure/external/esi/EsiCacheTtlExtractor.java`（解析 Cache-Control/Expires） |
+| 强制刷新限流 | `infrastructure/external/esi/ForceRefreshLimiter.java`（`forceRefresh` 参数限流保护） |
+
+---
+
+**最后更新**: 2026-08-21（015 特性:添加 forceRefresh 参数与 ESI 响应缓存判读说明）

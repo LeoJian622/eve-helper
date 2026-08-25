@@ -93,6 +93,7 @@ GET /wallet/overview/corp/{corpId}?division=N
 | 入参校验先于归属校验 | 非法 `range` / `start>end` / 非法 `division` 在 `requireOwnership` **之前**拒绝，防越权探测（避免无权者借参数错误列出数据存在性） |
 | division 校验 | 人物：无 division 概念；军团：`null` 或 `1..7`，`<1 || >7` 拒绝 |
 | 只读聚合 | 总览端点为纯查询，不触发 ESI 同步、无冷却限流（同步限流在 010/011 同步端点） |
+| 间接受益于 ESI 缓存（015） | 总览数据来自 `wallet_journal` 表（由 010/011 同步链路写入）；同步链路已接入 Redis 缓存判读（详见 [wallet-journal-character.md §2.3](./wallet-journal-character.md)），重复同步时缓存命中可跳过 ESI 真调，加速数据刷新 |
 | 有意偏离（勿当 bug 修） | currentBalance/asOfTime 不受时间过滤影响；人物总览 division=null 不过滤（存量人物 journal division 为 NULL/1，写死 0 会造成存量全零）；人物 divisions 恒 null |
 
 ## 9. RBAC 权限
@@ -125,3 +126,7 @@ GET /wallet/overview/corp/{corpId}?division=N
 | 归属校验 | `application/security/AccessGuard.java`、`domain/util/AuthorizeUtil.java` |
 | RBAC 权限登记 | `src/SQL/convert/012_rbac_permissions.sql` |
 | 数据来源同步链路 | 参见 [wallet-journal-character.md](./wallet-journal-character.md)、[corporation-wallet-journal.md](./corporation-wallet-journal.md) |
+
+---
+
+**最后更新**: 2026-08-21（015 特性:补充 ESI 响应缓存间接受益说明）

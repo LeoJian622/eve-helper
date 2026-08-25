@@ -13,24 +13,26 @@
 两个入口的**共同安全前置**：路径 `corpId` 是用户可控入参，应用服务在进入业务逻辑前统一 `accessGuard.requireOwnership(corpId, ...)` 校验归属，防 IDOR。
 
 ```
-军团同步: POST /wallet/journal/corp/{corpId}/sync
-  -> WalletJournalApplicationService.syncCorporationJournal
-       -> accessGuard.requireOwnership(corpId)              // 防 IDOR
+军团同步: POST /wallet/journal/corp/{characterId}/sync?forceRefresh=false
+  -> WalletJournalApplicationService.syncCorporationJournal(characterId, forceRefresh)
+       -> accessGuard.requireOwnership(characterId)         // 防 IDOR(角色归属校验)
        -> requireSyncCooldown(cooldownKey)                  // Redis 冷却限流
-       -> WalletJournalService.syncCorporationJournal
+       -> WalletJournalService.syncCorporationJournal(characterId, forceRefresh)
+            -> authorize 解析 corpId = eveAccount.getCorpId()  // 013 US1:军团ID从角色行派生
             -> 遍历 division 1..7,逐一:
-                 -> queryCorporationWalletJournalMaxPage(corpId, division, token)  // 总页数
-                 -> Stream.iterate(1..maxPage) 串行翻页 queryCorporationWalletJournal(corpId, division, page, token)
-                 -> 回填 ownerId=corpId / division=<当前>
+                 -> queryCorporationWalletJournalMaxPage(corpId, division, token, forceRefresh)  // 总页数(含缓存判读)
+                 -> Stream.iterate(1..maxPage) 串行翻页 queryCorporationWalletJournal(corpId, division, page, token, forceRefresh)
+                 -> 回填 ownerId=corpId / division=<当前> / userId=syncUserId
                  -> saveOrUpdateBatch                          // M4 批量 upsert(500条/批)
-                 -> 单 division try/catch 隔离(失败仅记结果,不回滚已成功分账)
+                 -> 单 division try/catch 隔离(失败仅记结果,不回滚已成功分账;ESI 403/5xx 透传)
             -> 任一失败 -> 汇总抛 EveHelperException(含失败 division 明细),但已成功 division 已在 DB
 
 军团查询: GET /wallet/journal/corp/{corpId}?division=N&current=&size=
   -> WalletJournalApplicationService.queryCorporationPage
        -> 入参校验(division 1..7, current/size 边界)          // 先于归属校验,防越权探测
+       -> corporationScope 军团维度读过滤(US2b)              // 同步者私有读
        -> accessGuard.requireOwnership(corpId)               // 防 IDOR
-       -> WalletJournalRepository.selectPageByOwnerAndDivision(IPage, ownerId, division)
+       -> WalletJournalRepository.selectPageByOwnerAndDivision(IPage, ownerId, division, scope)
        -> WalletJournalAssembler.toVo -> PageResultUtil.copy
 ```
 
@@ -73,9 +75,10 @@ walletJournalService.syncCorporationJournal(corpId);
 与 010 交易流水的 **from_id 游标**不同，ESI journal 端点以**页码分页**（`?page=N`）拉取。军团侧先查 `maxPage`，再 `Stream.iterate(1..maxPage)` 串行翻页：
 
 ```java
-Integer maxPage = esiApiService.queryCorporationWalletJournalMaxPage(corpId, division, accessToken);
-List<WalletJournal> list = Stream.iterate(1, i -> i + 1).limit(maxPage)
-        .map(page -> esiApiService.queryCorporationWalletJournal(corpId, division, page, accessToken)
+Integer maxPage = esiApiService.queryCorporationWalletJournalMaxPage(corpId, division, accessToken, forceRefresh);
+int pages = maxPage == null ? 0 : maxPage;  // null 防御:无数据/错误路径按 0 页处理
+List<WalletJournal> list = Stream.iterate(1, i -> i + 1).limit(pages)
+        .map(page -> esiApiService.queryCorporationWalletJournal(corpId, division, page, accessToken, forceRefresh)
                 .collectList().block())
         .sequential().filter(Objects::nonNull).flatMap(Collection::stream)
         .collect(Collectors.toList());
@@ -84,6 +87,7 @@ List<WalletJournal> list = Stream.iterate(1, i -> i + 1).limit(maxPage)
 要点：
 - **每 division 独立 maxPage**：各分账流水量不同，各自翻页到尽头。
 - **空页不终止**：与 from_id 游标不同，page-based 以 `maxPage` 为上界，空页 `filter(Objects::nonNull)` 跳过即可。
+- **forceRefresh 透传**：`forceRefresh` 参数从 Controller 一路透传至 EsiApiService，控制是否跳过 Redis 缓存读。
 
 ### 3.3 幂等 upsert（PRIMARY id + M4 批量）
 
@@ -114,6 +118,17 @@ if (!failedDivisions.isEmpty()) {
 
 - **不整体回滚**：单 division 失败仅记录，其余 6 个成功分账数据已在 DB。
 - **错误可定位**：汇总异常 `msg` 含失败 division 清单。
+- **ESI 系统性错误透传**：`EsiException`（403/400/5xx）不进入 division 隔离，直接上抛由全局异常处理器映射（013 US3）。
+
+### 3.5 ESI 响应缓存判读（015 特性新增）
+
+与人物 journal 共享同一缓存机制（详见 [wallet-journal-character.md §2.3](./wallet-journal-character.md)），差异点：
+
+- **缓存键含 division**：军团 journal 缓存键为 `datasource + userId + "/corporations/{corpId}/wallets/{division}/journal/" + page`，division 进归一化 uri（变体参数进键，避免不同分账缓存混淆）
+- **maxPage 独立缓存键**：`/corporations/{corpId}/wallets/{division}/journal/` + `"maxPage"` 作为 page 参数，与数据页缓存分开
+- **含响应头入口**：`WalletApi.queryCorporationWalletJournalMaxPageResponse` / `queryCorporationWalletJournalResponse` 返回 `ResponseEntity`，供提取 Cache-Control/Expires TTL
+- **forceRefresh 参数**：Controller → AppService → DomainService → EsiGateway 全链路透传，`true` 时跳过缓存读（受 `forceRefreshLimiter` 限流保护）
+- **未认证路径不缓存**：`userId == null` 时直接真调 WalletApi（安全优先，如定时任务场景）
 
 ## 4. 查询链路（真实物理分页）
 
@@ -159,8 +174,10 @@ order by `date` desc   -- date 为 MySQL 保留字,须反引号
 
 | 要点 | 说明 |
 |------|------|
-| 两端点均应用层 requireOwnership | 军团同步、军团查询入口 `accessGuard.requireOwnership(corpId)`，防 IDOR；未认证 401 / 无权 403，fail-closed；军团由 `ResourceOwnershipPolicy` 原生支持 |
+| 两端点均应用层 requireOwnership | 军团同步入口 `accessGuard.requireOwnership(characterId)`（013 US1:角色ID，军团ID 从 eve_account 派生）；军团查询入口 `accessGuard.requireOwnership(corpId)` + `corporationScope` 军团维度读过滤（US2b:同步者私有读）；未认证 401 / 无权 403，fail-closed；军团由 `ResourceOwnershipPolicy` 原生支持 |
+| Redis 冷却限流（同步） | `requireSyncCooldown`，默认 60 秒冷却（`wallet:journal:sync:corp:{characterId}`），防 ESI 限流滥用 |
 | 入参校验先于归属校验 | 军团查询 `division 1..7` / `current/size` 校验在 `requireOwnership` **之前**，防越权探测（避免无权者借参数错误列出数据存在性） |
+| ESI 响应缓存（015） | 已认证请求走 Redis 缓存判读，TTL 由 ESI 响应头决定；`forceRefresh=true` 跳过缓存读（受 `forceRefreshLimiter` 限流）；未认证路径不缓存；缓存键含 division |
 | 双层授权（同步） | 应用层 `requireOwnership` + 领域层 `WalletJournalService` 内 `authorize/authorizeInternal` 归属校验 |
 | Redis 冷却限流 | 同步入口 `requireSyncCooldown`，默认 60 秒冷却，防 ESI 限流滥用；测试 profile 可设为 0 禁用 |
 | 幂等 upsert | `PRIMARY(id)` 触发 `ON DUPLICATE KEY UPDATE`，重复同步不产生重复行（区别于 010 transaction 的复合唯一键） |
@@ -182,10 +199,16 @@ order by `date` desc   -- date 为 MySQL 保留字,须反引号
 | 分页/批量 SQL | `src/main/resources/mappers/system/WalletJournalMapper.xml`（`selectPageByOwnerAndDivision`） |
 | M4 批量 upsert | `WalletJournalMapper.java`（`insertOrUpdateBatch`）+ XML `<foreach>` |
 | 组装器 / 响应 VO | `application/assembler/system/WalletJournalAssembler.java`、`application/dto/response/WalletJournalVO.java` |
-| ESI 端口 | `domain/port/esi/EsiGateway.java`（`queryCorporationWalletJournal*`，page-based） |
-| ESI 适配 / 转换器 | `infrastructure/external/esi/EsiApiService.java`、`infrastructure/assembler/esi/EsiWalletJournalConverter.java` |
+| ESI 端口 | `domain/port/esi/EsiGateway.java`（`queryCorporationWalletJournal*`，含 `forceRefresh` 重载，page-based） |
+| ESI API（含响应头入口） | `infrastructure/external/esi/api/WalletApi.java`（`queryCorporationWalletJournalMaxPageResponse` / `queryCorporationWalletJournalResponse`） |
+| ESI 适配 / 转换器 | `infrastructure/external/esi/EsiApiService.java`（缓存判读 + TTL 回填）、`infrastructure/assembler/esi/EsiWalletJournalConverter.java` |
 | 数据迁移 | `src/SQL/convert/011_wallet_journal_division.sql` |
 | RBAC 权限登记 | `src/SQL/convert/011_rbac_permissions.sql` |
 | 归属校验 | `application/security/AccessGuard.java`、`domain/util/AuthorizeUtil.java` |
 | 页向量复制 | `shared/util/PageResultUtil.java` |
-| 缓存网关 | `domain/port/cache/CacheGateway.java`（冷却限流底层） |
+| 缓存网关 | `domain/port/cache/CacheGateway.java`（ESI 响应缓存 + 冷却限流底层） |
+| 缓存 TTL 提取 / 限流 | 同 [wallet-journal-character.md](./wallet-journal-character.md) §6 |
+
+---
+
+**最后更新**: 2026-08-21（015 特性:添加 forceRefresh 参数、ESI 响应缓存判读说明、同步路径修正为角色ID、查询添加 corporationScope 私有读）

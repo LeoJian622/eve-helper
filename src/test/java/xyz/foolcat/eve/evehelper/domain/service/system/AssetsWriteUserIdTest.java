@@ -80,7 +80,7 @@ class AssetsWriteUserIdTest {
         when(assetsRepository.findByOwnerId(CHARACTER_ID)).thenReturn(List.of());
 
         // ── Act ──
-        assetsService.saveAndUpdateAsserts(CHARACTER_ID);
+        assetsService.saveAndUpdateAsserts(CHARACTER_ID, false);
 
         // ── Assert:userId 回填发生在传入 batchInsertOrUpdate 之前 ──
         ArgumentCaptor<List<Assets>> captor = ArgumentCaptor.forClass(List.class);

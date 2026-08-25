@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,15 +14,23 @@ import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
+import xyz.foolcat.eve.evehelper.domain.repository.system.EveAccountRepository;
 import xyz.foolcat.eve.evehelper.domain.service.security.ResourceOwnershipPolicy;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.RbacAuthorizationManager;
+import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
+import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -52,20 +59,43 @@ class WalletOverviewControllerIT {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
-    @MockBean
+    @MockitoBean
     RbacAuthorizationManager rbacAuthorizationManager;
 
-    @MockBean
+    @MockitoBean
     ResourceOwnershipPolicy resourceOwnershipPolicy;
 
+    @MockitoBean
+    AuthorizeUtil authorizeUtil;
+
+    @MockitoBean
+    EsiGateway esiGateway;
+
+    @MockitoBean
+    EveAccountRepository eveAccountRepository;
+
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         jdbcTemplate.update("delete from wallet_journal where owner_id = ?", CID);
         jdbcTemplate.update("delete from wallet_journal where owner_id = ?", CORP);
         when(rbacAuthorizationManager.authorize(any(), any()))
                 .thenReturn(new AuthorizationDecision(true));
         when(rbacAuthorizationManager.check(any(), any()))
                 .thenReturn(new AuthorizationDecision(true));
+        // 016:人物/军团余额改由 ESI 直查;配置 lenient 通用 stub(人物默认 0,可按测试覆盖)
+        EveAccount account = new EveAccount();
+        account.setCharacterId(CID);
+        account.setUserId(7);
+        account.setCorpId(CORP);
+        // authorize(CID) 返回有效 account;其他角色也返回(避免 fetchCharacterBalance NPE)
+        lenient().when(authorizeUtil.authorize(anyInt())).thenReturn(account);
+        lenient().when(esiGateway.getAccessToken(anyInt(), anyInt())).thenReturn("Bearer test");
+        lenient().when(esiGateway.queryCharacterWalletBalance(eq(CID), any())).thenReturn(0.0);
+        // 017 IMPORTANT-1:军团余额已改为直接用入口 authorize(cid) 的账号换 token,
+        // 服务不再从 scope/SYSTEM_USER_ID 反查角色,故此处不再 stub getAccountList
+        // (原先的 getAccountList(1) stub 让 SYSTEM_USER_ID 恰好"拥有"该角色,
+        //  掩盖了 ROOT 场景下军团余额恒为 0 的缺陷)。
+        lenient().when(esiGateway.queryCorporationWalletBalances(eq(CORP), any())).thenReturn(List.of());
     }
 
     @AfterEach
@@ -99,6 +129,8 @@ class WalletOverviewControllerIT {
     @DisplayName("有流水 → 返回五个标量/类目/趋势,divisions 为 null")
     void overview_withJournals_returnsAggregateCategoriesTrend() throws Exception {
         loginAsAdmin();
+        // 016:currentBalance 改由 ESI 直查;stub 返回与 journal 一致的值以便断言
+        when(esiGateway.queryCharacterWalletBalance(eq(CID), any())).thenReturn(2100.0);
         // id 倒序取 balance 为 currentBalance;amount 决定 income/expense/net
         insertJournal(101L, 1000.0, 1500.0, LocalDate.of(2026, 1, 2), "bounty_prizes");
         insertJournal(102L, -200.0, 1300.0, LocalDate.of(2026, 1, 5), "ess_escrow_transfer");
@@ -134,6 +166,7 @@ class WalletOverviewControllerIT {
     @DisplayName("有界≤92天区间 → 趋势日粒度")
     void overview_boundedRange_dailyTrend() throws Exception {
         loginAsAdmin();
+        when(esiGateway.queryCharacterWalletBalance(eq(CID), any())).thenReturn(50.0);
         insertJournal(201L, 100.0, 100.0, LocalDate.of(2026, 8, 1), "market_sale");
         insertJournal(202L, -50.0, 50.0, LocalDate.of(2026, 8, 3), "market_sale");
 
@@ -205,9 +238,14 @@ class WalletOverviewControllerIT {
     // ---------- 军团总览(US2) ----------
 
     @Test
-    @DisplayName("军团全量 -> 分账分布 1..7(有数据归并/无数据补零),currentBalance=各分账余额和")
+    @DisplayName("军团全量 -> 分账分布 1..7(有数据归并/无数据补零),currentBalance=ESI 各分账余额和(016)")
     void corpOverview_full_divisionDistribution() throws Exception {
         loginAsAdmin();
+        // 016:分账余额改由 ESI 直查
+        when(esiGateway.queryCorporationWalletBalances(eq(CORP), any())).thenReturn(List.of(
+                new WalletDivisionBalance(1, 800.0),
+                new WalletDivisionBalance(3, 500.0),
+                new WalletDivisionBalance(5, 300.0)));
         // div1:最新 id302 balance=800;income=1000,expense=200
         insertCorpJournal(301L, 1, 1000.0, 1000.0, LocalDate.of(2026, 1, 2), "bounty_prizes");
         insertCorpJournal(302L, 1, -200.0, 800.0, LocalDate.of(2026, 1, 3), "ess_escrow_transfer");
@@ -216,7 +254,7 @@ class WalletOverviewControllerIT {
         // div5 单条
         insertCorpJournal(304L, 5, 300.0, 300.0, LocalDate.of(2026, 1, 5), "market_sale");
 
-        mockMvc.perform(get("/wallet/overview/corp/" + CORP).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/wallet/overview/corp/" + CID).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 // 全量标量(无 division 过滤):income=1800, expense=200, net=1600, count=4
                 .andExpect(jsonPath("$.data.totalIncome").value(1800.0))
@@ -246,13 +284,16 @@ class WalletOverviewControllerIT {
     }
 
     @Test
-    @DisplayName("军团单分账 -> 仅该 division 过滤,divisions 不出现")
+    @DisplayName("军团单分账 -> 仅该 division 过滤,divisions 不出现(余额来自 ESI)")
     void corpOverview_singleDivision_filteredNoDivisions() throws Exception {
         loginAsAdmin();
+        // 016:单分账余额由 ESI 返回,div3=500
+        when(esiGateway.queryCorporationWalletBalances(eq(CORP), any())).thenReturn(
+                List.of(new WalletDivisionBalance(3, 500.0)));
         insertCorpJournal(401L, 1, 1000.0, 1000.0, LocalDate.of(2026, 1, 2), "bounty_prizes");
         insertCorpJournal(402L, 3, 500.0, 500.0, LocalDate.of(2026, 1, 4), "market_sale");
 
-        mockMvc.perform(get("/wallet/overview/corp/" + CORP)
+        mockMvc.perform(get("/wallet/overview/corp/" + CID)
                         .param("division", "3")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -264,9 +305,13 @@ class WalletOverviewControllerIT {
     }
 
     @Test
-    @DisplayName("军团单分账边界:division=1 与 7 合法,仅含该分账数据(其它分账不入),divisions 不出现")
+    @DisplayName("军团单分账边界:division=1 与 7 合法,仅含该分账数据(其它分账不入),divisions 不出现(016)")
     void corpOverview_singleDivision_boundary_div1And7Legal() throws Exception {
         loginAsAdmin();
+        // 016:两次查询分别返回 div1=1000 和 div7=300(ESI 余额按调用顺序)
+        when(esiGateway.queryCorporationWalletBalances(eq(CORP), any()))
+                .thenReturn(List.of(new WalletDivisionBalance(1, 1000.0)))
+                .thenReturn(List.of(new WalletDivisionBalance(7, 300.0)));
         // div1、div7 有数据,div3、div5 为干扰数据(division=1/7 查询不得包含)
         insertCorpJournal(501L, 1, 1000.0, 1000.0, LocalDate.of(2026, 1, 2), "bounty_prizes");
         insertCorpJournal(502L, 3, 700.0, 700.0, LocalDate.of(2026, 1, 3), "market_sale");
@@ -274,7 +319,7 @@ class WalletOverviewControllerIT {
         insertCorpJournal(504L, 5, 900.0, 900.0, LocalDate.of(2026, 1, 5), "market_sale");
 
         // division=1:仅含 div1 数据(div3/div5/div7 不入)
-        mockMvc.perform(get("/wallet/overview/corp/" + CORP)
+        mockMvc.perform(get("/wallet/overview/corp/" + CID)
                         .param("division", "1")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -285,7 +330,7 @@ class WalletOverviewControllerIT {
                 .andExpect(jsonPath("$.data.divisions").doesNotExist());
 
         // division=7:仅含 div7 数据
-        mockMvc.perform(get("/wallet/overview/corp/" + CORP)
+        mockMvc.perform(get("/wallet/overview/corp/" + CID)
                         .param("division", "7")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -300,24 +345,30 @@ class WalletOverviewControllerIT {
     void corpOverview_invalidDivision_badRequest() throws Exception {
         loginAsAdmin();
 
-        mockMvc.perform(get("/wallet/overview/corp/" + CORP).param("division", "0")
+        mockMvc.perform(get("/wallet/overview/corp/" + CID).param("division", "0")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
-        mockMvc.perform(get("/wallet/overview/corp/" + CORP).param("division", "8")
+        mockMvc.perform(get("/wallet/overview/corp/" + CID).param("division", "8")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("军团越权访问 -> 403")
-    void corpOverview_foreignCorp_forbidden() throws Exception {
+    @DisplayName("非 ROOT 用户查询不拥有的人物 → 400(USER_ACCOUNT_NOT_EXIST,与生产 authorize 行为一致)")
+    void corpOverview_foreignCharacter_badRequest() throws Exception {
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(
                         (long) 7, null, List.of(new SimpleGrantedAuthority("USER"))));
         when(resourceOwnershipPolicy.isOwnedBy(any(), any())).thenReturn(false);
 
+        // 精确 stub:user 7 不拥有角色 999999,authorize 抛 USER_ACCOUNT_NOT_EXIST
+        // (覆盖 setUp 中 lenient authorize(anyInt()) 的宽松 stub)
+        doThrow(new EveHelperException(ResultCode.USER_ACCOUNT_NOT_EXIST))
+                .when(authorizeUtil).authorize(999999);
+
+        // 生产行为:authorize(999999) → 抛异常 → GlobalExceptionHandler 映射为 400
         mockMvc.perform(get("/wallet/overview/corp/999999").contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -325,7 +376,7 @@ class WalletOverviewControllerIT {
     void corpOverview_empty_zeroedDivisions() throws Exception {
         loginAsAdmin();
 
-        mockMvc.perform(get("/wallet/overview/corp/" + CORP).contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/wallet/overview/corp/" + CID).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.currentBalance").value(0.0))
                 .andExpect(jsonPath("$.data.journalCount").value(0))

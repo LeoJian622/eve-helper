@@ -132,8 +132,8 @@ EsiApiService (缓存判读逻辑)
 ## 8. 已知权衡（收尾遗留）
 
 - `EsiApiServiceTest` 全量约 163s：大头是 access-token 超时类用例真实等待（非本特性引入）；部分 cache-miss 用例因 `tryClaim` 未 stub→false 走 5s 轮询，亦占时间。T020 全量评估，不影响正确性。
-- ~~T008 资产 maxPage 仍与列表 page=1 同键~~ → **已修复**：资产 maxPage 使用独立 `:maxPage` 键（与蓝图/建筑一致），避免与列表 page=1 互相驱逐（commit `a40f505`）。
-- ~~T009 工业 `include_completed` 未入键~~ → **已修复**：工业 `include_completed` 已入缓存键（`?include_completed=true/false`），避免人物侧跨 true/false 互命中风险（commit `a40f505`）。
+- ~~T009 工业 `include_completed` 未入键~~ → **已修复**：军团/人物工业 `include_completed` 已入缓存键（`?include_completed=true/false`），避免跨 true/false 互命中风险（commit `a40f505`）。
+- ~~T008 资产 maxPage 仍与列表 page=1 同键~~ → **已修复**：资产 `doQueryCharactersAssetsMaxPage` 已改用独立 `:maxPage` 键（`cacheKey(..., "/characters/{cid}/assets/", "maxPage")`），与蓝图/建筑/工业/采矿/钱包等一致。回归测试 `characterAssetsMaxPage_cacheMiss_realCallAndBackfill` 显式断言 `assertThat(key).endsWith(":maxPage")` 且 `assertThat(key).isNotEqualTo(assetsKey(1))`。
 - T012 type 空列表命中判据 `!isEmpty()` 使空缓存永不生效（可用 `isPresent` 区分空结果与缺失）。
 - force 超限未命中回填子例未测。
 
@@ -141,3 +141,6 @@ EsiApiService (缓存判读逻辑)
 
 - 特性工件：`specs/015-esi-response-caching/`（spec/plan/tasks）
 - 授权绑定：`esi-authorization-binding.md` | 数据归属：`esi-data-user-binding.md`
+
+---
+*最后更新：2026-08-21*

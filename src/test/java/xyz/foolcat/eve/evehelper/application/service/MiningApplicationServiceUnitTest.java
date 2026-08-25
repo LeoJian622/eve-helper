@@ -23,6 +23,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doThrow;
@@ -83,9 +84,9 @@ class MiningApplicationServiceUnitTest {
     void syncMiningByObserver_success() throws Exception {
         loginAsOwnerOf(OWN_CHARACTER_ID);
 
-        miningApplicationService.syncMiningByObserver(OWN_CHARACTER_ID, OBSERVER_ID);
+        miningApplicationService.syncMiningByObserver(OWN_CHARACTER_ID, OBSERVER_ID, false);
 
-        verify(miningDetailService).saveObserverMining(OWN_CHARACTER_ID, OBSERVER_ID);
+        verify(miningDetailService).saveObserverMining(OWN_CHARACTER_ID, OBSERVER_ID, false);
     }
 
     @Test
@@ -93,10 +94,10 @@ class MiningApplicationServiceUnitTest {
     void syncMiningByObserver_parseError_throws() throws Exception {
         loginAsOwnerOf(OWN_CHARACTER_ID);
         doThrow(new ParseException("bad", 0)).when(miningDetailService)
-                .saveObserverMining(OWN_CHARACTER_ID, OBSERVER_ID);
+                .saveObserverMining(OWN_CHARACTER_ID, OBSERVER_ID, false);
 
         assertThrows(EveHelperException.class,
-                () -> miningApplicationService.syncMiningByObserver(OWN_CHARACTER_ID, OBSERVER_ID));
+                () -> miningApplicationService.syncMiningByObserver(OWN_CHARACTER_ID, OBSERVER_ID, false));
     }
 
     @Test
@@ -105,20 +106,20 @@ class MiningApplicationServiceUnitTest {
         loginAsOwnerOf(OWN_CHARACTER_ID);
 
         EveHelperException ex = assertThrows(EveHelperException.class,
-                () -> miningApplicationService.syncMiningByObserver(OTHER_CHARACTER_ID, OBSERVER_ID));
+                () -> miningApplicationService.syncMiningByObserver(OTHER_CHARACTER_ID, OBSERVER_ID, false));
 
         assertEquals(ResultCode.ACCESS_UNAUTHORIZED.getCode(), ex.getResultCode().getCode());
-        verify(miningDetailService, never()).saveObserverMining(anyInt(), anyLong());
+        verify(miningDetailService, never()).saveObserverMining(anyInt(), anyLong(), anyBoolean());
     }
 
     @Test
     @DisplayName("未认证访问 -> 拒绝，且不得触达 ESI 同步（fail-closed）")
     void unauthenticated_throws() throws Exception {
         EveHelperException ex = assertThrows(EveHelperException.class,
-                () -> miningApplicationService.syncMiningByObserver(OWN_CHARACTER_ID, OBSERVER_ID));
+                () -> miningApplicationService.syncMiningByObserver(OWN_CHARACTER_ID, OBSERVER_ID, false));
 
         assertEquals(ResultCode.ACCESS_UNAUTHORIZED.getCode(), ex.getResultCode().getCode());
-        verify(miningDetailService, never()).saveObserverMining(anyInt(), anyLong());
+        verify(miningDetailService, never()).saveObserverMining(anyInt(), anyLong(), anyBoolean());
     }
 
     @Test
@@ -126,9 +127,9 @@ class MiningApplicationServiceUnitTest {
     void rootSyncOther_allowed() throws Exception {
         loginAsJwt(CURRENT_USER_ID, GlobalConstants.ROOT_ROLE_CODE);
 
-        miningApplicationService.syncMiningByObserver(OTHER_CHARACTER_ID, OBSERVER_ID);
+        miningApplicationService.syncMiningByObserver(OTHER_CHARACTER_ID, OBSERVER_ID, false);
 
-        verify(miningDetailService).saveObserverMining(OTHER_CHARACTER_ID, OBSERVER_ID);
+        verify(miningDetailService).saveObserverMining(OTHER_CHARACTER_ID, OBSERVER_ID, false);
         verify(eveAccountService, never()).getAccountList(any());
     }
 }

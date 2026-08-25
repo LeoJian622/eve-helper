@@ -67,7 +67,8 @@
 4. **争用等待**：有界轮询 `awaitCachedToken`（10 次 × 100ms ≈ 1s）等持锁方填充缓存；等待窗口内拿到则直接用，超时才报 `ESI_SERVER_FAILURE`。
 5. **double-check**：等锁期间缓存可能已被填充，再读一次。
 6. **刷新**：`updateAccessToken(GrantType.REFRESH_TOKEN, refreshToken)` 换新 token 对。
-7. **回写**（`persistRefreshedToken`）：**先持久化新 refresh token 再缓存 access token** -- DB 写失败时不缓存无对应 refresh token 的 access（否则 19min 内下次刷新必失败）。仅 `insertOrUpdateSelective` 更新 `refresh_token` 列，避免覆盖其他字段。
+7. **回写**（`updateRefreshToken`）：解析新 access token JWT 取 characterId/角色名 → 查询角色/军团/联盟公开信息（各带 5s 超时，处于刷新锁临界区内）→ 缓存 access token（`esi_access_token:{userId}:{characterId}`，TTL 19min）→ `eveAccountService.insertOrUpdate` 全字段 upsert（含新 refresh token）。
+   > 注：另有一条独立路径 `determineAuthStatus`（授权状态判定）使用的是 `persistRefreshedToken`——**先** `insertOrUpdateSelective` 仅更新 `refresh_token` 列，**后**缓存 access token，确保 DB 写失败时不缓存无对应 refresh token 的 access。两条路径持久化策略不同：`doGetAccessToken` 是首次/完整绑定用全量 upsert，`determineAuthStatus` 是状态探测用最小选择性更新。
 8. **finally 释放锁**（owner 比对防误删他人锁）。
 
 **userId 为 null 拒绝写缓存**（评审 H3 纵深防御）：否则键退化为 `esi_access_token:null:{cid}`，多用户共享同一键构成跨用户 token 泄露。
@@ -95,11 +96,9 @@ sequenceDiagram
             E->>R: 轮询等缓存(10×100ms)
             E-->>B: 缓存被填充则返回 / 否则 ESI_SERVER_FAILURE
         else 获得锁
-            E->>R: double-check 缓存
-            E->>O: POST /token (grant_type=refresh_token)
-            O-->>E: 新 access + 新 refresh
-            E->>A: insertOrUpdateSelective 回写新 refreshToken（先 DB）
-            E->>R: set esi_access_token:{uid}:{cid} (TTL 19min，后缓存)
+            E->>E: updateRefreshToken(authToken, userId)
+            E->>R: set esi_access_token:{uid}:{cid} (TTL 19min，先缓存)
+            E->>A: insertOrUpdate 全字段 upsert（含新 refreshToken，后 DB）
             E->>R: DEL esi_refresh_lock:{cid}
             E-->>B: "Bearer "+accessToken
         end
@@ -112,11 +111,12 @@ sequenceDiagram
 
 1. 读缓存 `esi_auth_status:{...}`：AUTHORIZED/EXPIRED（TTL 5min）、UNKNOWN（TTL 30s，短 TTL 便于 ESI 恢复后尽快重试）。缓存值非法返回 null 触发重新判定。
 2. 缓存未命中 -> `determineAuthStatus(account)`：**尝试 refresh token 换 access**。
-   - 成功 -> `persistRefreshedToken`（顺带完成一次真实刷新）-> `AUTHORIZED`
+   - 成功 -> `persistRefreshedToken`（先 `insertOrUpdateSelective` 仅更新 `refresh_token` 列，后缓存 access token；DB 写失败时不缓存无对应 refresh token 的 access）-> `AUTHORIZED`
    - `ESI_AUTHORIZATION_FAILURE`(4xx) -> `EXPIRED`（需重新授权）
    - 其余（5xx/网络/超时）-> `UNKNOWN`
    - 任何异常兜底为 UNKNOWN 且不外传，保证单角色异常不影响其他角色判定。
 3. 与 `doGetAccessToken` **共用 `esi_refresh_lock:{characterId}`** -- 状态判定本身也消耗一次性 refresh token，两条路径必须互斥。
+   > 两条路径持久化策略不同（见 §4 步骤 7 对比说明）：`doGetAccessToken` 用 `updateRefreshToken` 全量 upsert（首次绑定/完整刷新），`determineAuthStatus` 用 `persistRefreshedToken` 最小选择性更新（状态探测）。
 
 ## 6. 数据与存储模型
 
@@ -141,3 +141,7 @@ sequenceDiagram
 | 角色账户实体/服务 | `domain/model/entity/system/EveAccount.java`、`domain/service/system/EveAccountService.java` |
 | 权限工具（归属校验） | `domain/util/AuthorizeUtil.java` |
 | token 响应模型 | `infrastructure/external/esi/model/AuthTokenResponse.java` |
+
+---
+
+*最后更新：2026-08-21*

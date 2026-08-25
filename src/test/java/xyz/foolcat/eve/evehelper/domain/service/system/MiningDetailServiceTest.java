@@ -27,7 +27,7 @@ class MiningDetailServiceTest {
 
     @Test
     void saveObserverMining() throws ParseException {
-        miningDetailService.saveObserverMining(2112818290,1014017747012L);
+        miningDetailService.saveObserverMining(2112818290,1014017747012L,false);
 
     }
 }

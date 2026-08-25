@@ -20,7 +20,7 @@
 --          LEFT JOIN sys_role_permission srp ON srp.permission_id = sp.id
 --          LEFT JOIN sys_role sr ON srp.role_id = sr.id
 -- WHERE sp.url_perm IN ('GET:/wallet/overview/{cid}',
---                       'GET:/wallet/overview/corp/{corpId}')
+--                       'GET:/wallet/overview/corp/{cid}')
 -- GROUP BY sp.url_perm, sr.code;
 
 -- =====================================================================
@@ -32,7 +32,7 @@
 -- 归属: specs/012-wallet-overview —— Polish 收尾 T021 RBAC 权限登记 SQL
 --       关联端点(与 RbacAuthorizationManager.restfulPath = method + ':' + path 精确匹配):
 --         * GET:/wallet/overview/{cid}        人物钱包总览(WalletOverviewController)
---         * GET:/wallet/overview/corp/{corpId} 军团钱包总览(WalletOverviewController)
+--         * GET:/wallet/overview/corp/{cid}    军团钱包总览(人物入口反查军团ID,WalletOverviewController)
 --
 -- 角色编码依据:
 --   RbacAuthorizationManager 将 url_perm -> 角色集合 规则(AntPathMatcher)按
@@ -66,12 +66,12 @@ DELETE srp
 FROM sys_role_permission srp
          INNER JOIN sys_permission sp ON srp.permission_id = sp.id
 WHERE sp.url_perm IN ('GET:/wallet/overview/{cid}',
-                      'GET:/wallet/overview/corp/{corpId}');
+                      'GET:/wallet/overview/corp/{cid}');
 
 DELETE
 FROM sys_permission
 WHERE url_perm IN ('GET:/wallet/overview/{cid}',
-                   'GET:/wallet/overview/corp/{corpId}');
+                   'GET:/wallet/overview/corp/{cid}');
 
 -- ---------------------------------------------------------------------
 -- Step 2: 插入 2 条 URL 权限。url_perm 格式 = 'METHOD:PATH',
@@ -79,7 +79,7 @@ WHERE url_perm IN ('GET:/wallet/overview/{cid}',
 -- ---------------------------------------------------------------------
 INSERT INTO sys_permission (name, url_perm, gmt_create, gmt_modified)
 VALUES ('人物钱包总览', 'GET:/wallet/overview/{cid}', NOW(), NOW()),
-       ('军团钱包总览', 'GET:/wallet/overview/corp/{corpId}', NOW(), NOW());
+       ('军团钱包总览', 'GET:/wallet/overview/corp/{cid}', NOW(), NOW());
 
 -- ---------------------------------------------------------------------
 -- Step 3: 将 2 条权限绑定到 ADMIN 角色。
@@ -91,7 +91,18 @@ VALUES ((SELECT id FROM sys_role WHERE code = 'ADMIN' LIMIT 1),
         (SELECT id FROM sys_permission WHERE url_perm = 'GET:/wallet/overview/{cid}' LIMIT 1),
         NOW(), NOW()),
        ((SELECT id FROM sys_role WHERE code = 'ADMIN' LIMIT 1),
-        (SELECT id FROM sys_permission WHERE url_perm = 'GET:/wallet/overview/corp/{corpId}' LIMIT 1),
+        (SELECT id FROM sys_permission WHERE url_perm = 'GET:/wallet/overview/corp/{cid}' LIMIT 1),
         NOW(), NOW());
 
 COMMIT;
+
+-- ---------------------------------------------------------------------
+-- Step 4(017 追加): 将历史行 url_perm 从 /corp/{corpId} 更新为 /corp/{cid}。
+--   017 特性将军团总览入口从军团ID改为人物ID,端点 URL 同步变更。
+--   已部署 012 的环境运行本步,使 RBAC 匹配新 URL。
+--   幂等:已为 /corp/{cid} 时 WHERE 不命中,0 行更新。
+-- ---------------------------------------------------------------------
+UPDATE sys_permission
+SET url_perm = 'GET:/wallet/overview/corp/{cid}',
+    gmt_modified = NOW()
+WHERE url_perm = 'GET:/wallet/overview/corp/{corpId}';

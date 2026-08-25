@@ -26,6 +26,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -80,19 +81,19 @@ class WalletTransactionApplicationServiceTest {
         @Test
         @DisplayName("归属校验先于业务逻辑,随后委托领域服务")
         void guardsOwnershipThenDelegates() throws Exception {
-            applicationService.syncCharacterTransactions(CID);
+            applicationService.syncCharacterTransactions(CID, false);
 
             verify(accessGuard).requireOwnership("9001", "钱包交易同步");
-            verify(walletTransactionService).syncCharacterTransactions(CID);
+            verify(walletTransactionService).syncCharacterTransactions(CID, false);
         }
 
         @Test
         @DisplayName("领域层 ParseException 收敛为 EveHelperException")
         void parseException_wrappedAsEveHelperException() throws Exception {
             doThrow(new java.text.ParseException("bad jwt", 0))
-                    .when(walletTransactionService).syncCharacterTransactions(any());
+                    .when(walletTransactionService).syncCharacterTransactions(any(), anyBoolean());
 
-            assertThatThrownBy(() -> applicationService.syncCharacterTransactions(CID))
+            assertThatThrownBy(() -> applicationService.syncCharacterTransactions(CID, false))
                     .isInstanceOf(EveHelperException.class)
                     .hasMessageContaining("钱包交易同步失败");
         }
@@ -104,7 +105,7 @@ class WalletTransactionApplicationServiceTest {
             ReflectionTestUtils.setField(applicationService, "syncCooldownSeconds", 60L);
             when(cacheGateway.hasKey("wallet:sync:char:" + CID)).thenReturn(Boolean.TRUE);
 
-            assertThatThrownBy(() -> applicationService.syncCharacterTransactions(CID))
+            assertThatThrownBy(() -> applicationService.syncCharacterTransactions(CID, false))
                     .isInstanceOf(EveHelperException.class)
                     .hasMessageContaining("同步操作过于频繁");
             verifyNoInteractions(walletTransactionService);
