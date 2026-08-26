@@ -1,4 +1,6 @@
-package xyz.foolcat.eve.evehelper.infrastructure.external.esi;
+package xyz.foolcat.eve.evehelper.infrastructure.gateway.esi;
+
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.*;
 
 import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.databind.JavaType;

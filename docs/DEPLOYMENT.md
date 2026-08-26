@@ -185,9 +185,9 @@ T038 起语义由「黑名单」改为**正向白名单** —— **键缺失不�
 >
 > 自检命令(在各 profile 配置文件上执行):
 > ```bash
-> grep -nE "^\s+(root|[a-z.]+):\s*(debug|trace)\s*$" src/main/resources/application-{ali,aliw,prod}.yml
+> grep -nE "^\s+(root|[a-z.]+):\s*(debug|trace)\s*$" src/main/resources/application.yml
 > # 期望:无输出。有输出则该行必须改为 info 或更高,否则应用拒启
-> grep -nE "log-impl|access-token-endpoint" -A1 src/main/resources/application-{ali,aliw,prod}.yml
+> grep -nE "log-impl|access-token-endpoint" -A1 src/main/resources/application.yml
 > # 期望:log-impl 为 Slf4jImpl(或未覆盖,继承 application.yml);enabled 为 false
 > ```
 

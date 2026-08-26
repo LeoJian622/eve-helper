@@ -18,6 +18,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
+import xyz.foolcat.eve.evehelper.infrastructure.gateway.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CharacterApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UniverseApi;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
