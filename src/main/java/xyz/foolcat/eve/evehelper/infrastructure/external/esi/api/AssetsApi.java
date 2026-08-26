@@ -15,14 +15,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConstants;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiStatusUtil;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AssetResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AssetsLocationResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AssetsNameResponse;
 
-import java.time.Duration;
 import java.util.List;
 
 /**
@@ -41,10 +39,7 @@ public class AssetsApi {
 
     private final PageTotalApi pageTotalApi;
 
-    /**
-     * ESI 数据接口调用超时(宪法:外部调用 5s 超时)
-     */
-    private static final Duration ESI_DATA_TIMEOUT = Duration.ofSeconds(5);
+
 
     /**
      * 人物资产清单最大页数
@@ -137,22 +132,8 @@ public class AssetsApi {
     public Mono<ResponseEntity<List<AssetResponse>>> queryCharactersAssetsResponse(Integer characterId, String datasource, Integer page, String accessesToken) {
         return esiClient.get().uri("/characters/{character_id}/assets/?datasource={datasource}&page={page}",characterId,datasource,page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
-                .exchangeToMono(response -> {
-                    HttpStatusCode httpStatusCode = response.statusCode();
-                    if (httpStatusCode.is4xxClientError()) {
-                        if (EsiStatusUtil.isForbidden(httpStatusCode)) {
-                            log.warn("ESI 人物资产权限不足(403): characterId={}", characterId);
-                            return Mono.error(EsiStatusUtil.forbiddenAgent());
-                        }
-                        return Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE));
-                    }
-                    if (httpStatusCode.is5xxServerError()) {
-                        log.warn("ESI 人物资产服务端错误(5xx): characterId={}, status={}", characterId, httpStatusCode.value());
-                        return Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE));
-                    }
-                    return response.toEntity(new ParameterizedTypeReference<List<AssetResponse>>() {
-                    });
-                }).timeout(ESI_DATA_TIMEOUT);
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<List<AssetResponse>>() {}, "ESI 人物资产")).timeout(EsiClientConstants.ESI_DATA_TIMEOUT);
     }
 
     /**
@@ -279,22 +260,8 @@ public class AssetsApi {
     public Mono<ResponseEntity<List<AssetResponse>>> queryCorporationsAssetsResponse(Integer corporationId, String datasource, Integer page, String accessesToken) {
         return esiClient.get().uri("/corporations/{corporation_id}/assets/?datasource={datasource}&page={page}",corporationId,datasource,page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
-                .exchangeToMono(response -> {
-                    HttpStatusCode httpStatusCode = response.statusCode();
-                    if (httpStatusCode.is4xxClientError()) {
-                        if (EsiStatusUtil.isForbidden(httpStatusCode)) {
-                            log.warn("ESI 军团资产权限不足(403): corporationId={}", corporationId);
-                            return Mono.error(EsiStatusUtil.forbiddenAgent());
-                        }
-                        return Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE));
-                    }
-                    if (httpStatusCode.is5xxServerError()) {
-                        log.warn("ESI 军团资产服务端错误(5xx): corporationId={}, status={}", corporationId, httpStatusCode.value());
-                        return Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE));
-                    }
-                    return response.toEntity(new ParameterizedTypeReference<List<AssetResponse>>() {
-                    });
-                }).timeout(ESI_DATA_TIMEOUT);
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<List<AssetResponse>>() {}, "ESI 军团资产")).timeout(EsiClientConstants.ESI_DATA_TIMEOUT);
     }
 
     /**
