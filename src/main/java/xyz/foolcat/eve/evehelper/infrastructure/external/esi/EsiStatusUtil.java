@@ -1,7 +1,9 @@
 package xyz.foolcat.eve.evehelper.infrastructure.external.esi;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.reactive.function.client.ClientResponse;
 import reactor.core.publisher.Mono;
 
@@ -77,4 +79,50 @@ public final class EsiStatusUtil {
             return release.then(Mono.error(new EsiException(code)));
         };
     }
+
+    /**
+     * 封装 exchangeToMono 块（15-20 行）为单行调用，消除 19 处重复。
+     *
+     * <p>用于需要响应头（如 Cache-Control: max-age）的场景，统一处理 4xx/5xx 错误分支。</p>
+     *
+     * <p>统一日志格式：</p>
+     * <ul>
+     *     <li>403 → {@code "ESI {apiName} 权限不足(403)"}</li>
+     *     <li>5xx → {@code "ESI {apiName} 服务端错误(5xx): status={}"}</li>
+     * </ul>
+     *
+     * <p>用法示例：</p>
+     * <pre>{@code
+     * return esiClient.get().uri(...)
+     *     .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+     *         response, new ParameterizedTypeReference<List<WalletJournalResponse>>() {}, "人物钱包记录"))
+     *     .timeout(EsiClientConstants.ESI_DATA_TIMEOUT);
+     * }</pre>
+     *
+     * @param response WebClient ClientResponse
+     * @param typeRef  泛型类型引用（如 {@code new ParameterizedTypeReference<List<T>>() {}}）
+     * @param apiName  API 名称（用于日志，如 "人物钱包记录"）
+     * @param <T>      响应体泛型类型
+     * @return {@code Mono<ResponseEntity<T>>}
+     * @since 2026-08-26 (020-esi-client-dedup 方案 B)
+     */
+    public static <T> Mono<ResponseEntity<T>> handleResponseWithHeaders(
+            ClientResponse response,
+            ParameterizedTypeReference<T> typeRef,
+            String apiName) {
+        HttpStatusCode status = response.statusCode();
+        if (status.is4xxClientError()) {
+            if (isForbidden(status)) {
+                log.warn("ESI {} 权限不足(403)", apiName);
+                return Mono.error(forbiddenAgent());
+            }
+            return Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE));
+        }
+        if (status.is5xxServerError()) {
+            log.warn("ESI {} 服务端错误(5xx): status={}", apiName, status.value());
+            return Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE));
+        }
+        return response.toEntity(typeRef);
+    }
+
 }

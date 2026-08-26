@@ -14,12 +14,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConstants;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiStatusUtil;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 
-import java.time.Duration;
 import java.util.List;
 
 /**
@@ -39,10 +37,7 @@ public class CorporationApi {
 
     private final PageTotalApi pageTotalApi;
 
-    /**
-     * ESI 数据接口调用超时(宪法:外部调用 5s 超时)
-     */
-    private static final Duration ESI_DATA_TIMEOUT = Duration.ofSeconds(5);
+
 
     /**
      * 军团公开信息
@@ -745,22 +740,8 @@ public class CorporationApi {
         return esiClient.get().uri("/corporations/{corporation_id}/structures/?datasource={datasource}&language={language}&page={page}", corporationId, datasource, language, page)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
                 .header(HttpHeaders.ACCEPT_LANGUAGE, language)
-                .exchangeToMono(response -> {
-                    HttpStatusCode httpStatusCode = response.statusCode();
-                    if (httpStatusCode.is4xxClientError()) {
-                        if (EsiStatusUtil.isForbidden(httpStatusCode)) {
-                            log.warn("ESI 军团建筑权限不足(403): corporationId={}", corporationId);
-                            return Mono.error(EsiStatusUtil.forbiddenAgent());
-                        }
-                        return Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE));
-                    }
-                    if (httpStatusCode.is5xxServerError()) {
-                        log.warn("ESI 军团建筑服务端错误(5xx): corporationId={}, status={}", corporationId, httpStatusCode.value());
-                        return Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE));
-                    }
-                    return response.toEntity(new ParameterizedTypeReference<List<StructuresInformationResponse>>() {
-                    });
-                }).timeout(ESI_DATA_TIMEOUT);
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<List<StructuresInformationResponse>>() {}, "ESI 军团建筑")).timeout(EsiClientConstants.ESI_DATA_TIMEOUT);
     }
 
     /**

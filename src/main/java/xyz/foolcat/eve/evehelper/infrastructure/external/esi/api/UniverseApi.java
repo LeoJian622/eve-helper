@@ -15,12 +15,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConstants;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiStatusUtil;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 
-import java.time.Duration;
 import java.util.List;
 
 /**
@@ -39,10 +37,7 @@ public class UniverseApi {
     private final WebClient esiClient;
     private final PageTotalApi pageTotalApi;
 
-    /**
-     * ESI 数据接口调用超时(宪法:外部调用 5s 超时)
-     */
-    private static final Duration ESI_DATA_TIMEOUT = Duration.ofSeconds(5);
+
 
     /**
      * 获取人物民族
@@ -390,22 +385,8 @@ public class UniverseApi {
         return esiClient.post().uri("/universe/names/?datasource={datasource}", datasource)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Mono.just(ids), List.class)
-                .exchangeToMono(response -> {
-                    HttpStatusCode httpStatusCode = response.statusCode();
-                    if (httpStatusCode.is4xxClientError()) {
-                        if (EsiStatusUtil.isForbidden(httpStatusCode)) {
-                            log.warn("ESI 宇宙名称解析权限不足(403)");
-                            return Mono.error(EsiStatusUtil.forbiddenAgent());
-                        }
-                        return Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE));
-                    }
-                    if (httpStatusCode.is5xxServerError()) {
-                        log.warn("ESI 宇宙名称解析服务端错误(5xx): status={}", httpStatusCode.value());
-                        return Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE));
-                    }
-                    return response.toEntity(new ParameterizedTypeReference<List<Id2NameResponse>>() {
-                    });
-                }).timeout(ESI_DATA_TIMEOUT);
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<List<Id2NameResponse>>() {}, "ESI 宇宙名称解析")).timeout(EsiClientConstants.ESI_DATA_TIMEOUT);
     }
 
     /**
@@ -743,20 +724,7 @@ public class UniverseApi {
     public Mono<ResponseEntity<TypeInfoResponse>> queryUniverseTypeResponse(Integer typeId, String datasource, String language) {
         return esiClient.get().uri("/universe/types/{type_id}/?datasource={datasource}&language={language}", typeId, datasource, language)
                 .header(HttpHeaders.ACCEPT_LANGUAGE, language)
-                .exchangeToMono(response -> {
-                    HttpStatusCode httpStatusCode = response.statusCode();
-                    if (httpStatusCode.is4xxClientError()) {
-                        if (EsiStatusUtil.isForbidden(httpStatusCode)) {
-                            log.warn("ESI 物品类型详情权限不足(403): typeId={}", typeId);
-                            return Mono.error(EsiStatusUtil.forbiddenAgent());
-                        }
-                        return Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE));
-                    }
-                    if (httpStatusCode.is5xxServerError()) {
-                        log.warn("ESI 物品类型详情服务端错误(5xx): typeId={}, status={}", typeId, httpStatusCode.value());
-                        return Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE));
-                    }
-                    return response.toEntity(TypeInfoResponse.class);
-                }).timeout(ESI_DATA_TIMEOUT);
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<TypeInfoResponse>() {}, "ESI 物品类型详情")).timeout(EsiClientConstants.ESI_DATA_TIMEOUT);
     }
 }

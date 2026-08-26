@@ -3,18 +3,15 @@ package xyz.foolcat.eve.evehelper.infrastructure.external.esi.api;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConstants;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiStatusUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
-
-import java.time.Duration;
-import java.util.Objects;
 
 /**
  * 获取对应接口下数据总页数
@@ -33,10 +30,7 @@ public class PageTotalApi {
      */
     private final String X_PAGES = "X-Pages";
 
-    /**
-     * ESI 数据接口调用超时(宪法:外部调用 5s 超时)
-     */
-    private static final Duration ESI_DATA_TIMEOUT = Duration.ofSeconds(5);
+
 
     /**
      * 发送请求。
@@ -59,21 +53,8 @@ public class PageTotalApi {
     public int queryMaxPage(String accessesToken, String uri, WebClient esiClient) {
         ResponseEntity<String> responseEntity = esiClient.get().uri(uri)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
-                .exchangeToMono(response -> {
-                    HttpStatusCode httpStatusCode = response.statusCode();
-                    if (httpStatusCode.is4xxClientError()) {
-                        if (EsiStatusUtil.isForbidden(httpStatusCode)) {
-                            log.warn("ESI 军团/人物数据分页权限不足(403): uri={}", uri);
-                            return Mono.error(EsiStatusUtil.forbiddenAgent());
-                        }
-                        return Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE));
-                    }
-                    if (httpStatusCode.is5xxServerError()) {
-                        log.warn("ESI 数据分页服务端错误(5xx): uri={}, status={}", uri, httpStatusCode.value());
-                        return Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE));
-                    }
-                    return response.toEntity(String.class);
-                }).timeout(ESI_DATA_TIMEOUT).block();
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<String>() {}, "ESI 军团/人物数据分页")).timeout(EsiClientConstants.ESI_DATA_TIMEOUT).block();
         if (responseEntity == null) {
             throw new EsiException(ResultCode.ESI_SERVER_FAILURE);
         }
@@ -104,21 +85,8 @@ public class PageTotalApi {
     public PageCountResult queryMaxPageWithHeaders(String accessesToken, String uri, WebClient esiClient) {
         ResponseEntity<String> responseEntity = esiClient.get().uri(uri)
                 .header(HttpHeaders.AUTHORIZATION, accessesToken)
-                .exchangeToMono(response -> {
-                    HttpStatusCode httpStatusCode = response.statusCode();
-                    if (httpStatusCode.is4xxClientError()) {
-                        if (EsiStatusUtil.isForbidden(httpStatusCode)) {
-                            log.warn("ESI 军团/人物数据分页权限不足(403): uri={}", uri);
-                            return Mono.error(EsiStatusUtil.forbiddenAgent());
-                        }
-                        return Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE));
-                    }
-                    if (httpStatusCode.is5xxServerError()) {
-                        log.warn("ESI 数据分页服务端错误(5xx): uri={}, status={}", uri, httpStatusCode.value());
-                        return Mono.error(new EsiException(ResultCode.ESI_SERVER_FAILURE));
-                    }
-                    return response.toEntity(String.class);
-                }).timeout(ESI_DATA_TIMEOUT).block();
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<String>() {}, "ESI 军团/人物数据分页")).timeout(EsiClientConstants.ESI_DATA_TIMEOUT).block();
         if (responseEntity == null) {
             throw new EsiException(ResultCode.ESI_SERVER_FAILURE);
         }
