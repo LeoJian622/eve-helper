@@ -1,7 +1,5 @@
 package xyz.foolcat.eve.evehelper.infrastructure.gateway.esi;
 
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.*;
-
 import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,15 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.IndustryJob;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.InvTypes;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.MiningDetail;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.*;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
@@ -29,41 +19,28 @@ import xyz.foolcat.eve.evehelper.domain.port.esi.EsiAccessException;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiAssetsConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiIndustryJobConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiInvTypesConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiMiningDetailConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiStructureConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiUniverseNameConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiWalletJournalConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiWalletTransactionConverter;
+import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.*;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.*;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiCacheTtlExtractor;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCache;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCacheProperties;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.ForceRefreshLimiter;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.AssetsApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CharacterApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.PageTotalApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CorporationApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UniverseApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.WalletApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CharacterPublicInfoResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.Id2NameResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.TypeInfoResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.WalletJournalResponse;
-import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
+import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 
 import java.text.ParseException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -1478,7 +1455,7 @@ public class EsiApiService implements EsiGateway {
      * 包裹 SDK 调用,捕获 EsiException 并转换为 EsiAccessException。
      * 用于同步返回值的 SDK 调用。
      */
-    private <T> T callSdk(java.util.concurrent.Callable<T> sdkCall) {
+    private <T> T callSdk(Callable<T> sdkCall) {
         try {
             return sdkCall.call();
         } catch (EsiException e) {
@@ -1491,7 +1468,7 @@ public class EsiApiService implements EsiGateway {
     /**
      * 包裹 SDK 调用(Flux 返回类型),捕获 EsiException 并转换为 EsiAccessException。
      */
-    private <T> Flux<T> callSdkFlux(java.util.function.Supplier<Flux<T>> sdkCall) {
+    private <T> Flux<T> callSdkFlux(Supplier<Flux<T>> sdkCall) {
         try {
             return sdkCall.get();
         } catch (EsiException e) {
@@ -1502,7 +1479,7 @@ public class EsiApiService implements EsiGateway {
     /**
      * 包裹 SDK 调用(Mono 返回类型),捕获 EsiException 并转换为 EsiAccessException。
      */
-    private <T> Mono<T> callSdkMono(java.util.function.Supplier<Mono<T>> sdkCall) {
+    private <T> Mono<T> callSdkMono(Supplier<Mono<T>> sdkCall) {
         try {
             return sdkCall.get();
         } catch (EsiException e) {
