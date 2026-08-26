@@ -25,7 +25,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiApiService;
+import xyz.foolcat.eve.evehelper.infrastructure.gateway.esi.EsiApiService;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.AssetsApi;

@@ -26,7 +26,6 @@
         <knife4j.version>4.1.0</knife4j.version>
         <springdco.version>2.8.16</springdco.version>
         <mysql.version>9.6.0</mysql.version>
-        <snakeyaml.version>2.1</snakeyaml.version>
     </properties>
 
     <dependencyManagement>

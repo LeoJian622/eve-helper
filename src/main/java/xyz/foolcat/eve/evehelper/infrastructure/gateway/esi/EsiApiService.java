@@ -1,4 +1,4 @@
-package xyz.foolcat.eve.evehelper.infrastructure.external.esi;
+package xyz.foolcat.eve.evehelper.infrastructure.gateway.esi;
 
 import cn.hutool.core.util.StrUtil;
 import com.fasterxml.jackson.databind.JavaType;
@@ -11,56 +11,36 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.Assets;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.IndustryJob;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.InvTypes;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.MiningDetail;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.*;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiAccessException;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiAssetsConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiIndustryJobConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiInvTypesConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiMiningDetailConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiStructureConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiUniverseNameConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiWalletJournalConverter;
-import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.EsiWalletTransactionConverter;
+import xyz.foolcat.eve.evehelper.infrastructure.assembler.esi.*;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.*;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiCacheTtlExtractor;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCache;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCacheProperties;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.ForceRefreshLimiter;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.AssetsApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CharacterApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.PageTotalApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.CorporationApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.UniverseApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.WalletApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CharacterPublicInfoResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.Id2NameResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.TypeInfoResponse;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.WalletJournalResponse;
-import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
+import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 
 import java.text.ParseException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -584,7 +564,7 @@ public class EsiApiService implements EsiGateway {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
-            return assetsApi.queryCharactersAssetsMaxPage(characterId, EsiClientConfig.SERENITY, accessToken);
+            return callSdk(() -> assetsApi.queryCharactersAssetsMaxPage(characterId, EsiClientConfig.SERENITY, accessToken));
         }
         // maxPage 用独立 :maxPage 键,不与列表首页 page=1 共用(避免互相覆盖震荡,T008 评审 M1 修复回归)
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
@@ -615,7 +595,7 @@ public class EsiApiService implements EsiGateway {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
-            return assetsApi.queryCharactersAssets(characterId, EsiClientConfig.SERENITY, page, accessToken)
+            return callSdk(() -> callSdk(() -> assetsApi.queryCharactersAssets(characterId, EsiClientConfig.SERENITY, page, accessToken)))
                     .map(esiAssetsConverter::toDomain);
         }
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
@@ -656,7 +636,7 @@ public class EsiApiService implements EsiGateway {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
-            return corporationApi.queryCorporationBlueprintsMaxPage(corporationId, EsiClientConfig.SERENITY, accessToken);
+            return callSdk(() -> corporationApi.queryCorporationBlueprintsMaxPage(corporationId, EsiClientConfig.SERENITY, accessToken));
         }
         // maxPage 用独立 :maxPage 键,不与列表首页 page=1 共用(避免互相覆盖震荡,T008 评审 M1)
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
@@ -689,7 +669,7 @@ public class EsiApiService implements EsiGateway {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
-            return industryApi.queryCorporationIndustryJobsMaxPage(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken);
+            return callSdk(() -> industryApi.queryCorporationIndustryJobsMaxPage(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken));
         }
         // 军团工业列表统一归一化 uri;maxPage 用独立 :maxPage 键
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
@@ -720,7 +700,7 @@ public class EsiApiService implements EsiGateway {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
-            return industryApi.queryCorporationIndustryJobs(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
+            return callSdk(() -> callSdk(() -> industryApi.queryCorporationIndustryJobs(corporationId, EsiClientConfig.SERENITY, includeCompleted, accessToken)))
                     .map(resp -> esiIndustryJobConverter.toDomain(resp, corporationId));
         }
         // includeCompleted 入键,避免 true/false 变体互相命中(T009/H2)
@@ -760,7 +740,7 @@ public class EsiApiService implements EsiGateway {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
-            return industryApi.queryCharacterIndustryJobs(characterId, EsiClientConfig.SERENITY, includeCompleted, accessToken)
+            return callSdk(() -> callSdk(() -> industryApi.queryCharacterIndustryJobs(characterId, EsiClientConfig.SERENITY, includeCompleted, accessToken)))
                     .map(resp -> esiIndustryJobConverter.toDomain(resp, null));
         }
         // includeCompleted 入键,避免 true/false 变体互相命中(T009/H2)
@@ -829,7 +809,7 @@ public class EsiApiService implements EsiGateway {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
-            return industryApi.queryCorporationMiningObserverMaxPage(corporationId, observerId, EsiClientConfig.SERENITY, accessToken);
+            return callSdk(() -> industryApi.queryCorporationMiningObserverMaxPage(corporationId, observerId, EsiClientConfig.SERENITY, accessToken));
         }
         // observerId 进归一化 uri(变体参数必须进键,T010 规避 T009 MEDIUM-1);maxPage 用独立 :maxPage 键
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
@@ -860,7 +840,7 @@ public class EsiApiService implements EsiGateway {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
-            return industryApi.queryCorporationMiningObserver(corporationId, EsiClientConfig.SERENITY, observerId, page, accessToken)
+            return callSdk(() -> callSdk(() -> industryApi.queryCorporationMiningObserver(corporationId, EsiClientConfig.SERENITY, observerId, page, accessToken)))
                     .map(esiMiningDetailConverter::toDomain);
         }
         // observerId 进归一化 uri,页面参数用实际 page
@@ -902,7 +882,7 @@ public class EsiApiService implements EsiGateway {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
-            return corporationApi.queryCorporationStructuresMaxPage(corporationId, EsiClientConfig.SERENITY, accessToken);
+            return callSdk(() -> corporationApi.queryCorporationStructuresMaxPage(corporationId, EsiClientConfig.SERENITY, accessToken));
         }
         // 端口签名无 language,maxPage 页数与语言无关 → 用语言无关的 :maxPage 独立键
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
@@ -933,7 +913,7 @@ public class EsiApiService implements EsiGateway {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
-            return corporationApi.queryCorporationStructures(corporationId, EsiClientConfig.SERENITY, language, page, accessToken)
+            return callSdk(() -> callSdk(() -> corporationApi.queryCorporationStructures(corporationId, EsiClientConfig.SERENITY, language, page, accessToken)))
                     .map(esiStructureConverter::toDomain);
         }
         // language 进归一化 uri(变体参数必须进键:T010 规避 T009 MEDIUM-1,换语种不得互命中)
@@ -1022,7 +1002,14 @@ public class EsiApiService implements EsiGateway {
             }
         }
         // 持锁承担真调;或强刷有额度未抢锁(保新鲜,直接真调不读陈旧缓存);或轮询超时 fail-open
-        Flux<T> out = realCaller.get().flatMapIterable(Function.identity());
+        Mono<List<T>> mono;
+        try {
+            mono = realCaller.get();
+        } catch (EsiException e) {
+            throw convertToAccessException(e);
+        }
+        Flux<T> out = mono.flatMapIterable(Function.identity())
+                .onErrorMap(EsiException.class, this::convertToAccessException);
         return claimed ? out.doFinally(sig -> esiResponseCache.releaseClaim(key)) : out;
     }
 
@@ -1040,11 +1027,17 @@ public class EsiApiService implements EsiGateway {
         if (claimed) {
             try {
                 return fillMaxPage(key, realCaller.get());
+            } catch (EsiException e) {
+                throw convertToAccessException(e);
             } finally {
                 esiResponseCache.releaseClaim(key);
             }
         }
-        return fillMaxPage(key, realCaller.get());
+        try {
+            return fillMaxPage(key, realCaller.get());
+        } catch (EsiException e) {
+            throw convertToAccessException(e);
+        }
     }
 
     /**
@@ -1110,7 +1103,7 @@ public class EsiApiService implements EsiGateway {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
-            return walletApi.queryCorporationWalletJournalMaxPage(corporationId, division, EsiClientConfig.SERENITY, accessToken);
+            return callSdk(() -> walletApi.queryCorporationWalletJournalMaxPage(corporationId, division, EsiClientConfig.SERENITY, accessToken));
         }
         // division 进归一化 uri(变体参数进键,规避 MEDIUM-1);maxPage 用独立 :maxPage 键
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
@@ -1141,7 +1134,7 @@ public class EsiApiService implements EsiGateway {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
-            return walletApi.queryCorporationWalletJournal(corporationId, division, EsiClientConfig.SERENITY, page, accessToken)
+            return callSdk(() -> callSdk(() -> walletApi.queryCorporationWalletJournal(corporationId, division, EsiClientConfig.SERENITY, page, accessToken)))
                     .map(wallet -> esiWalletJournalConverter.toDomain(wallet, corporationId, resolveWalletCharacter(wallet)));
         }
         // division 进归一化 uri
@@ -1182,7 +1175,7 @@ public class EsiApiService implements EsiGateway {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
-            return walletApi.queryCharacterWalletJournalMaxPage(characterId, EsiClientConfig.SERENITY, accessToken);
+            return callSdk(() -> walletApi.queryCharacterWalletJournalMaxPage(characterId, EsiClientConfig.SERENITY, accessToken));
         }
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
                 "/characters/" + characterId + "/wallet/journal/", "maxPage");
@@ -1212,7 +1205,7 @@ public class EsiApiService implements EsiGateway {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
-            return walletApi.queryCharacterWalletJournal(characterId, EsiClientConfig.SERENITY, page, accessToken)
+            return callSdk(() -> callSdk(() -> walletApi.queryCharacterWalletJournal(characterId, EsiClientConfig.SERENITY, page, accessToken)))
                     .map(wallet -> esiWalletJournalConverter.toDomain(wallet, characterId, resolveWalletCharacter(wallet)));
         }
         String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
@@ -1253,7 +1246,7 @@ public class EsiApiService implements EsiGateway {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
-            return walletApi.queryCharacterWalletTransactions(characterId, EsiClientConfig.SERENITY, fromId, accessToken)
+            return callSdk(() -> callSdk(() -> walletApi.queryCharacterWalletTransactions(characterId, EsiClientConfig.SERENITY, fromId, accessToken)))
                     .map(esiWalletTransactionConverter::toDomain);
         }
         // fromId 是游标须进键:null 与非 null 由归一化 uri 是否含 from_id 段区分(M06 规避 MEDIUM-1)
@@ -1293,7 +1286,7 @@ public class EsiApiService implements EsiGateway {
         Integer userId = UserUtil.getUserId();
         if (userId == null || userId <= 0) {
             // 未认证/无上下文:不缓存,直接真调(安全优先)
-            return walletApi.queryCorporationWalletTransactions(corporationId, division, EsiClientConfig.SERENITY, fromId, accessToken)
+            return callSdk(() -> callSdk(() -> walletApi.queryCorporationWalletTransactions(corporationId, division, EsiClientConfig.SERENITY, fromId, accessToken)))
                     .map(esiWalletTransactionConverter::toDomain);
         }
         // division 进归一化 uri;fromId null/非 null 由 from_id 段区分
@@ -1323,14 +1316,14 @@ public class EsiApiService implements EsiGateway {
 
     @Override
     public Double queryCharacterWalletBalance(Integer characterId, String accessToken) {
-        return walletApi.queryCharacterWallet(characterId, EsiClientConfig.SERENITY, accessToken)
+        return callSdk(() -> walletApi.queryCharacterWallet(characterId, EsiClientConfig.SERENITY, accessToken))
                 .timeout(ESI_DATA_TIMEOUT)
                 .block();
     }
 
     @Override
     public List<WalletDivisionBalance> queryCorporationWalletBalances(Integer corporationId, String accessToken) {
-        return walletApi.queryCorporationWallet(corporationId, EsiClientConfig.SERENITY, accessToken)
+        return callSdk(() -> walletApi.queryCorporationWallet(corporationId, EsiClientConfig.SERENITY, accessToken))
                 .map(r -> new WalletDivisionBalance(r.getDivision(), r.getBalance()))
                 .collectList()
                 .timeout(ESI_DATA_TIMEOUT)
@@ -1433,6 +1426,64 @@ public class EsiApiService implements EsiGateway {
             }
             String redisKey = accessTokenKey(account.getUserId(), characterId);
             cacheGateway.set(redisKey, GlobalConstants.TOKEN_PERN + accessToken, ACCESS_TOKEN_CACHE_TTL_SECONDS, TimeUnit.SECONDS);
+        }
+    }
+
+    /**
+     * 将 SDK 异常转换为 domain 层异常(防腐层职责)。
+     * <p>
+     * SDK 调用抛出的 {@link EsiException} 在此转换为 {@link EsiAccessException},
+     * 使 domain 层不依赖 infrastructure 的异常类型。
+     *
+     * @param e SDK 抛出的 EsiException
+     * @return domain 层异常
+     */
+    private EsiAccessException convertToAccessException(EsiException e) {
+        String message = e.getMessage();
+        if (!(e.getResultCode() instanceof ResultCode code)) {
+            return new EsiAccessException(message, e);
+        }
+        return switch (code) {
+            case ESI_AUTHORIZATION_FAILURE -> EsiAccessException.authorizationFailure();
+            case ESI_AUTH_PERMISSION_LOW -> EsiAccessException.permissionLow();
+            case ESI_SERVER_FAILURE -> EsiAccessException.serverFailure();
+            default -> new EsiAccessException(message, e);
+        };
+    }
+
+    /**
+     * 包裹 SDK 调用,捕获 EsiException 并转换为 EsiAccessException。
+     * 用于同步返回值的 SDK 调用。
+     */
+    private <T> T callSdk(Callable<T> sdkCall) {
+        try {
+            return sdkCall.call();
+        } catch (EsiException e) {
+            throw convertToAccessException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 包裹 SDK 调用(Flux 返回类型),捕获 EsiException 并转换为 EsiAccessException。
+     */
+    private <T> Flux<T> callSdkFlux(Supplier<Flux<T>> sdkCall) {
+        try {
+            return sdkCall.get();
+        } catch (EsiException e) {
+            throw convertToAccessException(e);
+        }
+    }
+
+    /**
+     * 包裹 SDK 调用(Mono 返回类型),捕获 EsiException 并转换为 EsiAccessException。
+     */
+    private <T> Mono<T> callSdkMono(Supplier<Mono<T>> sdkCall) {
+        try {
+            return sdkCall.get();
+        } catch (EsiException e) {
+            throw convertToAccessException(e);
         }
     }
 

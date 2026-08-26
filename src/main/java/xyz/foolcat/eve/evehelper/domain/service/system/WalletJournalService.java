@@ -12,8 +12,7 @@ import xyz.foolcat.eve.evehelper.domain.repository.system.WalletJournalRepositor
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiAccessException;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 
@@ -191,7 +190,7 @@ public class WalletJournalService {
         Integer corpId = eveAccount.getCorpId();
         if (corpId == null) {
             log.warn("钱包流水军团同步:角色 {} 无关联军团,映射 ESI 403 权限不足", characterId);
-            throw new EsiException(ResultCode.ESI_AUTH_PERMISSION_LOW);
+            throw EsiAccessException.permissionLow();
         }
         String accessToken = esiApiService.getAccessToken(characterId, eveAccount.getUserId());
         // US2a(014 T013):军团流水随同步者 user_id 落库 —— 军团数据只对同步者可见的归属依据
@@ -219,7 +218,7 @@ public class WalletJournalService {
                     walletJournalRepository.saveOrUpdateBatch(walletJournals);
                 }
                 log.info("钱包流水军团同步完成 characterId={} corpId={} division={} 条数={}", characterId, corpId, currentDivision, walletJournals.size());
-            } catch (EsiException esiEx) {
+            } catch (EsiAccessException esiEx) {
                 // FR-005/FR-006(013 US3):ESI 数据接口 403 是系统性「权限/角色/成员资格」条件,非单分账瞬时故障——
                 // 透传交由全局异常处理器映射 HTTP 403 + ESI00403(区别于应用层 ACCESS_UNAUTHORIZED)。
                 // 授权失效(ESI00400)/服务故障(ESI00500)同样透传,使 403 与 5xx/失效可区分,
