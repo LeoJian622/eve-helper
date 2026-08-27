@@ -26,7 +26,7 @@
 
 **⚠️ CRITICAL**: 本阶段完成前不得开始 API 类改造
 
-- [ ] T001 新建 EsiClientConstants 常量类 in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/EsiClientConstants.java`
+- [x] T001 新建 EsiClientConstants 常量类 in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/EsiClientConstants.java`
   - 提取 `public static final Duration ESI_DATA_TIMEOUT = Duration.ofSeconds(5);`
   - 私有构造器禁止实例化
   - Javadoc 说明常量用途（宪法：外部调用 5s 超时）
@@ -43,7 +43,7 @@
 
 ### Tests (MUST WRITE FIRST - TDD) ⚠️
 
-- [ ] T002 编写 EsiStatusUtil 工具方法单元测试 in `src/test/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/EsiStatusUtilTest.java`
+- [x] T002 编写 EsiStatusUtil 工具方法单元测试 in `src/test/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/EsiStatusUtilTest.java`
   - 测试 `applyErrorHandlers(ResponseSpec)`:
     - 2xx 响应正常通过
     - 4xx 通用错误 → EsiException(ESI_AUTHORIZATION_FAILURE)
@@ -59,7 +59,7 @@
 
 ### Implementation
 
-- [ ] T003 实现 EsiStatusUtil 工具方法 in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/EsiStatusUtil.java`
+- [x] T003 实现 EsiStatusUtil 工具方法 in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/EsiStatusUtil.java`
   - 新增 `public static ResponseSpec applyErrorHandlers(ResponseSpec spec)`
   - 新增 `public static <T> Mono<ResponseEntity<T>> handleResponseWithHeaders(ClientResponse response, ParameterizedTypeReference<T> typeRef, String apiName)`
   - 运行 `mvn test -Dtest=EsiStatusUtilTest` 确认测试通过（GREEN 阶段）
@@ -77,45 +77,45 @@
 
 ### Batch 1: AlliancesApi ~ CharacterApi (6 个类) [P]
 
-- [ ] T004 [P] 改造 AlliancesApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/AlliancesApi.java`
+- [x] T004 [P] 改造 AlliancesApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/AlliancesApi.java`
   - 替换 `.onStatus().onStatus()` → `.as(EsiStatusUtil::applyErrorHandlers)`
   - 替换 `exchangeToMono` 块 → `EsiStatusUtil.handleResponseWithHeaders(...)`
   - 替换 `private static final Duration ESI_DATA_TIMEOUT` → `import static EsiClientConstants.ESI_DATA_TIMEOUT`
 
-- [ ] T005 [P] 改造 AssetsApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/AssetsApi.java`
+- [x] T005 [P] 改造 AssetsApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/AssetsApi.java`
   - 同上改造规则
 
-- [ ] T006 [P] 改造 BookmarksApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/BookmarksApi.java`
+- [x] T006 [P] 改造 BookmarksApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/BookmarksApi.java`
   - 同上改造规则
 
-- [ ] T007 [P] 改造 CalendarApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/CalendarApi.java`
+- [x] T007 [P] 改造 CalendarApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/CalendarApi.java`
   - 同上改造规则
 
-- [ ] T008 [P] 改造 CharacterApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/CharacterApi.java`
+- [x] T008 [P] 改造 CharacterApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/CharacterApi.java`
   - 同上改造规则
 
-- [ ] T009 运行 Batch 1 验证: `mvn test` in repository root
+- [x] T009 运行 Batch 1 验证 ✅ 测试通过: `mvn test` in repository root
   - 确认 0 failures, 0 errors
   - 如有失败，回退并修复
 
 ### Batch 2: CorporationApi ~ MarketApi (5 个类) [P]
 
-- [ ] T010 [P] 改造 CorporationApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/CorporationApi.java`
-- [ ] T011 [P] 改造 IndustryApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/IndustryApi.java`
-- [ ] T012 [P] 改造 MarketApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/MarketApi.java`
-- [ ] T013 [P] 改造 SovereigntyApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/SovereigntyApi.java`
-- [ ] T014 [P] 改造 UniverseApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/UniverseApi.java`
-- [ ] T015 运行 Batch 2 验证: `mvn test`
+- [x] T010 [P] 跳过 - 无 exchangeToMono 块，无需改造 CorporationApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/CorporationApi.java`
+- [x] T011 [P] 跳过 - 无 exchangeToMono 块，无需改造 IndustryApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/IndustryApi.java`
+- [x] T012 [P] 跳过 - 无 exchangeToMono 块，无需改造 MarketApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/MarketApi.java`
+- [x] T013 [P] 跳过 - 无 exchangeToMono 块，无需改造 SovereigntyApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/SovereigntyApi.java`
+- [x] T014 [P] 跳过 - 无 exchangeToMono 块，无需改造 UniverseApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/UniverseApi.java`
+- [x] T015 跳过 - Batch 2 无需改造: `mvn test`
 
 ### Batch 3: WalletApi ~ WarApi + PageTotalApi (4 个类) [P]
 
-- [ ] T016 [P] 改造 WalletApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/WalletApi.java`
-- [ ] T017 [P] 改造 WarApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/WarApi.java`
-- [ ] T018 [P] 改造 PageTotalApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/PageTotalApi.java`
+- [x] T016 [P] 跳过 - 无 exchangeToMono 块，无需改造 WalletApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/WalletApi.java`
+- [x] T017 [P] 跳过 - 无 exchangeToMono 块，无需改造 WarApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/WarApi.java`
+- [x] T018 [P] 跳过 - 无 exchangeToMono 块，无需改造 PageTotalApi in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/PageTotalApi.java`
   - 特殊处理：含 `.block()` 场景，确保 `handleResponseWithHeaders` 兼容
-- [ ] T019 [P] 改造其余 API 类（RouteApi, SearchApi, SkillApi, StatusApi 等）in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/*.java`
+- [x] T019 [P] 跳过 - 无 exchangeToMono 块，无需改造其余 API 类（RouteApi, SearchApi, SkillApi, StatusApi 等）in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/*.java`
   - 使用 `ls api/*.java | wc -l` 确认总数为 33
-- [ ] T020 运行 Batch 3 验证: `mvn test`
+- [x] T020 跳过 - Batch 3 无需改造: `mvn test`
 
 **Checkpoint**: 所有 33 个 API 类改造完成，测试通过
 
@@ -125,7 +125,7 @@
 
 **Purpose**: 替换 EsiApiService 中的 ESI_DATA_TIMEOUT 引用（如有）
 
-- [ ] T021 改造 EsiApiService in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/gateway/esi/EsiApiService.java`
+- [x] T021 改造 EsiApiService in `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/gateway/esi/EsiApiService.java`
   - 检查是否有 `private static final Duration ESI_DATA_TIMEOUT` 声明
   - 如有，替换为 `import static EsiClientConstants.ESI_DATA_TIMEOUT`
   - 运行 `mvn test` 确认无回归
@@ -138,12 +138,12 @@
 
 **Purpose**: 证据铁律执行区，运行完整验证并产出报告
 
-- [ ] T022 构建验证: `mvn clean package -DskipTests` → exit 0
-- [ ] T023 测试验证: `mvn test` → 0 failures, 0 errors
-- [ ] T024 遗漏检查: `grep -r ".onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())" src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/` → 无匹配
-- [ ] T025 遗漏检查: `grep -r "private static final Duration ESI_DATA_TIMEOUT" src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/` → 无匹配
-- [ ] T026 Diff 审查: `git diff --stat` 确认无计划外变更
-- [ ] T027 产出 VERIFICATION REPORT（格式见 `ecc:verification-loop`）
+- [x] T022 构建验证: `mvn clean package -DskipTests` → exit 0
+- [x] T023 测试验证: `mvn test` → 0 failures, 0 errors
+- [x] T024 遗漏检查: `grep -r ".onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())" src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/api/` → 无匹配
+- [x] T025 遗漏检查: `grep -r "private static final Duration ESI_DATA_TIMEOUT" src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/` → 无匹配
+- [x] T026 Diff 审查: `git diff --stat` 确认无计划外变更
+- [x] T027 产出 VERIFICATION REPORT（格式见 `ecc:verification-loop`）
 
 **Checkpoint**: VERIFICATION REPORT = READY，可进入 P6 评审
 
@@ -153,9 +153,9 @@
 
 **Purpose**: 代码清理与文档更新
 
-- [ ] T028 代码清理: 删除未使用的 import、优化 Javadoc
-- [ ] T029 更新 knowledge 文档 in `docs/knowledge/`（如有需要）
-- [ ] T030 提交所有变更: `git add -A && git commit -m "refactor(020): ESI 客户端重复代码消除 (Phase 1)"`
+- [x] T028 代码清理: 删除未使用的 import、优化 Javadoc
+- [x] T029 更新 knowledge 文档 in `docs/knowledge/`（如有需要）
+- [x] T030 提交所有变更: `git add -A && git commit -m "refactor(020): ESI 客户端重复代码消除 (Phase 1)"`
 
 ---
 
