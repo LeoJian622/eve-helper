@@ -369,6 +369,17 @@ class SessionRevocationT049Test {
         public void convertAndSend(String channel, Object message) {
             throw new UnsupportedOperationException("T049 测试未预期 convertAndSend 调用");
         }
+
+        @Override
+        public Boolean compareAndDelete(String key, Object expectedValue) {
+            Object current = store.get(key);
+            if (current != null && current.equals(expectedValue)) {
+                store.remove(key);
+                ttlSeconds.remove(key);
+                return true;
+            }
+            return false;
+        }
     }
 
     /**

@@ -78,4 +78,16 @@ public interface CacheGateway {
      * 发布消息到指定通道。
      */
     void convertAndSend(String channel, Object message);
+
+    /**
+     * 原子性地比较并删除键：仅当键的当前值等于期望值时才删除。
+     * <p>
+     * 用于分布式锁的安全释放，避免在读取和删除之间的窗口期内锁被其他线程获取后误释放。
+     * 实现应使用 Redis Lua 脚本保证原子性。
+     *
+     * @param key          要删除的键
+     * @param expectedValue 期望的当前值
+     * @return true 表示值匹配并已删除；false 表示值不匹配或键不存在
+     */
+    Boolean compareAndDelete(String key, Object expectedValue);
 }

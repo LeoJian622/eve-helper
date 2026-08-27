@@ -2,10 +2,12 @@ package xyz.foolcat.eve.evehelper.infrastructure.cache;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -75,5 +77,32 @@ public class RedisCacheGateway implements CacheGateway {
     @Override
     public void convertAndSend(String channel, Object message) {
         redisTemplate.convertAndSend(channel, message);
+    }
+
+    @Override
+    public Boolean compareAndDelete(String key, Object expectedValue) {
+        // Lua 脚本实现原子性的比较并删除
+        // KEYS[1] = 要删除的键
+        // ARGV[1] = 期望的当前值
+        // 返回值: 1 表示匹配并删除, 0 表示不匹配
+        String luaScript =
+                "local current = redis.call('get', KEYS[1]) " +
+                "if current == ARGV[1] then " +
+                "    return redis.call('del', KEYS[1]) " +
+                "else " +
+                "    return 0 " +
+                "end";
+
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setScriptText(luaScript);
+        script.setResultType(Long.class);
+
+        Long result = redisTemplate.execute(
+                script,
+                Collections.singletonList(key),
+                expectedValue
+        );
+
+        return result != null && result == 1L;
     }
 }

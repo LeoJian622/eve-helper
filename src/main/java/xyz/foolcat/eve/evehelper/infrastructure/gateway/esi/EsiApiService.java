@@ -330,25 +330,21 @@ public class EsiApiService implements EsiGateway {
     }
 
     /**
-     * 释放刷新锁,仅当锁未被他人接管(compare-and-delete)。
+     * 释放刷新锁,使用原子性的 compare-and-delete。
      * <p>
-     * 只在读到的 owner 与本次**不同且非空**时跳过删除 —— 那是"临界区超时、锁已过期、
-     * 他人重新获得"的情形,此时删除会误释放别人的锁。
-     * 读到 null 仍执行删除:键可能刚过期(删除是 no-op),或 Redis 读瞬时失败,
-     * 此时宁可删除也不要把锁留到 TTL 结束阻塞后续请求。
+     * 通过 CacheGateway.compareAndDelete 实现原子性比较并删除,
+     * 避免在读取和删除之间的窗口期内锁被其他线程获取后误释放。
      * <p>
-     * 非原子实现:CacheGateway 端口未暴露 Lua/CAS 能力。读与删之间的极窄窗口属残余风险,
-     * 与原先的无条件删除相比严格更优。
+     * 仅当锁的当前值等于本次持有的 owner 时才删除;
+     * 若锁已被他人接管(临界区超时、锁过期后他人重新获得),则跳过删除。
      */
     private void releaseRefreshLock(String lockKey, String lockOwner) {
         try {
-            Object currentOwner = cacheGateway.get(lockKey);
-            if (currentOwner != null && !lockOwner.equals(currentOwner)) {
-                // 临界区耗时超过锁 TTL,锁已被他人重新获得 —— 不可删除
-                log.warn("ESI 刷新锁已被其他请求接管,跳过释放: lockKey={}", lockKey);
-                return;
+            boolean deleted = cacheGateway.compareAndDelete(lockKey, lockOwner);
+            if (!deleted) {
+                // 锁已被他人接管或已过期,跳过释放
+                log.warn("ESI 刷新锁已被其他请求接管或已过期,跳过释放: lockKey={}", lockKey);
             }
-            cacheGateway.delete(lockKey);
         } catch (Exception e) {
             // 释放失败不应掩盖业务异常;锁有 TTL 兜底,最多阻塞一个 TTL 周期
             log.warn("ESI 刷新锁释放失败: lockKey={}", lockKey, e);

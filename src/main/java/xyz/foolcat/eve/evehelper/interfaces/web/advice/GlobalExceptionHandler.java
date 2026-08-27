@@ -72,7 +72,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ConstraintViolationException.class)
     public <T> Result<T> processException(ConstraintViolationException e) {
-        log.error("参数校验异常: ", e);
+        log.warn("参数校验失败: violationCount={}", e.getConstraintViolations().size());
         JSONObject msg = new JSONObject();
         e.getConstraintViolations().forEach(constraintViolation -> {
             String template = constraintViolation.getMessage();
@@ -85,7 +85,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ValidationException.class)
     public <T> Result<T> processException(ValidationException e) {
-        log.error("验证异常: ", e);
+        log.warn("验证失败: message={}", e.getMessage());
         return Result.failed(ResultCode.PARAM_ERROR, "参数校验失败");
     }
 
@@ -96,7 +96,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public <T> Result<T> processException(MissingServletRequestParameterException e) {
-        log.error("缺少必需参数异常: ", e);
+        log.warn("缺少必需参数: paramName={}", e.getParameterName());
         return Result.failed(ResultCode.PARAM_IS_NULL);
     }
 
@@ -121,21 +121,21 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ServletException.class)
     public <T> Result<T> processException(ServletException e) {
-        log.error("服务器异常: ", e);
+        log.warn("Servlet异常: message={}", e.getMessage());
         return Result.failed(e.getMessage());
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler({IllegalArgumentException.class})
     public Result handlerIllegalArgumentException(IllegalArgumentException e) {
-        log.error("非法参数异常，异常原因：{}", e.getMessage(), e);
+        log.warn("非法参数异常: message={}", e.getMessage());
         return Result.failed("参数错误");
     }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(JsonProcessingException.class)
     public Result handleJsonProcessingException(JsonProcessingException e) {
-        log.error("Json转换异常: ", e);
+        log.warn("JSON转换失败: message={}", e.getOriginalMessage());
         return Result.failed("JSON格式错误");
     }
 
@@ -145,7 +145,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public <T> Result<T> processException(HttpMessageNotReadableException e) {
-        log.error("HTTP消息不可读异常: ", e);
+        log.warn("HTTP消息不可读: message={}", e.getMessage());
         String errorMessage = "请求体不可为空";
         Throwable cause = e.getCause();
         if (cause != null) {
@@ -160,7 +160,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(TypeMismatchException.class)
     public <T> Result<T> processException(TypeMismatchException e) {
-        log.error("类型不匹配异常: ", e);
+        log.warn("类型不匹配: propertyName={}, requiredType={}", e.getPropertyName(), e.getRequiredType());
         return Result.failed("参数类型错误");
     }
 
@@ -170,7 +170,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(DataAccessException.class)
     public <T> Result<T> processException(DataAccessException e) {
-        log.error("数据库访问异常: ", e);
+        log.warn("数据库访问失败: message={}", e.getMessage());
         return Result.failed("数据访问异常，请稍后重试");
     }
 
@@ -217,7 +217,7 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(WebClientRequestException.class)
     public <T> Result<T> handleWebClientRequestException(WebClientRequestException e) {
-        log.error("WebClient请求异常: ", e);
+        log.warn("WebClient请求失败: uri={}, message={}", e.getUri(), e.getMessage());
         return Result.failed("网络请求异常，请稍后重试");
     }
 
@@ -227,38 +227,27 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(WebClientResponseException.class)
     public <T> Result<T> handleWebClientResponseException(WebClientResponseException e) {
-        log.error("WebClient响应异常: ", e);
+        log.warn("WebClient响应异常: statusCode={}, statusText={}", e.getStatusCode(), e.getStatusText());
         return Result.failed("外部服务响应异常，请稍后重试");
     }
 
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler(Exception.class)
     public <T> Result<T> handleException(Exception e) {
-        log.error("未知异常: ", e);
+        log.warn("未知异常: type={}, message={}", e.getClass().getSimpleName(), e.getMessage());
         return Result.failed("系统内部错误，请联系管理员");
     }
 
 
     /**
-     * 传参类型错误时，用于消息转换
+     * 传参类型错误时，返回固定错误信息（LOW-4: 不回显 cause.toString()，防止泄露用户输入）
      *
      * @param throwable 异常
-     * @return 错误信息
+     * @return 固定错误信息
      */
     private String convertMessage(Throwable throwable) {
-        String error = throwable.toString();
-        String regulation = "\\[\"(.*?)\"]+";
-        Pattern pattern = Pattern.compile(regulation);
-        Matcher matcher = pattern.matcher(error);
-        String group = "";
-        if (matcher.find()) {
-            String matchString = matcher.group();
-            matchString = matchString
-                    .replace("[", "")
-                    .replace("]", "");
-            matchString = matchString.replaceAll("\\\"", "") + "字段类型错误";
-            group += matchString;
-        }
-        return group;
+        // LOW-4: 不再解析 throwable.toString()，直接返回固定消息
+        // 原实现会回显用户输入的字段名，存在信息泄露风险
+        return "请求体字段类型错误";
     }
 }
