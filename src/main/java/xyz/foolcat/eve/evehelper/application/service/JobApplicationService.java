@@ -3,9 +3,9 @@ package xyz.foolcat.eve.evehelper.application.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import xyz.foolcat.eve.evehelper.application.security.AccessGuard;
 import xyz.foolcat.eve.evehelper.domain.service.system.IndustryJobService;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
+import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
 import java.text.ParseException;
 
@@ -28,8 +28,6 @@ public class JobApplicationService {
 
     private final IndustryJobService industryJobService;
 
-    private final AccessGuard accessGuard;
-
     /**
      * 从 ESI 同步制造线数据。
      * <p>
@@ -41,11 +39,18 @@ public class JobApplicationService {
      * @param forceRefresh 是否强制刷新(忽略缓存)
      */
     public void syncJobs(String type, Integer id, String complete, boolean forceRefresh) {
-        accessGuard.requireOwnership(String.valueOf(id), "制造线同步");
         boolean includeCompleted = COMPLETE_FLAG.equals(complete);
         boolean isCorporation = CORP_TYPE.equals(type);
         try {
             industryJobService.batchInsertOrUpdateFromEsi(id, includeCompleted, isCorporation, forceRefresh);
+        } catch (EveHelperException e) {
+            // 统一归属失败错误码：USER_ACCOUNT_NOT_EXIST 对调用方泄露「该角色/军团是否存在于该用户」，
+            // 转 ACCESS_UNAUTHORIZED 消除枚举 oracle（与 AuthorizeUtil 对齐）。
+            if (ResultCode.USER_ACCOUNT_NOT_EXIST.getCode().equals(e.getResultCode().getCode())) {
+                log.warn("制造线同步归属失败：type={}, id={}", type, id);
+                throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);
+            }
+            throw e;
         } catch (ParseException e) {
             log.error("制造线同步失败: type={}, id={}", type, id, e);
             throw new EveHelperException("制造线同步失败", e);

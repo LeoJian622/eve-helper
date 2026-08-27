@@ -36,8 +36,13 @@ public class UserUtil {
             return id == null ? UNAUTHENTICATED : id;
         }
         // JWT 认证时主体为 userId claim（Number），匿名访问时为字符串
+        // 防御 Long → int 静默截断：超出 Integer 范围的值（含 2^32 + victimId 回绕攻击）一律拒绝
         if (principal instanceof Number number) {
-            return number.intValue();
+            long value = number.longValue();
+            if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
+                return UNAUTHENTICATED;
+            }
+            return (int) value;
         }
         return UNAUTHENTICATED;
     }

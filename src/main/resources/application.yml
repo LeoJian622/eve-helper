@@ -131,6 +131,9 @@ security:
 
 eve:
   helper:
+    # 系统内部调用所用用户ID（定时任务、机器人等无安全上下文场景）。
+    # 生产部署须通过 SYSTEM_USER_ID 环境变量指定非默认值（IDOR 审计 LOW-9）。
+    system-user-id: ${SYSTEM_USER_ID:1}
     whiteUrlList:
       #      - GET:/
       - POST:/user

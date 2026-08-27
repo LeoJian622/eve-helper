@@ -40,7 +40,17 @@ public class AuthorizeUtil {
             log.warn("游戏账户访问越权：未认证或主体无法识别 characterId={}", characterId);
             throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);
         }
-        return eveAccountService.getAccountOne(userId, characterId);
+        // 统一归属失败错误码：USER_ACCOUNT_NOT_EXIST 对调用方泄露「该角色是否存在于该用户」，
+        // 构成枚举 oracle；统一转 ACCESS_UNAUTHORIZED 消除区分度。
+        try {
+            return eveAccountService.getAccountOne(userId, characterId);
+        } catch (EveHelperException e) {
+            if (ResultCode.USER_ACCOUNT_NOT_EXIST.getCode().equals(e.getResultCode().getCode())) {
+                log.warn("游戏账户访问越权：账户不属于当前用户 userId={}, characterId={}", userId, characterId);
+                throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);
+            }
+            throw e;
+        }
     }
 
     /**
@@ -67,6 +77,15 @@ public class AuthorizeUtil {
             log.warn("内部通道被请求路径误用：currentUserId={}, 声明身份={}, characterId={}", currentUserId, userId, characterId);
             throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);
         }
-        return eveAccountService.getAccountOne(userId, characterId);
+        // 统一归属失败错误码（与 authorize 对齐），避免下游依赖特定异常码
+        try {
+            return eveAccountService.getAccountOne(userId, characterId);
+        } catch (EveHelperException e) {
+            if (ResultCode.USER_ACCOUNT_NOT_EXIST.getCode().equals(e.getResultCode().getCode())) {
+                log.warn("系统内部调用归属失败：userId={}, characterId={}", userId, characterId);
+                throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);
+            }
+            throw e;
+        }
     }
 }

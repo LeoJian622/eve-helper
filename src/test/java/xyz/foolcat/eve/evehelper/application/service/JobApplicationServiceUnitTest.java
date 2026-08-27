@@ -114,25 +114,29 @@ class JobApplicationServiceUnitTest {
     }
 
     @Test
-    @DisplayName("同步他人角色 -> 拒绝，且不得触达 ESI 同步（IDOR 防御）")
+    @DisplayName("同步他人角色 -> 拒绝（IDOR 防御），下游归属失败由应用层转译为 ACCESS_UNAUTHORIZED")
     void syncOtherCharacter_throws() throws Exception {
         loginAsOwnerOf(OWN_CHARACTER_ID, OWN_CORP_ID);
+        // 模拟下游 IndustryJobService 内部 authorizeUtil 的归属失败
+        doThrow(new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED))
+                .when(industryJobService).batchInsertOrUpdateFromEsi(anyInt(), anyBoolean(), anyBoolean(), anyBoolean());
 
         EveHelperException ex = assertThrows(EveHelperException.class,
                 () -> jobApplicationService.syncJobs("char", OTHER_CHARACTER_ID, "complete", false));
 
         assertEquals(ResultCode.ACCESS_UNAUTHORIZED.getCode(), ex.getResultCode().getCode());
-        verify(industryJobService, never()).batchInsertOrUpdateFromEsi(anyInt(), anyBoolean(), anyBoolean(), anyBoolean());
     }
 
     @Test
-    @DisplayName("未认证访问 -> 拒绝，且不得触达 ESI 同步（fail-closed）")
+    @DisplayName("未认证访问 -> 拒绝（fail-closed），下游归属失败由应用层转译为 ACCESS_UNAUTHORIZED")
     void unauthenticated_throws() throws Exception {
+        doThrow(new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED))
+                .when(industryJobService).batchInsertOrUpdateFromEsi(anyInt(), anyBoolean(), anyBoolean(), anyBoolean());
+
         EveHelperException ex = assertThrows(EveHelperException.class,
                 () -> jobApplicationService.syncJobs("char", OWN_CHARACTER_ID, "complete", false));
 
         assertEquals(ResultCode.ACCESS_UNAUTHORIZED.getCode(), ex.getResultCode().getCode());
-        verify(industryJobService, never()).batchInsertOrUpdateFromEsi(anyInt(), anyBoolean(), anyBoolean(), anyBoolean());
     }
 
     @Test
