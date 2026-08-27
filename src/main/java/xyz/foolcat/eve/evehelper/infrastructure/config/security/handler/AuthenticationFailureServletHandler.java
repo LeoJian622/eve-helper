@@ -19,10 +19,19 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 /**
- * 认证失败处理器
- * 处理登录失败,记录失败次数,实现账户锁定
+ * 认证失败处理器。
+ * 处理登录失败,记录失败次数,实现账户锁定。
  *
- * @author Leojan
+ * <p><b>安全约束(SC-001 / 008 MEDIUM-1)</b>:本处理器的对外响应(状态码、消息体、HTTP 头)
+ * <u>不得</u>因 {@link AuthenticationException} 的具体子类(BadCredentialsException、
+ * UsernameNotFoundException、LockedException、DisabledException 等)而分支。
+ * 所有凭证类失败必须输出完全一致的响应(401 + 「用户名或密码错误」),
+ * 防止攻击者通过响应差异枚举有效账号或探知锁定状态。
+ * 失败原因的区分仅存于服务端日志(log.warn 的 reason 字段),供运维与告警使用。
+ *
+ * <p>修改本类时,若需按异常类型输出不同响应,须先获得安全评审批准并更新 SC-001 验证。
+ *
+ * @author Leojian
  * date 2026-01-30
  */
 @Slf4j
