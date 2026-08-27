@@ -23,7 +23,9 @@
       "mcp__idea__get_run_configurations",
       "mcp__idea__execute_run_configuration",
       "Read(//c/Users/Leojian/AppData/Local/JetBrains/IntelliJIdea2026.2/tmp/**)",
-      "Bash(awk -F: '{s+=$2} END{print s}')"
+      "Bash(awk -F: '{s+=$2} END{print s}')",
+      "mcp__idea__build_project",
+      "mcp__idea__execute_terminal_command"
     ]
   }
 }
