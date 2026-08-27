@@ -29,6 +29,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -119,9 +120,9 @@ class WalletJournalControllerIT {
         } catch (java.text.ParseException e) {
             throw new IllegalStateException(e);
         }
-        when(esiGateway.queryCharacterWalletJournalMaxPage(CID, "tk")).thenReturn(2);
-        when(esiGateway.queryCharacterWalletJournal(eq(CID), eq(1), eq("tk"))).thenReturn(Flux.fromIterable(page1));
-        when(esiGateway.queryCharacterWalletJournal(eq(CID), eq(2), eq("tk"))).thenReturn(Flux.fromIterable(page2));
+        when(esiGateway.queryCharacterWalletJournalMaxPage(eq(CID), eq("tk"), anyBoolean())).thenReturn(2);
+        when(esiGateway.queryCharacterWalletJournal(eq(CID), eq(1), eq("tk"), anyBoolean())).thenReturn(Flux.fromIterable(page1));
+        when(esiGateway.queryCharacterWalletJournal(eq(CID), eq(2), eq("tk"), anyBoolean())).thenReturn(Flux.fromIterable(page2));
     }
 
     // ---------- T011 越权拒绝 ----------
@@ -234,8 +235,8 @@ class WalletJournalControllerIT {
         } catch (java.text.ParseException e) {
             throw new IllegalStateException(e);
         }
-        when(esiGateway.queryCharacterWalletJournalMaxPage(CID, "tk")).thenReturn(1);
-        when(esiGateway.queryCharacterWalletJournal(eq(CID), eq(1), eq("tk")))
+        when(esiGateway.queryCharacterWalletJournalMaxPage(eq(CID), eq("tk"), anyBoolean())).thenReturn(1);
+        when(esiGateway.queryCharacterWalletJournal(eq(CID), eq(1), eq("tk"), anyBoolean()))
                 .thenReturn(Flux.error(new RuntimeException("esi down")));
 
         mockMvc.perform(post("/wallet/journal/" + CID + "/sync").contentType(MediaType.APPLICATION_JSON))

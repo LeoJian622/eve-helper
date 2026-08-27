@@ -168,8 +168,8 @@ class CorporationPrivacyIT {
         acc.setCorpId((int) CORP_ID);
         when(eveAccountService.getAccountOne(OWNER_USER_ID, OWNER_CHARACTER)).thenReturn(acc);
         when(esiGateway.getAccessToken(OWNER_CHARACTER, OWNER_USER_ID)).thenReturn("tk");
-        when(esiGateway.queryCorporationWalletJournalMaxPage((int) CORP_ID, DIVISION, "tk")).thenReturn(1);
-        when(esiGateway.queryCorporationWalletJournal(eq((int) CORP_ID), eq(DIVISION), eq(1), eq("tk")))
+        when(esiGateway.queryCorporationWalletJournalMaxPage((int) CORP_ID, DIVISION, "tk", false)).thenReturn(1);
+        when(esiGateway.queryCorporationWalletJournal(eq((int) CORP_ID), eq(DIVISION), eq(1), eq("tk"), eq(false)))
                 .thenReturn(Flux.just(journal(JOURNAL_ID_OWN)));
 
         mockMvc.perform(post("/wallet/journal/corp/" + OWNER_CHARACTER + "/sync")

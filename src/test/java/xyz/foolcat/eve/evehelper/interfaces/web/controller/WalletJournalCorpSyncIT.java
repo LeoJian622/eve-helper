@@ -23,8 +23,7 @@ import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.security.ResourceOwnershipPolicy;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.RbacAuthorizationManager;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiAccessException;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -32,6 +31,7 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -144,10 +144,10 @@ class WalletJournalCorpSyncIT {
         loginAs(USER_ID, "ADMIN"); // ROOT 豁免归属校验,直达授权+ESI
         stubAccountAndToken();
         // maxPage:div1 有 1 页,div2..7 无数据(0 页)
-        when(esiGateway.queryCorporationWalletJournalMaxPage(eq(CORP_ID), anyInt(), eq("tk")))
+        when(esiGateway.queryCorporationWalletJournalMaxPage(eq(CORP_ID), anyInt(), eq("tk"), anyBoolean()))
                 .thenAnswer(inv -> ((Integer) inv.getArgument(1)).intValue() == DIVISION_1 ? 1 : 0);
         // query:div1 page1 返回一条,其余空页
-        when(esiGateway.queryCorporationWalletJournal(eq(CORP_ID), anyInt(), anyInt(), eq("tk")))
+        when(esiGateway.queryCorporationWalletJournal(eq(CORP_ID), anyInt(), anyInt(), eq("tk"), anyBoolean()))
                 .thenAnswer(inv -> {
                     int div = ((Integer) inv.getArgument(1)).intValue();
                     int page = ((Integer) inv.getArgument(2)).intValue();
@@ -160,9 +160,9 @@ class WalletJournalCorpSyncIT {
 
         // 核心 US1:ESI 调用使用解析 corpId 而非入参角色ID(7 个 division 全部用 corpId)
         verify(esiGateway, times(7))
-                .queryCorporationWalletJournalMaxPage(eq(CORP_ID), anyInt(), eq("tk"));
+                .queryCorporationWalletJournalMaxPage(eq(CORP_ID), anyInt(), eq("tk"), anyBoolean());
         verify(esiGateway, times(1))
-                .queryCorporationWalletJournal(eq(CORP_ID), eq(1), eq(1), eq("tk"));
+                .queryCorporationWalletJournal(eq(CORP_ID), eq(1), eq(1), eq("tk"), anyBoolean());
 
         // 落库 + 分页查询该军团 div1 返回数据(ownerId=corpId, division=1)
         mockMvc.perform(get("/wallet/journal/corp/" + CORP_ID)
@@ -189,8 +189,8 @@ class WalletJournalCorpSyncIT {
         // 注意:精确匹配本用例 FOREIGN_CHARACTER_ID,避免被共享 context 中后台系统任务
         // (authorizeInternal(1, 其它真实角色))用 anyInt() 匹配而污染。
         verify(eveAccountService, never()).getAccountOne(eq(USER_ID), eq(FOREIGN_CHARACTER_ID));
-        verify(esiGateway, never()).queryCorporationWalletJournalMaxPage(eq(FOREIGN_CHARACTER_ID), anyInt(), any());
-        verify(esiGateway, never()).queryCorporationWalletJournal(eq(FOREIGN_CHARACTER_ID), anyInt(), anyInt(), any());
+        verify(esiGateway, never()).queryCorporationWalletJournalMaxPage(eq(FOREIGN_CHARACTER_ID), anyInt(), any(), anyBoolean());
+        verify(esiGateway, never()).queryCorporationWalletJournal(eq(FOREIGN_CHARACTER_ID), anyInt(), anyInt(), any(), anyBoolean());
     }
 
     // ---------- US3:ESI 403 → 精确溢出为 HTTP 403 + 专属码(FR-005) ----------
@@ -200,9 +200,9 @@ class WalletJournalCorpSyncIT {
     void sync_esi403_forbidden_friendlyMessage() throws Exception {
         loginAs(USER_ID, "ADMIN");
         stubAccountAndToken();
-        // 模拟 ESI 防腐层已把 HTTP 403 转成 EsiException(ESI_AUTH_PERMISSION_LOW)
-        when(esiGateway.queryCorporationWalletJournalMaxPage(anyInt(), anyInt(), any()))
-                .thenThrow(new EsiException(ResultCode.ESI_AUTH_PERMISSION_LOW));
+        // 模拟 ESI 防腐层已把 HTTP 403 转成 EsiAccessException(权限不足)
+        when(esiGateway.queryCorporationWalletJournalMaxPage(anyInt(), anyInt(), any(), anyBoolean()))
+                .thenThrow(EsiAccessException.permissionLow());
 
         mockMvc.perform(post("/wallet/journal/corp/" + CHARACTER_ID + "/sync")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -219,9 +219,9 @@ class WalletJournalCorpSyncIT {
     void sync_esi5xx_distinctFrom403() throws Exception {
         loginAs(USER_ID, "ADMIN");
         stubAccountAndToken();
-        // 模拟 ESI 服务故障:5xx → EsiException(ESI_SERVER_FAILURE)
-        when(esiGateway.queryCorporationWalletJournalMaxPage(anyInt(), anyInt(), any()))
-                .thenThrow(new EsiException(ResultCode.ESI_SERVER_FAILURE));
+        // 模拟 ESI 服务故障:5xx → EsiAccessException(服务端错误)
+        when(esiGateway.queryCorporationWalletJournalMaxPage(anyInt(), anyInt(), any(), anyBoolean()))
+                .thenThrow(EsiAccessException.serverFailure());
 
         mockMvc.perform(post("/wallet/journal/corp/" + CHARACTER_ID + "/sync")
                         .contentType(MediaType.APPLICATION_JSON))

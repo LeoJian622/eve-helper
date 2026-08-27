@@ -76,9 +76,9 @@ class WalletTransactionCharacterSyncUserIdTest {
         WalletTransaction tx = new WalletTransaction();
         tx.setTransactionId(9999L);
         // 首页游标 null → 有 1 条;游标页 fromId=末条 transactionId → 空,翻页终止
-        when(esiGateway.queryCharacterWalletTransactions(eq(CHARACTER_ID), isNull(), eq("Bearer t")))
+        when(esiGateway.queryCharacterWalletTransactions(eq(CHARACTER_ID), isNull(), eq("Bearer t"), eq(false)))
                 .thenReturn(Flux.just(tx));
-        when(esiGateway.queryCharacterWalletTransactions(eq(CHARACTER_ID), eq(9999L), eq("Bearer t")))
+        when(esiGateway.queryCharacterWalletTransactions(eq(CHARACTER_ID), eq(9999L), eq("Bearer t"), eq(false)))
                 .thenReturn(Flux.empty());
 
         // ── Act ──

@@ -23,8 +23,7 @@ import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.security.ResourceOwnershipPolicy;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.RbacAuthorizationManager;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiAccessException;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -35,6 +34,7 @@ import java.util.Set;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -140,7 +140,7 @@ class WalletTransactionControllerCorpIT {
         } catch (java.text.ParseException e) {
             throw new IllegalStateException(e);
         }
-        when(esiGateway.queryCorporationWalletTransactions(eq(corpId), anyInt(), any(), eq("tk")))
+        when(esiGateway.queryCorporationWalletTransactions(eq(corpId), anyInt(), any(), eq("tk"), anyBoolean()))
                 .thenAnswer(inv -> {
                     Integer division = inv.getArgument(1);
                     Long fromId = inv.getArgument(2);
@@ -158,7 +158,7 @@ class WalletTransactionControllerCorpIT {
      * 不被 division 级失败隔离折叠成笼统 400)。
      */
     @SuppressWarnings("unchecked")
-    private void stubCorpSyncEsiError(Integer corpId, EsiException esiException) {
+    private void stubCorpSyncEsiError(Integer corpId, EsiAccessException esiAccessException) {
         EveAccount acc = new EveAccount();
         acc.setCharacterId(corpId);
         acc.setCorpId(corpId);
@@ -170,8 +170,8 @@ class WalletTransactionControllerCorpIT {
             throw new IllegalStateException(e);
         }
         // 任一分账首次翻页(from_id=null)即抛 ESI 异常
-        when(esiGateway.queryCorporationWalletTransactions(eq(corpId), anyInt(), isNull(), eq("tk")))
-                .thenThrow(esiException);
+        when(esiGateway.queryCorporationWalletTransactions(eq(corpId), anyInt(), isNull(), eq("tk"), anyBoolean()))
+                .thenThrow(esiAccessException);
     }
 
     private Integer countByDivision(Integer corpId, Integer division) {
@@ -310,7 +310,7 @@ class WalletTransactionControllerCorpIT {
     @DisplayName("ESI 军团交易查询返回 403 → 前端收 HTTP 403 + ESI00403 + 友好文案(非 ACCESS_UNAUTHORIZED 折叠)")
     void syncCorporation_esi403_forbidden_friendlyMessage() throws Exception {
         loginAs(CURRENT_USER_ID, "ADMIN");
-        stubCorpSyncEsiError(CORP_ID, new EsiException(ResultCode.ESI_AUTH_PERMISSION_LOW));
+        stubCorpSyncEsiError(CORP_ID, EsiAccessException.permissionLow());
 
         mockMvc.perform(post("/wallet/transaction/corp/" + CORP_ID + "/sync")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -324,7 +324,7 @@ class WalletTransactionControllerCorpIT {
     @DisplayName("ESI 军团交易查询 5xx → 返回异于 403 的错误(ESI00500),不与权限问题混淆")
     void syncCorporation_esi5xx_distinctFrom403() throws Exception {
         loginAs(CURRENT_USER_ID, "ADMIN");
-        stubCorpSyncEsiError(CORP_ID, new EsiException(ResultCode.ESI_SERVER_FAILURE));
+        stubCorpSyncEsiError(CORP_ID, EsiAccessException.serverFailure());
 
         mockMvc.perform(post("/wallet/transaction/corp/" + CORP_ID + "/sync")
                         .contentType(MediaType.APPLICATION_JSON))

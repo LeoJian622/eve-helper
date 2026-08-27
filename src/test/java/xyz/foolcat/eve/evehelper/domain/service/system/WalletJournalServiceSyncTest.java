@@ -17,14 +17,14 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.repository.system.WalletJournalRepository;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiAccessException;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -97,8 +97,8 @@ class WalletJournalServiceSyncTest {
         when(esiApiService.getAccessToken(characterId, userId)).thenReturn(token);
 
         for (int d = 1; d <= 7; d++) {
-            when(esiApiService.queryCorporationWalletJournalMaxPage(corpId, d, token)).thenReturn(1);
-            when(esiApiService.queryCorporationWalletJournal(corpId, d, 1, token))
+            when(esiApiService.queryCorporationWalletJournalMaxPage(eq(corpId), eq(d), eq(token), eq(false))).thenReturn(1);
+            when(esiApiService.queryCorporationWalletJournal(eq(corpId), eq(d), eq(1), eq(token), eq(false)))
                     .thenReturn(Flux.just(journal(d * 100L)));
         }
 
@@ -110,8 +110,8 @@ class WalletJournalServiceSyncTest {
         verify(esiApiService).getAccessToken(characterId, userId);
 
         // ── ESI 军团查询目标 = 角色行派生的 corpId,而非入参 characterId ──
-        verify(esiApiService, times(7)).queryCorporationWalletJournalMaxPage(eq(corpId), anyInt(), eq(token));
-        verify(esiApiService, times(7)).queryCorporationWalletJournal(eq(corpId), anyInt(), anyInt(), eq(token));
+        verify(esiApiService, times(7)).queryCorporationWalletJournalMaxPage(eq(corpId), anyInt(), eq(token), eq(false));
+        verify(esiApiService, times(7)).queryCorporationWalletJournal(eq(corpId), anyInt(), anyInt(), eq(token), eq(false));
 
         // ── ownerId 回填用解析 corpId ──
         ArgumentCaptor<List<WalletJournal>> captor = ArgumentCaptor.forClass(List.class);
@@ -130,11 +130,10 @@ class WalletJournalServiceSyncTest {
         when(authorizeUtil.authorize(characterId)).thenReturn(account(userId, null));
 
         assertThatThrownBy(() -> walletJournalService.syncCorporationJournal(characterId, false))
-                .isInstanceOf(EsiException.class)
-                .satisfies(e -> assertThat(((EsiException) e).getResultCode())
-                        .isEqualTo(ResultCode.ESI_AUTH_PERMISSION_LOW));
+                .isInstanceOf(EsiAccessException.class)
+                .hasMessage(EsiAccessException.MSG_PERMISSION_LOW);
 
-        verify(esiApiService, never()).queryCorporationWalletJournal(anyInt(), anyInt(), anyInt(), any());
+        verify(esiApiService, never()).queryCorporationWalletJournal(anyInt(), anyInt(), anyInt(), any(), anyBoolean());
     }
 
     @Test
@@ -148,8 +147,8 @@ class WalletJournalServiceSyncTest {
         when(esiApiService.getAccessToken(characterId, userId)).thenReturn(token);
 
         for (int d = 1; d <= 7; d++) {
-            when(esiApiService.queryCorporationWalletJournalMaxPage(corpId, d, token)).thenReturn(1);
-            when(esiApiService.queryCorporationWalletJournal(corpId, d, 1, token))
+            when(esiApiService.queryCorporationWalletJournalMaxPage(eq(corpId), eq(d), eq(token), eq(false))).thenReturn(1);
+            when(esiApiService.queryCorporationWalletJournal(eq(corpId), eq(d), eq(1), eq(token), eq(false)))
                     .thenReturn(Flux.just(journal(d * 100L)));
         }
 

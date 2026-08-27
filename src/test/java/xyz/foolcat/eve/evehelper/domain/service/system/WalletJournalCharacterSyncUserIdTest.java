@@ -21,6 +21,7 @@ import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -70,10 +71,10 @@ class WalletJournalCharacterSyncUserIdTest {
         when(authorizeUtil.authorize(CHARACTER_ID)).thenReturn(account);
         when(esiApiService.getAccessToken(CHARACTER_ID, systemUserId)).thenReturn("Bearer t");
 
-        when(esiApiService.queryCharacterWalletJournalMaxPage(CHARACTER_ID, "Bearer t")).thenReturn(1);
+        when(esiApiService.queryCharacterWalletJournalMaxPage(eq(CHARACTER_ID), eq("Bearer t"), eq(false))).thenReturn(1);
         WalletJournal j1 = new WalletJournal();
         j1.setId(111L);
-        when(esiApiService.queryCharacterWalletJournal(CHARACTER_ID, 1, "Bearer t")).thenReturn(Flux.just(j1));
+        when(esiApiService.queryCharacterWalletJournal(eq(CHARACTER_ID), eq(1), eq("Bearer t"), eq(false))).thenReturn(Flux.just(j1));
 
         // ── Act ──
         walletJournalService.syncCharacterJournal(CHARACTER_ID, false);

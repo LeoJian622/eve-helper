@@ -17,14 +17,14 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.repository.system.WalletTransactionRepository;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
-import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.domain.port.esi.EsiAccessException;
 
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.when;
  *
  * <p>同构于 {@link WalletJournalServiceSyncTest}:入参恒为<b>角色ID(characterId)</b>,内部从
  * eve_account 角色行解析 {@code corpId = eveAccount.getCorpId()},ESI 军团交易查询、ownerId
- * 回填一律用解析 corpId,绝不复用入参;corpId 为 null → {@link EsiException}(ESI00403, 403)。</p>
+ * 回填一律用解析 corpId,绝不复用入参;corpId 为 null → {@link EsiAccessException}(权限不足, 403)。</p>
  *
  * <p>请求路径:SecurityContextHolder 设 Number principal → {@code UserUtil.getUserId()>0} →
  * {@code authorize(characterId)}。样式仿 {@link WalletJournalServiceSyncTest}。</p>
@@ -96,9 +96,9 @@ class WalletTransactionServiceSyncTest {
 
         for (int d = 1; d <= 7; d++) {
             // 首页游标 isNull() → 有 1 条;游标页 fromId=末条 transactionId → 空,翻页终止
-            when(esiGateway.queryCorporationWalletTransactions(eq(corpId), eq(d), isNull(), eq(token)))
+            when(esiGateway.queryCorporationWalletTransactions(eq(corpId), eq(d), isNull(), eq(token), eq(false)))
                     .thenReturn(Flux.just(tx(d * 100L)));
-            when(esiGateway.queryCorporationWalletTransactions(eq(corpId), eq(d), eq(d * 100L), eq(token)))
+            when(esiGateway.queryCorporationWalletTransactions(eq(corpId), eq(d), eq(d * 100L), eq(token), eq(false)))
                     .thenReturn(Flux.empty());
         }
 
@@ -112,7 +112,7 @@ class WalletTransactionServiceSyncTest {
         verify(esiGateway).getAccessToken(characterId, userId);
 
         // ── ESI 军团交易查询首页目标 = 角色行派生的 corpId,而非入参 characterId ──
-        verify(esiGateway, times(7)).queryCorporationWalletTransactions(eq(corpId), anyInt(), isNull(), eq(token));
+        verify(esiGateway, times(7)).queryCorporationWalletTransactions(eq(corpId), anyInt(), isNull(), eq(token), eq(false));
 
         // ── owner 回填用解析 corpId(ownerType=corporation) ──
         ArgumentCaptor<List<WalletTransaction>> captor = ArgumentCaptor.forClass(List.class);
@@ -132,11 +132,10 @@ class WalletTransactionServiceSyncTest {
         when(authorizeUtil.authorize(characterId)).thenReturn(account(userId, null));
 
         assertThatThrownBy(() -> walletTransactionService.syncCorporationTransactions(characterId, false))
-                .isInstanceOf(EsiException.class)
-                .satisfies(e -> assertThat(((EsiException) e).getResultCode())
-                        .isEqualTo(ResultCode.ESI_AUTH_PERMISSION_LOW));
+                .isInstanceOf(EsiAccessException.class)
+                .hasMessage(EsiAccessException.MSG_PERMISSION_LOW);
 
-        verify(esiGateway, never()).queryCorporationWalletTransactions(anyInt(), anyInt(), any(), any());
+        verify(esiGateway, never()).queryCorporationWalletTransactions(anyInt(), anyInt(), any(), any(), anyBoolean());
     }
 
     @Test
@@ -150,9 +149,9 @@ class WalletTransactionServiceSyncTest {
         when(esiGateway.getAccessToken(characterId, userId)).thenReturn(token);
 
         for (int d = 1; d <= 7; d++) {
-            when(esiGateway.queryCorporationWalletTransactions(eq(corpId), eq(d), isNull(), eq(token)))
+            when(esiGateway.queryCorporationWalletTransactions(eq(corpId), eq(d), isNull(), eq(token), eq(false)))
                     .thenReturn(Flux.just(tx(d * 100L)));
-            when(esiGateway.queryCorporationWalletTransactions(eq(corpId), eq(d), eq(d * 100L), eq(token)))
+            when(esiGateway.queryCorporationWalletTransactions(eq(corpId), eq(d), eq(d * 100L), eq(token), eq(false)))
                     .thenReturn(Flux.empty());
         }
 

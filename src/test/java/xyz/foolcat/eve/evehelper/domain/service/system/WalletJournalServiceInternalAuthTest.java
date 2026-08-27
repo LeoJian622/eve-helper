@@ -20,6 +20,7 @@ import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -81,8 +82,8 @@ class WalletJournalServiceInternalAuthTest {
                         .isEqualTo(ResultCode.USER_ACCOUNT_NOT_EXIST));
 
         // 归属校验失败 → 不触发任何 ESI 军团读取(拒绝而非静默以他人身份执行)
-        verify(esiApiService, never()).queryCorporationWalletJournal(anyInt(), anyInt(), anyInt(), any());
-        verify(esiApiService, never()).queryCorporationWalletJournalMaxPage(anyInt(), anyInt(), any());
+        verify(esiApiService, never()).queryCorporationWalletJournal(anyInt(), anyInt(), anyInt(), any(), anyBoolean());
+        verify(esiApiService, never()).queryCorporationWalletJournalMaxPage(anyInt(), anyInt(), any(), anyBoolean());
     }
 
     @Test
@@ -95,14 +96,14 @@ class WalletJournalServiceInternalAuthTest {
                 .thenReturn(account(GlobalConstants.SYSTEM_USER_ID, validCorpId));
         when(esiApiService.getAccessToken(characterId, GlobalConstants.SYSTEM_USER_ID)).thenReturn(token);
         // division 1:maxPage=1 + 空页(无流水)。
-        when(esiApiService.queryCorporationWalletJournalMaxPage(validCorpId, 1, token)).thenReturn(1);
-        when(esiApiService.queryCorporationWalletJournal(validCorpId, 1, 1, token)).thenReturn(Flux.empty());
+        when(esiApiService.queryCorporationWalletJournalMaxPage(eq(validCorpId), eq(1), eq(token), eq(false))).thenReturn(1);
+        when(esiApiService.queryCorporationWalletJournal(eq(validCorpId), eq(1), eq(1), eq(token), eq(false))).thenReturn(Flux.empty());
         // division 2..7:maxPage 未 mock → null → 0 页空,均成功,无失败隔离。
 
         walletJournalService.syncCorporationJournal(characterId, false);
 
         // 内部路径也以角色行派生 corpId 驱动 ESI(owner 定位不旁路);7 个 division 均用解析 corpId
         verify(esiApiService, org.mockito.Mockito.times(7))
-                .queryCorporationWalletJournalMaxPage(eq(validCorpId), anyInt(), any());
+                .queryCorporationWalletJournalMaxPage(eq(validCorpId), anyInt(), eq(token), eq(false));
     }
 }

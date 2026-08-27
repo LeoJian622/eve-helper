@@ -76,7 +76,7 @@ class WalletTransactionServiceTest {
      * 模拟有限分页:fromId 为 null 时给一页,否则给空页(模拟一次翻页后终止)。
      */
     private void stubFiniteCharacterPages(Integer characterId, List<Long> pageIds, String token) {
-        when(esiApiService.queryCharacterWalletTransactions(eq(characterId), any(), eq(token)))
+        when(esiApiService.queryCharacterWalletTransactions(eq(characterId), any(), eq(token), eq(false)))
                 .thenAnswer(inv -> {
                     Long fromId = inv.getArgument(1);
                     return fromId == null ? Flux.fromIterable(pageIds.stream().map(WalletTransactionServiceTest::tx).toList()) : Flux.empty();
@@ -98,11 +98,11 @@ class WalletTransactionServiceTest {
             when(esiApiService.getAccessToken(characterId, 100)).thenReturn(token);
 
             // 第一页(最新两条),第二页(更旧两条),第三页空
-            when(esiApiService.queryCharacterWalletTransactions(eq(characterId), isNull(), eq(token)))
+            when(esiApiService.queryCharacterWalletTransactions(eq(characterId), isNull(), eq(token), eq(false)))
                     .thenReturn(Flux.just(tx(100L), tx(50L)));
-            when(esiApiService.queryCharacterWalletTransactions(eq(characterId), eq(50L), eq(token)))
+            when(esiApiService.queryCharacterWalletTransactions(eq(characterId), eq(50L), eq(token), eq(false)))
                     .thenReturn(Flux.just(tx(25L), tx(10L)));
-            when(esiApiService.queryCharacterWalletTransactions(eq(characterId), eq(10L), eq(token)))
+            when(esiApiService.queryCharacterWalletTransactions(eq(characterId), eq(10L), eq(token), eq(false)))
                     .thenReturn(Flux.empty());
 
             walletTransactionService.syncCharacterTransactions(characterId, false);
@@ -129,7 +129,7 @@ class WalletTransactionServiceTest {
             String token = "Bearer t";
             when(authorizeUtil.authorizeInternal(anyInt(), eq(characterId))).thenReturn(account(100, 5001));
             when(esiApiService.getAccessToken(characterId, 100)).thenReturn(token);
-            when(esiApiService.queryCharacterWalletTransactions(eq(characterId), isNull(), eq(token)))
+            when(esiApiService.queryCharacterWalletTransactions(eq(characterId), isNull(), eq(token), eq(false)))
                     .thenReturn(Flux.empty());
 
             walletTransactionService.syncCharacterTransactions(characterId, false);
@@ -145,7 +145,7 @@ class WalletTransactionServiceTest {
             when(authorizeUtil.authorizeInternal(anyInt(), eq(characterId))).thenReturn(account(100, 5001));
             when(esiApiService.getAccessToken(characterId, 100)).thenReturn(token);
             // 每页恒返回同一条(游标不前进,永不空页) → 应被 MAX_CURSOR_PAGES 截断
-            when(esiApiService.queryCharacterWalletTransactions(eq(characterId), any(), eq(token)))
+            when(esiApiService.queryCharacterWalletTransactions(eq(characterId), any(), eq(token), eq(false)))
                     .thenReturn(Flux.just(tx(1L)));
 
             walletTransactionService.syncCharacterTransactions(characterId, false);
@@ -172,7 +172,7 @@ class WalletTransactionServiceTest {
             // 每 division 首页给一条,翻页空页终止
             for (int d = 1; d <= 7; d++) {
                 final int div = d;
-                when(esiApiService.queryCorporationWalletTransactions(eq(corpId), eq(div), any(), eq(token)))
+                when(esiApiService.queryCorporationWalletTransactions(eq(corpId), eq(div), any(), eq(token), eq(false)))
                         .thenAnswer(inv -> inv.getArgument(2) == null ? Flux.just(tx(div * 100L)) : Flux.empty());
             }
 
@@ -201,10 +201,10 @@ class WalletTransactionServiceTest {
                 final int div = d;
                 if (div == 2) {
                     // division 2 抛 ESI 运行异常
-                    when(esiApiService.queryCorporationWalletTransactions(eq(corpId), eq(div), any(), eq(token)))
+                    when(esiApiService.queryCorporationWalletTransactions(eq(corpId), eq(div), any(), eq(token), eq(false)))
                             .thenThrow(new RuntimeException("esi boom"));
                 } else {
-                    when(esiApiService.queryCorporationWalletTransactions(eq(corpId), eq(div), any(), eq(token)))
+                    when(esiApiService.queryCorporationWalletTransactions(eq(corpId), eq(div), any(), eq(token), eq(false)))
                             .thenAnswer(inv -> inv.getArgument(2) == null ? Flux.just(tx(div * 100L)) : Flux.empty());
                 }
             }

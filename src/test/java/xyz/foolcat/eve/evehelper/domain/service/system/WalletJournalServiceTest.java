@@ -84,8 +84,8 @@ class WalletJournalServiceTest {
             when(esiApiService.getAccessToken(corpId, 100)).thenReturn(token);
 
             for (int d = 1; d <= 7; d++) {
-                when(esiApiService.queryCorporationWalletJournalMaxPage(corpId, d, token)).thenReturn(1);
-                when(esiApiService.queryCorporationWalletJournal(corpId, d, 1, token))
+                when(esiApiService.queryCorporationWalletJournalMaxPage(eq(corpId), eq(d), eq(token), eq(false))).thenReturn(1);
+                when(esiApiService.queryCorporationWalletJournal(eq(corpId), eq(d), eq(1), eq(token), eq(false)))
                         .thenReturn(Flux.just(journal((long) (d * 100))));
             }
 
@@ -112,11 +112,11 @@ class WalletJournalServiceTest {
 
             for (int d = 1; d <= 7; d++) {
                 if (d == 3) {
-                    when(esiApiService.queryCorporationWalletJournalMaxPage(corpId, d, token))
+                    when(esiApiService.queryCorporationWalletJournalMaxPage(eq(corpId), eq(d), eq(token), eq(false)))
                             .thenThrow(new RuntimeException("esi boom"));
                 } else {
-                    when(esiApiService.queryCorporationWalletJournalMaxPage(corpId, d, token)).thenReturn(1);
-                    when(esiApiService.queryCorporationWalletJournal(corpId, d, 1, token))
+                    when(esiApiService.queryCorporationWalletJournalMaxPage(eq(corpId), eq(d), eq(token), eq(false))).thenReturn(1);
+                    when(esiApiService.queryCorporationWalletJournal(eq(corpId), eq(d), eq(1), eq(token), eq(false)))
                             .thenReturn(Flux.just(journal((long) (d * 100))));
                 }
             }
@@ -142,8 +142,8 @@ class WalletJournalServiceTest {
             String token = "Bearer char-token";
             when(authorizeUtil.authorizeInternal(anyInt(), eq(characterId))).thenReturn(account(100, 5001));
             when(esiApiService.getAccessToken(characterId, 100)).thenReturn(token);
-            when(esiApiService.queryCharacterWalletJournalMaxPage(characterId, token)).thenReturn(1);
-            when(esiApiService.queryCharacterWalletJournal(characterId, 1, token))
+            when(esiApiService.queryCharacterWalletJournalMaxPage(eq(characterId), eq(token), eq(false))).thenReturn(1);
+            when(esiApiService.queryCharacterWalletJournal(eq(characterId), eq(1), eq(token), eq(false)))
                     .thenReturn(Flux.just(journal(1001L), journal(1002L)));
 
             walletJournalService.syncCharacterJournal(characterId, false);

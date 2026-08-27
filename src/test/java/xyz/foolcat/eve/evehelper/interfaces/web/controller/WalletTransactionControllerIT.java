@@ -29,6 +29,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -120,7 +121,7 @@ class WalletTransactionControllerIT {
             throw new IllegalStateException(e);
         }
         // from_id 游标:首页(null)给一页,翻页(非 null)给空页终止
-        when(esiGateway.queryCharacterWalletTransactions(eq(CID), any(), eq("tk")))
+        when(esiGateway.queryCharacterWalletTransactions(eq(CID), any(), eq("tk"), anyBoolean()))
                 .thenAnswer(inv -> inv.getArgument(1) == null ? Flux.fromIterable(page) : Flux.empty());
     }
 
@@ -236,7 +237,7 @@ class WalletTransactionControllerIT {
         } catch (java.text.ParseException e) {
             throw new IllegalStateException(e);
         }
-        when(esiGateway.queryCharacterWalletTransactions(eq(CID), any(), eq("tk")))
+        when(esiGateway.queryCharacterWalletTransactions(eq(CID), any(), eq("tk"), anyBoolean()))
                 .thenReturn(Flux.error(new RuntimeException("esi down")));
 
         mockMvc.perform(post("/wallet/transaction/" + CID + "/sync").contentType(MediaType.APPLICATION_JSON))
