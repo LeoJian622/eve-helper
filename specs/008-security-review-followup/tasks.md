@@ -180,7 +180,7 @@
   - 调用 `ecc:security-reviewer` 对全部变更评审;归档 `docs/reviews/2026-08-XX-008-security-reviewer.md`
   - **AC**: 零 CRITICAL/HIGH;残余项登记
 
-- [ ] T022 最终 `mvn test` 全绿 + 提交
+- [x] T022 最终 `mvn test` 全绿 + 提交
   - `mvn test` 全绿(Failures 段逐名 diff 零新增);敏感核验 `git status --porcelain | grep -Ei 'application-.*\.yml|\.jks|\.env|\.p12'` clean;按 Conventional Commits 提交,关联 feature 008
   - **AC**: 测试全绿;敏感文件零入库;提交规范
 

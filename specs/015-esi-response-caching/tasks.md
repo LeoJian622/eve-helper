@@ -22,11 +22,11 @@ description: "Task list for ESI 响应缓存特性 (015)"
 
 **Purpose**: 构建缓存设施核心，US1/2/3 的依赖基础。
 
-- [ ] T001 `[US1]` TDD `EsiCacheTtlExtractor` — 新建 `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/cache/EsiCacheTtlExtractor.java`，解析响应头 TTL：`Cache-Control: max-age`（容忍空白/引号，≤0→null）优先，退回 `Expires`（RFC1123，已过期/不可解析→null），皆无→null。
-- [ ] T002 `[P] [US1]` TDD `EsiResponseCacheProperties` — 新建 `.../cache/EsiResponseCacheProperties.java`，`@ConfigurationProperties(prefix="eve.esi.cache")`：`forceRefreshWindowMinutes=60`、`forceRefreshLimit=5`、`datasource="serenity"`。
-- [ ] T003 `[P] [US2]` TDD `EsiResponseCache`（键构造+命中读）— 新建 `.../cache/EsiResponseCache.java`：键 `esi:resp:{datasource}:{userId|pub}:{normalized-uri}:{page}`；`getList(key, JavaType)` / `getInt(key)`；列表按参数化 JavaType 反序列化（防 LinkedHashMap）；fail-open（异常→null 不阻断）。
-- [ ] T004 `[P] [US4]` TDD `ForceRefreshLimiter` — 新建 `.../cache/ForceRefreshLimiter.java`：固定时间窗计数哨兵，`tryAcquire(key, window, limit)`（窗口 setIfAbsent 起 1，increment 超限拒；键过期天然归零）。
-- [ ] T005 `[US1]` `EsiResponseCache` 原子占位防穿透 — `touch(key)` 用 `CacheGateway.setIfAbsent` 原子占位，未命中并发合并（补 T003 缺失的防穿透逻辑 + 并发测试）。
+- [x] T001 `[US1]` TDD `EsiCacheTtlExtractor` — 新建 `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/external/esi/cache/EsiCacheTtlExtractor.java`，解析响应头 TTL：`Cache-Control: max-age`（容忍空白/引号，≤0→null）优先，退回 `Expires`（RFC1123，已过期/不可解析→null），皆无→null。
+- [x] T002 `[P] [US1]` TDD `EsiResponseCacheProperties` — 新建 `.../cache/EsiResponseCacheProperties.java`，`@ConfigurationProperties(prefix="eve.esi.cache")`：`forceRefreshWindowMinutes=60`、`forceRefreshLimit=5`、`datasource="serenity"`。
+- [x] T003 `[P] [US2]` TDD `EsiResponseCache`（键构造+命中读）— 新建 `.../cache/EsiResponseCache.java`：键 `esi:resp:{datasource}:{userId|pub}:{normalized-uri}:{page}`；`getList(key, JavaType)` / `getInt(key)`；列表按参数化 JavaType 反序列化（防 LinkedHashMap）；fail-open（异常→null 不阻断）。
+- [x] T004 `[P] [US4]` TDD `ForceRefreshLimiter` — 新建 `.../cache/ForceRefreshLimiter.java`：固定时间窗计数哨兵，`tryAcquire(key, window, limit)`（窗口 setIfAbsent 起 1，increment 超限拒；键过期天然归零）。
+- [x] T005 `[US1]` `EsiResponseCache` 原子占位防穿透 — `touch(key)` 用 `CacheGateway.setIfAbsent` 原子占位，未命中并发合并（补 T003 缺失的防穿透逻辑 + 并发测试）。
 
 **Checkpoint**: 4 组件可用，各自单测全绿。此后 US1–US5 包裹可开始。
 

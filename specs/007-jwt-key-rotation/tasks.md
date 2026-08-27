@@ -340,9 +340,9 @@ description: "Task list for 007-jwt-key-rotation"
 
 ### 登记但不在本 feature 修(超出 007 边界,须另开 spec)
 
-- [ ] T043 [MEDIUM-5(security)]登录端点**用户名枚举**:`SecurityConfig:75` 的 `setHideUserNotFoundExceptions(false)` + `AuthenticationFailureServletHandler:66` 使「用户账号不存在」与「用户名或密码错误,剩余尝试次数: N」可区分 → 可枚举有效账号并探知锁定状态。**既存缺陷,非 007 引入**,与 007「统一 AUT00210 防原因区分」是同类问题的相反做法。**→ 已移交 `008-security-review-followup`(2026-08-12 收口),不在本 feature 实现**
-- [ ] T044 [MEDIUM-6(security)]`MODE_INHERITABLETHREADLOCAL` + 线程池 → **认证上下文跨用户泄漏**:请求线程提交任务时 `Authentication` 被继承给池化线程,而池化线程无人 `clearContext()`。**既存缺陷**。**→ 已移交 `008-security-review-followup`(2026-08-12 收口),不在本 feature 实现**
-- [ ] T045 LOW 项汇总(两份评审共 12 条,择机 polish):`writeTokenInfo` 通配 ACAO + `no-cache` 应改 `no-store`(LOW-1s);refresh DTO 缺 `@Size` + `maskToken` 可 CRLF 注入日志(LOW-2s);孤立 `public.key`(LOW-3s);`redis-cli -a` 改 `REDISCLI_AUTH`(LOW-4s);`KeyStoreKeyFactory` 死代码重载/全限定名/自重抛/硬编码位数文案(LOW-1~4j);`ResponseUtils` 两方法编码不一致(LOW-5j);登录失败回显原始 message(LOW-7j)。**→ 已移交 `008-security-review-followup`(2026-08-12 收口),不在本 feature 实现**(LOW-6j 已在 T040 修复;LOW-8j 升级为 HIGH-2,实际生产 profile 由用户管理,属部署侧)
+- [x] T043 [MEDIUM-5(security)]登录端点**用户名枚举**:`SecurityConfig:75` 的 `setHideUserNotFoundExceptions(false)` + `AuthenticationFailureServletHandler:66` 使「用户账号不存在」与「用户名或密码错误,剩余尝试次数: N」可区分 → 可枚举有效账号并探知锁定状态。**既存缺陷,非 007 引入**,与 007「统一 AUT00210 防原因区分」是同类问题的相反做法。**→ 已移交 `008-security-review-followup`(2026-08-12 收口),不在本 feature 实现**
+- [x] T044 [MEDIUM-6(security)]`MODE_INHERITABLETHREADLOCAL` + 线程池 → **认证上下文跨用户泄漏**:请求线程提交任务时 `Authentication` 被继承给池化线程,而池化线程无人 `clearContext()`。**既存缺陷**。**→ 已移交 `008-security-review-followup`(2026-08-12 收口),不在本 feature 实现**
+- [x] T045 LOW 项汇总(两份评审共 12 条,择机 polish):`writeTokenInfo` 通配 ACAO + `no-cache` 应改 `no-store`(LOW-1s);refresh DTO 缺 `@Size` + `maskToken` 可 CRLF 注入日志(LOW-2s);孤立 `public.key`(LOW-3s);`redis-cli -a` 改 `REDISCLI_AUTH`(LOW-4s);`KeyStoreKeyFactory` 死代码重载/全限定名/自重抛/硬编码位数文案(LOW-1~4j);`ResponseUtils` 两方法编码不一致(LOW-5j);登录失败回显原始 message(LOW-7j)。**→ 已移交 `008-security-review-followup`(2026-08-12 收口),不在本 feature 实现**(LOW-6j 已在 T040 修复;LOW-8j 升级为 HIGH-2,实际生产 profile 由用户管理,属部署侧)
 - [x] T046 [T037 遗留]**L1 告警缺口**:`refresh:fail:{userId}` 计数只写不读、无 `ALERT_MARKER` → 针对单一账号的定向刷失败**无法触发任何告警**,L1 当前是纯哑计数器
   - **未在 T037 修的理由**:L1 定位是「观测,非防护」(plan §3.3:随机 UUID 洪泛在 userId 解析前就被挡,L1 看不到主攻击向量);加告警需先定义「多少次/多长窗口算定向攻击」的阈值,以及为何该阈值不会被正常用户的 token 过期误触发 —— 这是**新需求**,不是 T037 的名实一致修正
   - 若不修,应在 `spec.md` 显式记录「L1 仅为事后取证提供 Redis 计数,不产生实时告警」,避免下一个读者再次误以为有告警能力

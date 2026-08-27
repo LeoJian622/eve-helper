@@ -31,10 +31,10 @@ description: "Task list for 010 wallet-transactions implementation"
 
 **Purpose**: 新增 `wallet_transaction` 全链路(实体/建表/PO/仓储)。**A 未完成,US1/US2 不得开始。**
 
-- [ ] T001 [P] 新增领域实体 `.../domain/model/entity/system/WalletTransaction.java`(ownerType, ownerId(Long), division, transactionId(Long), date(OffsetDateTime), typeId(Integer), quantity(Integer), unitPrice(Double), clientId(Integer), locationId(Long), isBuy(Boolean), isPersonal(Boolean), journalRefId(Long))
-- [ ] T002 [P] 建表迁移:新增 `src/SQL/convert/010_wallet_transaction_create.sql`——`CREATE TABLE IF NOT EXISTS wallet_transaction`(自增主键 id BIGINT、`UNIQUE KEY uk_owner_div_tx (owner_type, owner_id, division, transaction_id)`、索引 `idx_date (date)`、索引 `idx_owner (owner_type, owner_id, division)`)
-- [ ] T003 [P] 新增持久化 PO `.../infrastructure/persistence/entity/system/WalletTransactionPO.java` + 转换器 `.../infrastructure/assembler/persistence/WalletTransactionPoConverter.java`(PO↔domain,MapStruct)
-- [ ] T004 [P] 新增仓储接口 `.../domain/repository/system/WalletTransactionRepository.java`＋实现 `.../infrastructure/persistence/repository/system/WalletTransactionRepositoryImpl.java`＋Mapper `.../infrastructure/persistence/mapper/system/WalletTransactionMapper.java`＋XML `src/main/resources/mappers/system/WalletTransactionMapper.xml`:`void saveOrUpdateBatch(List<WalletTransaction>)`(逐条 `insertOrUpdateSelective` 复合键 upsert)＋`IPage<WalletTransaction> selectPageByOwner(IPage, ownerType, ownerId, division)`(保留字 `` `date`` `/`` 反引号,`` ORDER BY `` `date` `` DESC``)
+- [x] T001 [P] 新增领域实体 `.../domain/model/entity/system/WalletTransaction.java`(ownerType, ownerId(Long), division, transactionId(Long), date(OffsetDateTime), typeId(Integer), quantity(Integer), unitPrice(Double), clientId(Integer), locationId(Long), isBuy(Boolean), isPersonal(Boolean), journalRefId(Long))
+- [x] T002 [P] 建表迁移:新增 `src/SQL/convert/010_wallet_transaction_create.sql`——`CREATE TABLE IF NOT EXISTS wallet_transaction`(自增主键 id BIGINT、`UNIQUE KEY uk_owner_div_tx (owner_type, owner_id, division, transaction_id)`、索引 `idx_date (date)`、索引 `idx_owner (owner_type, owner_id, division)`)
+- [x] T003 [P] 新增持久化 PO `.../infrastructure/persistence/entity/system/WalletTransactionPO.java` + 转换器 `.../infrastructure/assembler/persistence/WalletTransactionPoConverter.java`(PO↔domain,MapStruct)
+- [x] T004 [P] 新增仓储接口 `.../domain/repository/system/WalletTransactionRepository.java`＋实现 `.../infrastructure/persistence/repository/system/WalletTransactionRepositoryImpl.java`＋Mapper `.../infrastructure/persistence/mapper/system/WalletTransactionMapper.java`＋XML `src/main/resources/mappers/system/WalletTransactionMapper.xml`:`void saveOrUpdateBatch(List<WalletTransaction>)`(逐条 `insertOrUpdateSelective` 复合键 upsert)＋`IPage<WalletTransaction> selectPageByOwner(IPage, ownerType, ownerId, division)`(保留字 `` `date`` `/`` 反引号,`` ORDER BY `` `date` `` DESC``)
 
 **Checkpoint**: 底座提交后,进入 ESI 端口。
 
@@ -44,9 +44,9 @@ description: "Task list for 010 wallet-transactions implementation"
 
 **Purpose**: 暴露人物/军团 transactions 的 from_id 游标端口,使同步服务可拉取 ESI 数据。
 
-- [ ] T005 [P] `.../domain/port/esi/EsiGateway.java` 新增两端口:`Flux<WalletTransaction> queryCharacterWalletTransactions(Integer characterId, Long fromId, String accessToken)` 与 `Flux<WalletTransaction> queryCorporationWalletTransactions(Integer corporationId, Integer division, Long fromId, String accessToken)`
-- [ ] T006 [P] `.../infrastructure/external/esi/EsiApiService.java` 实现两适配器(调 `walletApi.queryCharacterWalletTransactions(characterId, EsiClientConfig.SERENITY, fromId, accessToken)` / `walletApi.queryCorporationWalletTransactions(corpId, division, EsiClientConfig.SERENITY, fromId, accessToken)`,并 `.map(resp -> esiWalletTransactionConverter.toDomain(resp))`)
-- [ ] T007 新增 ESI→domain 转换器 `.../infrastructure/assembler/esi/EsiWalletTransactionConverter.java`(`WalletTransactionsResponse`→`WalletTransaction`,归属字段 ownerType/ownerId/division **ignore**,service 层回填)
+- [x] T005 [P] `.../domain/port/esi/EsiGateway.java` 新增两端口:`Flux<WalletTransaction> queryCharacterWalletTransactions(Integer characterId, Long fromId, String accessToken)` 与 `Flux<WalletTransaction> queryCorporationWalletTransactions(Integer corporationId, Integer division, Long fromId, String accessToken)`
+- [x] T006 [P] `.../infrastructure/external/esi/EsiApiService.java` 实现两适配器(调 `walletApi.queryCharacterWalletTransactions(characterId, EsiClientConfig.SERENITY, fromId, accessToken)` / `walletApi.queryCorporationWalletTransactions(corpId, division, EsiClientConfig.SERENITY, fromId, accessToken)`,并 `.map(resp -> esiWalletTransactionConverter.toDomain(resp))`)
+- [x] T007 新增 ESI→domain 转换器 `.../infrastructure/assembler/esi/EsiWalletTransactionConverter.java`(`WalletTransactionsResponse`→`WalletTransaction`,归属字段 ownerType/ownerId/division **ignore**,service 层回填)
 
 **Checkpoint**: ESI 端口可用后,进入同步/查询服务。
 
@@ -60,17 +60,17 @@ description: "Task list for 010 wallet-transactions implementation"
 
 ### Tests for User Story 1 (先 RED)
 
-- [ ] T008 [P] [US1] 集成测试 `WalletTransactionControllerIT`(interfaces/web):未登录越权拒绝(401/403)
-- [ ] T009 [P] [US1] 集成测试:同步后分页查询返回 `WalletTransactionVO` 列表(倒序、含 date/typeId/quantity/unitPrice/isBuy)
-- [ ] T010 [P] [US1] 集成测试:重复同步不产生重复行(幂等);同步 ESI 失败返回错误不写脏数据
+- [x] T008 [P] [US1] 集成测试 `WalletTransactionControllerIT`(interfaces/web):未登录越权拒绝(401/403)
+- [x] T009 [P] [US1] 集成测试:同步后分页查询返回 `WalletTransactionVO` 列表(倒序、含 date/typeId/quantity/unitPrice/isBuy)
+- [x] T010 [P] [US1] 集成测试:重复同步不产生重复行(幂等);同步 ESI 失败返回错误不写脏数据
 
 ### Implementation for User Story 1
 
-- [ ] T011 [P] [US1] 新增显示 VO `.../application/dto/response/WalletTransactionVO.java`(含 date(OffsetDateTime), typeId, quantity, unitPrice, isBuy, clientId, locationId, journalRefId, ownerType, ownerId, division)
-- [ ] T012 [P] [US1] 新增 `.../application/assembler/system/WalletTransactionAssembler.java`(MapStruct `WalletTransactionVO toVo(WalletTransaction)` + List 重载)
-- [ ] T013 [US1] 新增领域服务 `.../domain/service/system/WalletTransactionService.java`:(a) `syncCharacterTransactions(Integer cId)`——authorize/authorizeInternal + from_id 游标拉取(见 plan D2)＋回填 ownerType='character'/ownerId/division=0 + `walletTransactionRepository.saveOrUpdateBatch(幂等 upsert)`;(b) `syncCorporationTransactions(Integer corpId)`——军团 division 1–7 遍历循环 try/catch 隔离(见 plan D3)＋回填 ownerType='corporation'/ownerId/division
-- [ ] T014 [US1] 新增 `.../application/service/WalletTransactionApplicationService.java`:`syncCharacterTransactions(Integer cid)`(`accessGuard.requireOwnership`,异常→EveHelperException)、`queryCharacterPage(Integer cid, int current, int size)`(`requireOwnership` + 分页 by ownerType/ownerId+division=0 + `PageResultUtil.copy(page, assembler::toVo)`)
-- [ ] T015 [US1] 新增 `.../interfaces/web/controller/WalletTransactionController.java`:`POST /wallet/transaction/{cid}/sync`(人物)、`GET /wallet/transaction/{cid}`(人物分页,current 默认 1,size 默认 20,经参数校验)
+- [x] T011 [P] [US1] 新增显示 VO `.../application/dto/response/WalletTransactionVO.java`(含 date(OffsetDateTime), typeId, quantity, unitPrice, isBuy, clientId, locationId, journalRefId, ownerType, ownerId, division)
+- [x] T012 [P] [US1] 新增 `.../application/assembler/system/WalletTransactionAssembler.java`(MapStruct `WalletTransactionVO toVo(WalletTransaction)` + List 重载)
+- [x] T013 [US1] 新增领域服务 `.../domain/service/system/WalletTransactionService.java`:(a) `syncCharacterTransactions(Integer cId)`——authorize/authorizeInternal + from_id 游标拉取(见 plan D2)＋回填 ownerType='character'/ownerId/division=0 + `walletTransactionRepository.saveOrUpdateBatch(幂等 upsert)`;(b) `syncCorporationTransactions(Integer corpId)`——军团 division 1–7 遍历循环 try/catch 隔离(见 plan D3)＋回填 ownerType='corporation'/ownerId/division
+- [x] T014 [US1] 新增 `.../application/service/WalletTransactionApplicationService.java`:`syncCharacterTransactions(Integer cid)`(`accessGuard.requireOwnership`,异常→EveHelperException)、`queryCharacterPage(Integer cid, int current, int size)`(`requireOwnership` + 分页 by ownerType/ownerId+division=0 + `PageResultUtil.copy(page, assembler::toVo)`)
+- [x] T015 [US1] 新增 `.../interfaces/web/controller/WalletTransactionController.java`:`POST /wallet/transaction/{cid}/sync`(人物)、`GET /wallet/transaction/{cid}`(人物分页,current 默认 1,size 默认 20,经参数校验)
 
 **Checkpoint**: US1 独立可用——人物同步+分页完整,越权拒绝。
 
@@ -84,14 +84,14 @@ description: "Task list for 010 wallet-transactions implementation"
 
 ### Tests for User Story 2 (先 RED)
 
-- [ ] T016 [P] [US2] 集成测试:军团全 division 同步后可按 division 分页查询(如 division 2 有数据返回、division 无数据返回空)
-- [ ] T017 [P] [US2] 集成测试:单 division 同步失败,已成功 division 数据保留不整批回滚;错误返回含失败 division 明细
-- [ ] T018 [P] [US2] 集成测试:重复同步不产生重复行(幂等);无权访问军团 401/403
+- [x] T016 [P] [US2] 集成测试:军团全 division 同步后可按 division 分页查询(如 division 2 有数据返回、division 无数据返回空)
+- [x] T017 [P] [US2] 集成测试:单 division 同步失败,已成功 division 数据保留不整批回滚;错误返回含失败 division 明细
+- [x] T018 [P] [US2] 集成测试:重复同步不产生重复行(幂等);无权访问军团 401/403
 
 ### Implementation for User Story 2
 
-- [ ] T019 [US2] `WalletTransactionApplicationService.java` 新增军团两法:`syncCorporationTransactions(Integer corpId)`(`requireOwnership` + 调领域服务 division 循环 + 汇总结果)、`queryCorporationPage(Integer corpId, Integer division, int current, int size)`(`requireOwnership` + 分页 by ownerType/ownerId+division + `PageResultUtil.copy`;division 校验 1..7)
-- [ ] T020 [US2] `WalletTransactionController.java` 新增军团两法:`POST /wallet/transaction/corp/{corpId}/sync`、`GET /wallet/transaction/corp/{corpId}?division=N`(current 默认 1,size 默认 20,经参数校验)
+- [x] T019 [US2] `WalletTransactionApplicationService.java` 新增军团两法:`syncCorporationTransactions(Integer corpId)`(`requireOwnership` + 调领域服务 division 循环 + 汇总结果)、`queryCorporationPage(Integer corpId, Integer division, int current, int size)`(`requireOwnership` + 分页 by ownerType/ownerId+division + `PageResultUtil.copy`;division 校验 1..7)
+- [x] T020 [US2] `WalletTransactionController.java` 新增军团两法:`POST /wallet/transaction/corp/{corpId}/sync`、`GET /wallet/transaction/corp/{corpId}?division=N`(current 默认 1,size 默认 20,经参数校验)
 
 **Checkpoint**: US2 独立可用——军团全 division 同步+分页完整,失败隔离。
 
@@ -99,9 +99,9 @@ description: "Task list for 010 wallet-transactions implementation"
 
 ## Phase 6: Polish & 收尾
 
-- [ ] T021 RBAC 权限登记 SQL:`src/SQL/convert/010_rbac_permissions.sql`——新增 `sys_permission` 行(`POST:/wallet/transaction/{cid}/sync`、`GET:/wallet/transaction/{cid}`、`POST:/wallet/transaction/corp/{corpId}/sync`、`GET:/wallet/transaction/corp/{corpId}`)及 `sys_role_permission` 绑定到 ADMIN
-- [ ] T022 [P] 知识文档:按 `knowledge-doc-convention` 在 `docs/knowledge/` 生成 `wallet-transaction.md` 流程文档并登记 `docs/INDEX.md`
-- [ ] T023 [P] 补充单元测试覆盖同步/分页边界,达到 ≥80%——**不可客观测量标注**:本项目 pom 无 jacoco/coverage 插件(技术栈冻结,不新增依赖),"≥80%"无测量工具底座;项目测试基线本身含环境噪声 Error(~219,勿用固定阈值)。以 010 集成的测试覆盖证据(同步语义/越权拒绝/幂等/失败不写脏数据)替代,覆盖 US1/US2 全旅程。
+- [x] T021 RBAC 权限登记 SQL:`src/SQL/convert/010_rbac_permissions.sql`——新增 `sys_permission` 行(`POST:/wallet/transaction/{cid}/sync`、`GET:/wallet/transaction/{cid}`、`POST:/wallet/transaction/corp/{corpId}/sync`、`GET:/wallet/transaction/corp/{corpId}`)及 `sys_role_permission` 绑定到 ADMIN
+- [x] T022 [P] 知识文档:按 `knowledge-doc-convention` 在 `docs/knowledge/` 生成 `wallet-transaction.md` 流程文档并登记 `docs/INDEX.md`
+- [x] T023 [P] 补充单元测试覆盖同步/分页边界,达到 ≥80%——**不可客观测量标注**:本项目 pom 无 jacoco/coverage 插件(技术栈冻结,不新增依赖),"≥80%"无测量工具底座;项目测试基线本身含环境噪声 Error(~219,勿用固定阈值)。以 010 集成的测试覆盖证据(同步语义/越权拒绝/幂等/失败不写脏数据)替代,覆盖 US1/US2 全旅程。
 
 ---
 

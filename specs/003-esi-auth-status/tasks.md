@@ -67,8 +67,8 @@
 
 - [X] T011 [P] [US2] 单元测试 `EsiApiServiceTest`:Mock 抛 `EsiException(ResultCode.ESI_SERVER_FAILURE)` 与 `TimeoutException` -> `UNKNOWN`
 - [X] T012 [P] [US2] 单元测试 `UserApplicationServiceTest` 于 `src/test/java/xyz/foolcat/eve/evehelper/application/service/UserApplicationServiceTest.java`:3 个角色,其中 1 个 `getAuthorizationStatus` 抛异常被隔离为 `UNKNOWN`,另 2 个状态正确;验证并行执行(总耗时约等于最慢单调用,非累加)
-- [ ] T013 [P] [US2] 集成测试 `UserControllerAuthStatusIT` 于 `src/test/java/xyz/foolcat/eve/evehelper/interfaces/web/controller/UserControllerAuthStatusIT.java`:用户无绑定角色 -> `data=[]` 且成功
-- [ ] T014 [P] [US2] 集成测试(同上文件):多角色混合状态(AUTHORIZED/EXPIRED/NOT_AUTHORIZED/UNKNOWN)端到端验证
+- [x] T013 [P] [US2] 集成测试 `UserControllerAuthStatusIT` 于 `src/test/java/xyz/foolcat/eve/evehelper/interfaces/web/controller/UserControllerAuthStatusIT.java`:用户无绑定角色 -> `data=[]` 且成功
+- [x] T014 [P] [US2] 集成测试(同上文件):多角色混合状态(AUTHORIZED/EXPIRED/NOT_AUTHORIZED/UNKNOWN)端到端验证
 
 ### Implementation for User Story 2
 
@@ -83,10 +83,10 @@
 
 **Purpose**: 质量门禁与验证
 
-- [ ] T017 运行 `mvn test`,确认全绿且新增代码覆盖率 ≥80%
+- [x] T017 运行 `mvn test`,确认全绿且新增代码覆盖率 ≥80%
 - [X] T018 [P] `ecc:java-reviewer` 评审,修复 CRITICAL/HIGH
 - [X] T019 [P] `ecc:security-reviewer` 评审(涉及认证/外部 API),修复 CRITICAL/HIGH
-- [ ] T020 执行 [quickstart.md](quickstart.md) 验证矩阵,手动确认 `authStatus` 字段
+- [x] T020 执行 [quickstart.md](quickstart.md) 验证矩阵,手动确认 `authStatus` 字段
 
 ---
 

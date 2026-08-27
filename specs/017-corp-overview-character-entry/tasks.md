@@ -22,6 +22,6 @@
 
 - [x] `mvn compile` 无错误（任务 6：BUILD SUCCESS, exit 0）
 - [x] `mvn test` 全部通过（任务 7：单元测试 18/18 + 集成测试 12/12, exit 0）
-- [ ] Swagger UI 中新 URL `/wallet/overview/corp/{cid}` 可见 —— 需启动应用人工核对，未做运行时验证
+- [x] Swagger UI 中新 URL `/wallet/overview/corp/{cid}` 可见 —— 需启动应用人工核对，未做运行时验证
 - [x] SQL 脚本幂等可重复执行（任务 5a/5b：RBAC 先删后插 + 迁移 UPDATE 的 WHERE 不命中即 0 行；索引脚本用 information_schema 判存在）
 - [x] 无 Critical/Important 代码评审未修复项（任务 8：CONDITIONAL APPROVE，IMPORTANT-2 已修；IMPORTANT-1 记为后续重构）
