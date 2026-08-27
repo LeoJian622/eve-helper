@@ -18,8 +18,8 @@
 
 **Purpose**: 底座/项目初始化。本特性**无**新依赖与 DDL,设置极薄。
 
-- [ ] T001 拉取最新分支基线:确认在 `012-wallet-overview` 分支,`git status` 干净、无无关改动混入
-- [ ] T002 核对运行时依赖就绪:Redis 可达 + 两个 MySQL 库(eve/eve_helper)可达(`eve` 只读、`eve_helper` 运行),供集成测试使用
+- [x] T001 拉取最新分支基线:确认在 `012-wallet-overview` 分支,`git status` 干净、无无关改动混入
+- [x] T002 核对运行时依赖就绪:Redis 可达 + 两个 MySQL 库(eve/eve_helper)可达(`eve` 只读、`eve_helper` 运行),供集成测试使用
 
 **Checkpoint**: 环境就绪,可进入基础层。
 
@@ -31,9 +31,9 @@
 
 **⚠️ CRITICAL**: 未完成前不得开始任何用户故事实现(TDD)。
 
-- [ ] T003 [P] 创建领域读模型 `WalletOverviewVO`(含嵌套 `CategorySummary`/`TrendPoint`/`DivisionSummary`)于 `src/main/java/xyz/foolcat/eve/evehelper/domain/model/vo/WalletOverviewVO.java`;字段 currentBalance/totalIncome/totalExpense/netFlow/journalCount/asOfTime(OffsetDateTime)/categories/trend/divisions
-- [ ] T004 [P] 创建领域摘要载体 `WalletOverviewAggregate` 于 `src/main/java/xyz/foolcat/eve/evehelper/domain/model/vo/WalletOverviewAggregate.java`(currentBalance/totalIncome/totalExpense/netFlow/journalCount/asOfTime)
-- [ ] T005 [P] 创建 4 个 infra 结果记录:`WalletOverviewAggregatePO`/`WalletOverviewCategoryPO`/`WalletOverviewTrendPO`/`WalletOverviewDivisionPO` 于 `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/persistence/entity/system/`(规避 mapper 直返 domain 类型的分层气味)
+- [x] T003 [P] 创建领域读模型 `WalletOverviewVO`(含嵌套 `CategorySummary`/`TrendPoint`/`DivisionSummary`)于 `src/main/java/xyz/foolcat/eve/evehelper/domain/model/vo/WalletOverviewVO.java`;字段 currentBalance/totalIncome/totalExpense/netFlow/journalCount/asOfTime(OffsetDateTime)/categories/trend/divisions
+- [x] T004 [P] 创建领域摘要载体 `WalletOverviewAggregate` 于 `src/main/java/xyz/foolcat/eve/evehelper/domain/model/vo/WalletOverviewAggregate.java`(currentBalance/totalIncome/totalExpense/netFlow/journalCount/asOfTime)
+- [x] T005 [P] 创建 4 个 infra 结果记录:`WalletOverviewAggregatePO`/`WalletOverviewCategoryPO`/`WalletOverviewTrendPO`/`WalletOverviewDivisionPO` 于 `src/main/java/xyz/foolcat/eve/evehelper/infrastructure/persistence/entity/system/`(规避 mapper 直返 domain 类型的分层气味)
 
 **Checkpoint**: Foundational 就绪——领域 VO 与 infra 载体可用,US1 可启动。
 
@@ -46,15 +46,15 @@
 
 ### Tests for US1（先写、必红）
 
-- [ ] T006 [P] [US1] 单元测试 `WalletOverviewApplicationServiceTest#...`(Mockito):入参校验(非法 range/start>end 抛 PARAM_ERROR)、`accessGuard.requireOwnership` 被正确调用(人物)、range 预设解析(today/last7d/last30d/last90d/year)、趋势粒度日/月选择、空聚合转零值组装
-- [ ] T007 [P] [US1] 集成测试 `WalletOverviewControllerIT#characterOverview...`(@SpringBootTest + @ActiveProfiles("test")):已同步角色总览五项正确、无权 401/403、空数据回零、非法入参 400
+- [x] T006 [P] [US1] 单元测试 `WalletOverviewApplicationServiceTest#...`(Mockito):入参校验(非法 range/start>end 抛 PARAM_ERROR)、`accessGuard.requireOwnership` 被正确调用(人物)、range 预设解析(today/last7d/last30d/last90d/year)、趋势粒度日/月选择、空聚合转零值组装
+- [x] T007 [P] [US1] 集成测试 `WalletOverviewControllerIT#characterOverview...`(@SpringBootTest + @ActiveProfiles("test")):已同步角色总览五项正确、无权 401/403、空数据回零、非法入参 400
 
 ### Implementation for US1
 
-- [ ] T008 [P] [US1] `WalletJournalMapper.java` + `WalletJournalMapper.xml` 新增 3 个聚合 SQL(摘要 selectOverviewAggregate、类别 selectOverviewCategories、趋势 selectOverviewTrend;`date` 反引号、金额 COALESCE(...,0));人物调用 **division 传 null 不过滤**
-- [ ] T009 [P] [US1] `WalletJournalRepository.java` 新增 `selectOverviewAggregate`/`selectOverviewCategories`/`selectOverviewTrend` 签名;`WalletJournalRepositoryImpl.java` 实现并把 `PO` 映射为 `WalletOverviewAggregate`/`WalletOverviewVO.*`
-- [ ] T010 [US1] 新建 `WalletOverviewApplicationService.java`:`getCharacterOverview(Integer cid, String range, Date start, Date end)`——入参边界→resolveRange→requireOwnership→调用 D2→组装(divisions=null)
-- [ ] T011 [US1] 新建 `WalletOverviewController.java`(人物端点):`GET /wallet/overview/{cid}?range=&start=&end=`,`@DateTimeFormat(iso=ISO.DATE)`,`Result<WalletOverviewVO>`
+- [x] T008 [P] [US1] `WalletJournalMapper.java` + `WalletJournalMapper.xml` 新增 3 个聚合 SQL(摘要 selectOverviewAggregate、类别 selectOverviewCategories、趋势 selectOverviewTrend;`date` 反引号、金额 COALESCE(...,0));人物调用 **division 传 null 不过滤**
+- [x] T009 [P] [US1] `WalletJournalRepository.java` 新增 `selectOverviewAggregate`/`selectOverviewCategories`/`selectOverviewTrend` 签名;`WalletJournalRepositoryImpl.java` 实现并把 `PO` 映射为 `WalletOverviewAggregate`/`WalletOverviewVO.*`
+- [x] T010 [US1] 新建 `WalletOverviewApplicationService.java`:`getCharacterOverview(Integer cid, String range, Date start, Date end)`——入参边界→resolveRange→requireOwnership→调用 D2→组装(divisions=null)
+- [x] T011 [US1] 新建 `WalletOverviewController.java`(人物端点):`GET /wallet/overview/{cid}?range=&start=&end=`,`@DateTimeFormat(iso=ISO.DATE)`,`Result<WalletOverviewVO>`
 
 **Checkpoint**: US1 独立可用(MVP)。运行 `./mvnw test -Dtest=WalletOverviewApplicationServiceTest,WalletOverviewControllerIT`。
 
@@ -67,15 +67,15 @@
 
 ### Tests for US2（先写、必红）
 
-- [ ] T012 [P] [US2] 单元测试 `WalletOverviewApplicationServiceTest#...`:军团全量——分账 1..7 补零、`currentBalance`=各分账最新余额之和、division 越界抛 PARAM_ERROR、分账收支/余额按 division 归并
-- [ ] T013 [P] [US2] 集成测试 `WalletOverviewControllerIT#corporationOverview...`:已同步军团全量含分布正确、单分账过滤正确、越权拒绝、空分账零值
+- [x] T012 [P] [US2] 单元测试 `WalletOverviewApplicationServiceTest#...`:军团全量——分账 1..7 补零、`currentBalance`=各分账最新余额之和、division 越界抛 PARAM_ERROR、分账收支/余额按 division 归并
+- [x] T013 [P] [US2] 集成测试 `WalletOverviewControllerIT#corporationOverview...`:已同步军团全量含分布正确、单分账过滤正确、越权拒绝、空分账零值
 
 ### Implementation for US2
 
-- [ ] T014 [P] [US2] `WalletJournalMapper.java` + XML 新增 2 个分账 SQL(selectOverviewDivisionBalances MAX(id) 自关联、selectOverviewDivisionFlow GROUP BY division)
-- [ ] T015 [P] [US2] `WalletJournalRepository.java` 新增 `selectOverviewDivisionBalances`/`selectOverviewDivisionFlow`;Impl 实现并把 `WalletOverviewDivisionPO` 映射为 `WalletOverviewVO.DivisionSummary`
-- [ ] T016 [US2] `WalletOverviewApplicationService.java` 新增 `getCorporationOverview(Integer corpId, Integer division, String range, Date start, Date end)`:division null 或 1..7 校验→resolveRange→requireOwnership→全量时拉分账余额/收支按 1..7 补零、`currentBalance`=各分账和;单分账时同人物仅过滤 division
-- [ ] T017 [US2] `WalletOverviewController.java` 新增军团端点:`GET /wallet/overview/corp/{corpId}?division=&range=&start=&end=`
+- [x] T014 [P] [US2] `WalletJournalMapper.java` + XML 新增 2 个分账 SQL(selectOverviewDivisionBalances MAX(id) 自关联、selectOverviewDivisionFlow GROUP BY division)
+- [x] T015 [P] [US2] `WalletJournalRepository.java` 新增 `selectOverviewDivisionBalances`/`selectOverviewDivisionFlow`;Impl 实现并把 `WalletOverviewDivisionPO` 映射为 `WalletOverviewVO.DivisionSummary`
+- [x] T016 [US2] `WalletOverviewApplicationService.java` 新增 `getCorporationOverview(Integer corpId, Integer division, String range, Date start, Date end)`:division null 或 1..7 校验→resolveRange→requireOwnership→全量时拉分账余额/收支按 1..7 补零、`currentBalance`=各分账和;单分账时同人物仅过滤 division
+- [x] T017 [US2] `WalletOverviewController.java` 新增军团端点:`GET /wallet/overview/corp/{corpId}?division=&range=&start=&end=`
 
 **Checkpoint**: US1 与 US2 均独立可用。运行 `./mvnw test -Dtest=WalletOverviewApplicationServiceTest,WalletOverviewControllerIT`。
 
@@ -88,12 +88,12 @@
 
 ### Tests for US3（先写、必红）
 
-- [ ] T018 [P] [US3] 单元测试:军团单分账 `getCorporationOverview(corpId, 3, ...)` 仅传 `division=3` 过滤、`divisions=null`;division 为 1..7 边界合法
-- [ ] T019 [P] [US3] 集成测试:指定 division=3 的军团总览只含该分账数据;division=0/8 → 400
+- [x] T018 [P] [US3] 单元测试:军团单分账 `getCorporationOverview(corpId, 3, ...)` 仅传 `division=3` 过滤、`divisions=null`;division 为 1..7 边界合法
+- [x] T019 [P] [US3] 集成测试:指定 division=3 的军团总览只含该分账数据;division=0/8 → 400
 
 ### Implementation for US3
 
-- [ ] T020 [US3] 双检 `getCorporationOverview` 单分账分支:division 非 null 时各聚合调用仅带该 division 过滤、分账分布不填充(divisions=null)(复用 T016 既有实现,本任务为确认+边界修正)
+- [x] T020 [US3] 双检 `getCorporationOverview` 单分账分支:division 非 null 时各聚合调用仅带该 division 过滤、分账分布不填充(divisions=null)(复用 T016 既有实现,本任务为确认+边界修正)
 
 **Checkpoint**: 三个故事独立可用。
 
@@ -103,10 +103,10 @@
 
 **Purpose**: 影响多故事;部署/安全/文档收尾。
 
-- [ ] T021 [P] 新建 `src/SQL/convert/012_rbac_permissions.sql`:登记 `GET:/wallet/overview/{cid}` 与 `GET:/wallet/overview/corp/{corpId}` 两条 RBAC 权限并绑定 ADMIN(先 DELETE 后 INSERT,仿 010/011)
-- [ ] T022 `./mvnw test` 全量绿(0 failure/0 error) + `ecc:test-coverage` 新代码覆盖率 ≥80%(记录证据)
-- [ ] T023 [P] 知识文档 `docs/knowledge/wallet-overview.md`(接口/聚合口径/asOfTime 语义)并登记 `docs/INDEX.md`
-- [ ] T024 检查点:P5 验证报告(P5)、P6 `ecc:java-reviewer` 评审、`ecc:checkpoint create "P5-verified"` / 会话保存
+- [x] T021 [P] 新建 `src/SQL/convert/012_rbac_permissions.sql`:登记 `GET:/wallet/overview/{cid}` 与 `GET:/wallet/overview/corp/{corpId}` 两条 RBAC 权限并绑定 ADMIN(先 DELETE 后 INSERT,仿 010/011)
+- [x] T022 `./mvnw test` 全量绿(0 failure/0 error) + `ecc:test-coverage` 新代码覆盖率 ≥80%(记录证据)
+- [x] T023 [P] 知识文档 `docs/knowledge/wallet-overview.md`(接口/聚合口径/asOfTime 语义)并登记 `docs/INDEX.md`
+- [x] T024 检查点:P5 验证报告(P5)、P6 `ecc:java-reviewer` 评审、`ecc:checkpoint create "P5-verified"` / 会话保存
 
 ---
 

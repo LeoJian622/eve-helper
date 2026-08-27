@@ -28,10 +28,10 @@ DDD 单体项目,路径基于 `src/main/java/xyz/foolcat/eve/evehelper/`(下记 
 
 **Purpose**: 创建跨故事共享的查询条件、排序白名单、请求 DTO。
 
-- [ ] T001 [P] 创建排序白名单枚举 `StructurePageCriteria.SortField`(STRUCTURE_ID/NAME/STATE/FUEL_EXPIRES,列名硬编码)在 `~/domain/model/query/StructurePageCriteria.java`(FR-015, R-04)
-- [ ] T002 [P] 创建分页查询条件 `StructurePageCriteria`(@Builder @Getter,字段 corporationId/name/state/lowFuelOnly/sortField/ascending/current/size)在 `~/domain/model/query/StructurePageCriteria.java`
-- [ ] T003 [P] 创建列表请求 DTO `StructureQuery`(extends PageQuery,@SuperBuilder,corporationId @NotBlank 纯数字≤19、name、state、lowFuelOnly)在 `~/application/dto/request/StructureQuery.java`(FR-016)
-- [ ] T004 [P] 创建燃料预警请求 DTO `StructureFuelQuery`(corporationId @NotBlank、hours @Min 1 @Max 720 默认 72)在 `~/application/dto/request/StructureFuelQuery.java`(FR-016, Assumption 7)
+- [x] T001 [P] 创建排序白名单枚举 `StructurePageCriteria.SortField`(STRUCTURE_ID/NAME/STATE/FUEL_EXPIRES,列名硬编码)在 `~/domain/model/query/StructurePageCriteria.java`(FR-015, R-04)
+- [x] T002 [P] 创建分页查询条件 `StructurePageCriteria`(@Builder @Getter,字段 corporationId/name/state/lowFuelOnly/sortField/ascending/current/size)在 `~/domain/model/query/StructurePageCriteria.java`
+- [x] T003 [P] 创建列表请求 DTO `StructureQuery`(extends PageQuery,@SuperBuilder,corporationId @NotBlank 纯数字≤19、name、state、lowFuelOnly)在 `~/application/dto/request/StructureQuery.java`(FR-016)
+- [x] T004 [P] 创建燃料预警请求 DTO `StructureFuelQuery`(corporationId @NotBlank、hours @Min 1 @Max 720 默认 72)在 `~/application/dto/request/StructureFuelQuery.java`(FR-016, Assumption 7)
 
 **Checkpoint**: 共享请求/查询基础就绪,可进入 Foundational。
 
@@ -43,10 +43,10 @@ DDD 单体项目,路径基于 `src/main/java/xyz/foolcat/eve/evehelper/`(下记 
 
 **⚠️ CRITICAL**: 故事实现不得在本阶段完成前开始。
 
-- [ ] T005 在 `~/domain/repository/system/StructureRepository.java` 追加 6 个只读方法签名(仅领域类型):`selectStructuresWithNames`、`selectDetailById`、`selectFuelExpiresListWithNames`、`selectServicesById`、`selectSummary`、`selectTimers`(R-07,不改现有方法)
-- [ ] T006 创建应用服务骨架 `StructureQueryApplicationService`(@Service @Transactional(readOnly=true),注入 StructureRepository、StructureAssembler、AccessGuard;私有方法 `requireCorpOwnership(corpId)` 调 `accessGuard.requireOwnership(corpId,"建筑")`)在 `~/application/service/StructureQueryApplicationService.java`(FR-010, R-06)
-- [ ] T007 创建 MapStruct 装配器骨架 `StructureAssembler`(@Mapper(componentModel="spring"),空类)在 `~/application/assembler/system/StructureAssembler.java`
-- [ ] T008 创建控制器骨架 `StructureController`(@RestController @RequestMapping("/structures") @Validated,@Tag)在 `~/interfaces/web/controller/StructureController.java`
+- [x] T005 在 `~/domain/repository/system/StructureRepository.java` 追加 6 个只读方法签名(仅领域类型):`selectStructuresWithNames`、`selectDetailById`、`selectFuelExpiresListWithNames`、`selectServicesById`、`selectSummary`、`selectTimers`(R-07,不改现有方法)
+- [x] T006 创建应用服务骨架 `StructureQueryApplicationService`(@Service @Transactional(readOnly=true),注入 StructureRepository、StructureAssembler、AccessGuard;私有方法 `requireCorpOwnership(corpId)` 调 `accessGuard.requireOwnership(corpId,"建筑")`)在 `~/application/service/StructureQueryApplicationService.java`(FR-010, R-06)
+- [x] T007 创建 MapStruct 装配器骨架 `StructureAssembler`(@Mapper(componentModel="spring"),空类)在 `~/application/assembler/system/StructureAssembler.java`
+- [x] T008 创建控制器骨架 `StructureController`(@RestController @RequestMapping("/structures") @Validated,@Tag)在 `~/interfaces/web/controller/StructureController.java`
 
 **Checkpoint**: 仓储接口/服务/控制器/装配器骨架就绪,故事实现可并行展开。
 
@@ -59,18 +59,18 @@ DDD 单体项目,路径基于 `src/main/java/xyz/foolcat/eve/evehelper/`(下记 
 
 ### Tests for User Story 1(RED 先)
 
-- [ ] T009 [P] [US1] 集成测试:列表正常分页+名称/状态筛选+排序生效,在 `~/test/interfaces/web/controller/StructureControllerTest.java`
-- [ ] T010 [P] [US1] 安全测试:非本人军团 403、sortField 非白名单 400,在 `~/test/interfaces/web/controller/StructureSecurityTest.java`(SC-005/006/010)
+- [x] T009 [P] [US1] 集成测试:列表正常分页+名称/状态筛选+排序生效,在 `~/test/interfaces/web/controller/StructureControllerTest.java`
+- [x] T010 [P] [US1] 安全测试:非本人军团 403、sortField 非白名单 400,在 `~/test/interfaces/web/controller/StructureSecurityTest.java`(SC-005/006/010)
 
 ### Implementation for User Story 1(GREEN)
 
-- [ ] T011 [P] [US1] 创建领域读模型 `StructureListItemDTO`(structureId/name/typeId/typeName/systemId/systemName/state/fuelExpires/corporationId)在 `~/domain/model/vo/StructureListItemDTO.java`
-- [ ] T012 [P] [US1] 创建响应 VO `StructureListItemVO`(@Data @Schema)在 `~/application/dto/response/StructureListItemVO.java`
-- [ ] T013 [US1] 在 `StructureAssembler` 追加 `dtoList2VoList(List<StructureListItemDTO>)` 映射
-- [ ] T014 [US1] 在 `~/infrastructure/persistence/repository/system/StructureRepositoryImpl.java` 实现 `selectStructuresWithNames`(IPage + mapper 调用,手工组装 PageResult)
-- [ ] T015 [US1] 在 `src/main/resources/mappers/system/StructureMapper.xml` 追加 `selectStructuresWithNames`:`structure s LEFT JOIN eve.inv_types it ON s.type_id=it.type_id LEFT JOIN eve.universe_name un ON s.system_id=un.item_id AND un.category='solar_system'`,排序用 `${sortColumn}` 白名单 + `<choose>` asc/desc(SC-002, R-02/04)
-- [ ] T016 [US1] 在 `StructureQueryApplicationService` 实现 `queryStructuresByPage(StructureQuery)`:requireCorpOwnership -> toCriteria(sortField 白名单校验)-> `PageResultUtil.copy(repo.selectStructuresWithNames, assembler::dtoList2VoList)`
-- [ ] T017 [US1] 在 `StructureController` 追加 `GET /structures/{corpId}`(@Parameters/@Operation,返回 `Result<PageResult<StructureListItemVO>>`)
+- [x] T011 [P] [US1] 创建领域读模型 `StructureListItemDTO`(structureId/name/typeId/typeName/systemId/systemName/state/fuelExpires/corporationId)在 `~/domain/model/vo/StructureListItemDTO.java`
+- [x] T012 [P] [US1] 创建响应 VO `StructureListItemVO`(@Data @Schema)在 `~/application/dto/response/StructureListItemVO.java`
+- [x] T013 [US1] 在 `StructureAssembler` 追加 `dtoList2VoList(List<StructureListItemDTO>)` 映射
+- [x] T014 [US1] 在 `~/infrastructure/persistence/repository/system/StructureRepositoryImpl.java` 实现 `selectStructuresWithNames`(IPage + mapper 调用,手工组装 PageResult)
+- [x] T015 [US1] 在 `src/main/resources/mappers/system/StructureMapper.xml` 追加 `selectStructuresWithNames`:`structure s LEFT JOIN eve.inv_types it ON s.type_id=it.type_id LEFT JOIN eve.universe_name un ON s.system_id=un.item_id AND un.category='solar_system'`,排序用 `${sortColumn}` 白名单 + `<choose>` asc/desc(SC-002, R-02/04)
+- [x] T016 [US1] 在 `StructureQueryApplicationService` 实现 `queryStructuresByPage(StructureQuery)`:requireCorpOwnership -> toCriteria(sortField 白名单校验)-> `PageResultUtil.copy(repo.selectStructuresWithNames, assembler::dtoList2VoList)`
+- [x] T017 [US1] 在 `StructureController` 追加 `GET /structures/{corpId}`(@Parameters/@Operation,返回 `Result<PageResult<StructureListItemVO>>`)
 
 **Checkpoint**: US1 独立可用(MVP),列表/筛选/排序/IDOR 全覆盖。
 
@@ -85,18 +85,18 @@ DDD 单体项目,路径基于 `src/main/java/xyz/foolcat/eve/evehelper/`(下记 
 
 ### Tests for User Story 2(RED 先)
 
-- [ ] T018 [P] [US2] 集成测试:详情正常返回+services 解析为列表+不存在 404,在 `~/test/interfaces/web/controller/StructureControllerTest.java`
-- [ ] T019 [P] [US2] 安全测试:他团建筑 403(FR-011),在 `~/test/interfaces/web/controller/StructureSecurityTest.java`(SC-005/010)
+- [x] T018 [P] [US2] 集成测试:详情正常返回+services 解析为列表+不存在 404,在 `~/test/interfaces/web/controller/StructureControllerTest.java`
+- [x] T019 [P] [US2] 安全测试:他团建筑 403(FR-011),在 `~/test/interfaces/web/controller/StructureSecurityTest.java`(SC-005/010)
 
 ### Implementation for User Story 2(GREEN)
 
-- [ ] T020 [P] [US2] 创建领域读模型 `StructureDetailDTO`(全部 Structure 字段 + typeName + systemName + `List<StructuresService>` services)在 `~/domain/model/vo/StructureDetailDTO.java`
-- [ ] T021 [P] [US2] 创建响应 VO `StructureDetailVO` 在 `~/application/dto/response/StructureDetailVO.java`
-- [ ] T022 [US2] 在 `StructureAssembler` 追加 `dto2Vo(StructureDetailDTO)` 映射
-- [ ] T023 [US2] 在 `StructureRepositoryImpl` 实现 `selectDetailById`(含 inv_types/universe_name JOIN)
-- [ ] T024 [US2] 在 `StructureMapper.xml` 追加 `selectDetailById` SQL(同 US1 JOIN 模式,WHERE structure_id)
-- [ ] T025 [US2] 在 `StructureQueryApplicationService` 实现 `queryDetailById(corpId, structureId)`:requireCorpOwnership -> 查询 -> 校验 `structure.corporationId == corpId`(不符抛 403,FR-011)-> services JSON 容错解析(`JSONUtil.toBeanList` try-catch 返回空列表,FR-014, R-01)
-- [ ] T026 [US2] 在 `StructureController` 追加 `GET /structures/{corpId}/detail/{structureId}`(返回 `Result<StructureDetailVO>`)
+- [x] T020 [P] [US2] 创建领域读模型 `StructureDetailDTO`(全部 Structure 字段 + typeName + systemName + `List<StructuresService>` services)在 `~/domain/model/vo/StructureDetailDTO.java`
+- [x] T021 [P] [US2] 创建响应 VO `StructureDetailVO` 在 `~/application/dto/response/StructureDetailVO.java`
+- [x] T022 [US2] 在 `StructureAssembler` 追加 `dto2Vo(StructureDetailDTO)` 映射
+- [x] T023 [US2] 在 `StructureRepositoryImpl` 实现 `selectDetailById`(含 inv_types/universe_name JOIN)
+- [x] T024 [US2] 在 `StructureMapper.xml` 追加 `selectDetailById` SQL(同 US1 JOIN 模式,WHERE structure_id)
+- [x] T025 [US2] 在 `StructureQueryApplicationService` 实现 `queryDetailById(corpId, structureId)`:requireCorpOwnership -> 查询 -> 校验 `structure.corporationId == corpId`(不符抛 403,FR-011)-> services JSON 容错解析(`JSONUtil.toBeanList` try-catch 返回空列表,FR-014, R-01)
+- [x] T026 [US2] 在 `StructureController` 追加 `GET /structures/{corpId}/detail/{structureId}`(返回 `Result<StructureDetailVO>`)
 
 **Checkpoint**: US2 独立可用,详情/归属/服务解析全覆盖。
 
@@ -111,17 +111,17 @@ DDD 单体项目,路径基于 `src/main/java/xyz/foolcat/eve/evehelper/`(下记 
 
 ### Tests for User Story 3(RED 先)
 
-- [ ] T027 [P] [US3] 集成测试:燃料预警返回剩余时长+hours 范围校验(1~720)在 `~/test/interfaces/web/controller/StructureControllerTest.java`
+- [x] T027 [P] [US3] 集成测试:燃料预警返回剩余时长+hours 范围校验(1~720)在 `~/test/interfaces/web/controller/StructureControllerTest.java`
 
 ### Implementation for User Story 3(GREEN)
 
-- [ ] T028 [P] [US3] 创建领域读模型 `StructureFuelDTO`(structureId/name/typeName/systemName/state/fuelExpires/remainingHours)在 `~/domain/model/vo/StructureFuelDTO.java`
-- [ ] T029 [P] [US3] 创建响应 VO `StructureFuelVO` 在 `~/application/dto/response/StructureFuelVO.java`
-- [ ] T030 [US3] 在 `StructureAssembler` 追加 `dtoList2VoList(List<StructureFuelDTO>)` 映射
-- [ ] T031 [US3] 在 `StructureRepositoryImpl` 实现 `selectFuelExpiresListWithNames`(带名称+剩余时长)
-- [ ] T032 [US3] 在 `StructureMapper.xml` 追加 `selectFuelExpiresListWithNames`:`fuel_expires < date_add(now()+8,interval #{hour}-8 hour) or fuel_expires is null`(沿用现有时区模式,不动现有 `selectFuelExpiresList`,R-03/07)
-- [ ] T033 [US3] 在 `StructureQueryApplicationService` 实现 `queryFuelExpiring(StructureFuelQuery)`:requireCorpOwnership -> 调仓储 -> 装配
-- [ ] T034 [US3] 在 `StructureController` 追加 `GET /structures/{corpId}/fuel`(返回 `Result<List<StructureFuelVO>>`)
+- [x] T028 [P] [US3] 创建领域读模型 `StructureFuelDTO`(structureId/name/typeName/systemName/state/fuelExpires/remainingHours)在 `~/domain/model/vo/StructureFuelDTO.java`
+- [x] T029 [P] [US3] 创建响应 VO `StructureFuelVO` 在 `~/application/dto/response/StructureFuelVO.java`
+- [x] T030 [US3] 在 `StructureAssembler` 追加 `dtoList2VoList(List<StructureFuelDTO>)` 映射
+- [x] T031 [US3] 在 `StructureRepositoryImpl` 实现 `selectFuelExpiresListWithNames`(带名称+剩余时长)
+- [x] T032 [US3] 在 `StructureMapper.xml` 追加 `selectFuelExpiresListWithNames`:`fuel_expires < date_add(now()+8,interval #{hour}-8 hour) or fuel_expires is null`(沿用现有时区模式,不动现有 `selectFuelExpiresList`,R-03/07)
+- [x] T033 [US3] 在 `StructureQueryApplicationService` 实现 `queryFuelExpiring(StructureFuelQuery)`:requireCorpOwnership -> 调仓储 -> 装配
+- [x] T034 [US3] 在 `StructureController` 追加 `GET /structures/{corpId}/fuel`(返回 `Result<List<StructureFuelVO>>`)
 
 **Checkpoint**: US3 独立可用,燃料预警/时区/参数校验全覆盖。
 
@@ -136,16 +136,16 @@ DDD 单体项目,路径基于 `src/main/java/xyz/foolcat/eve/evehelper/`(下记 
 
 ### Tests for User Story 4(RED 先)
 
-- [ ] T035 [P] [US4] 集成测试:服务状态正常返回+损坏 services JSON 容错返回空列表(FR-014)在 `~/test/interfaces/web/controller/StructureControllerTest.java`
+- [x] T035 [P] [US4] 集成测试:服务状态正常返回+损坏 services JSON 容错返回空列表(FR-014)在 `~/test/interfaces/web/controller/StructureControllerTest.java`
 
 ### Implementation for User Story 4(GREEN)
 
-- [ ] T036 [P] [US4] 创建领域读模型 `StructureServiceDTO`(structureId/name/`List<StructuresService>` services)在 `~/domain/model/vo/StructureServiceDTO.java`
-- [ ] T037 [P] [US4] 创建响应 VO `StructureServiceVO` 在 `~/application/dto/response/StructureServiceVO.java`
-- [ ] T038 [US4] 在 `StructureAssembler` 追加 `dto2Vo(StructureServiceDTO)` 映射
-- [ ] T039 [US4] 在 `StructureRepositoryImpl` 实现 `selectServicesById`(仅取 structureId/name/services)
-- [ ] T040 [US4] 在 `StructureQueryApplicationService` 实现 `queryServices(corpId, structureId)`:requireCorpOwnership -> 查询 -> 校验 `corporationId == corpId`(FR-011)-> services JSON 容错解析(FR-014, R-01)
-- [ ] T041 [US4] 在 `StructureController` 追加 `GET /structures/{corpId}/detail/{structureId}/services`(返回 `Result<StructureServiceVO>`)
+- [x] T036 [P] [US4] 创建领域读模型 `StructureServiceDTO`(structureId/name/`List<StructuresService>` services)在 `~/domain/model/vo/StructureServiceDTO.java`
+- [x] T037 [P] [US4] 创建响应 VO `StructureServiceVO` 在 `~/application/dto/response/StructureServiceVO.java`
+- [x] T038 [US4] 在 `StructureAssembler` 追加 `dto2Vo(StructureServiceDTO)` 映射
+- [x] T039 [US4] 在 `StructureRepositoryImpl` 实现 `selectServicesById`(仅取 structureId/name/services)
+- [x] T040 [US4] 在 `StructureQueryApplicationService` 实现 `queryServices(corpId, structureId)`:requireCorpOwnership -> 查询 -> 校验 `corporationId == corpId`(FR-011)-> services JSON 容错解析(FR-014, R-01)
+- [x] T041 [US4] 在 `StructureController` 追加 `GET /structures/{corpId}/detail/{structureId}/services`(返回 `Result<StructureServiceVO>`)
 
 **Checkpoint**: US4 独立可用,服务状态/容错/归属全覆盖。
 
@@ -160,17 +160,17 @@ DDD 单体项目,路径基于 `src/main/java/xyz/foolcat/eve/evehelper/`(下记 
 
 ### Tests for User Story 5(RED 先)
 
-- [ ] T042 [P] [US5] 集成测试:统计概览聚合数据正确(单 SQL,SC-003)在 `~/test/interfaces/web/controller/StructureControllerTest.java`
+- [x] T042 [P] [US5] 集成测试:统计概览聚合数据正确(单 SQL,SC-003)在 `~/test/interfaces/web/controller/StructureControllerTest.java`
 
 ### Implementation for User Story 5(GREEN)
 
-- [ ] T043 [P] [US5] 创建领域读模型 `StructureSummaryDTO`(total/fuelExpiredCount/lowFuelCount/stateCounts)在 `~/domain/model/vo/StructureSummaryDTO.java`
-- [ ] T044 [P] [US5] 创建响应 VO `StructureSummaryVO` 在 `~/application/dto/response/StructureSummaryVO.java`
-- [ ] T045 [US5] 在 `StructureAssembler` 追加 `dto2Vo(StructureSummaryDTO)` 映射
-- [ ] T046 [US5] 在 `StructureRepositoryImpl` 实现 `selectSummary`(调聚合 SQL)
-- [ ] T047 [US5] 在 `StructureMapper.xml` 追加 `selectSummary`:`SELECT count(*) total, sum(IF(fuel_expires IS NULL,1,0)) fuelExpiredCount, sum(IF(fuel_expires<date_add(now()+8,interval 72-8 hour),1,0)) lowFuelCount FROM structure WHERE corporation_id=#{corpId}` + 状态分组(R-05, SC-003)
-- [ ] T048 [US5] 在 `StructureQueryApplicationService` 实现 `querySummary(corpId)`:requireCorpOwnership -> 调仓储 -> 装配
-- [ ] T049 [US5] 在 `StructureController` 追加 `GET /structures/{corpId}/stats`(返回 `Result<StructureSummaryVO>`)
+- [x] T043 [P] [US5] 创建领域读模型 `StructureSummaryDTO`(total/fuelExpiredCount/lowFuelCount/stateCounts)在 `~/domain/model/vo/StructureSummaryDTO.java`
+- [x] T044 [P] [US5] 创建响应 VO `StructureSummaryVO` 在 `~/application/dto/response/StructureSummaryVO.java`
+- [x] T045 [US5] 在 `StructureAssembler` 追加 `dto2Vo(StructureSummaryDTO)` 映射
+- [x] T046 [US5] 在 `StructureRepositoryImpl` 实现 `selectSummary`(调聚合 SQL)
+- [x] T047 [US5] 在 `StructureMapper.xml` 追加 `selectSummary`:`SELECT count(*) total, sum(IF(fuel_expires IS NULL,1,0)) fuelExpiredCount, sum(IF(fuel_expires<date_add(now()+8,interval 72-8 hour),1,0)) lowFuelCount FROM structure WHERE corporation_id=#{corpId}` + 状态分组(R-05, SC-003)
+- [x] T048 [US5] 在 `StructureQueryApplicationService` 实现 `querySummary(corpId)`:requireCorpOwnership -> 调仓储 -> 装配
+- [x] T049 [US5] 在 `StructureController` 追加 `GET /structures/{corpId}/stats`(返回 `Result<StructureSummaryVO>`)
 
 **Checkpoint**: US5 独立可用,统计聚合全覆盖。
 
@@ -185,17 +185,17 @@ DDD 单体项目,路径基于 `src/main/java/xyz/foolcat/eve/evehelper/`(下记 
 
 ### Tests for User Story 6(RED 先)
 
-- [ ] T050 [P] [US6] 集成测试:时间提醒返回 state 含 vulnerable 或 unanchorsAt 近期的建筑在 `~/test/interfaces/web/controller/StructureControllerTest.java`
+- [x] T050 [P] [US6] 集成测试:时间提醒返回 state 含 vulnerable 或 unanchorsAt 近期的建筑在 `~/test/interfaces/web/controller/StructureControllerTest.java`
 
 ### Implementation for User Story 6(GREEN)
 
-- [ ] T051 [P] [US6] 创建领域读模型 `StructureTimerDTO`(structureId/name/state/reinforceHour/nextReinforceHour/nextReinforceApply/stateTimerStart/stateTimerEnd/unanchorsAt)在 `~/domain/model/vo/StructureTimerDTO.java`
-- [ ] T052 [P] [US6] 创建响应 VO `StructureTimerVO` 在 `~/application/dto/response/StructureTimerVO.java`
-- [ ] T053 [US6] 在 `StructureAssembler` 追加 `dtoList2VoList(List<StructureTimerDTO>)` 映射
-- [ ] T054 [US6] 在 `StructureRepositoryImpl` 实现 `selectTimers`
-- [ ] T055 [US6] 在 `StructureMapper.xml` 追加 `selectTimers`:`WHERE state LIKE '%vulnerable%' OR (unanchorsAt IS NOT NULL AND unanchorsAt < date_add(now()+8,interval 168 hour))`(近 7 天解锚)
-- [ ] T056 [US6] 在 `StructureQueryApplicationService` 实现 `queryTimers(corpId)`:requireCorpOwnership -> 调仓储 -> 装配
-- [ ] T057 [US6] 在 `StructureController` 追加 `GET /structures/{corpId}/timers`(返回 `Result<List<StructureTimerVO>>`)
+- [x] T051 [P] [US6] 创建领域读模型 `StructureTimerDTO`(structureId/name/state/reinforceHour/nextReinforceHour/nextReinforceApply/stateTimerStart/stateTimerEnd/unanchorsAt)在 `~/domain/model/vo/StructureTimerDTO.java`
+- [x] T052 [P] [US6] 创建响应 VO `StructureTimerVO` 在 `~/application/dto/response/StructureTimerVO.java`
+- [x] T053 [US6] 在 `StructureAssembler` 追加 `dtoList2VoList(List<StructureTimerDTO>)` 映射
+- [x] T054 [US6] 在 `StructureRepositoryImpl` 实现 `selectTimers`
+- [x] T055 [US6] 在 `StructureMapper.xml` 追加 `selectTimers`:`WHERE state LIKE '%vulnerable%' OR (unanchorsAt IS NOT NULL AND unanchorsAt < date_add(now()+8,interval 168 hour))`(近 7 天解锚)
+- [x] T056 [US6] 在 `StructureQueryApplicationService` 实现 `queryTimers(corpId)`:requireCorpOwnership -> 调仓储 -> 装配
+- [x] T057 [US6] 在 `StructureController` 追加 `GET /structures/{corpId}/timers`(返回 `Result<List<StructureTimerVO>>`)
 
 **Checkpoint**: US6 独立可用,全部 6 个故事完成。
 
