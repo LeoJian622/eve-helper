@@ -50,7 +50,7 @@ ALTER TABLE `structure`
 -- 【部署占位 '?'】
 --   下方所有 '?' 为用户部署时的占位,需替换为 ROOT admin 的 user_id。
 --   建议一键替换(例如 admin userId=1):
---     sed -i 's/user_id = ?/user_id = 1/g' 014_esi_user_binding.sql
+--     sed -i 's/user_id = 1/user_id = 1/g' 014_esi_user_binding.sql
 --   person(join) 段取 eve_account.user_id 回填,无需占位。
 --
 -- 【幂等标注】
@@ -72,18 +72,18 @@ UPDATE wallet_journal    w JOIN eve_account e ON e.character_id = w.owner_id    
 UPDATE wallet_transaction t JOIN eve_account e ON e.character_id = t.owner_id AND t.owner_type = 'character'  SET t.user_id = e.user_id WHERE t.user_id IS NULL;
 
 -- ── 2. 军团行 → 管理域(ROOT admin userId,部署占位 '?';join eve_account 按 corp_id 限定到系统已登记军团,再 SET 常量 admin) ──
-UPDATE structure         s JOIN eve_account e ON e.corp_id = s.corporation_id     SET s.user_id = ? WHERE s.user_id IS NULL;
-UPDATE industry_job      i JOIN eve_account e ON e.corp_id = i.corporation_id     SET i.user_id = ? WHERE i.user_id IS NULL;
-UPDATE observer          o JOIN eve_account e ON e.corp_id = o.croporation_id     SET o.user_id = ? WHERE o.user_id IS NULL;
-UPDATE wallet_journal    w JOIN eve_account e ON e.corp_id = w.owner_id            SET w.user_id = ? WHERE w.user_id IS NULL;
-UPDATE wallet_transaction t JOIN eve_account e ON e.corp_id = t.owner_id AND t.owner_type = 'corporation' SET t.user_id = ? WHERE t.user_id IS NULL;
+UPDATE structure         s JOIN eve_account e ON e.corp_id = s.corporation_id     SET s.user_id = 1 WHERE s.user_id IS NULL;
+UPDATE industry_job      i JOIN eve_account e ON e.corp_id = i.corporation_id     SET i.user_id = 1 WHERE i.user_id IS NULL;
+UPDATE observer          o JOIN eve_account e ON e.corp_id = o.croporation_id     SET o.user_id = 1 WHERE o.user_id IS NULL;
+UPDATE wallet_journal    w JOIN eve_account e ON e.corp_id = w.owner_id            SET w.user_id = 1 WHERE w.user_id IS NULL;
+UPDATE wallet_transaction t JOIN eve_account e ON e.corp_id = t.owner_id AND t.owner_type = 'corporation' SET t.user_id = 1 WHERE t.user_id IS NULL;
 
 -- ── 3. 孤儿行兜底(迁移后仍 user_id IS NULL 的未匹配行,归管理域 admin) ──
-UPDATE assets            SET user_id = ? WHERE user_id IS NULL;
-UPDATE blueprints        SET user_id = ? WHERE user_id IS NULL;
-UPDATE mining_detail     SET user_id = ? WHERE user_id IS NULL;
-UPDATE industry_job      SET user_id = ? WHERE user_id IS NULL;
-UPDATE observer          SET user_id = ? WHERE user_id IS NULL;
-UPDATE structure         SET user_id = ? WHERE user_id IS NULL;
-UPDATE wallet_journal    SET user_id = ? WHERE user_id IS NULL;
-UPDATE wallet_transaction SET user_id = ? WHERE user_id IS NULL;
+UPDATE assets            SET user_id = 1 WHERE user_id IS NULL;
+UPDATE blueprints        SET user_id = 1 WHERE user_id IS NULL;
+UPDATE mining_detail     SET user_id = 1 WHERE user_id IS NULL;
+UPDATE industry_job      SET user_id = 1 WHERE user_id IS NULL;
+UPDATE observer          SET user_id = 1 WHERE user_id IS NULL;
+UPDATE structure         SET user_id = 1 WHERE user_id IS NULL;
+UPDATE wallet_journal    SET user_id = 1 WHERE user_id IS NULL;
+UPDATE wallet_transaction SET user_id = 1 WHERE user_id IS NULL;
