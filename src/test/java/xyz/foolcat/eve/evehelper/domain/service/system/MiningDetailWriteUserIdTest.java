@@ -81,13 +81,13 @@ class MiningDetailWriteUserIdTest {
         when(authorizeUtil.authorize(CHARACTER_ID)).thenReturn(account);
         when(esiGateway.getAccessToken(CHARACTER_ID, systemUserId)).thenReturn("Bearer t");
 
-        when(esiGateway.queryCorporationMiningObserverMaxPage(corpId, OBSERVER_ID, "Bearer t")).thenReturn(1);
+        when(esiGateway.queryCorporationMiningObserverMaxPage(eq(corpId), eq(OBSERVER_ID), eq("Bearer t"), eq(false))).thenReturn(1);
         MiningDetail m1 = new MiningDetail();
         m1.setCharacterId(111);
         m1.setRecordedCorporationId(222);
         m1.setTypeId(34);
         m1.setLastUpdated(new Date());
-        when(esiGateway.queryCorporationMiningObserver(eq(corpId), eq(OBSERVER_ID), eq(1), eq("Bearer t")))
+        when(esiGateway.queryCorporationMiningObserver(eq(corpId), eq(OBSERVER_ID), eq(1), eq("Bearer t"), eq(false)))
                 .thenReturn(Flux.just(m1));
         when(universeNameService.getUniverseName(any())).thenReturn(new HashMap<>());
 

@@ -18,6 +18,7 @@ import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -57,10 +58,10 @@ class MiningDetailServicePaginationTest {
         account.setUserId(7);
         when(authorizeUtil.authorize(100)).thenReturn(account);
         when(esiApiService.getAccessToken(100, 7)).thenReturn("token");
-        when(esiApiService.queryCorporationMiningObserverMaxPage(42, 200L, "token")).thenReturn(3);
+        when(esiApiService.queryCorporationMiningObserverMaxPage(eq(42), eq(200L), eq("token"), eq(false))).thenReturn(3);
 
         // 按请求的 page 返回不同角色的数据,以便区分被请求的是哪一页
-        when(esiApiService.queryCorporationMiningObserver(anyInt(), anyLong(), anyInt(), anyString()))
+        when(esiApiService.queryCorporationMiningObserver(anyInt(), anyLong(), anyInt(), anyString(), anyBoolean()))
                 .thenAnswer(invocation -> {
                     int page = invocation.getArgument(2);
                     MiningDetail d = new MiningDetail();
@@ -77,7 +78,7 @@ class MiningDetailServicePaginationTest {
         miningDetailService.saveObserverMining(100, 200L, false);
 
         ArgumentCaptor<Integer> pageCaptor = ArgumentCaptor.forClass(Integer.class);
-        verify(esiApiService, times(3)).queryCorporationMiningObserver(eq(42), eq(200L), pageCaptor.capture(), anyString());
+        verify(esiApiService, times(3)).queryCorporationMiningObserver(eq(42), eq(200L), pageCaptor.capture(), anyString(), anyBoolean());
         assertThat(pageCaptor.getAllValues())
                 .as("分页流必须以 1..maxPage 递增请求,而非重复 page=1")
                 .containsExactly(1, 2, 3);
