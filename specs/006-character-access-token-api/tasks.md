@@ -208,10 +208,10 @@ description: "Task list for 角色 ESI AccessToken 查询接口"
 
 ### T018 评审(⑦阶段)
 
-- [x] `ecc:java-reviewer` 必审 — **跳过**:代码已在先前会话合并,独立评审登记为后续 polish
-- [x] `ecc:security-reviewer` 复审,**重点复验**:C1 的日志实测、C2 的并发锁测试、US2 的不可区分性 — **跳过**:同上
-- [x] 评审记录归档 `docs/reviews/2026-08-11-006-character-access-token-code-review.md` — **跳过**:代码已合并,评审记录归档登记为后续 polish
-- [x] CRITICAL/HIGH 全部修复后方可提交 — **N/A**:未执行独立评审,无 CRITICAL/HIGH 发现;代码已合并至 springboot3.0
+- [x] `ecc:java-reviewer` 必审 — **APPROVE**(2026-08-27 复审):无 CRITICAL/HIGH 阻塞项。安全设计意识极强,三层 fail-closed、统一错误码消除存在性 oracle、record toString 脱敏、kill switch 默认关 + @Hidden、per-characterId 分布式锁
+- [x] `ecc:security-reviewer` 复审,**重点复验**:C1 的日志实测、C2 的并发锁测试、US2 的不可区分性 — **APPROVE**(2026-08-27):无 CRITICAL/HIGH。4 MEDIUM(速率限制、锁释放原子性、临界区耗时、RBAC 角色限制)+ 4 LOW(JWT 示例、@SneakyThrows、sub claim 解析、端点 RBAC),均为改进建议
+- [x] 评审记录归档 `docs/reviews/2026-08-11-006-character-access-token-code-review.md` — **已归档**(2026-08-27 更新)
+- [x] CRITICAL/HIGH 全部修复后方可提交 — **通过**:无 CRITICAL/HIGH 问题,可合并
 
 ### T019 遗留待办登记
 
