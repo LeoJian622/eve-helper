@@ -13,6 +13,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.*;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
+import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiAccessException;
@@ -38,8 +39,10 @@ import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 
 import java.text.ParseException;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -533,6 +536,67 @@ public class EsiApiService implements EsiGateway {
         } finally {
             releaseRefreshLock(lockKey, lockOwner);
         }
+    }
+
+    /**
+     * 判定绑定角色的 ESI 授权状态,并在 AUTHORIZED 时解析已授权权限(scopes)。
+     * <p>
+     * 组合 {@link #getAuthorizationStatus}(复用全部状态缓存/刷新锁/回写逻辑),
+     * 仅 AUTHORIZED 时再从缓存层已持有的 accessToken(JWT {@code scp} claim)运行时解析 scopes,
+     * 不因本方法产生额外的上游 ESI 调用或 refreshToken 刷新。
+     *
+     * @param account 绑定角色(需含 userId、refreshToken 与 characterId)
+     * @return 授权状态 + 已授权权限(scopes 为 null 表示无法确定;空列表表示 token 有效但未声明受限权限)
+     */
+    @Override
+    public EsiAuthorizationDetail getAuthorizationDetail(EveAccount account) {
+        EsiAuthStatus status = getAuthorizationStatus(account);
+        if (status != EsiAuthStatus.AUTHORIZED) {
+            return new EsiAuthorizationDetail(status, null);
+        }
+        return new EsiAuthorizationDetail(status, parseScopesFromCachedToken(account));
+    }
+
+    /**
+     * 从缓存层已持有的 accessToken 解析已授权权限(scopes)。
+     * <p>
+     * userId/characterId 缺失、缓存未命中或解析失败时返回 null(无法确定);
+     * 日志不记录任何 token 内容(FR-009)。
+     */
+    private List<String> parseScopesFromCachedToken(EveAccount account) {
+        // 守卫置于 try 之外:保证 catch 中 account 必非 null(不变量结构化,评审 Minor-1)
+        if (account == null || account.getUserId() == null || account.getCharacterId() == null) {
+            return null;
+        }
+        try {
+            String cached = (String) cacheGateway.get(accessTokenKey(account.getUserId(), account.getCharacterId()));
+            // isBlank 而非兄弟缓存读的 isNotEmpty:空串/空白同样视为无 token 可解析,属有意的 fail-soft 选择(评审 Minor-2)
+            if (StrUtil.isBlank(cached)) {
+                return null;
+            }
+            String token = cached.startsWith(GlobalConstants.TOKEN_PERN)
+                    ? cached.substring(GlobalConstants.TOKEN_PERN.length()) : cached;
+            return toScopeList(SignedJWT.parse(token).getJWTClaimsSet().getClaim("scp"));
+        } catch (Exception e) {
+            log.warn("ESI scopes 解析失败,fail-soft 返回 null,characterId={}", account.getCharacterId());
+            return null;
+        }
+    }
+
+    /**
+     * scp 声明通用解析:JSON 数组 → 逐项字符串;空格分隔字符串 → 切分;
+     * 缺失/类型未知 → null(无法确定)。空集合/空串 → 空列表(确认为空)。
+     */
+    private List<String> toScopeList(Object scpClaim) {
+        if (scpClaim instanceof List<?> list) {
+            return list.stream().filter(Objects::nonNull).map(String::valueOf)
+                    .filter(s -> !s.isBlank()).toList();
+        }
+        if (scpClaim instanceof String s) {
+            return s.isBlank() ? List.of() : Arrays.stream(s.trim().split("\\s+"))
+                    .filter(seg -> !seg.isBlank()).toList();
+        }
+        return null;
     }
 
     // ── 资产 ──

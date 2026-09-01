@@ -1,5 +1,10 @@
 package xyz.foolcat.eve.evehelper.domain.service.esi;
 
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,6 +28,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
+import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.infrastructure.gateway.esi.EsiApiService;
@@ -273,6 +279,139 @@ class EsiApiServiceTest {
         assertEquals(EsiAuthStatus.UNKNOWN, status);
         verify(cacheGateway).set(eq(STATUS_KEY), eq("UNKNOWN"), anyLong(), eq(TimeUnit.SECONDS));
         verify(cacheGateway).delete(LOCK_KEY);
+    }
+
+    // ─═ 021/T004:getAuthorizationDetail(AUTHORIZED → 解析缓存 token 的 scp) ══
+
+    private static final List<String> SCOPES_TWO =
+            List.of("esi-assets.read_assets.v1", "esi-wallet.read_character_wallet.v1");
+
+    /**
+     * 生成带 scp claim 的自签 HS256 JWT(模拟 ESI 签发的 accessToken;
+     * 与生产解析 sub/name 同口径,只读声明不验证签名)。scp 为 null 时不写入该 claim。
+     */
+    private String jwtWithScp(Object scp) throws Exception {
+        JWTClaimsSet.Builder b = new JWTClaimsSet.Builder()
+                .subject("CHARACTER:EVE:" + CID).claim("name", "TestChar");
+        if (scp != null) {
+            b.claim("scp", scp);
+        }
+        SignedJWT jwt = new SignedJWT(
+                new JWSHeader.Builder(JWSAlgorithm.HS256).build(), b.build());
+        jwt.sign(new MACSigner("0123456789abcdef0123456789abcdef"));
+        return jwt.serialize();
+    }
+
+    @Test
+    @DisplayName("detail:状态缓存命中(AUTHORIZED) + token 缓存 scp 为数组 → status 与 scopes 均正确(A1)")
+    void detail_scopesFromArrayClaim() throws Exception {
+        EveAccount acc = account("rt");
+        when(cacheGateway.get(STATUS_KEY)).thenReturn("AUTHORIZED");
+        when(cacheGateway.get(ACCESS_TOKEN_KEY)).thenReturn("Bearer " + jwtWithScp(SCOPES_TWO));
+
+        EsiAuthorizationDetail detail = esiApiService.getAuthorizationDetail(acc);
+
+        assertEquals(EsiAuthStatus.AUTHORIZED, detail.status());
+        // 顺序无关:scopes 与 scp 数组两元素集合等价
+        assertThat(detail.scopes()).containsExactlyInAnyOrder(
+                "esi-assets.read_assets.v1", "esi-wallet.read_character_wallet.v1");
+    }
+
+    @Test
+    @DisplayName("detail:scp 为空格分隔字符串 → 解析为与数组格式等价的两元素列表(A2,SC-005)")
+    void detail_scopesFromSpaceDelimitedClaim() throws Exception {
+        EveAccount acc = account("rt");
+        when(cacheGateway.get(STATUS_KEY)).thenReturn("AUTHORIZED");
+        when(cacheGateway.get(ACCESS_TOKEN_KEY))
+                .thenReturn("Bearer " + jwtWithScp("esi-assets.read_assets.v1 esi-wallet.read_character_wallet.v1"));
+
+        EsiAuthorizationDetail detail = esiApiService.getAuthorizationDetail(acc);
+
+        assertEquals(EsiAuthStatus.AUTHORIZED, detail.status());
+        assertThat(detail.scopes()).containsExactlyInAnyOrder(
+                "esi-assets.read_assets.v1", "esi-wallet.read_character_wallet.v1");
+    }
+
+    @Test
+    @DisplayName("detail:scp 为空数组 → scopes 为非 null 空列表(确认为空,而非 null)")
+    void detail_scopesEmptyArrayClaim_returnsEmptyList() throws Exception {
+        EveAccount acc = account("rt");
+        when(cacheGateway.get(STATUS_KEY)).thenReturn("AUTHORIZED");
+        when(cacheGateway.get(ACCESS_TOKEN_KEY)).thenReturn("Bearer " + jwtWithScp(List.of()));
+
+        EsiAuthorizationDetail detail = esiApiService.getAuthorizationDetail(acc);
+
+        assertEquals(EsiAuthStatus.AUTHORIZED, detail.status());
+        assertThat(detail.scopes()).isNotNull().isEmpty();
+    }
+
+    // ─═ 021/T009:getAuthorizationDetail 降级矩阵(B1-B5,US2) ══
+
+    @Test
+    @DisplayName("detail:刷新 4xx → EXPIRED,scopes=null 且不读 token 缓存(B1,FR-006)")
+    void detail_expiredStatus_doesNotTouchTokenCache() {
+        EveAccount acc = account("rt");
+        stubCacheMissAndLockAcquired();
+        when(authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, "rt"))
+                .thenReturn(Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE)));
+
+        EsiAuthorizationDetail detail = esiApiService.getAuthorizationDetail(acc);
+
+        assertEquals(EsiAuthStatus.EXPIRED, detail.status());
+        assertThat(detail.scopes()).isNull();
+        // FR-006:非 AUTHORIZED 不得产生任何额外 token 缓存读
+        verify(cacheGateway, never()).get(ACCESS_TOKEN_KEY);
+    }
+
+    @Test
+    @DisplayName("detail:refreshToken 为空 → NOT_AUTHORIZED + scopes=null(B2)")
+    void detail_blankRefreshToken_returnsNotAuthorizedNullScopes() {
+        EsiAuthorizationDetail blank = esiApiService.getAuthorizationDetail(account(""));
+        EsiAuthorizationDetail nullRt = esiApiService.getAuthorizationDetail(account(null));
+
+        assertEquals(EsiAuthStatus.NOT_AUTHORIZED, blank.status());
+        assertThat(blank.scopes()).isNull();
+        assertEquals(EsiAuthStatus.NOT_AUTHORIZED, nullRt.status());
+        assertThat(nullRt.scopes()).isNull();
+    }
+
+    @Test
+    @DisplayName("detail:状态缓存命中 AUTHORIZED 但 token 缓存未命中 → status 不变,scopes=null(B3)")
+    void detail_authorizedButTokenCacheMiss_returnsNullScopes() {
+        EveAccount acc = account("rt");
+        when(cacheGateway.get(STATUS_KEY)).thenReturn("AUTHORIZED");
+        when(cacheGateway.get(ACCESS_TOKEN_KEY)).thenReturn(null);
+
+        EsiAuthorizationDetail detail = esiApiService.getAuthorizationDetail(acc);
+
+        assertEquals(EsiAuthStatus.AUTHORIZED, detail.status());
+        assertThat(detail.scopes()).isNull();
+    }
+
+    @Test
+    @DisplayName("detail:token 缓存为非 JWT 垃圾串 → scopes=null,不抛异常(B4,fail-soft)")
+    void detail_corruptTokenCacheValue_returnsNullScopes() {
+        EveAccount acc = account("rt");
+        when(cacheGateway.get(STATUS_KEY)).thenReturn("AUTHORIZED");
+        when(cacheGateway.get(ACCESS_TOKEN_KEY)).thenReturn("Bearer this-is-not-a-jwt");
+
+        EsiAuthorizationDetail detail = esiApiService.getAuthorizationDetail(acc);
+
+        assertEquals(EsiAuthStatus.AUTHORIZED, detail.status());
+        assertThat(detail.scopes()).isNull();
+    }
+
+    @Test
+    @DisplayName("detail:token 有效但无 scp claim → scopes=null(B5)")
+    void detail_tokenWithoutScpClaim_returnsNullScopes() throws Exception {
+        EveAccount acc = account("rt");
+        when(cacheGateway.get(STATUS_KEY)).thenReturn("AUTHORIZED");
+        when(cacheGateway.get(ACCESS_TOKEN_KEY)).thenReturn("Bearer " + jwtWithScp(null));
+
+        EsiAuthorizationDetail detail = esiApiService.getAuthorizationDetail(acc);
+
+        assertEquals(EsiAuthStatus.AUTHORIZED, detail.status());
+        assertThat(detail.scopes()).isNull();
     }
 
     // ─═ 015/T008:角色资产查询接入缓存判读(列表 + maxPage) ═─

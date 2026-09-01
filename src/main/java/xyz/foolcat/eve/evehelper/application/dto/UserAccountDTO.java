@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 
+import java.util.List;
+
 /**
  * 用户角色列表
  *
@@ -55,4 +57,11 @@ public class UserAccountDTO {
      */
     @Schema(description = "ESI 授权状态:AUTHORIZED/EXPIRED/NOT_AUTHORIZED/UNKNOWN")
     private EsiAuthStatus authStatus;
+
+    /**
+     * ESI 已授权权限(原始 scope 名)。null=无法确定(非 AUTHORIZED/无可用 token/解析失败);
+     * 空列表=token 有效但未声明受限权限。
+     */
+    @Schema(description = "ESI 已授权权限列表(原始 scope 名);null=无法确定(非 AUTHORIZED/无可用 token/解析失败),空列表=token 有效但未声明受限权限")
+    private List<String> scopes;
 }

@@ -13,6 +13,7 @@ import xyz.foolcat.eve.evehelper.application.dto.response.UserDTO;
 import xyz.foolcat.eve.evehelper.application.security.AccessGuard;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
+import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
@@ -45,6 +46,12 @@ public class UserApplicationService {
      * 单角色状态判定结果等待上限,秒(覆盖 ESI 5s 超时 + 缓存 IO)
      */
     private static final long STATUS_FUTURE_TIMEOUT_SECONDS = 10;
+
+    /**
+     * 组合判定的兜底读模型:UNKNOWN + scopes null(超时/异常/中断/结果为 null 时统一归于此)。
+     */
+    private static final EsiAuthorizationDetail UNKNOWN_DETAIL =
+            new EsiAuthorizationDetail(EsiAuthStatus.UNKNOWN, null);
 
     private final EveAccountService eveAccountService;
 
@@ -116,31 +123,35 @@ public class UserApplicationService {
         if (accounts == null || accounts.isEmpty()) {
             return Collections.emptyList();
         }
-        List<UserAccountDTO> dtos = eveAccountAssembler.domain2UserAccountTO(accounts);
-        List<CompletableFuture<EsiAuthStatus>> futures = new ArrayList<>(accounts.size());
+        List<UserAccountDTO> dtos = eveAccountAssembler.domain2UserAccountDTO(accounts);
+        List<CompletableFuture<EsiAuthorizationDetail>> futures = new ArrayList<>(accounts.size());
         for (EveAccount account : accounts) {
-            futures.add(CompletableFuture.supplyAsync(() -> esiApiService.getAuthorizationStatus(account), esiAuthStatusExecutor));
+            futures.add(CompletableFuture.supplyAsync(() -> esiApiService.getAuthorizationDetail(account), esiAuthStatusExecutor));
         }
         for (int i = 0; i < dtos.size(); i++) {
-            dtos.get(i).setAuthStatus(resolveStatus(futures.get(i)));
+            EsiAuthorizationDetail detail = resolveDetail(futures.get(i));
+            dtos.get(i).setAuthStatus(detail.status());
+            dtos.get(i).setScopes(detail.scopes());
         }
         return dtos;
     }
 
     /**
-     * 等待单角色状态判定结果,带超时与异常隔离(任何异常/超时归为 UNKNOWN)。
+     * 等待单角色组合判定结果(状态+scopes),带超时与异常隔离;
+     * 任何异常/超时/结果为 null(实现返回 null 时)统一归为 UNKNOWN_DETAIL,不影响其他角色。
      */
-    private EsiAuthStatus resolveStatus(CompletableFuture<EsiAuthStatus> future) {
+    private EsiAuthorizationDetail resolveDetail(CompletableFuture<EsiAuthorizationDetail> future) {
         try {
-            return future.get(STATUS_FUTURE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            EsiAuthorizationDetail result = future.get(STATUS_FUTURE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            return result != null ? result : UNKNOWN_DETAIL;
         } catch (TimeoutException e) {
             future.cancel(true);
-            return EsiAuthStatus.UNKNOWN;
+            return UNKNOWN_DETAIL;
         } catch (ExecutionException e) {
-            return EsiAuthStatus.UNKNOWN;
+            return UNKNOWN_DETAIL;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            return EsiAuthStatus.UNKNOWN;
+            return UNKNOWN_DETAIL;
         }
     }
 }

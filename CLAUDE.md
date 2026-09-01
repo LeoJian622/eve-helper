@@ -118,6 +118,6 @@ mvn package -DskipTests
 - 业务代码变更须走统一 Spec-First 流程(不分级、无例外);技术栈本身不可变更
 
 <!-- SPECKIT START -->
-当前 feature: `014-esi-data-user-binding`(ESI 数据 × 系统用户强关联:8 表 user_id 归属 + 军团同步者私有读 + 联盟维度机制 + 存量迁移)
-实现计划: [specs/014-esi-data-user-binding/plan.md](specs/014-esi-data-user-binding/plan.md)
+当前 feature: `021-esi-auth-scopes`(用户角色列表接口返回 ESI 已授权权限 scopes:运行时解析 accessToken、无 DDL)
+实现计划: [specs/021-esi-auth-scopes/plan.md](specs/021-esi-auth-scopes/plan.md)
 <!-- SPECKIT END -->

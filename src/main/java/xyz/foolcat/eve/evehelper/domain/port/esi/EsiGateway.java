@@ -12,6 +12,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
+import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 
@@ -70,6 +71,19 @@ public interface EsiGateway {
      * @return ESI 授权状态
      */
     EsiAuthStatus getAuthorizationStatus(EveAccount account);
+
+    /**
+     * 判定绑定角色的 ESI 授权状态,并在 AUTHORIZED 时解析已授权权限(scopes)。
+     * <p>
+     * scopes 取自当前有效 accessToken(缓存或本次判定中刷新所得)的已授权权限声明;
+     * 非 AUTHORIZED、无可用 accessToken 或解析失败时 scopes 为 null
+     * (空列表表示 token 有效但未声明任何受限权限)。
+     * 不得因本方法产生额外的上游 ESI 调用或 refreshToken 刷新。
+     *
+     * @param account 绑定角色(需含 userId、refreshToken 与 characterId)
+     * @return 授权状态 + 已授权权限(可 null)
+     */
+    EsiAuthorizationDetail getAuthorizationDetail(EveAccount account);
 
     // ── 资产 ──
 
