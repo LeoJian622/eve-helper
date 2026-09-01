@@ -138,7 +138,7 @@ class UserApplicationServiceUnitTest {
         UserAccountDTO d1 = dto(1);
         UserAccountDTO d2 = dto(2);
         UserAccountDTO d3 = dto(3);
-        when(eveAccountAssembler.domain2UserAccountTO(anyList())).thenReturn(List.of(d1, d2, d3));
+        when(eveAccountAssembler.domain2UserAccountDTO(anyList())).thenReturn(List.of(d1, d2, d3));
         when(esiApiService.getAuthorizationStatus(a1)).thenReturn(EsiAuthStatus.AUTHORIZED);
         when(esiApiService.getAuthorizationStatus(a2)).thenReturn(EsiAuthStatus.EXPIRED);
         when(esiApiService.getAuthorizationStatus(a3)).thenReturn(EsiAuthStatus.NOT_AUTHORIZED);
@@ -160,7 +160,7 @@ class UserApplicationServiceUnitTest {
         when(eveAccountService.getAccountList(1)).thenReturn(List.of(a1, a2));
         UserAccountDTO d1 = dto(1);
         UserAccountDTO d2 = dto(2);
-        when(eveAccountAssembler.domain2UserAccountTO(anyList())).thenReturn(List.of(d1, d2));
+        when(eveAccountAssembler.domain2UserAccountDTO(anyList())).thenReturn(List.of(d1, d2));
         when(esiApiService.getAuthorizationStatus(a1)).thenReturn(EsiAuthStatus.AUTHORIZED);
         when(esiApiService.getAuthorizationStatus(a2)).thenThrow(new RuntimeException("boom"));
 

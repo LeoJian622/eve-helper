@@ -18,5 +18,5 @@ public interface EveAccountAssembler {
      * @param eveAccount
      * @return
      */
-    List<UserAccountDTO> domain2UserAccountTO(List<EveAccount> eveAccount);
+    List<UserAccountDTO> domain2UserAccountDTO(List<EveAccount> eveAccount);
 }

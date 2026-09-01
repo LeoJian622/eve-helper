@@ -105,7 +105,7 @@ class UserApplicationServiceTest {
         UserAccountDTO d1 = dto(1);
         UserAccountDTO d2 = dto(2);
         UserAccountDTO d3 = dto(3);
-        when(eveAccountAssembler.domain2UserAccountTO(anyList())).thenReturn(List.of(d1, d2, d3));
+        when(eveAccountAssembler.domain2UserAccountDTO(anyList())).thenReturn(List.of(d1, d2, d3));
 
         when(esiApiService.getAuthorizationStatus(a1)).thenReturn(EsiAuthStatus.AUTHORIZED);
         when(esiApiService.getAuthorizationStatus(a2)).thenThrow(new RuntimeException("ESI unavailable"));

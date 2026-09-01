@@ -116,7 +116,7 @@ public class UserApplicationService {
         if (accounts == null || accounts.isEmpty()) {
             return Collections.emptyList();
         }
-        List<UserAccountDTO> dtos = eveAccountAssembler.domain2UserAccountTO(accounts);
+        List<UserAccountDTO> dtos = eveAccountAssembler.domain2UserAccountDTO(accounts);
         List<CompletableFuture<EsiAuthStatus>> futures = new ArrayList<>(accounts.size());
         for (EveAccount account : accounts) {
             futures.add(CompletableFuture.supplyAsync(() -> esiApiService.getAuthorizationStatus(account), esiAuthStatusExecutor));
