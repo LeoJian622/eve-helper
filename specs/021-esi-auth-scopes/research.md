@@ -36,7 +36,7 @@
 
 **Decision**: 测试内用 Nimbus `MACSigner` 自签 HS256 JWT 作为缓存 token 值（`Bearer ` 前缀 + `jwt.serialize()`）,精确控制 scp 为数组/字符串/缺失三种变体。
 
-**Rationale**: 现有 `EsiApiServiceUnitTest` 的刷新成功用例缓存的是 `"at"`（非 JWT）,无法验证解析成功路径;自签 JWT 可确定性覆盖两种格式与空/缺失语义。`EsiApiServiceTest` 为纯 Mockito 测试（不依赖 Spring/DB/Redis）,新用例落在该文件沿用其构造方式。
+**Rationale**: 现有 `EsiApiServiceUnitTest` 的刷新成功用例缓存的是 `"at"`（非 JWT）,无法验证解析成功路径;自签 JWT 可确定性覆盖两种格式与空/缺失语义。**实测更正**：`EsiApiServiceTest` 实为 `@SpringBootTest + @MockBean` 模式（文件头"纯 Mockito"注释已过时,T001 基线运行确认）,新用例落在该文件沿用 @MockBean stub 模式;运行需 DB/Redis 可达（test profile → 192.168.12.249）。
 
 **Alternatives considered**: 用线上真实 token 写死在测试（凭据入库,安全红线违例）。
 

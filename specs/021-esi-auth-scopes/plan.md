@@ -83,7 +83,7 @@ public record EsiAuthorizationDetail(EsiAuthStatus status, List<String> scopes) 
 EsiAuthorizationDetail getAuthorizationDetail(EveAccount account);
 ```
 
-2. **RED**：在 `EsiApiServiceTest`（纯 Mockito,沿用现有构造方式）先写失败用例——测试内用 Nimbus `MACSigner` 自签 HS256 JWT 构造缓存 token：
+2. **RED**：在 `EsiApiServiceTest`（`@SpringBootTest + @MockBean`,与 `EsiApiServiceUnitTest` 同模式;T001 实测更正:文件头"纯 Mockito"注释已过时）先写失败用例——测试内用 Nimbus `MACSigner` 自签 HS256 JWT 构造缓存 token：
 
 ```java
 // 测试辅助:生成带 scp 的 JWT
