@@ -27,7 +27,6 @@ import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -121,24 +120,6 @@ class UserApplicationServiceUnitTest {
                         Arrays.stream(roles).map(SimpleGrantedAuthority::new).toList()));
     }
 
-    /**
-     * 反射读取 DTO 的 scopes 字段:该字段由 021/T007 加入 UserAccountDTO,
-     * RED 阶段尚不存在 → 返回 null(与服务未写入的语义一致),保证本测试可编译;
-     * GREEN 后读取真实字段值。
-     */
-    @SuppressWarnings("unchecked")
-    private static List<String> scopesOf(UserAccountDTO dto) {
-        try {
-            Field field = UserAccountDTO.class.getDeclaredField("scopes");
-            field.setAccessible(true);
-            return (List<String>) field.get(dto);
-        } catch (NoSuchFieldException e) {
-            return null;
-        } catch (IllegalAccessException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
     @Test
     @DisplayName("无绑定角色 -> 返回空列表")
     void emptyAccounts_returnsEmpty() {
@@ -160,9 +141,12 @@ class UserApplicationServiceUnitTest {
         UserAccountDTO d2 = dto(2);
         UserAccountDTO d3 = dto(3);
         when(eveAccountAssembler.domain2UserAccountDTO(anyList())).thenReturn(List.of(d1, d2, d3));
-        when(esiApiService.getAuthorizationStatus(a1)).thenReturn(EsiAuthStatus.AUTHORIZED);
-        when(esiApiService.getAuthorizationStatus(a2)).thenReturn(EsiAuthStatus.EXPIRED);
-        when(esiApiService.getAuthorizationStatus(a3)).thenReturn(EsiAuthStatus.NOT_AUTHORIZED);
+        when(esiApiService.getAuthorizationDetail(a1))
+                .thenReturn(new EsiAuthorizationDetail(EsiAuthStatus.AUTHORIZED, null));
+        when(esiApiService.getAuthorizationDetail(a2))
+                .thenReturn(new EsiAuthorizationDetail(EsiAuthStatus.EXPIRED, null));
+        when(esiApiService.getAuthorizationDetail(a3))
+                .thenReturn(new EsiAuthorizationDetail(EsiAuthStatus.NOT_AUTHORIZED, null));
 
         List<UserAccountDTO> result = userApplicationService.queryAccountListWithAuthStatus(1);
 
@@ -182,8 +166,9 @@ class UserApplicationServiceUnitTest {
         UserAccountDTO d1 = dto(1);
         UserAccountDTO d2 = dto(2);
         when(eveAccountAssembler.domain2UserAccountDTO(anyList())).thenReturn(List.of(d1, d2));
-        when(esiApiService.getAuthorizationStatus(a1)).thenReturn(EsiAuthStatus.AUTHORIZED);
-        when(esiApiService.getAuthorizationStatus(a2)).thenThrow(new RuntimeException("boom"));
+        when(esiApiService.getAuthorizationDetail(a1))
+                .thenReturn(new EsiAuthorizationDetail(EsiAuthStatus.AUTHORIZED, null));
+        when(esiApiService.getAuthorizationDetail(a2)).thenThrow(new RuntimeException("boom"));
 
         List<UserAccountDTO> result = userApplicationService.queryAccountListWithAuthStatus(1);
 
@@ -207,7 +192,7 @@ class UserApplicationServiceUnitTest {
 
         assertEquals(1, result.size());
         assertEquals(EsiAuthStatus.AUTHORIZED, d1.getAuthStatus());
-        assertEquals(List.of("esi-x.v1"), scopesOf(d1));
+        assertEquals(List.of("esi-x.v1"), d1.getScopes());
     }
 
     @Test
@@ -224,7 +209,7 @@ class UserApplicationServiceUnitTest {
 
         assertEquals(1, result.size());
         assertEquals(EsiAuthStatus.UNKNOWN, d1.getAuthStatus());
-        assertNull(scopesOf(d1));
+        assertNull(d1.getScopes());
     }
 
     @Test

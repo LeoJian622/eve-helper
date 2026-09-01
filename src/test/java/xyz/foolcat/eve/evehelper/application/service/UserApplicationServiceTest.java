@@ -20,7 +20,6 @@ import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -94,24 +93,6 @@ class UserApplicationServiceTest {
                         Arrays.stream(roles).map(SimpleGrantedAuthority::new).toList()));
     }
 
-    /**
-     * 反射读取 DTO 的 scopes 字段:该字段由 021/T007 加入 UserAccountDTO,
-     * RED 阶段尚不存在 → 返回 null(与服务未写入的语义一致),保证本测试可编译;
-     * GREEN 后读取真实字段值。
-     */
-    @SuppressWarnings("unchecked")
-    private static List<String> scopesOf(UserAccountDTO dto) {
-        try {
-            Field field = UserAccountDTO.class.getDeclaredField("scopes");
-            field.setAccessible(true);
-            return (List<String>) field.get(dto);
-        } catch (NoSuchFieldException e) {
-            return null;
-        } catch (IllegalAccessException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
     @Test
     @DisplayName("3 角色中 1 个 ESI 异常被隔离为 UNKNOWN,其余 2 个状态正确,接口仍成功返回 3 条")
     void threeAccounts_oneThrows_isolatedAsUnknown() {
@@ -127,9 +108,11 @@ class UserApplicationServiceTest {
         UserAccountDTO d3 = dto(3);
         when(eveAccountAssembler.domain2UserAccountDTO(anyList())).thenReturn(List.of(d1, d2, d3));
 
-        when(esiApiService.getAuthorizationStatus(a1)).thenReturn(EsiAuthStatus.AUTHORIZED);
-        when(esiApiService.getAuthorizationStatus(a2)).thenThrow(new RuntimeException("ESI unavailable"));
-        when(esiApiService.getAuthorizationStatus(a3)).thenReturn(EsiAuthStatus.EXPIRED);
+        when(esiApiService.getAuthorizationDetail(a1))
+                .thenReturn(new EsiAuthorizationDetail(EsiAuthStatus.AUTHORIZED, null));
+        when(esiApiService.getAuthorizationDetail(a2)).thenThrow(new RuntimeException("ESI unavailable"));
+        when(esiApiService.getAuthorizationDetail(a3))
+                .thenReturn(new EsiAuthorizationDetail(EsiAuthStatus.EXPIRED, null));
 
         List<UserAccountDTO> result = userApplicationService.queryAccountListWithAuthStatus(1);
 
@@ -154,7 +137,7 @@ class UserApplicationServiceTest {
 
         assertEquals(1, result.size());
         assertEquals(EsiAuthStatus.AUTHORIZED, d1.getAuthStatus());
-        assertEquals(List.of("esi-x.v1"), scopesOf(d1));
+        assertEquals(List.of("esi-x.v1"), d1.getScopes());
     }
 
     @Test
