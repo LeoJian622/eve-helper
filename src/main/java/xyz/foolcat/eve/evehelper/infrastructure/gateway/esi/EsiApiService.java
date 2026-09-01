@@ -564,11 +564,13 @@ public class EsiApiService implements EsiGateway {
      * 日志不记录任何 token 内容(FR-009)。
      */
     private List<String> parseScopesFromCachedToken(EveAccount account) {
+        // 守卫置于 try 之外:保证 catch 中 account 必非 null(不变量结构化,评审 Minor-1)
+        if (account == null || account.getUserId() == null || account.getCharacterId() == null) {
+            return null;
+        }
         try {
-            if (account == null || account.getUserId() == null || account.getCharacterId() == null) {
-                return null;
-            }
             String cached = (String) cacheGateway.get(accessTokenKey(account.getUserId(), account.getCharacterId()));
+            // isBlank 而非兄弟缓存读的 isNotEmpty:空串/空白同样视为无 token 可解析,属有意的 fail-soft 选择(评审 Minor-2)
             if (StrUtil.isBlank(cached)) {
                 return null;
             }

@@ -47,6 +47,12 @@ public class UserApplicationService {
      */
     private static final long STATUS_FUTURE_TIMEOUT_SECONDS = 10;
 
+    /**
+     * 组合判定的兜底读模型:UNKNOWN + scopes null(超时/异常/中断/结果为 null 时统一归于此)。
+     */
+    private static final EsiAuthorizationDetail UNKNOWN_DETAIL =
+            new EsiAuthorizationDetail(EsiAuthStatus.UNKNOWN, null);
+
     private final EveAccountService eveAccountService;
 
     private final EsiGateway esiApiService;
@@ -131,14 +137,8 @@ public class UserApplicationService {
     }
 
     /**
-     * 组合判定的兜底读模型:UNKNOWN + scopes null(超时/异常/中断/结果为 null 时统一归于此)。
-     */
-    private static final EsiAuthorizationDetail UNKNOWN_DETAIL =
-            new EsiAuthorizationDetail(EsiAuthStatus.UNKNOWN, null);
-
-    /**
      * 等待单角色组合判定结果(状态+scopes),带超时与异常隔离;
-     * 任何异常/超时/结果为 null(如 mock 未 stub)统一归为 UNKNOWN_DETAIL,不影响其他角色。
+     * 任何异常/超时/结果为 null(实现返回 null 时)统一归为 UNKNOWN_DETAIL,不影响其他角色。
      */
     private EsiAuthorizationDetail resolveDetail(CompletableFuture<EsiAuthorizationDetail> future) {
         try {
