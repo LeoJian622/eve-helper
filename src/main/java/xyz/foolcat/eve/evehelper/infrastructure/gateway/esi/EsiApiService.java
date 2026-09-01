@@ -13,6 +13,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.*;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
+import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiAccessException;
@@ -533,6 +534,12 @@ public class EsiApiService implements EsiGateway {
         } finally {
             releaseRefreshLock(lockKey, lockOwner);
         }
+    }
+
+    @Override
+    public EsiAuthorizationDetail getAuthorizationDetail(EveAccount account) {
+        // T006 实现真正的组合逻辑;当前为编译锚点骨架
+        return null;
     }
 
     // ── 资产 ──
