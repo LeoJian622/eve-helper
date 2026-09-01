@@ -345,6 +345,75 @@ class EsiApiServiceTest {
         assertThat(detail.scopes()).isNotNull().isEmpty();
     }
 
+    // ─═ 021/T009:getAuthorizationDetail 降级矩阵(B1-B5,US2) ══
+
+    @Test
+    @DisplayName("detail:刷新 4xx → EXPIRED,scopes=null 且不读 token 缓存(B1,FR-006)")
+    void detail_expiredStatus_doesNotTouchTokenCache() {
+        EveAccount acc = account("rt");
+        stubCacheMissAndLockAcquired();
+        when(authorizeOAuth.updateAccessToken(GrantType.REFRESH_TOKEN, "rt"))
+                .thenReturn(Mono.error(new EsiException(ResultCode.ESI_AUTHORIZATION_FAILURE)));
+
+        EsiAuthorizationDetail detail = esiApiService.getAuthorizationDetail(acc);
+
+        assertEquals(EsiAuthStatus.EXPIRED, detail.status());
+        assertThat(detail.scopes()).isNull();
+        // FR-006:非 AUTHORIZED 不得产生任何额外 token 缓存读
+        verify(cacheGateway, never()).get(ACCESS_TOKEN_KEY);
+    }
+
+    @Test
+    @DisplayName("detail:refreshToken 为空 → NOT_AUTHORIZED + scopes=null(B2)")
+    void detail_blankRefreshToken_returnsNotAuthorizedNullScopes() {
+        EsiAuthorizationDetail blank = esiApiService.getAuthorizationDetail(account(""));
+        EsiAuthorizationDetail nullRt = esiApiService.getAuthorizationDetail(account(null));
+
+        assertEquals(EsiAuthStatus.NOT_AUTHORIZED, blank.status());
+        assertThat(blank.scopes()).isNull();
+        assertEquals(EsiAuthStatus.NOT_AUTHORIZED, nullRt.status());
+        assertThat(nullRt.scopes()).isNull();
+    }
+
+    @Test
+    @DisplayName("detail:状态缓存命中 AUTHORIZED 但 token 缓存未命中 → status 不变,scopes=null(B3)")
+    void detail_authorizedButTokenCacheMiss_returnsNullScopes() {
+        EveAccount acc = account("rt");
+        when(cacheGateway.get(STATUS_KEY)).thenReturn("AUTHORIZED");
+        when(cacheGateway.get(ACCESS_TOKEN_KEY)).thenReturn(null);
+
+        EsiAuthorizationDetail detail = esiApiService.getAuthorizationDetail(acc);
+
+        assertEquals(EsiAuthStatus.AUTHORIZED, detail.status());
+        assertThat(detail.scopes()).isNull();
+    }
+
+    @Test
+    @DisplayName("detail:token 缓存为非 JWT 垃圾串 → scopes=null,不抛异常(B4,fail-soft)")
+    void detail_corruptTokenCacheValue_returnsNullScopes() {
+        EveAccount acc = account("rt");
+        when(cacheGateway.get(STATUS_KEY)).thenReturn("AUTHORIZED");
+        when(cacheGateway.get(ACCESS_TOKEN_KEY)).thenReturn("Bearer this-is-not-a-jwt");
+
+        EsiAuthorizationDetail detail = esiApiService.getAuthorizationDetail(acc);
+
+        assertEquals(EsiAuthStatus.AUTHORIZED, detail.status());
+        assertThat(detail.scopes()).isNull();
+    }
+
+    @Test
+    @DisplayName("detail:token 有效但无 scp claim → scopes=null(B5)")
+    void detail_tokenWithoutScpClaim_returnsNullScopes() throws Exception {
+        EveAccount acc = account("rt");
+        when(cacheGateway.get(STATUS_KEY)).thenReturn("AUTHORIZED");
+        when(cacheGateway.get(ACCESS_TOKEN_KEY)).thenReturn("Bearer " + jwtWithScp(null));
+
+        EsiAuthorizationDetail detail = esiApiService.getAuthorizationDetail(acc);
+
+        assertEquals(EsiAuthStatus.AUTHORIZED, detail.status());
+        assertThat(detail.scopes()).isNull();
+    }
+
     // ─═ 015/T008:角色资产查询接入缓存判读(列表 + maxPage) ═─
 
     @AfterEach

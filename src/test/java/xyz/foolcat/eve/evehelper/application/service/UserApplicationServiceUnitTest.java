@@ -213,6 +213,42 @@ class UserApplicationServiceUnitTest {
     }
 
     @Test
+    @DisplayName("EXPIRED detail → DTO authStatus=EXPIRED 且 scopes 为 null(021/T010)")
+    void detail_expiredStatus_propagatesNullScopes() {
+        loginAsJwt(1L, "USER");
+        EveAccount acc = account(1, "rt1");
+        when(eveAccountService.getAccountList(1)).thenReturn(List.of(acc));
+        UserAccountDTO d1 = dto(1);
+        when(eveAccountAssembler.domain2UserAccountDTO(anyList())).thenReturn(List.of(d1));
+        when(esiApiService.getAuthorizationDetail(acc))
+                .thenReturn(new EsiAuthorizationDetail(EsiAuthStatus.EXPIRED, null));
+
+        List<UserAccountDTO> result = userApplicationService.queryAccountListWithAuthStatus(1);
+
+        assertEquals(1, result.size());
+        assertEquals(EsiAuthStatus.EXPIRED, d1.getAuthStatus());
+        assertNull(d1.getScopes());
+    }
+
+    @Test
+    @DisplayName("UNKNOWN detail(网关真实返回)→ DTO authStatus=UNKNOWN 且 scopes 为 null(021/T010)")
+    void detail_unknownStatus_propagatesNullScopes() {
+        loginAsJwt(1L, "USER");
+        EveAccount acc = account(1, "rt1");
+        when(eveAccountService.getAccountList(1)).thenReturn(List.of(acc));
+        UserAccountDTO d1 = dto(1);
+        when(eveAccountAssembler.domain2UserAccountDTO(anyList())).thenReturn(List.of(d1));
+        when(esiApiService.getAuthorizationDetail(acc))
+                .thenReturn(new EsiAuthorizationDetail(EsiAuthStatus.UNKNOWN, null));
+
+        List<UserAccountDTO> result = userApplicationService.queryAccountListWithAuthStatus(1);
+
+        assertEquals(1, result.size());
+        assertEquals(EsiAuthStatus.UNKNOWN, d1.getAuthStatus());
+        assertNull(d1.getScopes());
+    }
+
+    @Test
     @DisplayName("getAccountList 返回 null -> 返回空列表(防御)")
     void nullAccounts_returnsEmpty() {
         loginAsJwt(1L, "USER");
