@@ -17,6 +17,7 @@ import xyz.foolcat.eve.evehelper.application.dto.UserAccountDTO;
 import xyz.foolcat.eve.evehelper.application.dto.response.UserDTO;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
+import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
@@ -26,11 +27,13 @@ import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -118,6 +121,24 @@ class UserApplicationServiceUnitTest {
                         Arrays.stream(roles).map(SimpleGrantedAuthority::new).toList()));
     }
 
+    /**
+     * 反射读取 DTO 的 scopes 字段:该字段由 021/T007 加入 UserAccountDTO,
+     * RED 阶段尚不存在 → 返回 null(与服务未写入的语义一致),保证本测试可编译;
+     * GREEN 后读取真实字段值。
+     */
+    @SuppressWarnings("unchecked")
+    private static List<String> scopesOf(UserAccountDTO dto) {
+        try {
+            Field field = UserAccountDTO.class.getDeclaredField("scopes");
+            field.setAccessible(true);
+            return (List<String>) field.get(dto);
+        } catch (NoSuchFieldException e) {
+            return null;
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     @Test
     @DisplayName("无绑定角色 -> 返回空列表")
     void emptyAccounts_returnsEmpty() {
@@ -169,6 +190,41 @@ class UserApplicationServiceUnitTest {
         assertEquals(2, result.size());
         assertEquals(EsiAuthStatus.AUTHORIZED, d1.getAuthStatus());
         assertEquals(EsiAuthStatus.UNKNOWN, d2.getAuthStatus());
+    }
+
+    @Test
+    @DisplayName("AUTHORIZED detail → authStatus 与 scopes 传播到 DTO")
+    void queryAccounts_authorizedDetailPropagatesScopes() {
+        loginAsJwt(1L, "USER");
+        EveAccount acc = account(1, "rt1");
+        when(eveAccountService.getAccountList(1)).thenReturn(List.of(acc));
+        UserAccountDTO d1 = dto(1);
+        when(eveAccountAssembler.domain2UserAccountDTO(anyList())).thenReturn(List.of(d1));
+        when(esiApiService.getAuthorizationDetail(acc))
+                .thenReturn(new EsiAuthorizationDetail(EsiAuthStatus.AUTHORIZED, List.of("esi-x.v1")));
+
+        List<UserAccountDTO> result = userApplicationService.queryAccountListWithAuthStatus(1);
+
+        assertEquals(1, result.size());
+        assertEquals(EsiAuthStatus.AUTHORIZED, d1.getAuthStatus());
+        assertEquals(List.of("esi-x.v1"), scopesOf(d1));
+    }
+
+    @Test
+    @DisplayName("detail 为 null(未 stub)→ 不抛异常,归为 UNKNOWN 且 scopes 为 null")
+    void queryAccounts_nullDetailDefaultsToUnknown() {
+        loginAsJwt(1L, "USER");
+        EveAccount acc = account(1, "rt1");
+        when(eveAccountService.getAccountList(1)).thenReturn(List.of(acc));
+        UserAccountDTO d1 = dto(1);
+        when(eveAccountAssembler.domain2UserAccountDTO(anyList())).thenReturn(List.of(d1));
+        // 不 stub getAuthorizationDetail:mock 返回 null(计划 T2:resolveDetail 须 null-safe)
+
+        List<UserAccountDTO> result = userApplicationService.queryAccountListWithAuthStatus(1);
+
+        assertEquals(1, result.size());
+        assertEquals(EsiAuthStatus.UNKNOWN, d1.getAuthStatus());
+        assertNull(scopesOf(d1));
     }
 
     @Test
