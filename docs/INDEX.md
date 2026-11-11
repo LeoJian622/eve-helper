@@ -9,6 +9,7 @@ EVE Helper 项目文档中心。
 | 文档 | 描述 | 最后更新 |
 |------|------|----------|
 | [Readme.md](../Readme.md) | 项目概述、快速开始、ESI 授权 scope 清单 | 2026-08-06 |
+| [功能清单](./FEATURES.md) | 全项目功能盘点(业务域×端点×定时任务×specs 演进索引) | 2026-11-11 |
 | [环境变量配置](./ENVIRONMENT.md) | 环境变量配置详细说明 | 2026-08-07 |
 | [开发指南](./DEVELOPMENT.md) | 开发工作流程和规范(含测试编写与命令) | 2026-08-06 |
 | [部署运维手册](./DEPLOYMENT.md) | 部署流程和运维指南 | 2026-08-07 |
@@ -170,7 +171,7 @@ EVE Helper 项目文档中心。
 
 ## 📊 文档统计
 
-- **docs/ 目录**: INDEX、DEVELOPMENT、DEPLOYMENT、ENVIRONMENT + workflow/(DEVELOPMENT-WORKFLOW、PHASE-DETAILS、TOOL-MAP)+ project/(PROJECT-STATE)+ archive/(已废弃 AI_WORKFLOW、superpowers plans/specs、superpowers-sdd)+ reviews/(ECC 评审记录)
+- **docs/ 目录**: INDEX、FEATURES、DEVELOPMENT、DEPLOYMENT、ENVIRONMENT + workflow/(DEVELOPMENT-WORKFLOW、PHASE-DETAILS、TOOL-MAP)+ project/(PROJECT-STATE)+ archive/(已废弃 AI_WORKFLOW、superpowers plans/specs、superpowers-sdd)+ reviews/(ECC 评审记录)
 - **分层架构 README**: 5 个(application/domain/infrastructure/interfaces/shared)
 - **根目录**: Readme.md、CLAUDE.md、AGENTS.md
 - **最近更新**: 2026-08-13
