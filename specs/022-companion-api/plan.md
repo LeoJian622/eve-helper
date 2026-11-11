@@ -7,7 +7,7 @@
 
 六组能力：角色面板（技能/队列/属性/在线/位置/舰船）、邮件收发（含收件人精确名称解析）、工业订单查询、军团团员追踪、APP 通知通道（三事件 + 持久化 + 实时送达）、账号自助（改密/解绑）+ 系统授权入口。
 
-技术路线（用户澄清 + 建造者评审定稿）：**直查架构**——角色面板/工业订单/团员追踪均按绑定角色直查 ESI，经 015 响应缓存（016 先例），不新建多租户同步层；通知通道 = 事件判定（复用 QQ 侧判定逻辑，工业/技能改为多租户直查判定）+ 通知表持久化（去重键：事件 + 对象 + 24h 窗口）+ WebSocket 实时推送；燃料通知按权限扇出（军团内有建筑权限的用户），建筑同步每军团每小时至多一次；QQ 推送与 014 归属规则零变更。
+技术路线（用户澄清 + 建造者评审定稿）：**直查架构**——角色面板/工业订单/团员追踪均按绑定角色直查 ESI，经 015 响应缓存（016 先例），不新建多租户同步层；通知通道 = 事件判定（复用 QQ 侧判定逻辑，工业/技能改为多租户直查判定）+ 通知表持久化（去重键：事件+对象；一次性事件至多一次、持续性条件 24h 窗口）+ WebSocket 实时推送；燃料通知按权限扇出（军团内有建筑权限的用户），建筑同步每军团每小时至多一次；QQ 推送与 014 归属规则零变更。
 
 ## Technical Context
 
@@ -120,7 +120,7 @@ src/main/java/xyz/foolcat/eve/evehelper/
 │   ├── NotificationController.java                               [+] /notification/**(含 ws-ticket)
 │   ├── UserController.java                                       [M] +PUT /user/password +DELETE /user/characters/{cid}
 │   └── CharacterController.java                                  [M] +GET /character/auth-url(POST /{code} 不动)
-└── shared/                                                       零改动(Result/PageQuery/PageResult 沿用;+AppNotificationEventType 枚举)
+└── shared/enums/AppNotificationEventType.java                    [+] 通知事件枚举(Result/PageQuery/PageResult 等其余零改动)
 
 src/main/resources/
 ├── mappers/system/AppNotificationMapper.xml                      [+]
@@ -141,4 +141,5 @@ src/test/java/…                                                   镜像主包
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| 200ms p95 口径解释（非违规，备案） | ESI 直查 miss 路径天然 >200ms；宪法允许 5s 外部超时，"standard requests" 解释为缓存命中/DB 路径（016 先例已合并） | 强制全路径 <200ms 须把全部数据预同步入库＝多租户同步层，已被用户澄清明确否决（直查架构） |
+| 200ms p95 口径解释（非违规，备案） | ESI 直查 miss 路径天然 >200ms；宪法 :51「standard requests <200ms」与 :52「外部调用显式 5s 超时」本为双轨条款，缓存命中/DB 路径＝standard requests（016 先例已合并） | 强制全路径 <200ms 须把全部数据预同步入库＝多租户同步层，已被用户澄清明确否决（直查架构） |
+| ESI 无独立熔断组件（宪法 :56 circuit breakers 与栈冻结张力，备案） | 引入 Resilience4j 等＝新核心依赖，违反宪法 IV（NON-NEGOTIABLE）；既有 5s 超时 + 015 缓存兜底 + 防穿透占位锁 + EsiException 错误分类构成降级路径（015/016 已合并先例） | 正式熔断库须走宪法修订程序；本轮沿用先例，G2 提请用户确认此备案 |

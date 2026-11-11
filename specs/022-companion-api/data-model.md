@@ -84,17 +84,17 @@ public interface AppNotificationRepository {
 
 | record | 关键字段 | 来源 ESI |
 |--------|----------|----------|
-| `CharacterPanelInfo` | characterId, name, corporationId, allianceId, birthday, securityStatus, online, lastLogin, lastLogout, solarSystemId, stationId, shipTypeId, shipName | characters/{id} + online + location + ship 组合（4 调用，网关层各自缓存）；shipName 经 eve 静态库既有物品名称查询解析 |
+| `CharacterPanelInfo` | characterId, name, corporationId, allianceId, birthday, securityStatus, online, lastLogin, lastLogout, solarSystemId, stationId, structureId, shipTypeId, shipName | characters/{id} + online + location + ship 组合（4 调用，网关层各自缓存）；shipName/skillName 经 `InvTypesService.getNameByTypeIds`（InvTypesService.java:51）解析 |
 | `CharacterSkillsInfo` | totalSp, unallocatedSp, attributes(intelligence/memory/charisma/perception/willpower/bonusRemaps), skills[{skillId, trainedSkillLevel, activeSkillLevel, skillpointsInSkill}] | characters/{id}/skills + attributes |
 | `SkillQueueInfo` | queue[{skillId, finishedLevel, trainingStartSp, skillpointsInSkill, startDate, endDate, position}], queueEndsAt（末条 endDate；空队列→null） | characters/{id}/skillqueue |
 | `MailHeaderPage` | mails[{mailId, from, subject, timestamp, isRead, labels}]（≤50）, nextLastMailId（末条 mailId；不足 50→null） | characters/{id}/mail（lastMailId 游标） |
 | `MailDetailInfo` | mailId, from, recipients[{recipientId, recipientType}], subject, timestamp, body（原文）, isRead | characters/{id}/mail/{mailId} |
 | `MailLabelsInfo` | labels[{labelId, name, unreadCount}], totalUnread | characters/{id}/mail/labels（单调用双数据） |
-| `MemberTrackingInfo` | members[{characterId, locationId, shipTypeId, logonDate, logoffDate}], trackedAt | corporations/{id}/membertracking（Director） |
+| `MemberTrackingInfo` | members[{characterId, online（派生：logonDate>logoffDate）, locationId, shipTypeId, logonDate, logoffDate}], trackedAt | corporations/{id}/membertracking（Director） |
 | `RecipientResolution` | name, id, type(character/corporation/alliance), resolved | universe/ids（公开，pub 缓存） |
 | `CharacterRolesInfo` | rolesAtHq/rolesAtBase/rolesAtOther（List<String>） | characters/{id}/roles；建筑权限＝Director/Station_Manager 出现于任一集合；Director 追踪权限＝Director（精确集合 P4 对照 ESI structures 鉴权文档以 fixtures 固化） |
 
-技能名称（skillName）：技能队列/列表中的名称经 eve 静态库既有名称查询解析（同 shipName 路径）。
+技能名称（skillName）：技能亦为库存类型，与 shipName 同走 `InvTypesService.getNameByTypeIds`（eve 静态库，批量查询无 N+1）。
 
 ## 4. Redis 键清单
 

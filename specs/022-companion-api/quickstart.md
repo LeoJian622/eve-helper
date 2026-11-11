@@ -46,6 +46,8 @@ mvn test -Dtest=AppWebSocketHandlerTest
 
 手动：触发三类事件（测试桩）→ `GET /notification` 可见；WebSocket 客户端在线 → 5s 内收到 NOTIFICATION 帧；同一事件 24h 内重复判定 → 不重复；持续条件 >24h → 新提醒；`PUT /notification/1/read` → 已读持久化；QQ 推送回归（现有 StructTask/IndustryTask 测试全绿）。
 
+负载（SC-003）：模拟 300 个 WS 连接（军团全体成员规模）→ 触发事件 → 推送 p95 ≤5s、无连接降级；通知列表分页查询走缓存/DB 路径 <200ms p95。
+
 ## US5 团员追踪
 
 ```bash

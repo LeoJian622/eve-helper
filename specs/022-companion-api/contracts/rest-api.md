@@ -8,7 +8,7 @@
 
 | 方法 | 路径 | 参数 | 响应 data | 说明 |
 |------|------|------|-----------|------|
-| GET | `/character/{characterId}/panel` | forceRefresh? | `{characterId, name, corporationId, allianceId, birthday, securityStatus, online, lastLogin, lastLogout, location:{solarSystemId, stationId}, ship:{typeId, name}}` | 基础信息+在线+位置+舰船聚合；直查 ESI 组合 |
+| GET | `/character/{characterId}/panel` | forceRefresh? | `{characterId, name, corporationId, allianceId, birthday, securityStatus, online, lastLogin, lastLogout, location:{solarSystemId, stationId, structureId}, ship:{typeId, name}}` | 基础信息+在线+位置+舰船聚合；直查 ESI 组合；建筑内位置以 structureId 表示（stationId 为 null） |
 | GET | `/character/{characterId}/skills` | forceRefresh? | `{totalSp, unallocatedSp, attributes:{intelligence, memory, charisma, perception, willpower, bonusRemaps}, skills:[{skillId, trainedSkillLevel, activeSkillLevel, skillpointsInSkill}]}` | 技能列表+属性 |
 | GET | `/character/{characterId}/skill-queue` | forceRefresh? | `{queue:[{skillId, skillName, finishedLevel, trainingStartSp, skillpointsInSkill, endDate, position}], queueEndsAt}` | 队列空→`queue:[]`；`queueEndsAt` 为最后条目 endDate |
 
@@ -39,7 +39,7 @@
 
 | 方法 | 路径 | 参数 | 响应 data | 说明 |
 |------|------|------|-----------|------|
-| GET | `/corporation/{corpId}/member-tracking` | characterId（必填，Director 角色）, forceRefresh? | `{members:[{characterId, locationId, shipTypeId, logonDate, logoffDate}], trackedAt}` | 直查 ESI membertracking，不落库；缓存按用户隔离；无 Director 权限→拒绝 |
+| GET | `/corporation/{corpId}/member-tracking` | characterId（必填，Director 角色）, forceRefresh? | `{members:[{characterId, online, locationId, shipTypeId, logonDate, logoffDate}], trackedAt}` | 直查 ESI membertracking，不落库；缓存按用户隔离；无 Director 权限→拒绝；online 由服务端派生（logonDate > logoffDate） |
 
 ## 5. APP 通知（US4 / FR-014~020, 027~028）
 
@@ -59,6 +59,7 @@ eventType: `INDUSTRY_COMPLETE` / `FUEL_LOW` / `SKILL_QUEUE_EMPTY`。
 - 握手认证：**一次性 ticket**（research R11）——先 `POST /notification/ws-ticket`（JWT）取 ticket，再连 `/websocket/app?ticket=<ticket>`；ticket 30s 有效、原子一次性消费，失败即关闭；**JWT 不进 URL**
 - 服务端推送信封：`{type:"NOTIFICATION", data:{id, eventType, title, content, characterId, corpId, gmtCreate}}`
 - 多设备：同一用户多连接均收到推送（注册表按 userId 扇出）
+- 心跳：服务端空闲超时 90s（maxIdleTimeout）；客户端建议 ≤30s 应用层 ping；超时断开后重连需重新换取 ticket
 - 断线重连：客户端重连后调 `GET /notification` 补齐（通知已持久化，不丢）；ticket 过期需重新换取
 - 会话失效：改密成功后服务端主动关闭该用户全部 APP WS 连接
 
