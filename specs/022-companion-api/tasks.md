@@ -277,7 +277,7 @@
   - **AC**: 测试 `page_onlyOwnNotifications` / `unreadCount_ownOnly` / `markRead_otherUsersNotification_rejected`（markRead 返回 0 → 友好错误不泄露存在性）/ `wsTicket_storedWith30sTtl` / `wsTicket_uniquePerCall`；控制器四端点＝contracts §5；RED→GREEN；`mvn test -Dtest=NotificationServiceTest,NotificationControllerTest`
 
 - [ ] T028 [US4] EveAccountRepository 查询扩展（检测/扇出/同步选角共用）
-  - **Files**: Modify `MAIN/domain/repository/system/EveAccountRepository.java` · Modify 对应 Impl 与 Mapper（infrastructure/persistence/repository/system/EveAccountRepositoryImpl.java 等，按既有三件套定位） · Test `TEST/infrastructure/persistence/repository/system/EveAccountRepositoryQueryTest.java`
+  - **Files**: Modify `MAIN/domain/repository/system/EveAccountRepository.java` · Modify `MAIN/infrastructure/persistence/repository/system/EveAccountRepositoryImpl.java` · Modify `MAIN/infrastructure/persistence/mapper/system/EveAccountMapper.java` · Modify `src/main/resources/mappers/system/EveAccountMapper.xml` · Test `TEST/infrastructure/persistence/repository/system/EveAccountRepositoryQueryTest.java`
   - **Interfaces**: Produces `List<EveAccount> listAll()`（检测遍历全部绑定；军团枚举＝stream map corpId distinct）/ `List<EveAccount> listByCorpId(Integer corpId)`（燃料扇出+同步选角）；EveAccount 含 corpId/userId/characterId 字段（EveAccount.java:30-75）
   - **AC**: 测试 `listAll_returnsAllBindings` / `listByCorpId_filtersByCorp` / `listByCorpId_unknownCorp_emptyList` RED→GREEN；既有方法零改动
 
@@ -319,7 +319,7 @@
 - [ ] T035 [US4] 负载与 QQ 回归验证（SC-003/SC-008；依赖 T026/T033）
   - **Files**: Test `TEST/infrastructure/external/appws/AppWebSocketLoadTest.java` · 验证记录附提交信息
   - **Interfaces**: Consumes T025 注册表（300 mock Session 扇出）
-  - **AC**: `load_300Sessions_fanoutCompletes`（300 连接注册→单事件推送→全部收到，耗时断言 p95≤5s 量级，无连接降级）；通知列表查询路径 <200ms 抽样（T024 分页测试计时）；QQ 回归：`mvn test -Dtest=StructTaskTest,IndustryTaskTest,StructureServiceTest`（既有测试类名以实际为准）全绿 + `git diff --stat` 证明 QQ 五类零变更；真实网络级 300 连接压测按 quickstart 手动项在 P5 执行并记录
+  - **AC**: `load_300Sessions_fanoutCompletes`（300 连接注册→单事件推送→全部收到，耗时断言 p95≤5s 量级，无连接降级）；通知列表查询路径 <200ms 抽样（T024 分页测试计时）；QQ 回归：`mvn test -Dtest=StructTaskTest,IndustryTaskTest,StructureServiceTest,StructureServiceBatchSyncTest`（四类均已存在于 src/test）全绿 + `git diff --stat` 证明 QQ 五类零变更；真实网络级 300 连接压测按 quickstart 手动项在 P5 执行并记录
 
 **Checkpoint**: US4 独立可验收——三事件生成/去重/列表/实时送达/已读，QQ 零变化
 
