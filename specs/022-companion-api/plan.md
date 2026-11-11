@@ -51,7 +51,8 @@
 
 ### Post-Design Re-Check（Phase 1 完成后复检）
 
-- 依赖：零新增——WS 用既有 spring-boot-starter-websocket（raw JSR-356）；CacheGateway +3 Set 方法、EsiGateway +~13 方法均为端口纯增量（021 模式），实现复用既有 RedisTemplate/WebClient。✅
+- 依赖：零新增——WS 用既有 spring-boot-starter-websocket（raw JSR-356）；CacheGateway +3 Set 方法、EsiGateway +16 方法、新增 AppNotificationPushGateway 端口均为纯增量（021 模式），实现复用既有 RedisTemplate/WebClient。✅
+- **P3 任务拆解校正（2026-11-12，G3 呈报）**：① EsiApiService 实际在 `infrastructure/gateway/esi/`、Filter 在 `config/security/filter/`（树已校正）；② 任务编排服务落**领域层**——核实 StructTask→StructureService 先例中 StructureService 位于 domain/service/system，且 application/domain 零 infrastructure import，故 AppStructureSyncService/AppNotificationDetectService 为领域服务，REST 用例留应用层；③ WS 推送经新领域端口 AppNotificationPushGateway（DDD 合规）；④ auth-url 经 EsiGateway.buildAuthorizeUrl（AuthorizeOAuth/SsoScopes 在 infrastructure，应用层不可直引）；⑤ EveAccountRepository +listAll（检测遍历全部绑定与军团枚举必需）。
 - 性能：200ms 口径不变（缓存命中/DB 路径）；通知列表走 idx_user_created，扇出 insertBatch 无 N+1；建筑同步节流 SETNX 每军团≤1/h。✅
 - 安全：WS ticket 一次性 30s（JWT 不进 URL）；改密纪元 fail-closed；解绑守卫系统角色；RBAC 全端点登记；错误不回显原始体。✅
 - 数据：仅 1 新表（双索引）；既有表零变更；014/QQ 零侵入（新任务/新服务，不改 StructTask/IndustryTask/StructureService）。✅
@@ -83,35 +84,37 @@ src/main/java/xyz/foolcat/eve/evehelper/
 │   │   CharacterPanelInfo / CharacterSkillsInfo / SkillQueueInfo /
 │   │   MailHeaderPage / MailDetailInfo / MailLabelsInfo /
 │   │   MemberTrackingInfo / RecipientResolution / CharacterRolesInfo
-│   ├── port/esi/EsiGateway.java                                  [M] +~13 方法(R1;既有签名不动)
+│   ├── port/esi/EsiGateway.java                                  [M] +16 方法(15 数据+1 授权URL;R1;既有签名不动)
 │   ├── port/cache/CacheGateway.java                              [M] +sAdd/sMembers/sRemove(R10)
+│   ├── port/appws/AppNotificationPushGateway.java                [+] isOnline/pushToUser/closeUserSessions(WS 推送领域端口)
 │   ├── repository/system/AppNotificationRepository.java          [+] 签名见 data-model §1.5
-│   ├── repository/system/EveAccountRepository.java               [M] +listByCorpId/+deleteByUserIdAndCharacterId
+│   ├── repository/system/EveAccountRepository.java               [M] +listAll/+listByCorpId/+deleteByUserIdAndCharacterId
+│   ├── service/system/AppStructureSyncService.java               [+] 每军团建筑同步(R13;任务→领域服务,不动 StructureService)
+│   ├── service/system/AppNotificationDetectService.java          [+] 三事件判定+去重+权限扇出+推送+30d 清理
 │   └── service/security/TokenService.java                        [M] +iat claim/+refresh_iat/+refresh_user 索引/+refresh 纪元校验
 ├── application/
 │   ├── service/CharacterPanelApplicationService.java             [+] panel/skills/skill-queue 聚合(顺序组合,网关层各自缓存)
 │   ├── service/MailApplicationService.java                       [+] inbox/body/read/labels/send/resolve
 │   ├── service/IndustryJobQueryApplicationService.java           [+] char/corp 直查+status 内存过滤+分页
 │   ├── service/MemberTrackingApplicationService.java             [+] Director 校验(roles)+直查
-│   ├── service/NotificationApplicationService.java               [+] 列表/未读数/已读/ws-ticket/生成+推送
-│   ├── service/AppStructureSyncApplicationService.java           [+] 每军团建筑同步(R13;不动 StructureService)
+│   ├── service/NotificationApplicationService.java               [+] 列表/未读数/已读/ws-ticket(REST 用例;生成+推送在领域检测服务)
 │   ├── service/UserApplicationService.java                       [M] +changePassword(R10 流程)
 │   ├── service/CharacterApplicationService.java                  [M] +unbindCharacter/+getAuthorizeUrl
 │   ├── dto/request/                                              [+] ChangePassword/SendMail/ResolveNames/MarkMailRead(校验见 data-model §6)
 │   └── dto/response/                                             [+] 逐端点 record(contracts 形状)
 ├── infrastructure/
-│   ├── external/esi/EsiApiService.java                           [M] 新端口方法实现(015 缓存包裹,R2/R3)
+│   ├── gateway/esi/EsiApiService.java                            [M] 新端口方法实现(015 缓存包裹,R2/R3;实际路径 gateway/esi)
 │   ├── external/appws/AppNotificationWebSocket.java              [+] @ServerEndpoint("/websocket/app") 薄适配器
-│   ├── external/appws/AppWebSocketSessionRegistry.java           [+] userId→Set<Session> 多设备注册表+推送
+│   ├── external/appws/AppWebSocketSessionRegistry.java           [+] userId→Set<Session> 多设备注册表+推送(实现 AppNotificationPushGateway)
 │   ├── persistence/entity/system/AppNotificationPO.java          [+]
 │   ├── persistence/mapper/system/AppNotificationMapper.java      [+]
 │   ├── persistence/repository/system/AppNotificationRepositoryImpl.java [+]
 │   ├── persistence/assembler/persistence/AppNotificationPoConverter.java [+] MapStruct
 │   ├── assembler/esi/                                            [+] 新 VO 对应 ESI 响应转换器(按需)
-│   ├── config/security/JwtAuthorizationTokenFilter.java          [M] +撤销纪元校验(R10)
+│   ├── config/security/filter/JwtAuthorizationTokenFilter.java   [M] +撤销纪元校验(R10;实际路径含 filter/ 子包)
 │   ├── config/security/SecurityConfig.java                       [M] /websocket/app permitAll(端点 ticket 自鉴权)
-│   ├── util/AppStructureSyncTask.java                            [+] hourly 每军团节流同步
-│   └── util/AppNotificationTask.java                             [+] 工业/燃料/技能检测+30d 清理(调用模式仿 StructTask→服务)
+│   ├── util/AppStructureSyncTask.java                            [+] hourly 每军团节流同步(调用 AppStructureSyncService)
+│   └── util/AppNotificationTask.java                             [+] 工业/燃料/技能检测+30d 清理(调用 AppNotificationDetectService;仿 StructTask→领域服务)
 ├── interfaces/web/controller/
 │   ├── CharacterPanelController.java                             [+] /character/{id}/panel|skills|skill-queue
 │   ├── MailController.java                                       [+] /mail/**
@@ -133,7 +136,7 @@ src/SQL/convert/
 src/test/java/…                                                   镜像主包结构;测试类清单见 quickstart.md
 ```
 
-**Structure Decision**: 单项目 DDD 五层单体，全部落位于既有包结构；唯一新包 `infrastructure/external/appws`（APP WS 通道，与 onebot 完全隔离）。依赖方向合规：任务→应用服务（仿既有 StructTask→StructureService 模式）；应用层经 EsiGateway/CacheGateway/Repository 端口访问外部；WS 端点薄适配器→Spring 管理注册表（规避 @Profile("!test") 容器依赖，保证可单测）。不建多租户同步层、不建通用事件总线（YAGNI，用户澄清直查架构）。
+**Structure Decision**: 单项目 DDD 五层单体，全部落位于既有包结构；新包 `infrastructure/external/appws`（APP WS 通道，与 onebot 完全隔离）与 `domain/port/appws`（推送端口）。依赖方向合规：任务→领域服务（StructTask→StructureService 实际先例，StructureService 在 domain/service/system）；应用层与领域层经 EsiGateway/CacheGateway/AppNotificationPushGateway/Repository 端口访问外部（application/domain 零 infrastructure import）；WS 端点薄适配器→Spring 管理注册表（规避 @Profile("!test") 容器依赖，保证可单测）。不建多租户同步层、不建通用事件总线（YAGNI，用户澄清直查架构）。
 
 ## Complexity Tracking
 

@@ -69,7 +69,7 @@ eventType: `INDUSTRY_COMPLETE` / `FUEL_LOW` / `SKILL_QUEUE_EMPTY`。
 |------|------|------|-----------|------|
 | PUT | `/user/password` | `{oldPassword, newPassword}` | 无 | 验证旧密码；成功后该用户全部会话失效；限流 |
 | DELETE | `/user/characters/{characterId}` | 无 | 无 | 解绑本人角色；停止该角色同步与通知；历史数据按现有归属规则保留 |
-| GET | `/character/auth-url` | server?（serenity/tranquility，默认 serenity） | `{authorizeUrl, state}` | 系统生成含本特性所需权限集的授权 URL；用户浏览器授权后手动复制 code 回 APP，走现有 `POST /character/{code}` |
+| GET | `/character/auth-url` | server?（serenity/tranquility，默认＝部署 datasource） | `{authorizeUrl, state}` | 系统生成含本特性所需权限集的授权 URL（SsoScopes.ALL）；state 固定 `eve-helper`（既有 AGENT 常量）；server 与部署 datasource 不一致→友好错误（单服务器配置，P3 注记）；用户浏览器授权后手动复制 code 回 APP，走现有 `POST /character/{code}` |
 
 ## 7. 错误语义（横切 / FR-025~026）
 

@@ -74,13 +74,14 @@ public interface AppNotificationRepository {
 
 | 实体 | 新操作 | 说明 |
 |------|--------|------|
-| EveAccount（eve_account） | `listByCorpId(corpId)`；`deleteByUserIdAndCharacterId(userId, characterId)` | 解绑＝删行（character_id 全局唯一）；守卫：TaskConstant.CHARACTER_ID 不可解绑（research R14） |
+| EveAccount（eve_account） | `listAll()`；`listByCorpId(corpId)`；`deleteByUserIdAndCharacterId(userId, characterId)` | listAll＝检测任务遍历全部绑定+军团枚举（distinct corpId，实体含 corpId 字段）【P3 补充】；解绑＝删行（character_id 全局唯一）；守卫：TaskConstant.CHARACTER_ID 不可解绑（research R14） |
 | SysUser（sys_user） | 更新 password（BCrypt） | 改密流程见 research R10；无新列 |
 | Structure（structure） | 复用 `batchInsertOrUpdate`/`selectFuelExpiresList` | APP 建筑同步写入 userId=同步角色属主（014 语义）；QQ 同步路径不动 |
 
 ## 3. 领域读模型（`domain/model/vo`，record，非持久化）
 
 > API 出参形状以 contracts/rest-api.md 为准；VO 为网关→应用层载体。工业订单/建筑复用既有端口返回类型，不新建。
+> 【P3 补充】网关级子读模型（同为 `domain/model/vo` record）：CharacterPublicInfo / CharacterOnlineInfo / CharacterLocationInfo / CharacterSkillList（含嵌套 SkillItem）/ CharacterAttributesInfo / SkillQueueItem / MailHeaderItem / MailRecipient / MailLabel / MemberTrackingItem / SendMailCommand；下表 9 个为应用层聚合视图（如 CharacterSkillsInfo 合并 CharacterSkillList+CharacterAttributesInfo 两次调用，MemberTrackingInfo.online 由应用层派生）。
 
 | record | 关键字段 | 来源 ESI |
 |--------|----------|----------|
@@ -118,11 +119,11 @@ public interface AppNotificationRepository {
 
 ```text
 AppStructureSyncTask(hourly, 错开整点)
-  └─ 逐军团: SETNX app:struct:sync:{corpId} → 选有建筑权限的绑定角色
-       → AppStructureSyncApplicationService: authorizeInternal(userId,cid)
+  └─ 逐军团(listAll distinct corpId): SETNX app:struct:sync:{corpId} → 选有建筑权限的绑定角色
+       → AppStructureSyncService(领域服务): authorizeInternal(userId,cid)
        → EsiGateway.queryCorporationStructures(缓存) → StructureRepository.batchInsertOrUpdate
 
-AppNotificationTask
+AppNotificationTask → AppNotificationDetectService(领域服务;推送经 AppNotificationPushGateway 端口)
   ├─ 燃料(cron 18/22 点, 复用 QQ): 逐军团 selectFuelExpiresList(24,corpId) − 势力铁壁
   │    → 逐建筑 dedup(FUEL_LOW:{structureId},24h) → listByCorpId → queryCharacterRoles(缓存)
   │    → 筛 Director/Station_Manager 属主 → 每接收者一行 insertBatch → 逐用户 WS 推送

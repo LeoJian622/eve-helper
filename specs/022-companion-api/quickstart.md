@@ -13,7 +13,7 @@ mvn test                        # 全量测试（基线对照见 memory: test-ba
 ## US1 角色面板
 
 ```bash
-mvn test -Dtest=CharacterPanelServiceTest
+mvn test -Dtest=CharacterPanelApplicationServiceTest
 mvn test -Dtest=CharacterPanelControllerTest
 ```
 
@@ -22,7 +22,7 @@ mvn test -Dtest=CharacterPanelControllerTest
 ## US2 邮件
 
 ```bash
-mvn test -Dtest=MailServiceTest
+mvn test -Dtest=MailApplicationServiceTest
 mvn test -Dtest=MailControllerTest
 ```
 
@@ -31,7 +31,7 @@ mvn test -Dtest=MailControllerTest
 ## US3 工业查询
 
 ```bash
-mvn test -Dtest=IndustryJobQueryServiceTest
+mvn test -Dtest=IndustryJobQueryApplicationServiceTest,JobControllerTest
 ```
 
 手动：`GET /job/char/90000001?status=active` → 仅 active 订单；缓存有效期内二次调用不触发 ESI（日志验证）；现有 `POST /job/char/90000001/true` 行为不变。
@@ -51,7 +51,7 @@ mvn test -Dtest=AppWebSocketHandlerTest
 ## US5 团员追踪
 
 ```bash
-mvn test -Dtest=MemberTrackingServiceTest
+mvn test -Dtest=MemberTrackingApplicationServiceTest
 ```
 
 手动：Director 角色 `GET /corporation/98000001/member-tracking?characterId=90000001` → 团员列表；非 Director → 拒绝；两用户先后查询 → 缓存隔离（日志键含 userId）。
