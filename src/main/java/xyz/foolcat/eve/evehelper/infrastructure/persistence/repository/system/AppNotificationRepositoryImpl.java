@@ -48,6 +48,10 @@ public class AppNotificationRepositoryImpl implements AppNotificationRepository 
             int end = Math.min(i + BATCH_SIZE, poList.size());
             total += appNotificationMapper.insertBatch(poList.subList(i, end));
         }
+        // T031: id 回填（信封契约含 id，spec>plan 偏离登记）
+        for (int i = 0; i < notifications.size(); i++) {
+            notifications.get(i).setId(poList.get(i).getId());
+        }
         return total;
     }
 

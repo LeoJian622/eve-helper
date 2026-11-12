@@ -81,6 +81,11 @@ class AppNotificationRepositoryImplTest {
         int inserted = appNotificationRepository.insertBatch(Arrays.asList(n1, n2, n3));
         assertEquals(3, inserted);
 
+        // T031: id 回填断言（信封契约含 id，spec>plan 偏离登记）
+        assertNotNull(n1.getId(), "insertBatch 后 n1.id 应回填");
+        assertNotNull(n2.getId(), "insertBatch 后 n2.id 应回填");
+        assertNotNull(n3.getId(), "insertBatch 后 n3.id 应回填");
+
         // 查回验证
         PageResult<AppNotification> page = appNotificationRepository.pageByUser(
                 TEST_USER_1, null, PageQuery.builder().current(1).size(10).build());

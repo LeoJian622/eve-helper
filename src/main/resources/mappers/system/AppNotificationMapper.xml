@@ -3,7 +3,7 @@
 <mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.AppNotificationMapper">
 
     <!-- 批量插入：省略 id（自增主键）、gmt_create/gmt_modified（DB DEFAULT CURRENT_TIMESTAMP） -->
-    <insert id="insertBatch" parameterType="map">
+    <insert id="insertBatch" parameterType="map" useGeneratedKeys="true" keyProperty="list.id">
         INSERT INTO app_notification
         (user_id, event_type, dedup_key, character_id, corp_id, title, content, is_read)
         VALUES
