@@ -13,6 +13,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.*;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterOnlineInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterPublicInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
@@ -83,6 +85,8 @@ public class EsiApiService implements EsiGateway {
     private final IndustryApi industryApi;
 
     private final WalletApi walletApi;
+
+    private final LocationApi locationApi;
 
     private final EsiAssetsConverter esiAssetsConverter;
 
@@ -1535,6 +1539,125 @@ public class EsiApiService implements EsiGateway {
             return sdkCall.get();
         } catch (EsiException e) {
             throw convertToAccessException(e);
+        }
+    }
+
+    // ── 角色面板(伴侣 APP T009) ──
+
+    @Override
+    public CharacterPublicInfo queryCharacterPublicInfo(Integer characterId) {
+        return doQueryCharacterPublicInfo(characterId, false);
+    }
+
+    @Override
+    public CharacterPublicInfo queryCharacterPublicInfo(Integer characterId, boolean forceRefresh) {
+        return doQueryCharacterPublicInfo(characterId, forceRefresh);
+    }
+
+    private CharacterPublicInfo doQueryCharacterPublicInfo(Integer characterId, boolean forceRefresh) {
+        // 公开数据:userId 段置 pub 全局共享(不查 UserUtil)
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), null,
+                "/characters/" + characterId + "/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<CharacterPublicInfo> cached = esiResponseCache.getList(key, objectMapper.constructType(CharacterPublicInfo.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<CharacterPublicInfo> filled = awaitCachedList(key, objectMapper.constructType(CharacterPublicInfo.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            CharacterPublicInfoResponse resp = callSdkMono(() -> characterApi.queryCharacter(characterId, EsiClientConfig.SERENITY))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            if (resp == null) {
+                return null;
+            }
+            CharacterPublicInfo domain = new CharacterPublicInfo(
+                    characterId,
+                    resp.getName(),
+                    resp.getCorporationId(),
+                    resp.getAllianceId(),
+                    resp.getBirthday(),
+                    resp.getSecurityStatus()
+            );
+            // SDK 未返回 ResponseEntity,无 headers → TTL null → put 内部跳过
+            List<CharacterPublicInfo> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, null);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    @Override
+    public CharacterOnlineInfo queryCharacterOnline(Integer characterId, String accessToken) {
+        return doQueryCharacterOnline(characterId, accessToken, false);
+    }
+
+    @Override
+    public CharacterOnlineInfo queryCharacterOnline(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterOnline(characterId, accessToken, forceRefresh);
+    }
+
+    private CharacterOnlineInfo doQueryCharacterOnline(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            OnlineStatusResponse resp = callSdkMono(() -> locationApi.queryCharacterOnline(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            return resp == null ? null : new CharacterOnlineInfo(
+                    Boolean.TRUE.equals(resp.getOnline()),
+                    resp.getLastLogin(),
+                    resp.getLastLogout()
+            );
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/online/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<CharacterOnlineInfo> cached = esiResponseCache.getList(key, objectMapper.constructType(CharacterOnlineInfo.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        // 防穿透
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<CharacterOnlineInfo> filled = awaitCachedList(key, objectMapper.constructType(CharacterOnlineInfo.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            OnlineStatusResponse resp = callSdkMono(() -> locationApi.queryCharacterOnline(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            if (resp == null) {
+                return null;
+            }
+            CharacterOnlineInfo domain = new CharacterOnlineInfo(
+                    Boolean.TRUE.equals(resp.getOnline()),
+                    resp.getLastLogin(),
+                    resp.getLastLogout()
+            );
+            List<CharacterOnlineInfo> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, null);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
         }
     }
 

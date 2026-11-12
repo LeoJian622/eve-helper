@@ -12,6 +12,8 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterOnlineInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterPublicInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
@@ -309,4 +311,42 @@ public interface EsiGateway {
      * @return 各分账余额列表(1..7,但 ESI 仅返回有数据的分账)
      */
     List<WalletDivisionBalance> queryCorporationWalletBalances(Integer corporationId, String accessToken);
+
+    // ── 角色面板(伴侣 APP) ──
+
+    /**
+     * 查询角色公开信息(ESI /characters/{id}/,无需授权)。
+     *
+     * @param characterId 角色 ID
+     * @return 角色公开信息
+     */
+    CharacterPublicInfo queryCharacterPublicInfo(Integer characterId);
+
+    /**
+     * 查询角色公开信息(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 角色公开信息
+     */
+    CharacterPublicInfo queryCharacterPublicInfo(Integer characterId, boolean forceRefresh);
+
+    /**
+     * 查询角色在线状态(ESI /characters/{id}/online/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 角色在线状态
+     */
+    CharacterOnlineInfo queryCharacterOnline(Integer characterId, String accessToken);
+
+    /**
+     * 查询角色在线状态(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 角色在线状态
+     */
+    CharacterOnlineInfo queryCharacterOnline(Integer characterId, String accessToken, boolean forceRefresh);
 }
