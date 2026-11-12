@@ -17,9 +17,6 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.SkillQueueInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.SkillQueueItem;
 import xyz.foolcat.eve.evehelper.domain.service.system.InvTypesService;
 import xyz.foolcat.eve.evehelper.interfaces.web.advice.GlobalExceptionHandler;
-import xyz.foolcat.eve.evehelper.interfaces.web.dto.response.CharacterPanelResponse;
-import xyz.foolcat.eve.evehelper.interfaces.web.dto.response.CharacterSkillQueueResponse;
-import xyz.foolcat.eve.evehelper.interfaces.web.dto.response.CharacterSkillsResponse;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
@@ -42,7 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * GET /character/{characterId}/panel | skills | skill-queue。
  * <p>
  * RED 原因:CharacterPanelController 与三个响应 DTO
- * (CharacterPanelResponse / CharacterSkillsResponse / CharacterSkillQueueResponse)
+ * (CharacterPanelResponse / CharacterSkillsResponse / SkillQueueResponse)
  * 不存在,编译失败即 RED 证据。生产代码由 T013 创建。
  *
  * @author Leojan
