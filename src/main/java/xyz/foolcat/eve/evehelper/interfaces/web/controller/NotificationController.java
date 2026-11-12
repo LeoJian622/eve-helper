@@ -1,6 +1,9 @@
 package xyz.foolcat.eve.evehelper.interfaces.web.controller;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,6 +30,7 @@ import xyz.foolcat.eve.evehelper.shared.result.Result;
 @RestController
 @RequestMapping("/notification")
 @RequiredArgsConstructor
+@Validated
 public class NotificationController {
 
     private final NotificationApplicationService notificationService;
@@ -41,8 +45,8 @@ public class NotificationController {
      */
     @GetMapping
     public Result<PageResult<NotificationItem>> page(
-            @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "20") Integer size,
+            @RequestParam(defaultValue = "1") @Min(1) Integer current,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(1000) Integer size,
             @RequestParam(required = false) Boolean unreadOnly) {
         PageQuery pageQuery = PageQuery.builder().current(current).size(size).build();
         return Result.success(notificationService.page(unreadOnly, pageQuery));

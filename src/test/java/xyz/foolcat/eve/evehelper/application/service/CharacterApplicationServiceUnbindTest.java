@@ -8,7 +8,6 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
-import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.repository.system.EveAccountRepository;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
@@ -32,7 +31,6 @@ class CharacterApplicationServiceUnbindTest {
     @Mock private EsiGateway esiGateway;
     @Mock private AuthorizeUtil authorizeUtil;
     @Mock private EveAccountRepository eveAccountRepository;
-    @Mock private CacheGateway cacheGateway;
 
     private CharacterApplicationService service;
 
@@ -43,7 +41,7 @@ class CharacterApplicationServiceUnbindTest {
 
     @BeforeEach
     void setUp() {
-        service = new CharacterApplicationService(esiGateway, authorizeUtil, eveAccountRepository, cacheGateway);
+        service = new CharacterApplicationService(esiGateway, authorizeUtil, eveAccountRepository);
 
         account = new EveAccount();
         account.setUserId(USER_ID);
@@ -54,8 +52,8 @@ class CharacterApplicationServiceUnbindTest {
     // ── AC: 解绑后清理 accessToken 缓存 ──
 
     @Test
-    @DisplayName("unbind_deletesAccessTokenCache: 删除绑定 + 清理 esi_access_token 缓存")
-    void unbind_deletesAccessTokenCache() {
+    @DisplayName("unbind_delegatesEvictToGateway: 删除绑定 + 委托 esiGateway.evictAccessTokenCache（IMP-1）")
+    void unbind_delegatesEvictToGateway() {
         try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
             userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
             when(authorizeUtil.authorize(CHARACTER_ID)).thenReturn(account);
@@ -64,7 +62,8 @@ class CharacterApplicationServiceUnbindTest {
             service.unbindCharacter(CHARACTER_ID);
 
             verify(eveAccountRepository).deleteByUserIdAndCharacterId(USER_ID, CHARACTER_ID);
-            verify(cacheGateway).delete("esi_access_token:42:1001");
+            // IMP-1: 委托 EsiGateway 端口，不在应用层重建缓存键
+            verify(esiGateway).evictAccessTokenCache(USER_ID, CHARACTER_ID);
         }
     }
 

@@ -77,9 +77,9 @@ public class IndustryJobQueryApplicationService {
         if (TYPE_CHAR.equals(type)) {
             jobFlux = esiGateway.queryCharacterIndustryJobs(characterId, true, accessToken, forceRefresh);
         } else if (TYPE_CORP.equals(type)) {
-            // corp 权限预检
+            // corp 权限预检（MIN-A: roles 可 null，守卫对齐兄弟消费方）
             CharacterRolesInfo roles = esiGateway.queryCharacterRoles(characterId, accessToken);
-            if (!roles.hasIndustryPermission()) {
+            if (roles == null || !roles.hasIndustryPermission()) {
                 throw EsiAccessException.permissionLow();
             }
             Integer corpId = account.getCorpId();

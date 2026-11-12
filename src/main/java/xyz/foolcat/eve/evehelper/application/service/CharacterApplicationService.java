@@ -6,9 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.application.dto.response.AuthorizeUrlResponse;
-import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
-import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.repository.system.EveAccountRepository;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
@@ -35,8 +33,6 @@ public class CharacterApplicationService {
     private final AuthorizeUtil authorizeUtil;
 
     private final EveAccountRepository eveAccountRepository;
-
-    private final CacheGateway cacheGateway;
 
     /**
      * 使用授权 code 绑定角色到当前用户。
@@ -121,7 +117,8 @@ public class CharacterApplicationService {
             throw new EveHelperException(ResultCode.PARAM_ERROR);
         }
         eveAccountRepository.deleteByUserIdAndCharacterId(userId, characterId);
-        cacheGateway.delete(GlobalConstants.ESI_ACCESS_TOKEN_KEY + userId + ":" + characterId);
+        // IMP-1: 委托 EsiGateway 端口驱逐缓存，不在应用层重建键格式
+        esiApiService.evictAccessTokenCache(userId, characterId);
     }
 
     /**

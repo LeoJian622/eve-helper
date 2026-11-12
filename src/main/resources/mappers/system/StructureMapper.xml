@@ -262,6 +262,53 @@
     services = values(services),
     user_id = values(user_id)
   </insert>
+  <!-- IMP-A: APP 建筑同步归属保留变体（FR-018 修复）。INSERT 含 user_id（新行落属主），
+       ON DUPLICATE KEY UPDATE 去掉 user_id = values(user_id)，不翻转既有行归属。
+       既有 batchInsertOrUpdate（QQ 用）一字不动。 -->
+  <insert id="batchInsertOrUpdatePreserveOwner" parameterType="map">
+    insert into `structure`
+    (structure_id, corporation_id, fuel_expires, `name`, next_reinforce_apply, next_reinforce_hour,
+    profile_id, reinforce_hour, `state`, state_timer_end, state_timer_start, system_id,
+    type_id, unanchors_at, services, user_id)
+    values
+    <foreach collection="list" item="item" separator=",">
+      (#{item.structureId,jdbcType=BIGINT}, #{item.corporationId,jdbcType=INTEGER}, #{item.fuelExpires,jdbcType=TIMESTAMP},
+      #{item.name,jdbcType=VARCHAR}, #{item.nextReinforceApply,jdbcType=TIMESTAMP}, #{item.nextReinforceHour,jdbcType=INTEGER},
+      #{item.profileId,jdbcType=INTEGER}, #{item.reinforceHour,jdbcType=INTEGER}, #{item.state,jdbcType=VARCHAR},
+      #{item.stateTimerEnd,jdbcType=TIMESTAMP}, #{item.stateTimerStart,jdbcType=TIMESTAMP},
+      #{item.systemId,jdbcType=INTEGER}, #{item.typeId,jdbcType=INTEGER}, #{item.unanchorsAt,jdbcType=TIMESTAMP},
+      #{item.services,jdbcType=VARCHAR}, #{item.userId,jdbcType=BIGINT})
+    </foreach>
+    on duplicate key update
+    structure_id = values(structure_id),
+    corporation_id = values(corporation_id),
+    fuel_expires = values(fuel_expires),
+    `name` = values(name),
+    next_reinforce_apply = values(next_reinforce_apply),
+    next_reinforce_hour = values(next_reinforce_hour),
+    profile_id = values(profile_id),
+    reinforce_hour = values(reinforce_hour),
+    `state` = values(state),
+    state_timer_end =values(state_timer_end),
+    state_timer_start = values(state_timer_start),
+    system_id = values(system_id),
+    type_id = values(type_id),
+    unanchors_at = values(unanchors_at),
+    services = values(services)
+  </insert>
+
+  <!-- IMP-A: 军团维度 stale 清理（无 user 过滤，与 selectFuelExpiresList 同口径）。
+       keepIds 空/null → 删该军团全部行（NOT IN 空集非法，用 if 规避）。 -->
+  <delete id="removeStaleByCorporation">
+    delete from structure where corporation_id = #{corporationId}
+    <if test="keepIds != null and keepIds.size() > 0">
+      and structure_id not in
+      <foreach collection="keepIds" item="id" open="(" separator="," close=")">
+        #{id}
+      </foreach>
+    </if>
+  </delete>
+
   <insert id="insertOrUpdateSelective" parameterType="xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.StructurePO">
     <!--@mbg.generated-->
     insert into `structure`

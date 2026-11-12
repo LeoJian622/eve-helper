@@ -45,6 +45,18 @@ import java.util.List;
 public interface EsiGateway {
 
     /**
+     * 驱逐指定角色的 accessToken 缓存（IMP-1，封装不变量修复）。
+     * <p>
+     * 缓存键格式仅本层知晓，上层不得自行拼装。本方法委托实现方内部
+     * {@code accessTokenKey(userId, characterId)} 构造键并删除。
+     * 未命中时实现方打 [SECURITY_ALERT] 告警（仅 userId/characterId，不落 token）。
+     *
+     * @param userId      用户 ID
+     * @param characterId 角色 ID
+     */
+    void evictAccessTokenCache(Integer userId, Integer characterId);
+
+    /**
      * 获取 ESI 授权 accessToken(按角色 ID 或认证码)。
      *
      * @param code   角色 ID 或认证码

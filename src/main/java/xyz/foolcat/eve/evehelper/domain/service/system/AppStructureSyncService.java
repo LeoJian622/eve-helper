@@ -113,7 +113,12 @@ public class AppStructureSyncService {
 
         // ④ 拉取:分页 stream 镜像 StructureService 范式
         Integer maxPage = esiGateway.queryCorporationStructuresMaxPage(corpId, selectedToken);
-        if (maxPage == null || maxPage <= 0) {
+        // IMP-A: ESI 失败(maxPage==null) → 跳过同步且不清理（防瞬时失败误删）
+        if (maxPage == null) {
+            log.info("军团建筑 ESI 拉取失败(maxPage=null),跳过且不清理 corpId={}", corpId);
+            return;
+        }
+        if (maxPage <= 0) {
             log.info("军团建筑无分页数据,跳过 corpId={}", corpId);
             return;
         }
@@ -128,18 +133,22 @@ public class AppStructureSyncService {
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
 
-        if (structures.isEmpty()) {
-            log.info("军团建筑列表为空,跳过 corpId={}", corpId);
-            return;
-        }
-
-        // ⑤ 归属:014 语义 userId 随同步者属主
+        // IMP-A: 归属:014 语义 userId 随同步者属主（仅设新行属主，upsert 变体不翻转既有行）
         Long ownerUserId = selectedAccount.getUserId().longValue();
         structures.forEach(s -> s.setUserId(ownerUserId));
 
-        // ⑥ 落库
-        structureRepository.batchInsertOrUpdate(structures);
-        log.info("建筑同步完成 corpId={}, characterId={}, 条数={}",
-                corpId, selectedAccount.getCharacterId(), structures.size());
+        // IMP-A: 落库用归属保留变体（不翻转既有行 user_id）
+        if (!structures.isEmpty()) {
+            structureRepository.batchInsertOrUpdatePreserveOwner(structures);
+        }
+
+        // IMP-A: stale 清理（ESI 拉取成功后执行；structures 空→freshIds 空→删该 corp 全行）
+        List<Long> freshIds = structures.stream()
+                .map(Structure::getStructureId)
+                .toList();
+        structureRepository.removeStaleByCorporation(corpId, freshIds);
+
+        log.info("建筑同步完成 corpId={}, characterId={}, 条数={}, stale清理keepIds={}",
+                corpId, selectedAccount.getCharacterId(), structures.size(), freshIds.size());
     }
 }

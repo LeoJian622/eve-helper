@@ -232,6 +232,30 @@ class IndustryJobQueryApplicationServiceTest {
         verify(esiGateway, never()).queryCorporationIndustryJobs(anyInt(), anyBoolean(), any(), anyBoolean());
     }
 
+    // ── MIN-A: roles=null 不 NPE，走需重新授权语义 ──
+
+    @Test
+    @DisplayName("corpJobs roles=null 不 NPE，抛 EsiAccessException.permissionLow（MIN-A）")
+    void corpJobs_rolesNull_throwsPermissionLow() throws ParseException {
+        stubAuthorize();
+        stubAccessToken();
+
+        // 网关返回 null（角色权限查询失败/未授权场景）
+        when(esiGateway.queryCharacterRoles(eq(CHARACTER_ID), eq(STUB_ACCESS_TOKEN)))
+                .thenReturn(null);
+
+        IndustryJobQueryApplicationService service =
+                new IndustryJobQueryApplicationService(authorizeUtil, esiGateway);
+
+        assertThatThrownBy(() -> service.queryJobs(
+                "corp", CHARACTER_ID, null,
+                PageQuery.builder().current(1).size(20).build(), false))
+                .isInstanceOf(EsiAccessException.class)
+                .hasMessage(EsiAccessException.MSG_PERMISSION_LOW);
+
+        verify(esiGateway, never()).queryCorporationIndustryJobs(anyInt(), anyBoolean(), any(), anyBoolean());
+    }
+
     /* ============================ US3 归属安全 ============================ */
 
     @Test

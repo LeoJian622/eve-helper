@@ -153,12 +153,11 @@ class AccountSelfServiceTest {
                 pushGateway
         );
 
-        // CharacterApplicationService 4 参构造器(T042/T043 扩展)
+        // CharacterApplicationService 3 参构造器(IMP-1: CacheGateway 已移除)
         characterApplicationService = new CharacterApplicationService(
                 esiGateway,
                 authorizeUtil,
-                eveAccountRepository,
-                cacheGateway
+                eveAccountRepository
         );
 
         // Common fixtures
@@ -317,9 +316,9 @@ class AccountSelfServiceTest {
             // Act
             characterApplicationService.unbindCharacter(1001);
 
-            // Assert — 删除绑定 + 清理 token 缓存
+            // Assert — 删除绑定 + 委托 EsiGateway 驱逐 token 缓存（IMP-1）
             verify(eveAccountRepository).deleteByUserIdAndCharacterId(42, 1001);
-            verify(cacheGateway).delete("esi_access_token:42:1001");
+            verify(esiGateway).evictAccessTokenCache(42, 1001);
         }
     }
 

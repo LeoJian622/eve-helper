@@ -94,6 +94,13 @@ public class AppNotificationDetectService {
             return;
         }
 
+        // MIN-C: 权限扇出提升到军团级一次（循环外 compute，同军团所有建筑 recipients 相同）
+        List<Integer> recipients = fanout(corpId);
+        if (recipients.isEmpty()) {
+            log.debug("军团 {} 无有权接收者，跳过", corpId);
+            return;
+        }
+
         for (Structure structure : structures) {
             // 排除势力铁壁
             if (FACTION_CITADEL_TYPE_IDS.contains(structure.getTypeId())) {
@@ -105,13 +112,6 @@ public class AppNotificationDetectService {
             String dedupKey = "FUEL_LOW:" + structure.getStructureId();
             if (appNotificationRepository.existsByDedupKeyWithinHours(dedupKey, 24)) {
                 log.debug("燃料检测去重跳过 structureId={}", structure.getStructureId());
-                continue;
-            }
-
-            // 权限扇出
-            List<Integer> recipients = fanout(corpId);
-            if (recipients.isEmpty()) {
-                log.debug("军团 {} 无有权接收者，跳过", corpId);
                 continue;
             }
 

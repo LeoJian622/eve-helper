@@ -98,7 +98,8 @@ class AppStructureSyncServiceTest {
         Structure s1 = structure(9001L);
         when(esiGateway.queryCorporationStructures(500, "zh", 1, "Bearer test-token"))
                 .thenReturn(Flux.just(s1));
-        when(structureRepository.batchInsertOrUpdate(anyList())).thenReturn(1);
+        when(structureRepository.batchInsertOrUpdatePreserveOwner(anyList())).thenReturn(1);
+        when(structureRepository.removeStaleByCorporation(anyInt(), anyList())).thenReturn(0);
 
         AppStructureSyncService service = buildService();
 
@@ -107,7 +108,7 @@ class AppStructureSyncServiceTest {
         service.syncAllCorps();
 
         // Assert:第二次被节流跳过
-        verify(structureRepository, times(1)).batchInsertOrUpdate(anyList());
+        verify(structureRepository, times(1)).batchInsertOrUpdatePreserveOwner(anyList());
         verify(eveAccountRepository, times(1)).listByCorpId(500);
     }
 
@@ -136,7 +137,7 @@ class AppStructureSyncServiceTest {
         service.syncAllCorps();
 
         // Assert:无权限角色 → 不落库
-        verify(structureRepository, never()).batchInsertOrUpdate(anyList());
+        verify(structureRepository, never()).batchInsertOrUpdatePreserveOwner(anyList());
     }
 
     @Test
@@ -157,7 +158,8 @@ class AppStructureSyncServiceTest {
         Structure s1 = structure(9001L); // userId 初始 null
         when(esiGateway.queryCorporationStructures(500, "zh", 1, "Bearer test-token"))
                 .thenReturn(Flux.just(s1));
-        when(structureRepository.batchInsertOrUpdate(anyList())).thenReturn(1);
+        when(structureRepository.batchInsertOrUpdatePreserveOwner(anyList())).thenReturn(1);
+        when(structureRepository.removeStaleByCorporation(anyInt(), anyList())).thenReturn(0);
 
         AppStructureSyncService service = buildService();
 
@@ -166,10 +168,130 @@ class AppStructureSyncServiceTest {
 
         // Assert:落库时 userId 必须设为同步角色的属主(77L)
         ArgumentCaptor<List<Structure>> captor = ArgumentCaptor.forClass(List.class);
-        verify(structureRepository).batchInsertOrUpdate(captor.capture());
+        verify(structureRepository).batchInsertOrUpdatePreserveOwner(captor.capture());
         List<Structure> saved = captor.getValue();
         assertThat(saved).hasSize(1);
         assertThat(saved.get(0).getUserId()).isEqualTo(77L);
+    }
+
+    // ── IMP-A: ghost cleanup + preserve owner ──
+
+    @Test
+    void ghostCleanup_removesStructureNotInEsi() throws Exception {
+        // Arrange: DB has structureId=9001, ESI returns only 9002
+        EveAccount a = account(77, 1001, 500);
+        when(eveAccountRepository.listAll()).thenReturn(List.of(a));
+        when(cacheGateway.setIfAbsent(anyString(), anyString(), anyLong(), any(TimeUnit.class)))
+                .thenReturn(true);
+        when(eveAccountRepository.listByCorpId(500)).thenReturn(List.of(a));
+        when(authorizeUtil.authorizeInternal(77, 1001)).thenReturn(a);
+        when(esiGateway.getAccessTokenWithExpiry(1001, 77))
+                .thenReturn(new CharacterAccessTokenResult("Bearer t", 1001, 1140L));
+        when(esiGateway.queryCharacterRoles(1001, "Bearer t")).thenReturn(permittedRoles());
+        when(esiGateway.queryCorporationStructuresMaxPage(500, "Bearer t")).thenReturn(1);
+
+        Structure s2 = structure(9002L);
+        when(esiGateway.queryCorporationStructures(500, "zh", 1, "Bearer t"))
+                .thenReturn(Flux.just(s2));
+        when(structureRepository.batchInsertOrUpdatePreserveOwner(anyList())).thenReturn(1);
+        when(structureRepository.removeStaleByCorporation(anyInt(), anyList())).thenReturn(1);
+
+        AppStructureSyncService service = buildService();
+
+        // Act
+        service.syncAllCorps();
+
+        // Assert: removeStaleByCorporation called with keepIds=[9002], NOT containing 9001
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Long>> keepIdsCaptor = ArgumentCaptor.forClass(List.class);
+        verify(structureRepository).removeStaleByCorporation(eq(500), keepIdsCaptor.capture());
+        List<Long> keepIds = keepIdsCaptor.getValue();
+        assertThat(keepIds).containsExactly(9002L);
+    }
+
+    @Test
+    void preserveOwner_doesNotFlipUserId() throws Exception {
+        // Arrange
+        EveAccount a = account(77, 1001, 500);
+        when(eveAccountRepository.listAll()).thenReturn(List.of(a));
+        when(cacheGateway.setIfAbsent(anyString(), anyString(), anyLong(), any(TimeUnit.class)))
+                .thenReturn(true);
+        when(eveAccountRepository.listByCorpId(500)).thenReturn(List.of(a));
+        when(authorizeUtil.authorizeInternal(77, 1001)).thenReturn(a);
+        when(esiGateway.getAccessTokenWithExpiry(1001, 77))
+                .thenReturn(new CharacterAccessTokenResult("Bearer t", 1001, 1140L));
+        when(esiGateway.queryCharacterRoles(1001, "Bearer t")).thenReturn(permittedRoles());
+        when(esiGateway.queryCorporationStructuresMaxPage(500, "Bearer t")).thenReturn(1);
+
+        Structure s1 = structure(9001L);
+        when(esiGateway.queryCorporationStructures(500, "zh", 1, "Bearer t"))
+                .thenReturn(Flux.just(s1));
+        when(structureRepository.batchInsertOrUpdatePreserveOwner(anyList())).thenReturn(1);
+        when(structureRepository.removeStaleByCorporation(anyInt(), anyList())).thenReturn(0);
+
+        AppStructureSyncService service = buildService();
+
+        // Act
+        service.syncAllCorps();
+
+        // Assert: calls batchInsertOrUpdatePreserveOwner (NOT batchInsertOrUpdate)
+        verify(structureRepository).batchInsertOrUpdatePreserveOwner(anyList());
+        verify(structureRepository, never()).batchInsertOrUpdate(anyList());
+    }
+
+    @Test
+    void emptyEsi_cleansAllCorpRows() throws Exception {
+        // Arrange: ESI returns maxPage=1 but empty list (successful pull, vacuum)
+        EveAccount a = account(77, 1001, 500);
+        when(eveAccountRepository.listAll()).thenReturn(List.of(a));
+        when(cacheGateway.setIfAbsent(anyString(), anyString(), anyLong(), any(TimeUnit.class)))
+                .thenReturn(true);
+        when(eveAccountRepository.listByCorpId(500)).thenReturn(List.of(a));
+        when(authorizeUtil.authorizeInternal(77, 1001)).thenReturn(a);
+        when(esiGateway.getAccessTokenWithExpiry(1001, 77))
+                .thenReturn(new CharacterAccessTokenResult("Bearer t", 1001, 1140L));
+        when(esiGateway.queryCharacterRoles(1001, "Bearer t")).thenReturn(permittedRoles());
+        when(esiGateway.queryCorporationStructuresMaxPage(500, "Bearer t")).thenReturn(1);
+
+        // ESI returns empty flux
+        when(esiGateway.queryCorporationStructures(500, "zh", 1, "Bearer t"))
+                .thenReturn(Flux.empty());
+        when(structureRepository.removeStaleByCorporation(anyInt(), anyList())).thenReturn(0);
+
+        AppStructureSyncService service = buildService();
+
+        // Act
+        service.syncAllCorps();
+
+        // Assert: removeStaleByCorporation called with empty keepIds → clean all corp rows
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Long>> keepIdsCaptor = ArgumentCaptor.forClass(List.class);
+        verify(structureRepository).removeStaleByCorporation(eq(500), keepIdsCaptor.capture());
+        assertThat(keepIdsCaptor.getValue()).isEmpty();
+    }
+
+    @Test
+    void esiFailure_noCleanup() throws Exception {
+        // Arrange: maxPage returns null (ESI failure)
+        EveAccount a = account(77, 1001, 500);
+        when(eveAccountRepository.listAll()).thenReturn(List.of(a));
+        when(cacheGateway.setIfAbsent(anyString(), anyString(), anyLong(), any(TimeUnit.class)))
+                .thenReturn(true);
+        when(eveAccountRepository.listByCorpId(500)).thenReturn(List.of(a));
+        when(authorizeUtil.authorizeInternal(77, 1001)).thenReturn(a);
+        when(esiGateway.getAccessTokenWithExpiry(1001, 77))
+                .thenReturn(new CharacterAccessTokenResult("Bearer t", 1001, 1140L));
+        when(esiGateway.queryCharacterRoles(1001, "Bearer t")).thenReturn(permittedRoles());
+        when(esiGateway.queryCorporationStructuresMaxPage(500, "Bearer t")).thenReturn(null);
+
+        AppStructureSyncService service = buildService();
+
+        // Act
+        service.syncAllCorps();
+
+        // Assert: removeStaleByCorporation NEVER called
+        verify(structureRepository, never()).removeStaleByCorporation(anyInt(), anyList());
+        verify(structureRepository, never()).batchInsertOrUpdatePreserveOwner(anyList());
     }
 
     @Test
@@ -198,7 +320,8 @@ class AppStructureSyncServiceTest {
         Structure s1 = structure(9001L);
         when(esiGateway.queryCorporationStructures(502, "zh", 1, "Bearer test-token"))
                 .thenReturn(Flux.just(s1));
-        when(structureRepository.batchInsertOrUpdate(anyList())).thenReturn(1);
+        when(structureRepository.batchInsertOrUpdatePreserveOwner(anyList())).thenReturn(1);
+        when(structureRepository.removeStaleByCorporation(anyInt(), anyList())).thenReturn(0);
 
         AppStructureSyncService service = buildService();
 
@@ -206,6 +329,6 @@ class AppStructureSyncServiceTest {
         service.syncAllCorps();
 
         // Assert:corpA 异常被吞,corpB 成功落库一次
-        verify(structureRepository, times(1)).batchInsertOrUpdate(anyList());
+        verify(structureRepository, times(1)).batchInsertOrUpdatePreserveOwner(anyList());
     }
 }

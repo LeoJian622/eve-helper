@@ -64,8 +64,8 @@ public class JwtAuthorizationTokenFilter extends OncePerRequestFilter {
     /** 缓存端口:消费改密纪元标记 {@code auth:user:revoke_epoch:{userId}}(022 T006) */
     private final CacheGateway cacheGateway;
 
-    /** 改密纪元标记键前缀(022 T006,与 TokenService 逐字一致) */
-    private static final String REVOKE_EPOCH_PREFIX = "auth:user:revoke_epoch:";
+    /** 改密纪元标记键前缀(022 T006, 收敛至 GlobalConstants.REVOKE_EPOCH_KEY_PREFIX) */
+    private static final String REVOKE_EPOCH_PREFIX = xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants.REVOKE_EPOCH_KEY_PREFIX;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -120,7 +120,15 @@ public class JwtAuthorizationTokenFilter extends OncePerRequestFilter {
                 if (epochObj != null) {
                     Date issueTime = jwtClaimsSet.getIssueTime();
                     Long iat = (issueTime != null) ? issueTime.getTime() : null;
-                    long epoch = Long.parseLong(epochObj.toString());
+                    long epoch;
+                    try {
+                        epoch = Long.parseLong(epochObj.toString());
+                    } catch (NumberFormatException e) {
+                        // MIN-3: fail-closed + 脱敏告警（镜像 LoginRateLimiterService）
+                        log.warn("[SECURITY_ALERT] 改密纪元解析失败, fail-closed 拒绝: userId={}", userIdClaim);
+                        rejectOrPass(request, response, filterChain, ResultCode.TOKEN_ACCESS_EXPIRED);
+                        return;
+                    }
                     if (iat == null || iat <= epoch) {
                         log.warn("改密纪元校验拒绝: userId={}, iat={}, epoch={}",
                                 userIdClaim, iat, epoch);

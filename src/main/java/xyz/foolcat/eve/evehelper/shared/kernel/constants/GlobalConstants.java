@@ -26,6 +26,32 @@ public interface GlobalConstants {
      */
     Integer SYSTEM_USER_ID = 1;
 
+    // ── 022 P2 Redis 键常量（跨层消费方收敛，data-model.md §4） ──
+
+    /**
+     * 改密纪元标记键前缀（022 T006）。
+     * <p>
+     * 消费方:TokenService、JwtAuthorizationTokenFilter、UserApplicationService。
+     * 格式:{@code auth:user:revoke_epoch:<userId>}
+     */
+    String REVOKE_EPOCH_KEY_PREFIX = "auth:user:revoke_epoch:";
+
+    /**
+     * 改密失败限流计数键前缀（022 T041）。
+     * <p>
+     * 消费方:UserApplicationService。
+     * 格式:{@code pwd:attempt:<userId>}
+     */
+    String PWD_ATTEMPT_KEY_PREFIX = "pwd:attempt:";
+
+    /**
+     * 用户→会话反向索引键前缀（022 T005）。
+     * <p>
+     * 消费方:UserApplicationService、TokenService。
+     * 格式:{@code refresh_user:<userId>}
+     */
+    String REFRESH_USER_KEY_PREFIX = "refresh_user:";
+
     /**
      * 系统同步角色 ID（QQ 机器人同步用的固定角色）。
      * <p>

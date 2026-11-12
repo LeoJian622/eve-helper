@@ -334,6 +334,17 @@ public class EsiApiService implements EsiGateway {
         return GlobalConstants.ESI_ACCESS_TOKEN_KEY + userId + ":" + characterId;
     }
 
+    // ── IMP-1: accessToken 缓存驱逐（封装不变量修复） ──
+
+    @Override
+    public void evictAccessTokenCache(Integer userId, Integer characterId) {
+        String key = accessTokenKey(userId, characterId);
+        Boolean result = cacheGateway.delete(key);
+        if (!Boolean.TRUE.equals(result)) {
+            log.warn("[SECURITY_ALERT] accessToken 驱逐未命中 userId={}, characterId={}", userId, characterId);
+        }
+    }
+
     /**
      * 构造 ESI 刷新锁键。
      * <p>
@@ -2395,7 +2406,7 @@ public class EsiApiService implements EsiGateway {
         boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
         if (!forceGranted) {
             List<MemberTrackingItem> cached = esiResponseCache.getList(key, objectMapper.constructType(MemberTrackingItem.class));
-            if (cached != null && !cached.isEmpty()) {
+            if (cached != null) {
                 return cached;
             }
         }
@@ -2403,7 +2414,7 @@ public class EsiApiService implements EsiGateway {
         boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
         if (!claimed && !forceGranted) {
             List<MemberTrackingItem> filled = awaitCachedList(key, objectMapper.constructType(MemberTrackingItem.class));
-            if (filled != null && !filled.isEmpty()) {
+            if (filled != null) {
                 return filled;
             }
         }

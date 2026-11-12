@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.shared.kernel.config.JwtTokenProperties;
+import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.domain.model.vo.TokenResult;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
@@ -100,15 +101,9 @@ public class TokenService {
     private static final String REFRESH_USER_PREFIX = "refresh_user:";
 
     /**
-     * 改密纪元标记键前缀:{@code auth:user:revoke_epoch:<userId>}(022 T006)。
-     *
-     * <p>改密时由 T041 写入当前毫秒时间戳;filter 与 refresh 两条路径逐字一致地消费:
-     * epoch == null → 放行;epoch != null && (iat == null || iat <= epoch) → 拒绝(fail-closed)。</p>
-     *
-     * <p>与 JwtAuthorizationTokenFilter 中的同名常量逐字一致 —— 若需重构为共享常量,
-     * 须放 shared/kernel/constants(domain 不得 import infrastructure)。</p>
+     * 改密纪元标记键前缀(022 T006, 收敛至 GlobalConstants.REVOKE_EPOCH_KEY_PREFIX)。
      */
-    private static final String REVOKE_EPOCH_PREFIX = "auth:user:revoke_epoch:";
+    private static final String REVOKE_EPOCH_PREFIX = GlobalConstants.REVOKE_EPOCH_KEY_PREFIX;
 
 
     /**

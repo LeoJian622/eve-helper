@@ -4,7 +4,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,6 +33,7 @@ import java.text.ParseException;
 @RestController
 @RequestMapping("/job")
 @RequiredArgsConstructor
+@Validated
 public class JobController {
 
     private final JobApplicationService jobApplicationService;
@@ -62,8 +66,8 @@ public class JobController {
     public Result<IndustryJobPageResponse> getJobs(@PathVariable String type,
                                                    @PathVariable Integer id,
                                                    @RequestParam(required = false) String status,
-                                                   @RequestParam(defaultValue = "1") Integer current,
-                                                   @RequestParam(defaultValue = "20") Integer size,
+                                                   @RequestParam(defaultValue = "1") @Min(1) Integer current,
+                                                   @RequestParam(defaultValue = "20") @Min(1) @Max(1000) Integer size,
                                                    @RequestParam(defaultValue = "false") boolean forceRefresh) throws ParseException {
         PageQuery pageQuery = PageQuery.builder().current(current).size(size).build();
         return Result.success(industryJobQueryApplicationService.queryJobs(type, id, status, pageQuery, forceRefresh));

@@ -134,7 +134,7 @@ public class UserApplicationService {
         }
 
         // 2. 限流检查（先 get 计数 ≥5 → RATE_LIMITED，检查不 increment）
-        String attemptKey = "pwd:attempt:" + userId;
+        String attemptKey = xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants.PWD_ATTEMPT_KEY_PREFIX + userId;
         int attempts = getCurrentAttempts(attemptKey);
         if (attempts >= PWD_MAX_ATTEMPTS) {
             throw new EveHelperException(ResultCode.RATE_LIMITED);
@@ -167,10 +167,10 @@ public class UserApplicationService {
         sysUserRepository.insertOrUpdateSelective(update);
 
         // 7. 写纪元（7 天 TTL）
-        cacheGateway.set("auth:user:revoke_epoch:" + userId, System.currentTimeMillis(), 7, TimeUnit.DAYS);
+        cacheGateway.set(xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants.REVOKE_EPOCH_KEY_PREFIX + userId, System.currentTimeMillis(), 7, TimeUnit.DAYS);
 
         // 8. 逐 sid 撤销 + 标记（markSessionRevoked 无条件调用，HIGH-1）
-        Set<Object> sids = cacheGateway.sMembers("refresh_user:" + userId);
+        Set<Object> sids = cacheGateway.sMembers(xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants.REFRESH_USER_KEY_PREFIX + userId);
         if (sids != null) {
             for (Object sid : sids) {
                 String s = String.valueOf(sid);
@@ -203,6 +203,8 @@ public class UserApplicationService {
             try {
                 return Integer.parseInt(attemptsObj.toString());
             } catch (NumberFormatException e) {
+                // MIN-3: 脱敏告警（镜像 LoginRateLimiterService:84-86）
+                log.warn("[SECURITY_ALERT] pwd attempt 计数解析失败, fail-closed→0: key={}", key);
                 return 0;
             }
         }

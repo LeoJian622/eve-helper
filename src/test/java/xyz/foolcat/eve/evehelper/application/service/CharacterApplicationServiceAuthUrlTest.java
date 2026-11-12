@@ -7,7 +7,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import xyz.foolcat.eve.evehelper.application.dto.response.AuthorizeUrlResponse;
-import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.repository.system.EveAccountRepository;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
@@ -31,13 +30,12 @@ class CharacterApplicationServiceAuthUrlTest {
     @Mock private EsiGateway esiGateway;
     @Mock private AuthorizeUtil authorizeUtil;
     @Mock private EveAccountRepository eveAccountRepository;
-    @Mock private CacheGateway cacheGateway;
 
     private CharacterApplicationService service;
 
     @BeforeEach
     void setUp() {
-        service = new CharacterApplicationService(esiGateway, authorizeUtil, eveAccountRepository, cacheGateway);
+        service = new CharacterApplicationService(esiGateway, authorizeUtil, eveAccountRepository);
     }
 
     // ── AC: 委托端口并返回 state ──

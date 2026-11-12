@@ -54,6 +54,11 @@ public class MemberTrackingApplicationService {
         // 2. 归属校验(他人角色由 AuthorizeUtil 抛 ACCESS_UNAUTHORIZED)
         EveAccount account = authorizeUtil.authorize(characterId);
 
+        // 2b. MIN-E: 跨军团本地守卫（镜像 IndustryJobQuery:85 从 account.getCorpId 派生）
+        if (!corpId.equals(account.getCorpId())) {
+            throw new EveHelperException(ResultCode.PARAM_ERROR);
+        }
+
         // 3. 取 ESI access token
         CharacterAccessTokenResult tokenResult = esiGateway.getAccessTokenWithExpiry(characterId, account.getUserId());
         String token = tokenResult.accessToken();
