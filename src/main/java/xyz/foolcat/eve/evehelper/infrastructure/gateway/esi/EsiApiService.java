@@ -14,6 +14,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.*;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterLocationInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterOnlineInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterPublicInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
@@ -1656,6 +1657,125 @@ public class EsiApiService implements EsiGateway {
             List<CharacterOnlineInfo> wrapped = List.of(domain);
             esiResponseCache.put(key, wrapped, ttl);
             return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    // ── 位置 + 舰船(伴侣 APP T010) ──
+
+    @Override
+    public CharacterLocationInfo queryCharacterLocation(Integer characterId, String accessToken) {
+        return doQueryCharacterLocation(characterId, accessToken, false);
+    }
+
+    @Override
+    public CharacterLocationInfo queryCharacterLocation(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterLocation(characterId, accessToken, forceRefresh);
+    }
+
+    private CharacterLocationInfo doQueryCharacterLocation(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            LocationResponse resp = callSdkMono(() -> locationApi.queryCharacterLocation(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            return resp == null ? null : new CharacterLocationInfo(
+                    resp.getSolarSystemId(),
+                    resp.getStationId(),
+                    resp.getStructureId()
+            );
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/location/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<CharacterLocationInfo> cached = esiResponseCache.getList(key, objectMapper.constructType(CharacterLocationInfo.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        // 防穿透
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<CharacterLocationInfo> filled = awaitCachedList(key, objectMapper.constructType(CharacterLocationInfo.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<LocationResponse> response = callSdkMono(() -> locationApi.queryCharacterLocationResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            LocationResponse resp = response.getBody();
+            CharacterLocationInfo domain = new CharacterLocationInfo(
+                    resp.getSolarSystemId(),
+                    resp.getStationId(),
+                    resp.getStructureId()
+            );
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<CharacterLocationInfo> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    @Override
+    public Integer queryCharacterShipTypeId(Integer characterId, String accessToken) {
+        return doQueryCharacterShipTypeId(characterId, accessToken, false);
+    }
+
+    @Override
+    public Integer queryCharacterShipTypeId(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterShipTypeId(characterId, accessToken, forceRefresh);
+    }
+
+    private Integer doQueryCharacterShipTypeId(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            CurrentShipResponse resp = callSdkMono(() -> locationApi.queryCharacterShip(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            return resp == null ? null : resp.getShipTypeId();
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/ship/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<Integer> cached = esiResponseCache.getList(key, objectMapper.constructType(Integer.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        // 防穿透
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<Integer> filled = awaitCachedList(key, objectMapper.constructType(Integer.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<CurrentShipResponse> response = callSdkMono(() -> locationApi.queryCharacterShipResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            Integer shipTypeId = response.getBody().getShipTypeId();
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<Integer> wrapped = List.of(shipTypeId);
+            esiResponseCache.put(key, wrapped, ttl);
+            return shipTypeId;
         } finally {
             if (claimed) {
                 esiResponseCache.releaseClaim(key);

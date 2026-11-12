@@ -12,6 +12,7 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterLocationInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterOnlineInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterPublicInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
@@ -349,4 +350,42 @@ public interface EsiGateway {
      * @return 角色在线状态
      */
     CharacterOnlineInfo queryCharacterOnline(Integer characterId, String accessToken, boolean forceRefresh);
+
+    /**
+     * 查询角色当前位置(ESI /characters/{id}/location/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 角色当前位置
+     */
+    CharacterLocationInfo queryCharacterLocation(Integer characterId, String accessToken);
+
+    /**
+     * 查询角色当前位置(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 角色当前位置
+     */
+    CharacterLocationInfo queryCharacterLocation(Integer characterId, String accessToken, boolean forceRefresh);
+
+    /**
+     * 查询角色当前舰船类型 ID(ESI /characters/{id}/ship/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 舰船类型 ID
+     */
+    Integer queryCharacterShipTypeId(Integer characterId, String accessToken);
+
+    /**
+     * 查询角色当前舰船类型 ID(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 舰船类型 ID
+     */
+    Integer queryCharacterShipTypeId(Integer characterId, String accessToken, boolean forceRefresh);
 }

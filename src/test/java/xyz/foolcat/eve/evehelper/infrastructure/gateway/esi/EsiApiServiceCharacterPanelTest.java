@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterLocationInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterOnlineInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterPublicInfo;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
@@ -28,6 +29,8 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCa
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCacheProperties;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.ForceRefreshLimiter;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CharacterPublicInfoResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CurrentShipResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.LocationResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.OnlineStatusResponse;
 
 import java.time.Duration;
@@ -267,6 +270,169 @@ class EsiApiServiceCharacterPanelTest {
             verify(esiResponseCache).put(eq(expectedKey), any(), ttlCaptor.capture());
             assertThat(ttlCaptor.getValue()).isNotNull();
             assertThat(ttlCaptor.getValue()).isEqualTo(EXPECTED_TTL);
+        }
+    }
+
+    // ── T010: location ──
+
+    @Test
+    @DisplayName("location 建筑内:structureId 有值,stationId 为 null")
+    void location_structureIdPopulated_stationIdNull_whenInStructure() {
+        // Arrange: 缓存未命中,SDK 返回建筑内位置(structureId 有值,stationId=null)
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
+
+            String expectedKey = "esi:resp:" + DATASOURCE + ":" + USER_ID + ":/characters/" + CHARACTER_ID + "/location/:0";
+            when(esiResponseCache.cacheKey(eq(DATASOURCE), eq(USER_ID), eq("/characters/" + CHARACTER_ID + "/location/"), eq(0)))
+                    .thenReturn(expectedKey);
+            when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
+            when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+            LocationResponse sdkBody = new LocationResponse();
+            sdkBody.setSolarSystemId(30002187);
+            sdkBody.setStationId(null);
+            sdkBody.setStructureId(123456789L);
+            when(locationApi.queryCharacterLocationResponse(eq(CHARACTER_ID), eq(DATASOURCE), eq(ACCESS_TOKEN)))
+                    .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(sdkBody)));
+            when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+            // Act
+            CharacterLocationInfo result = esiApiService.queryCharacterLocation(CHARACTER_ID, ACCESS_TOKEN);
+
+            // Assert: 建筑内语义——structureId 有值,stationId 为 null
+            assertThat(result).isNotNull();
+            assertThat(result.solarSystemId()).isEqualTo(30002187);
+            assertThat(result.stationId()).isNull();
+            assertThat(result.structureId()).isEqualTo(123456789L);
+        }
+    }
+
+    @Test
+    @DisplayName("location 缓存命中 → 直接返回,不调用 SDK")
+    void location_cacheHit_noSdkCall() {
+        // Arrange: 缓存命中
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
+
+            String expectedKey = "esi:resp:" + DATASOURCE + ":" + USER_ID + ":/characters/" + CHARACTER_ID + "/location/:0";
+            when(esiResponseCache.cacheKey(eq(DATASOURCE), eq(USER_ID), eq("/characters/" + CHARACTER_ID + "/location/"), eq(0)))
+                    .thenReturn(expectedKey);
+
+            CharacterLocationInfo cachedInfo = new CharacterLocationInfo(30002187, 60003760, null);
+            when(esiResponseCache.getList(eq(expectedKey), any()))
+                    .thenReturn(List.of(cachedInfo));
+
+            // Act
+            CharacterLocationInfo result = esiApiService.queryCharacterLocation(CHARACTER_ID, ACCESS_TOKEN);
+
+            // Assert: 缓存命中,SDK 未被调用
+            assertThat(result).isNotNull();
+            assertThat(result.solarSystemId()).isEqualTo(30002187);
+            assertThat(result.stationId()).isEqualTo(60003760);
+            verify(locationApi, never()).queryCharacterLocationResponse(anyInt(), anyString(), anyString());
+        }
+    }
+
+    @Test
+    @DisplayName("location forceRefresh → 经 ForceRefreshLimiter 限流后真调")
+    void location_forceRefresh_bypassesCacheViaLimiter() {
+        // Arrange
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
+
+            String expectedKey = "esi:resp:" + DATASOURCE + ":" + USER_ID + ":/characters/" + CHARACTER_ID + "/location/:0";
+            when(esiResponseCache.cacheKey(eq(DATASOURCE), eq(USER_ID), eq("/characters/" + CHARACTER_ID + "/location/"), eq(0)))
+                    .thenReturn(expectedKey);
+            when(forceRefreshLimiter.tryAcquire(eq(expectedKey), any(), eq(5))).thenReturn(true);
+            when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+            LocationResponse sdkBody = new LocationResponse();
+            sdkBody.setSolarSystemId(30002187);
+            sdkBody.setStationId(60003760);
+            sdkBody.setStructureId(null);
+            when(locationApi.queryCharacterLocationResponse(eq(CHARACTER_ID), eq(DATASOURCE), eq(ACCESS_TOKEN)))
+                    .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(sdkBody)));
+            when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+            // Act
+            CharacterLocationInfo result = esiApiService.queryCharacterLocation(CHARACTER_ID, ACCESS_TOKEN, true);
+
+            // Assert
+            verify(forceRefreshLimiter).tryAcquire(eq(expectedKey), any(), eq(5));
+            verify(locationApi).queryCharacterLocationResponse(CHARACTER_ID, DATASOURCE, ACCESS_TOKEN);
+            assertThat(result).isNotNull();
+            assertThat(result.stationId()).isEqualTo(60003760);
+        }
+    }
+
+    @Test
+    @DisplayName("location 缓存写使用响应头提取的 TTL(非 null)")
+    void location_cacheWrite_usesHeaderTtl() {
+        // Arrange
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
+
+            String expectedKey = "esi:resp:" + DATASOURCE + ":" + USER_ID + ":/characters/" + CHARACTER_ID + "/location/:0";
+            when(esiResponseCache.cacheKey(eq(DATASOURCE), eq(USER_ID), eq("/characters/" + CHARACTER_ID + "/location/"), eq(0)))
+                    .thenReturn(expectedKey);
+            when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
+            when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
+
+            // extractor 被 mock,头设置仅为可读性
+            HttpHeaders headers = new HttpHeaders();
+            headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+            LocationResponse sdkBody = new LocationResponse();
+            sdkBody.setSolarSystemId(30002187);
+            sdkBody.setStructureId(123456789L);
+            when(locationApi.queryCharacterLocationResponse(eq(CHARACTER_ID), eq(DATASOURCE), eq(ACCESS_TOKEN)))
+                    .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(sdkBody)));
+            when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+            // Act
+            esiApiService.queryCharacterLocation(CHARACTER_ID, ACCESS_TOKEN);
+
+            // Assert: put 收到非 null TTL 且等于从响应头提取的值
+            ArgumentCaptor<Duration> ttlCaptor = ArgumentCaptor.forClass(Duration.class);
+            verify(esiResponseCache).put(eq(expectedKey), any(), ttlCaptor.capture());
+            assertThat(ttlCaptor.getValue()).isNotNull();
+            assertThat(ttlCaptor.getValue()).isEqualTo(EXPECTED_TTL);
+        }
+    }
+
+    // ── T010: ship ──
+
+    @Test
+    @DisplayName("ship 返回舰船 type ID")
+    void ship_returnsTypeId() {
+        // Arrange: 缓存未命中,SDK 返回舰船信息
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
+
+            String expectedKey = "esi:resp:" + DATASOURCE + ":" + USER_ID + ":/characters/" + CHARACTER_ID + "/ship/:0";
+            when(esiResponseCache.cacheKey(eq(DATASOURCE), eq(USER_ID), eq("/characters/" + CHARACTER_ID + "/ship/"), eq(0)))
+                    .thenReturn(expectedKey);
+            when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
+            when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+            CurrentShipResponse sdkBody = new CurrentShipResponse();
+            sdkBody.setShipTypeId(670);
+            sdkBody.setShipName("Test Ship");
+            sdkBody.setShipItemId(99999L);
+            when(locationApi.queryCharacterShipResponse(eq(CHARACTER_ID), eq(DATASOURCE), eq(ACCESS_TOKEN)))
+                    .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(sdkBody)));
+            when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+            // Act
+            Integer result = esiApiService.queryCharacterShipTypeId(CHARACTER_ID, ACCESS_TOKEN);
+
+            // Assert
+            assertThat(result).isEqualTo(670);
         }
     }
 
