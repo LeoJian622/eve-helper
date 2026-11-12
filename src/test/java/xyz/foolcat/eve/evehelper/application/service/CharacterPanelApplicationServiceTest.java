@@ -257,7 +257,7 @@ class CharacterPanelApplicationServiceTest {
 
     @Test
     @DisplayName("panel 其他用户角色被拒绝(AuthorizeUtil 抛 ACCESS_UNAUTHORIZED)")
-    void panel_otherUsersCharacter_rejected() {
+    void panel_otherUsersCharacter_rejected() throws ParseException {
         // AuthorizeUtil 检测到越权,抛出 EveHelperException(ACCESS_UNAUTHORIZED)
         when(authorizeUtil.authorize(CHARACTER_ID))
                 .thenThrow(new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED));
