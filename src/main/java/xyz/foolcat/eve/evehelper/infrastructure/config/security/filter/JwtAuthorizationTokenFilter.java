@@ -16,6 +16,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.service.security.TokenBlacklistService;
 import xyz.foolcat.eve.evehelper.infrastructure.config.security.WhiteUrlMatcher;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.SecurityConstant;
@@ -32,6 +33,7 @@ import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,6 +61,11 @@ public class JwtAuthorizationTokenFilter extends OncePerRequestFilter {
     private final TokenBlacklistService tokenBlacklistService;
     /** 白名单判定单一事实来源(与 RbacAuthorizationManager 共同消费) */
     private final WhiteUrlMatcher whiteUrlMatcher;
+    /** 缓存端口:消费改密纪元标记 {@code auth:user:revoke_epoch:{userId}}(022 T006) */
+    private final CacheGateway cacheGateway;
+
+    /** 改密纪元标记键前缀(022 T006,与 TokenService 逐字一致) */
+    private static final String REVOKE_EPOCH_PREFIX = "auth:user:revoke_epoch:";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -99,6 +106,28 @@ public class JwtAuthorizationTokenFilter extends OncePerRequestFilter {
                 log.warn("Token已被撤销: jti={}", SensitiveDataMasker.maskToken(jti));
                 rejectOrPass(request, response, filterChain, ResultCode.TOKEN_ACCESS_EXPIRED);
                 return;
+            }
+
+            // 022 T006:改密纪元强制校验(fail-closed)。
+            // 判定逻辑与 TokenService.refreshAccessTokenWithUser 逐字一致(互相引用):
+            //   epoch == null → 放行(含无 iat 旧 token,部署兼容)
+            //   epoch != null && (iat == null || iat <= epoch) → 拒绝
+            // iat 秒精度:JWT iat 为秒级 NumericDate,转毫秒后相对毫秒纪元只会偏小,
+            // 只会过度拒绝(fail-closed 安全方向),不得引入任何容差/放宽逻辑。
+            Object userIdClaim = jwtClaimsSet.getClaim(SecurityConstant.USER_ID_KEY);
+            if (userIdClaim != null) {
+                Object epochObj = cacheGateway.get(REVOKE_EPOCH_PREFIX + userIdClaim);
+                if (epochObj != null) {
+                    Date issueTime = jwtClaimsSet.getIssueTime();
+                    Long iat = (issueTime != null) ? issueTime.getTime() : null;
+                    long epoch = Long.parseLong(epochObj.toString());
+                    if (iat == null || iat <= epoch) {
+                        log.warn("改密纪元校验拒绝: userId={}, iat={}, epoch={}",
+                                userIdClaim, iat, epoch);
+                        rejectOrPass(request, response, filterChain, ResultCode.TOKEN_ACCESS_EXPIRED);
+                        return;
+                    }
+                }
             }
 
             // 提取权限信息

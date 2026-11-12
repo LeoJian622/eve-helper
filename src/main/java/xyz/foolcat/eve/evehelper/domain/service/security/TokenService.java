@@ -99,6 +99,17 @@ public class TokenService {
      */
     private static final String REFRESH_USER_PREFIX = "refresh_user:";
 
+    /**
+     * 改密纪元标记键前缀:{@code auth:user:revoke_epoch:<userId>}(022 T006)。
+     *
+     * <p>改密时由 T041 写入当前毫秒时间戳;filter 与 refresh 两条路径逐字一致地消费:
+     * epoch == null → 放行;epoch != null && (iat == null || iat <= epoch) → 拒绝(fail-closed)。</p>
+     *
+     * <p>与 JwtAuthorizationTokenFilter 中的同名常量逐字一致 —— 若需重构为共享常量,
+     * 须放 shared/kernel/constants(domain 不得 import infrastructure)。</p>
+     */
+    private static final String REVOKE_EPOCH_PREFIX = "auth:user:revoke_epoch:";
+
 
     /**
      * 生成Token对(Access Token + Refresh Token)
@@ -407,6 +418,25 @@ public class TokenService {
             log.warn("会话已登出,刷新被拒绝(tombstone 命中): sid={}",
                     SensitiveDataMasker.maskToken(sessionId));
             throw new IllegalArgumentException("Refresh Token无效或已过期");
+        }
+
+        // 022 T006:改密纪元强制校验(fail-closed)。
+        // 判定逻辑与 JwtAuthorizationTokenFilter 逐字一致(互相引用):
+        //   epoch == null → 放行(含无 iat 旧 token,部署兼容)
+        //   epoch != null && (iat == null || iat <= epoch) → 拒绝
+        // iat 来源:refresh_iat:<sid>(T005 写入的会话创建毫秒)。
+        // iat 秒精度:JWT iat 为秒级 NumericDate,转毫秒后相对毫秒纪元只会偏小,
+        // 只会过度拒绝(fail-closed 安全方向),不得引入任何容差/放宽逻辑。
+        Object epochObj = cacheGateway.get(REVOKE_EPOCH_PREFIX + user.getId());
+        if (epochObj != null) {
+            Object iatObj = cacheGateway.get(REFRESH_IAT_PREFIX + sessionId);
+            Long iat = (iatObj != null) ? Long.parseLong(iatObj.toString()) : null;
+            long epoch = Long.parseLong(epochObj.toString());
+            if (iat == null || iat <= epoch) {
+                log.warn("改密纪元校验拒绝: userId={}, iat={}, epoch={}",
+                        user.getId(), iat, epoch);
+                throw new IllegalArgumentException("Refresh Token无效或已过期");
+            }
         }
 
         // 生成新的Token对(包含新的Refresh Token),并重写会话索引
