@@ -24,6 +24,7 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.MailDetailInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailHeaderPage;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailLabelsInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailRecipient;
+import xyz.foolcat.eve.evehelper.domain.model.vo.SendMailCommand;
 import xyz.foolcat.eve.evehelper.domain.model.vo.SkillQueueItem;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
@@ -44,6 +45,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCa
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCacheProperties;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.ForceRefreshLimiter;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.NewMail;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
@@ -2196,6 +2198,36 @@ public class EsiApiService implements EsiGateway {
                         .toList();
         Long totalUnread = resp.getTotalUnreadCount() == null ? null : resp.getTotalUnreadCount().longValue();
         return new MailLabelsInfo(labels, totalUnread);
+    }
+
+    // ── 邮件写侧(伴侣 APP T017) ──
+
+    @Override
+    public void markCharacterMailRead(Integer characterId, Integer mailId, boolean read, String accessToken) {
+        // 写操作:直穿 SDK,不缓存、不限流
+        callSdkMono(() -> mailApi.updateCharacterMail(characterId, EsiClientConfig.SERENITY, mailId, null, read, accessToken))
+                .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                .block();
+    }
+
+    @Override
+    public Integer sendCharacterMail(Integer characterId, SendMailCommand command, String accessToken) {
+        // 写操作:直穿 SDK,不缓存、不限流
+        NewMail newMail = new NewMail();
+        newMail.setSubject(command.subject());
+        newMail.setBody(command.body());
+        List<xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.Recipient> sdkRecipients = command.recipients().stream()
+                .map(r -> {
+                    xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.Recipient sdkR = new xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.Recipient();
+                    sdkR.setRecipientId(r.recipientId());
+                    sdkR.setRecipientType(r.recipientType());
+                    return sdkR;
+                })
+                .toList();
+        newMail.setRecipients(sdkRecipients);
+        return callSdkMono(() -> mailApi.addCharacterMail(characterId, EsiClientConfig.SERENITY, newMail, accessToken))
+                .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                .block();
     }
 
 }

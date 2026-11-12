@@ -21,6 +21,7 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailDetailInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailHeaderPage;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailLabelsInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.SendMailCommand;
 import xyz.foolcat.eve.evehelper.domain.model.vo.SkillQueueItem;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
@@ -514,4 +515,28 @@ public interface EsiGateway {
      * @return 邮件标签与未读数
      */
     MailLabelsInfo queryCharacterMailLabels(Integer characterId, String accessToken, boolean forceRefresh);
+
+    // ── 邮件写侧(伴侣 APP T017) ──
+
+    /**
+     * 标记角色邮件为已读/未读(ESI PUT /characters/{id}/mail/{mailId}/,需授权)。
+     * <p>写操作不做响应缓存、无 forceRefresh。
+     *
+     * @param characterId 角色 ID
+     * @param mailId      邮件 ID
+     * @param read        true=已读,false=未读
+     * @param accessToken 授权 Token
+     */
+    void markCharacterMailRead(Integer characterId, Integer mailId, boolean read, String accessToken);
+
+    /**
+     * 发送角色邮件(ESI POST /characters/{id}/mail/,需授权)。
+     * <p>写操作不做响应缓存、无 forceRefresh。
+     *
+     * @param characterId 角色 ID
+     * @param command     发送命令(收件人、主题、正文)
+     * @param accessToken 授权 Token
+     * @return 新邮件 ID
+     */
+    Integer sendCharacterMail(Integer characterId, SendMailCommand command, String accessToken);
 }

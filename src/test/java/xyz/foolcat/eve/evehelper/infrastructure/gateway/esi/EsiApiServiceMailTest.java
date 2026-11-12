@@ -16,6 +16,7 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.MailDetailInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailHeaderPage;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailLabelsInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailRecipient;
+import xyz.foolcat.eve.evehelper.domain.model.vo.SendMailCommand;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiAccessException;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
@@ -32,6 +33,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.ForceRefreshL
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.MailLabelsAndUnreadCountsResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.MailResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.RequestedMailResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.NewMail;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.Label;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.Recipient;
 
@@ -292,6 +294,70 @@ class EsiApiServiceMailTest {
             assertThat(ttlCaptor.getValue()).isNotNull();
             assertThat(ttlCaptor.getValue()).isEqualTo(EXPECTED_TTL);
         }
+    }
+
+    // ── T017: 邮件写侧 ──
+
+    @Test
+    @DisplayName("markRead 委托 read 标记到 SDK updateCharacterMail")
+    void markRead_delegatesReadFlag() {
+        // Arrange: SDK updateCharacterMail 返回成功
+        Integer mailId = 5001;
+        when(mailApi.updateCharacterMail(eq(CHARACTER_ID), eq(DATASOURCE), eq(mailId), isNull(), eq(true), eq(ACCESS_TOKEN)))
+                .thenReturn(Mono.just(new MailResponse()));
+
+        // Act
+        esiApiService.markCharacterMailRead(CHARACTER_ID, mailId, true, ACCESS_TOKEN);
+
+        // Assert: SDK 被调用,read=true 传递
+        verify(mailApi).updateCharacterMail(CHARACTER_ID, DATASOURCE, mailId, null, true, ACCESS_TOKEN);
+    }
+
+    @Test
+    @DisplayName("send 映射 recipients 并返回 mailId")
+    void send_mapsRecipientsAndReturnsMailId() {
+        // Arrange: SDK addCharacterMail 返回 mailId
+        Integer expectedMailId = 9001;
+        List<MailRecipient> recipients = List.of(
+                new MailRecipient(12345, "character"),
+                new MailRecipient(67890, "corporation")
+        );
+        SendMailCommand command = new SendMailCommand(recipients, "Test Subject", "<p>Body</p>");
+
+        when(mailApi.addCharacterMail(eq(CHARACTER_ID), eq(DATASOURCE), any(NewMail.class), eq(ACCESS_TOKEN)))
+                .thenReturn(Mono.just(expectedMailId));
+
+        // Act
+        Integer result = esiApiService.sendCharacterMail(CHARACTER_ID, command, ACCESS_TOKEN);
+
+        // Assert: 返回 mailId,SDK 被调用且 NewMail 映射正确
+        assertThat(result).isEqualTo(expectedMailId);
+        ArgumentCaptor<NewMail> captor = ArgumentCaptor.forClass(NewMail.class);
+        verify(mailApi).addCharacterMail(eq(CHARACTER_ID), eq(DATASOURCE), captor.capture(), eq(ACCESS_TOKEN));
+        NewMail sentMail = captor.getValue();
+        assertThat(sentMail.getSubject()).isEqualTo("Test Subject");
+        assertThat(sentMail.getBody()).isEqualTo("<p>Body</p>");
+        assertThat(sentMail.getRecipients()).hasSize(2);
+        assertThat(sentMail.getRecipients().get(0).getRecipientId()).isEqualTo(12345);
+        assertThat(sentMail.getRecipients().get(0).getRecipientType()).isEqualTo("character");
+        assertThat(sentMail.getRecipients().get(1).getRecipientId()).isEqualTo(67890);
+        assertThat(sentMail.getRecipients().get(1).getRecipientType()).isEqualTo("corporation");
+    }
+
+    @Test
+    @DisplayName("send SDK EsiException(permissionLow) → 转换为 EsiAccessException")
+    void send_sdkError_convertedToAccessException() {
+        // Arrange: SDK 抛出 EsiException(403 权限不足)
+        SendMailCommand command = new SendMailCommand(
+                List.of(new MailRecipient(12345, "character")),
+                "Subject", "Body");
+        when(mailApi.addCharacterMail(eq(CHARACTER_ID), eq(DATASOURCE), any(NewMail.class), eq(ACCESS_TOKEN)))
+                .thenThrow(new EsiException(ResultCode.ESI_AUTH_PERMISSION_LOW));
+
+        // Act & Assert
+        assertThatThrownBy(() -> esiApiService.sendCharacterMail(CHARACTER_ID, command, ACCESS_TOKEN))
+                .isInstanceOf(EsiAccessException.class)
+                .hasMessageContaining(EsiAccessException.MSG_PERMISSION_LOW);
     }
 
     // ── helpers ──
