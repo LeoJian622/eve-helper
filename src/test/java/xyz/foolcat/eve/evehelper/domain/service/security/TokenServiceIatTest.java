@@ -49,6 +49,7 @@ class TokenServiceIatTest {
     private static final Integer USER_ID = 42;
     private static final String REFRESH_IAT_PREFIX = "refresh_iat:";
     private static final String REFRESH_USER_PREFIX = "refresh_user:";
+    private static final long REFRESH_TTL = 604800L;
 
     private CacheGateway cacheGateway;
     private TokenService tokenService;
@@ -59,7 +60,7 @@ class TokenServiceIatTest {
         cacheGateway = Mockito.mock(CacheGateway.class);
         JwtTokenProperties props = new JwtTokenProperties();
         props.setAccessTokenExpirationTime(900L);
-        props.setRefreshTokenExpirationTime(604800L);
+        props.setRefreshTokenExpirationTime(REFRESH_TTL);
         props.setIssuer("eve-helper-test");
         props.setSubject("eve-helper-test");
 
@@ -110,13 +111,18 @@ class TokenServiceIatTest {
         verify(cacheGateway).setIfAbsent(
                 Mockito.startsWith(REFRESH_IAT_PREFIX),
                 any(),
-                Mockito.eq(604800L),
+                Mockito.eq(REFRESH_TTL),
+                Mockito.eq(TimeUnit.SECONDS));
+        // refresh_iat:{sid} 随后 expire 续期(I-1 修复)
+        verify(cacheGateway).expire(
+                Mockito.startsWith(REFRESH_IAT_PREFIX),
+                Mockito.eq(REFRESH_TTL),
                 Mockito.eq(TimeUnit.SECONDS));
 
         // refresh_user:{userId} 用 sAdd 写入,随后 expire 续期
         verify(cacheGateway).sAdd(Mockito.eq(REFRESH_USER_PREFIX + USER_ID), anyString());
         verify(cacheGateway).expire(Mockito.eq(REFRESH_USER_PREFIX + USER_ID),
-                Mockito.eq(604800L), Mockito.eq(TimeUnit.SECONDS));
+                Mockito.eq(REFRESH_TTL), Mockito.eq(TimeUnit.SECONDS));
     }
 
     @Test
