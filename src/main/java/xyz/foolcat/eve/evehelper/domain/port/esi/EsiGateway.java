@@ -599,4 +599,17 @@ public interface EsiGateway {
      * @return 成员追踪列表
      */
     List<MemberTrackingItem> queryCorporationMemberTracking(Integer corporationId, String accessToken, boolean forceRefresh);
+
+    // ── 授权入口(伴侣 APP T043) ──
+
+    /**
+     * 构建 ESI OAuth 授权 URL(T043)。
+     * <p>
+     * server null/空 = 部署默认 datasource；
+     * server 非空且与部署 datasource 不一致时抛 EveHelperException(PARAM_ERROR)。
+     *
+     * @param server 服务器数据源标识
+     * @return 授权 URL
+     */
+    String buildAuthorizeUrl(String server);
 }

@@ -43,6 +43,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.*;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.SsoScopes;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiCacheTtlExtractor;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCache;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCacheProperties;
@@ -2436,6 +2437,13 @@ public class EsiApiService implements EsiGateway {
                         r.getLogoffDate()
                 ))
                 .toList();
+    }
+
+    // ── 授权入口(伴侣 APP T043) ──
+
+    @Override
+    public String buildAuthorizeUrl(String server) {
+        return authorizeOAuth.authorizeUrlForServer(server, SsoScopes.ALL);
     }
 
 }

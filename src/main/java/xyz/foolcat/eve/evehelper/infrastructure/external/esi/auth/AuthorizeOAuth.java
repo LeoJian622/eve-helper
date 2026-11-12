@@ -11,6 +11,7 @@ import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientProperties;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
+import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.AuthTokenResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.ErrorResponse;
 
@@ -107,6 +108,23 @@ public class AuthorizeOAuth {
 
     private static String encode(String parameter) {
         return URLEncoder.encode(parameter, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 按服务器数据源构建授权 URL（T043，校验内聚）。
+     * <p>
+     * server 非空且与部署 datasource 不一致时抛 EveHelperException(PARAM_ERROR)；
+     * 否则委托既有 {@link #authorizeUrl(Set)}。
+     *
+     * @param server 服务器数据源标识
+     * @param scopes 授权范围
+     * @return 授权 URL
+     */
+    public String authorizeUrlForServer(String server, Set<String> scopes) {
+        if (server != null && !server.isBlank() && !server.equals(esiClientProperties.getDatasource())) {
+            throw new EveHelperException(xyz.foolcat.eve.evehelper.shared.result.ResultCode.PARAM_ERROR);
+        }
+        return authorizeUrl(scopes);
     }
 
     private String getCodeChallenge() {

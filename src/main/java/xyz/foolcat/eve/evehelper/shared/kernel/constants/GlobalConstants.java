@@ -26,4 +26,13 @@ public interface GlobalConstants {
      */
     Integer SYSTEM_USER_ID = 1;
 
+    /**
+     * 系统同步角色 ID（QQ 机器人同步用的固定角色）。
+     * <p>
+     * 镜像 infrastructure/util/TaskConstant.CHARACTER_ID；
+     * application 层禁 import infrastructure，故将守卫常量置于 shared。
+     * 解绑角色时若 characterId 等于此值则拒绝（系统同步角色不可解绑）。
+     */
+    Integer SYSTEM_SYNC_CHARACTER_ID = 2112818290;
+
 }
