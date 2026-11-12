@@ -73,6 +73,7 @@ class EsiApiServiceCharacterPanelTest {
     @Mock private WalletApi walletApi;
     @Mock private LocationApi locationApi;
     @Mock private SkillApi skillApi;
+    @Mock private MailApi mailApi;
     @Mock private EsiAssetsConverter esiAssetsConverter;
     @Mock private EsiIndustryJobConverter esiIndustryJobConverter;
     @Mock private EsiInvTypesConverter esiInvTypesConverter;
@@ -98,7 +99,7 @@ class EsiApiServiceCharacterPanelTest {
     void setUp() {
         esiApiService = new EsiApiService(
                 cacheGateway, eveAccountService, authorizeOAuth,
-                characterApi, universeApi, assetsApi, corporationApi, industryApi, walletApi, locationApi, skillApi,
+                characterApi, universeApi, assetsApi, corporationApi, industryApi, walletApi, locationApi, skillApi, mailApi,
                 esiAssetsConverter, esiIndustryJobConverter, esiInvTypesConverter,
                 esiMiningDetailConverter, esiStructureConverter,
                 esiUniverseNameConverter, esiWalletJournalConverter, esiWalletTransactionConverter,

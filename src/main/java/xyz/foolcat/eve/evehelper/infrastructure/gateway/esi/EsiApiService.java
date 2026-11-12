@@ -20,6 +20,10 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterOnlineInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterPublicInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterSkillList;
 import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MailDetailInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MailHeaderPage;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MailLabelsInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MailRecipient;
 import xyz.foolcat.eve.evehelper.domain.model.vo.SkillQueueItem;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
@@ -94,6 +98,8 @@ public class EsiApiService implements EsiGateway {
     private final LocationApi locationApi;
 
     private final SkillApi skillApi;
+
+    private final MailApi mailApi;
 
     private final EsiAssetsConverter esiAssetsConverter;
 
@@ -1983,6 +1989,213 @@ public class EsiApiService implements EsiGateway {
                 resp.getFinishDate(),
                 resp.getQueuePosition()
         );
+    }
+
+    // ── 邮件读侧(伴侣 APP T016) ──
+
+    @Override
+    public MailHeaderPage queryCharacterMailHeaders(Integer characterId, Integer lastMailId, String accessToken) {
+        return doQueryCharacterMailHeaders(characterId, lastMailId, accessToken, false);
+    }
+
+    @Override
+    public MailHeaderPage queryCharacterMailHeaders(Integer characterId, Integer lastMailId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterMailHeaders(characterId, lastMailId, accessToken, forceRefresh);
+    }
+
+    private MailHeaderPage doQueryCharacterMailHeaders(Integer characterId, Integer lastMailId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            List<RequestedMailResponse> body = callSdkMono(() -> mailApi.queryCharacterMailsResponse(characterId, EsiClientConfig.SERENITY, null, lastMailId, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .map(ResponseEntity::getBody)
+                    .block();
+            return body == null ? null : mapMailHeaderPage(body);
+        }
+        // lastMailId 编入键 page 段(仿工业列表)
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/mail/?last_mail_id=" + lastMailId, 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<MailHeaderPage> cached = esiResponseCache.getList(key, objectMapper.constructType(MailHeaderPage.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        // 防穿透
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<MailHeaderPage> filled = awaitCachedList(key, objectMapper.constructType(MailHeaderPage.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<List<RequestedMailResponse>> response = callSdkMono(() -> mailApi.queryCharacterMailsResponse(characterId, EsiClientConfig.SERENITY, null, lastMailId, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            MailHeaderPage domain = mapMailHeaderPage(response.getBody());
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<MailHeaderPage> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private MailHeaderPage mapMailHeaderPage(List<RequestedMailResponse> mails) {
+        List<MailHeaderPage.MailHeaderItem> items = mails.stream()
+                .map(m -> new MailHeaderPage.MailHeaderItem(
+                        m.getMailId(),
+                        m.getFrom(),
+                        m.getSubject(),
+                        m.getTimestamp(),
+                        m.getIsRead(),
+                        m.getLabels()
+                ))
+                .toList();
+        // 满 50 条 → nextLastMailId = 最后一条 mailId;不足 → null(无下一页)
+        Integer nextLastMailId = items.size() >= 50 ? items.get(items.size() - 1).mailId() : null;
+        return new MailHeaderPage(items, nextLastMailId);
+    }
+
+    @Override
+    public MailDetailInfo queryCharacterMail(Integer characterId, Integer mailId, String accessToken) {
+        return doQueryCharacterMail(characterId, mailId, accessToken, false);
+    }
+
+    @Override
+    public MailDetailInfo queryCharacterMail(Integer characterId, Integer mailId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterMail(characterId, mailId, accessToken, forceRefresh);
+    }
+
+    private MailDetailInfo doQueryCharacterMail(Integer characterId, Integer mailId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            MailResponse resp = callSdkMono(() -> mailApi.queryCharacterMail(characterId, EsiClientConfig.SERENITY, mailId, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            return resp == null ? null : mapMailDetail(mailId, resp);
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/mail/" + mailId + "/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<MailDetailInfo> cached = esiResponseCache.getList(key, objectMapper.constructType(MailDetailInfo.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<MailDetailInfo> filled = awaitCachedList(key, objectMapper.constructType(MailDetailInfo.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<MailResponse> response = callSdkMono(() -> mailApi.queryCharacterMailResponse(characterId, EsiClientConfig.SERENITY, mailId, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            MailDetailInfo domain = mapMailDetail(mailId, response.getBody());
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<MailDetailInfo> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private MailDetailInfo mapMailDetail(Integer mailId, MailResponse resp) {
+        List<MailRecipient> recipients = resp.getRecipients() == null ? List.of()
+                : resp.getRecipients().stream()
+                        .map(r -> new MailRecipient(r.getRecipientId(), r.getRecipientType()))
+                        .toList();
+        return new MailDetailInfo(
+                mailId,
+                resp.getFrom(),
+                recipients,
+                resp.getSubject(),
+                resp.getTimestamp(),
+                resp.getBody(),
+                resp.getRead()
+        );
+    }
+
+    @Override
+    public MailLabelsInfo queryCharacterMailLabels(Integer characterId, String accessToken) {
+        return doQueryCharacterMailLabels(characterId, accessToken, false);
+    }
+
+    @Override
+    public MailLabelsInfo queryCharacterMailLabels(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterMailLabels(characterId, accessToken, forceRefresh);
+    }
+
+    private MailLabelsInfo doQueryCharacterMailLabels(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            MailLabelsAndUnreadCountsResponse resp = callSdkMono(() -> mailApi.queryCharacterMailLabels(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            return resp == null ? null : mapMailLabels(resp);
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/mail/labels/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<MailLabelsInfo> cached = esiResponseCache.getList(key, objectMapper.constructType(MailLabelsInfo.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<MailLabelsInfo> filled = awaitCachedList(key, objectMapper.constructType(MailLabelsInfo.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<MailLabelsAndUnreadCountsResponse> response = callSdkMono(() -> mailApi.queryCharacterMailLabelsResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            MailLabelsInfo domain = mapMailLabels(response.getBody());
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<MailLabelsInfo> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private MailLabelsInfo mapMailLabels(MailLabelsAndUnreadCountsResponse resp) {
+        List<MailLabelsInfo.MailLabel> labels = resp.getLabels() == null ? List.of()
+                : resp.getLabels().stream()
+                        .map(l -> new MailLabelsInfo.MailLabel(
+                                l.getLabelId(),
+                                l.getName(),
+                                l.getUnreadCount() == null ? null : l.getUnreadCount().longValue()
+                        ))
+                        .toList();
+        Long totalUnread = resp.getTotalUnreadCount() == null ? null : resp.getTotalUnreadCount().longValue();
+        return new MailLabelsInfo(labels, totalUnread);
     }
 
 }

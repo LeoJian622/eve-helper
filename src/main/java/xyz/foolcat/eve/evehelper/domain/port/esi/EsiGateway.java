@@ -18,6 +18,9 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterOnlineInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterPublicInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterSkillList;
 import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MailDetailInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MailHeaderPage;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MailLabelsInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.SkillQueueItem;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
@@ -448,4 +451,67 @@ public interface EsiGateway {
      * @return 技能队列(空队列返回空列表,查询失败抛 EsiAccessException)
      */
     List<SkillQueueItem> queryCharacterSkillQueue(Integer characterId, String accessToken, boolean forceRefresh);
+
+    // ── 邮件读侧(伴侣 APP T016) ──
+
+    /**
+     * 查询角色邮件标题(ESI /characters/{id}/mail/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param lastMailId  游标(返回该 ID 之前的邮件);首页传 null
+     * @param accessToken 授权 Token
+     * @return 邮件标题分页(含 nextLastMailId 游标)
+     */
+    MailHeaderPage queryCharacterMailHeaders(Integer characterId, Integer lastMailId, String accessToken);
+
+    /**
+     * 查询角色邮件标题(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param lastMailId   游标;首页传 null
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 邮件标题分页
+     */
+    MailHeaderPage queryCharacterMailHeaders(Integer characterId, Integer lastMailId, String accessToken, boolean forceRefresh);
+
+    /**
+     * 查询角色邮件详情(ESI /characters/{id}/mail/{mailId}/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param mailId      邮件 ID
+     * @param accessToken 授权 Token
+     * @return 邮件详情
+     */
+    MailDetailInfo queryCharacterMail(Integer characterId, Integer mailId, String accessToken);
+
+    /**
+     * 查询角色邮件详情(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param mailId       邮件 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 邮件详情
+     */
+    MailDetailInfo queryCharacterMail(Integer characterId, Integer mailId, String accessToken, boolean forceRefresh);
+
+    /**
+     * 查询角色邮件标签(ESI /characters/{id}/mail/labels/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 邮件标签与未读数
+     */
+    MailLabelsInfo queryCharacterMailLabels(Integer characterId, String accessToken);
+
+    /**
+     * 查询角色邮件标签(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 邮件标签与未读数
+     */
+    MailLabelsInfo queryCharacterMailLabels(Integer characterId, String accessToken, boolean forceRefresh);
 }
