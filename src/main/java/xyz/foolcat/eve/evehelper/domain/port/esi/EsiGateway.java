@@ -12,10 +12,13 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAttributesInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterLocationInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterOnlineInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterPublicInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterSkillList;
 import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
+import xyz.foolcat.eve.evehelper.domain.model.vo.SkillQueueItem;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 
@@ -388,4 +391,61 @@ public interface EsiGateway {
      * @return 舰船类型 ID
      */
     Integer queryCharacterShipTypeId(Integer characterId, String accessToken, boolean forceRefresh);
+
+    /**
+     * 查询角色技能列表(ESI /characters/{id}/skills/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 角色技能列表
+     */
+    CharacterSkillList queryCharacterSkills(Integer characterId, String accessToken);
+
+    /**
+     * 查询角色技能列表(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 角色技能列表
+     */
+    CharacterSkillList queryCharacterSkills(Integer characterId, String accessToken, boolean forceRefresh);
+
+    /**
+     * 查询角色属性(ESI /characters/{id}/attributes/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 角色属性
+     */
+    CharacterAttributesInfo queryCharacterAttributes(Integer characterId, String accessToken);
+
+    /**
+     * 查询角色属性(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 角色属性
+     */
+    CharacterAttributesInfo queryCharacterAttributes(Integer characterId, String accessToken, boolean forceRefresh);
+
+    /**
+     * 查询角色技能队列(ESI /characters/{id}/skillqueue/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 技能队列(空队列返回空列表,查询失败抛 EsiAccessException)
+     */
+    List<SkillQueueItem> queryCharacterSkillQueue(Integer characterId, String accessToken);
+
+    /**
+     * 查询角色技能队列(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 技能队列(空队列返回空列表,查询失败抛 EsiAccessException)
+     */
+    List<SkillQueueItem> queryCharacterSkillQueue(Integer characterId, String accessToken, boolean forceRefresh);
 }

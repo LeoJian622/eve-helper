@@ -12,9 +12,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAttributesInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterLocationInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterOnlineInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterPublicInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterSkillList;
+import xyz.foolcat.eve.evehelper.domain.model.vo.SkillQueueItem;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiAccessException;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
@@ -28,10 +31,14 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiCacheTtlEx
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCache;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCacheProperties;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.ForceRefreshLimiter;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CharacterAttributesResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CharacterPublicInfoResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CharacterSkillResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CurrentShipResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.LocationResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.OnlineStatusResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.SkillQueueResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.Skill;
 
 import java.time.Duration;
 import java.time.OffsetDateTime;
@@ -65,6 +72,7 @@ class EsiApiServiceCharacterPanelTest {
     @Mock private IndustryApi industryApi;
     @Mock private WalletApi walletApi;
     @Mock private LocationApi locationApi;
+    @Mock private SkillApi skillApi;
     @Mock private EsiAssetsConverter esiAssetsConverter;
     @Mock private EsiIndustryJobConverter esiIndustryJobConverter;
     @Mock private EsiInvTypesConverter esiInvTypesConverter;
@@ -90,7 +98,7 @@ class EsiApiServiceCharacterPanelTest {
     void setUp() {
         esiApiService = new EsiApiService(
                 cacheGateway, eveAccountService, authorizeOAuth,
-                characterApi, universeApi, assetsApi, corporationApi, industryApi, walletApi, locationApi,
+                characterApi, universeApi, assetsApi, corporationApi, industryApi, walletApi, locationApi, skillApi,
                 esiAssetsConverter, esiIndustryJobConverter, esiInvTypesConverter,
                 esiMiningDetailConverter, esiStructureConverter,
                 esiUniverseNameConverter, esiWalletJournalConverter, esiWalletTransactionConverter,
@@ -436,6 +444,179 @@ class EsiApiServiceCharacterPanelTest {
         }
     }
 
+    // ── T011: skills ──
+
+    @Test
+    @DisplayName("skills 映射 totalSp 与技能列表")
+    void skills_mapsTotalSpAndSkillItems() {
+        // Arrange
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
+
+            String expectedKey = "esi:resp:" + DATASOURCE + ":" + USER_ID + ":/characters/" + CHARACTER_ID + "/skills/:0";
+            when(esiResponseCache.cacheKey(eq(DATASOURCE), eq(USER_ID), eq("/characters/" + CHARACTER_ID + "/skills/"), eq(0)))
+                    .thenReturn(expectedKey);
+            when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
+            when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+            CharacterSkillResponse sdkBody = buildSkillResponse();
+            when(skillApi.queryCharactersSkillsResponse(eq(CHARACTER_ID), eq(DATASOURCE), eq(ACCESS_TOKEN)))
+                    .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(sdkBody)));
+            when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+            // Act
+            CharacterSkillList result = esiApiService.queryCharacterSkills(CHARACTER_ID, ACCESS_TOKEN);
+
+            // Assert
+            assertThat(result).isNotNull();
+            assertThat(result.totalSp()).isEqualTo(50000000L);
+            assertThat(result.unallocatedSp()).isEqualTo(1000000);
+            assertThat(result.skills()).hasSize(2);
+            assertThat(result.skills().get(0).skillId()).isEqualTo(3300);
+            assertThat(result.skills().get(0).trainedSkillLevel()).isEqualTo(5);
+            assertThat(result.skills().get(0).activeSkillLevel()).isEqualTo(5);
+            assertThat(result.skills().get(0).skillpointsInSkill()).isEqualTo(256000L);
+            assertThat(result.skills().get(1).skillId()).isEqualTo(3301);
+        }
+    }
+
+    // ── T011: attributes ──
+
+    @Test
+    @DisplayName("attributes 映射五属性与 bonusRemaps")
+    void attributes_mapsFiveAttributesAndBonusRemaps() {
+        // Arrange
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
+
+            String expectedKey = "esi:resp:" + DATASOURCE + ":" + USER_ID + ":/characters/" + CHARACTER_ID + "/attributes/:0";
+            when(esiResponseCache.cacheKey(eq(DATASOURCE), eq(USER_ID), eq("/characters/" + CHARACTER_ID + "/attributes/"), eq(0)))
+                    .thenReturn(expectedKey);
+            when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
+            when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+            CharacterAttributesResponse sdkBody = buildAttributesResponse();
+            when(skillApi.queryCharactersAttributesResponse(eq(CHARACTER_ID), eq(DATASOURCE), eq(ACCESS_TOKEN)))
+                    .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(sdkBody)));
+            when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+            // Act
+            CharacterAttributesInfo result = esiApiService.queryCharacterAttributes(CHARACTER_ID, ACCESS_TOKEN);
+
+            // Assert
+            assertThat(result).isNotNull();
+            assertThat(result.intelligence()).isEqualTo(25);
+            assertThat(result.memory()).isEqualTo(24);
+            assertThat(result.charisma()).isEqualTo(20);
+            assertThat(result.perception()).isEqualTo(23);
+            assertThat(result.willpower()).isEqualTo(21);
+            assertThat(result.bonusRemaps()).isEqualTo(2);
+        }
+    }
+
+    // ── T011: skillQueue ──
+
+    @Test
+    @DisplayName("skillQueue 空 body → 返回空列表")
+    void skillQueue_emptyBody_returnsEmptyList() {
+        // Arrange
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
+
+            String expectedKey = "esi:resp:" + DATASOURCE + ":" + USER_ID + ":/characters/" + CHARACTER_ID + "/skillqueue/:0";
+            when(esiResponseCache.cacheKey(eq(DATASOURCE), eq(USER_ID), eq("/characters/" + CHARACTER_ID + "/skillqueue/"), eq(0)))
+                    .thenReturn(expectedKey);
+            when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
+            when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+            // 空 body(015 约定:空 body → 空列表回填,与查询失败可区分)
+            when(skillApi.queryCharactersSkillqueueResponse(eq(CHARACTER_ID), eq(DATASOURCE), eq(ACCESS_TOKEN)))
+                    .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(List.of())));
+            when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+            // Act
+            List<SkillQueueItem> result = esiApiService.queryCharacterSkillQueue(CHARACTER_ID, ACCESS_TOKEN);
+
+            // Assert: 空队列返回空列表(非 null)
+            assertThat(result).isNotNull();
+            assertThat(result).isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("skillQueue 映射 endDate 与 position")
+    void skillQueue_mapsEndDateAndPosition() {
+        // Arrange
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
+
+            String expectedKey = "esi:resp:" + DATASOURCE + ":" + USER_ID + ":/characters/" + CHARACTER_ID + "/skillqueue/:0";
+            when(esiResponseCache.cacheKey(eq(DATASOURCE), eq(USER_ID), eq("/characters/" + CHARACTER_ID + "/skillqueue/"), eq(0)))
+                    .thenReturn(expectedKey);
+            when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
+            when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+            List<SkillQueueResponse> sdkBody = buildSkillQueueResponse();
+            when(skillApi.queryCharactersSkillqueueResponse(eq(CHARACTER_ID), eq(DATASOURCE), eq(ACCESS_TOKEN)))
+                    .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(sdkBody)));
+            when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+            // Act
+            List<SkillQueueItem> result = esiApiService.queryCharacterSkillQueue(CHARACTER_ID, ACCESS_TOKEN);
+
+            // Assert
+            assertThat(result).hasSize(1);
+            SkillQueueItem item = result.get(0);
+            assertThat(item.skillId()).isEqualTo(3300);
+            assertThat(item.finishedLevel()).isEqualTo(5);
+            assertThat(item.trainingStartSp()).isEqualTo(0L);
+            assertThat(item.skillpointsInSkill()).isEqualTo(256000L);
+            assertThat(item.startDate()).isEqualTo(OffsetDateTime.parse("2026-11-12T10:00:00Z"));
+            assertThat(item.endDate()).isEqualTo(OffsetDateTime.parse("2026-11-13T10:00:00Z"));
+            assertThat(item.position()).isEqualTo(0);
+        }
+    }
+
+    @Test
+    @DisplayName("skillQueue 缓存写使用响应头提取的 TTL(非 null,Flux→List 变体)")
+    void skillQueue_cacheWrite_usesHeaderTtl() {
+        // Arrange
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
+
+            String expectedKey = "esi:resp:" + DATASOURCE + ":" + USER_ID + ":/characters/" + CHARACTER_ID + "/skillqueue/:0";
+            when(esiResponseCache.cacheKey(eq(DATASOURCE), eq(USER_ID), eq("/characters/" + CHARACTER_ID + "/skillqueue/"), eq(0)))
+                    .thenReturn(expectedKey);
+            when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
+            when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
+
+            // extractor 被 mock,头设置仅为可读性
+            HttpHeaders headers = new HttpHeaders();
+            headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+            List<SkillQueueResponse> sdkBody = buildSkillQueueResponse();
+            when(skillApi.queryCharactersSkillqueueResponse(eq(CHARACTER_ID), eq(DATASOURCE), eq(ACCESS_TOKEN)))
+                    .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(sdkBody)));
+            when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+            // Act
+            esiApiService.queryCharacterSkillQueue(CHARACTER_ID, ACCESS_TOKEN);
+
+            // Assert: put 收到非 null TTL 且等于从响应头提取的值
+            ArgumentCaptor<Duration> ttlCaptor = ArgumentCaptor.forClass(Duration.class);
+            verify(esiResponseCache).put(eq(expectedKey), any(), ttlCaptor.capture());
+            assertThat(ttlCaptor.getValue()).isNotNull();
+            assertThat(ttlCaptor.getValue()).isEqualTo(EXPECTED_TTL);
+        }
+    }
+
     // ── helpers ──
 
     private CharacterPublicInfoResponse buildPublicInfoResponse() {
@@ -454,5 +635,49 @@ class EsiApiServiceCharacterPanelTest {
         resp.setLastLogin(OffsetDateTime.parse("2026-11-12T10:00:00Z"));
         resp.setLastLogout(OffsetDateTime.parse("2026-11-12T09:00:00Z"));
         return resp;
+    }
+
+    private CharacterSkillResponse buildSkillResponse() {
+        CharacterSkillResponse resp = new CharacterSkillResponse();
+        resp.setTotalSp(50000000L);
+        resp.setUnallocatedSp(1000000);
+
+        Skill s1 = new Skill();
+        s1.setSkillId(3300);
+        s1.setTrainedSkillLevel(5);
+        s1.setActiveSkillLevel(5);
+        s1.setSkillpointsInSkill(256000L);
+
+        Skill s2 = new Skill();
+        s2.setSkillId(3301);
+        s2.setTrainedSkillLevel(3);
+        s2.setActiveSkillLevel(3);
+        s2.setSkillpointsInSkill(40000L);
+
+        resp.setSkills(List.of(s1, s2));
+        return resp;
+    }
+
+    private CharacterAttributesResponse buildAttributesResponse() {
+        CharacterAttributesResponse resp = new CharacterAttributesResponse();
+        resp.setIntelligence(25);
+        resp.setMemory(24);
+        resp.setCharisma(20);
+        resp.setPerception(23);
+        resp.setWillpower(21);
+        resp.setBonusRemaps(2);
+        return resp;
+    }
+
+    private List<SkillQueueResponse> buildSkillQueueResponse() {
+        SkillQueueResponse resp = new SkillQueueResponse();
+        resp.setSkillId(3300);
+        resp.setFinishedLevel(5);
+        resp.setTrainingStartSp(0);
+        resp.setLevelEndSp(256000);
+        resp.setStartDate(OffsetDateTime.parse("2026-11-12T10:00:00Z"));
+        resp.setFinishDate(OffsetDateTime.parse("2026-11-13T10:00:00Z"));
+        resp.setQueuePosition(0);
+        return List.of(resp);
     }
 }

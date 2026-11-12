@@ -14,10 +14,13 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.*;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAttributesInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterLocationInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterOnlineInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterPublicInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterSkillList;
 import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
+import xyz.foolcat.eve.evehelper.domain.model.vo.SkillQueueItem;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiAccessException;
@@ -89,6 +92,8 @@ public class EsiApiService implements EsiGateway {
     private final WalletApi walletApi;
 
     private final LocationApi locationApi;
+
+    private final SkillApi skillApi;
 
     private final EsiAssetsConverter esiAssetsConverter;
 
@@ -1781,6 +1786,203 @@ public class EsiApiService implements EsiGateway {
                 esiResponseCache.releaseClaim(key);
             }
         }
+    }
+
+    // ── 技能列表 + 属性 + 技能队列(伴侣 APP T011) ──
+
+    @Override
+    public CharacterSkillList queryCharacterSkills(Integer characterId, String accessToken) {
+        return doQueryCharacterSkills(characterId, accessToken, false);
+    }
+
+    @Override
+    public CharacterSkillList queryCharacterSkills(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterSkills(characterId, accessToken, forceRefresh);
+    }
+
+    private CharacterSkillList doQueryCharacterSkills(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            CharacterSkillResponse resp = callSdkMono(() -> skillApi.queryCharactersSkills(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            return resp == null ? null : mapSkillList(resp);
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/skills/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<CharacterSkillList> cached = esiResponseCache.getList(key, objectMapper.constructType(CharacterSkillList.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<CharacterSkillList> filled = awaitCachedList(key, objectMapper.constructType(CharacterSkillList.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<CharacterSkillResponse> response = callSdkMono(() -> skillApi.queryCharactersSkillsResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            CharacterSkillList domain = mapSkillList(response.getBody());
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<CharacterSkillList> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private CharacterSkillList mapSkillList(CharacterSkillResponse resp) {
+        List<CharacterSkillList.SkillItem> items = resp.getSkills() == null ? List.of()
+                : resp.getSkills().stream().map(s -> new CharacterSkillList.SkillItem(
+                        s.getSkillId(),
+                        s.getTrainedSkillLevel(),
+                        s.getActiveSkillLevel(),
+                        s.getSkillpointsInSkill()
+                )).toList();
+        return new CharacterSkillList(resp.getTotalSp(), resp.getUnallocatedSp(), items);
+    }
+
+    @Override
+    public CharacterAttributesInfo queryCharacterAttributes(Integer characterId, String accessToken) {
+        return doQueryCharacterAttributes(characterId, accessToken, false);
+    }
+
+    @Override
+    public CharacterAttributesInfo queryCharacterAttributes(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterAttributes(characterId, accessToken, forceRefresh);
+    }
+
+    private CharacterAttributesInfo doQueryCharacterAttributes(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            CharacterAttributesResponse resp = callSdkMono(() -> skillApi.queryCharactersAttributes(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            return resp == null ? null : mapAttributes(resp);
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/attributes/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<CharacterAttributesInfo> cached = esiResponseCache.getList(key, objectMapper.constructType(CharacterAttributesInfo.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<CharacterAttributesInfo> filled = awaitCachedList(key, objectMapper.constructType(CharacterAttributesInfo.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<CharacterAttributesResponse> response = callSdkMono(() -> skillApi.queryCharactersAttributesResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            CharacterAttributesInfo domain = mapAttributes(response.getBody());
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<CharacterAttributesInfo> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private CharacterAttributesInfo mapAttributes(CharacterAttributesResponse resp) {
+        return new CharacterAttributesInfo(
+                resp.getIntelligence(),
+                resp.getMemory(),
+                resp.getCharisma(),
+                resp.getPerception(),
+                resp.getWillpower(),
+                resp.getBonusRemaps()
+        );
+    }
+
+    @Override
+    public List<SkillQueueItem> queryCharacterSkillQueue(Integer characterId, String accessToken) {
+        return doQueryCharacterSkillQueue(characterId, accessToken, false);
+    }
+
+    @Override
+    public List<SkillQueueItem> queryCharacterSkillQueue(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterSkillQueue(characterId, accessToken, forceRefresh);
+    }
+
+    private List<SkillQueueItem> doQueryCharacterSkillQueue(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            List<SkillQueueResponse> body = callSdkMono(() -> skillApi.queryCharactersSkillqueueResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .map(ResponseEntity::getBody)
+                    .block();
+            return body == null ? List.of() : body.stream().map(this::mapSkillQueueItem).toList();
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/skillqueue/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<SkillQueueItem> cached = esiResponseCache.getList(key, objectMapper.constructType(SkillQueueItem.class));
+            if (cached != null) {
+                return cached;
+            }
+        }
+        // 防穿透
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<SkillQueueItem> filled = awaitCachedList(key, objectMapper.constructType(SkillQueueItem.class));
+            if (filled != null) {
+                return filled;
+            }
+        }
+        try {
+            ResponseEntity<List<SkillQueueResponse>> response = callSdkMono(() -> skillApi.queryCharactersSkillqueueResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null) {
+                return null;
+            }
+            // 空 body → 空列表回填(015 约定,与查询失败可区分——失败抛 EsiAccessException)
+            List<SkillQueueItem> domain = response.getBody() == null || response.getBody().isEmpty()
+                    ? List.of()
+                    : response.getBody().stream().map(this::mapSkillQueueItem).toList();
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            esiResponseCache.put(key, domain, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private SkillQueueItem mapSkillQueueItem(SkillQueueResponse resp) {
+        return new SkillQueueItem(
+                resp.getSkillId(),
+                resp.getFinishedLevel(),
+                resp.getTrainingStartSp() == null ? null : resp.getTrainingStartSp().longValue(),
+                resp.getLevelEndSp() == null ? null : resp.getLevelEndSp().longValue(),
+                resp.getStartDate(),
+                resp.getFinishDate(),
+                resp.getQueuePosition()
+        );
     }
 
 }
