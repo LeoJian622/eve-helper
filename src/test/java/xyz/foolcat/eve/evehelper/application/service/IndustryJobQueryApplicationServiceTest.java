@@ -236,7 +236,7 @@ class IndustryJobQueryApplicationServiceTest {
 
     @Test
     @DisplayName("otherUsersCharacter authorize 抛 ACCESS_UNAUTHORIZED 透传且网关零调用")
-    void otherUsersCharacter_rejected() {
+    void otherUsersCharacter_rejected() throws ParseException {
         when(authorizeUtil.authorize(CHARACTER_ID))
                 .thenThrow(new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED));
 
