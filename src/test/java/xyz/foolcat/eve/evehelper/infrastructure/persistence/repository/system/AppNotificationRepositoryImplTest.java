@@ -201,8 +201,11 @@ class AppNotificationRepositoryImplTest {
         appNotificationRepository.insertBatch(Arrays.asList(n1, n2, n3));
 
         // unreadOnly=true → 2 条
+        long t0 = System.nanoTime();
         PageResult<AppNotification> unreadPage = appNotificationRepository.pageByUser(
                 TEST_USER_1, true, PageQuery.builder().current(1).size(10).build());
+        long elapsedMs = (System.nanoTime() - t0) / 1_000_000;
+        System.out.println("[T035] pageByUser 抽样耗时: " + elapsedMs + "ms");
         assertEquals(2L, unreadPage.getTotal(), "unreadOnly=true 应返回 2 条未读");
 
         // unreadOnly=false → 3 条
