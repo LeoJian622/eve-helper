@@ -82,6 +82,22 @@ public class TokenService {
      */
     private static final String SESSION_REVOKED_PREFIX = "session_revoked:";
 
+    /**
+     * 会话创建时刻索引:{@code refresh_iat:<sid> -> <毫秒时间戳>}(022 T005)。
+     *
+     * <p>登录新建 sid 时以 {@code setIfAbsent} 写入,轮换沿用旧 sid 时不覆盖原值
+     * (T006 refresh 路径以「会话创建时间 vs 改密纪元」判定,轮换若刷新会破坏 fail-closed)。
+     * TTL = refresh TTL,随后 {@code expire} 续期。</p>
+     */
+    private static final String REFRESH_IAT_PREFIX = "refresh_iat:";
+
+    /**
+     * 用户→会话反向索引:{@code refresh_user:<userId> -> Set<sid>}(022 T005)。
+     *
+     * <p>用于改密全会话失效(T006/T041):经 userId 枚举该用户所有活跃 sid,
+     * 逐一撤销。sAdd 后 expire 续期(TTL = refresh TTL)。</p>
+     */
+    private static final String REFRESH_USER_PREFIX = "refresh_user:";
 
 
     /**
@@ -122,6 +138,15 @@ public class TokenService {
             // 反向指针:供轮换时由 refresh token 反查 sid(刷新请求不带 access token)
             cacheGateway.set(REFRESH_OWNER_PREFIX + refreshToken, sessionId, refreshTtl, TimeUnit.SECONDS);
 
+            // 022 T005:会话创建时刻索引(setIfAbsent —— 轮换沿用旧 sid 时不覆盖原值,
+            // T006 refresh 路径以「会话创建时间 vs 改密纪元」判定,轮换若刷新会破坏 fail-closed)
+            cacheGateway.setIfAbsent(REFRESH_IAT_PREFIX + sessionId,
+                    System.currentTimeMillis(), refreshTtl, TimeUnit.SECONDS);
+            cacheGateway.expire(REFRESH_IAT_PREFIX + sessionId, refreshTtl, TimeUnit.SECONDS);
+
+            // 022 T005:用户→会话反向索引(供改密全会话失效枚举)
+            cacheGateway.sAdd(REFRESH_USER_PREFIX + user.getId(), sessionId);
+            cacheGateway.expire(REFRESH_USER_PREFIX + user.getId(), refreshTtl, TimeUnit.SECONDS);
 
             return new TokenResult(
                     SecurityConstant.JWT_PREFIX + accessToken,
@@ -157,6 +182,7 @@ public class TokenService {
                 .claim(SecurityConstant.USER_NAME_KEY, user.getUsername())
                 .claim(SecurityConstant.JWT_AUTHORITIES_KEY, safeAuthorities)
                 .claim(SecurityConstant.SESSION_ID_KEY, sessionId)
+                .issueTime(new Date())
                 .expirationTime(new Date(System.currentTimeMillis() + expirationTime))
                 .build();
 
@@ -399,11 +425,13 @@ public class TokenService {
     public ParsedAccessToken parseAccessToken(String token) throws ParseException {
         SignedJWT signedJWT = SignedJWT.parse(token);
         JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+        Date issueTime = claimsSet.getIssueTime();
         return new ParsedAccessToken(
                 claimsSet.getJWTID(),
                 claimsSet.getExpirationTime(),
                 claimsSet.getClaim(SecurityConstant.USER_ID_KEY),
-                claimsSet.getStringClaim(SecurityConstant.SESSION_ID_KEY));
+                claimsSet.getStringClaim(SecurityConstant.SESSION_ID_KEY),
+                issueTime != null ? issueTime.getTime() : null);
     }
 
     /**
@@ -413,8 +441,9 @@ public class TokenService {
      * @param expirationTime 过期时间
      * @param userIdClaim    用户ID声明
      * @param sessionId      会话标识({@code sid});改造前签发的 token 为 null(007 T048)
+     * @param iat            签发时刻(毫秒时间戳);改造前签发的 token 为 null(022 T005)
      */
-    public record ParsedAccessToken(String jti, Date expirationTime, Object userIdClaim, String sessionId) {
+    public record ParsedAccessToken(String jti, Date expirationTime, Object userIdClaim, String sessionId, Long iat) {
     }
 }
 

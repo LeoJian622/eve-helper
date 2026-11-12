@@ -489,7 +489,11 @@ class LogoutRevokesRefreshTokenTest {
 
         @Override
         public Boolean expire(String key, long ttl, TimeUnit timeUnit) {
-            throw new UnsupportedOperationException("T048 测试未预期 expire 调用");
+            if (store.containsKey(key)) {
+                ttlSeconds.put(key, timeUnit.toSeconds(ttl));
+                return true;
+            }
+            return false;
         }
 
         @Override

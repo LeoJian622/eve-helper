@@ -352,7 +352,11 @@ class SessionRevocationT049Test {
 
         @Override
         public Boolean expire(String key, long ttl, TimeUnit timeUnit) {
-            throw new UnsupportedOperationException("T049 测试未预期 expire 调用");
+            if (store.containsKey(key)) {
+                ttlSeconds.put(key, timeUnit.toSeconds(ttl));
+                return true;
+            }
+            return false;
         }
 
         @Override
