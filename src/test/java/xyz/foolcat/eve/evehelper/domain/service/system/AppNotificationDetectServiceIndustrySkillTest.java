@@ -20,14 +20,14 @@ import xyz.foolcat.eve.evehelper.domain.repository.system.AppNotificationReposit
 import xyz.foolcat.eve.evehelper.domain.repository.system.EveAccountRepository;
 import xyz.foolcat.eve.evehelper.domain.repository.system.StructureRepository;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
-import xyz.foolcat.eve.evehelper.shared.kernel.enums.AppNotificationEventType;
+
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
 import reactor.core.publisher.Flux;
 
 import java.time.OffsetDateTime;
-import java.util.Date;
+
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 

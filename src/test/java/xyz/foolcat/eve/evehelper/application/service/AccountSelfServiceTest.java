@@ -181,7 +181,7 @@ class AccountSelfServiceTest {
 
     @Test
     @DisplayName("changePassword 正确旧密码成功并撤销所有会话")
-    void changePassword_correctOld_succeeds_andRevokesAllSessions() {
+    void changePassword_correctOld_succeeds_andRevokesAllSessions() throws Exception {
         try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
             userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
 
@@ -222,7 +222,7 @@ class AccountSelfServiceTest {
 
     @Test
     @DisplayName("changePassword 错误旧密码被拒绝并计数")
-    void changePassword_wrongOld_rejected() {
+    void changePassword_wrongOld_rejected() throws Exception {
         try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
             userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
 
@@ -252,7 +252,7 @@ class AccountSelfServiceTest {
 
     @Test
     @DisplayName("changePassword 连续 5 次失败后限流")
-    void changePassword_rateLimited_after5Failures() {
+    void changePassword_rateLimited_after5Failures() throws Exception {
         try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
             userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
 
@@ -278,7 +278,7 @@ class AccountSelfServiceTest {
 
     @Test
     @DisplayName("changePassword 新旧密码相同被拒绝且不计数")
-    void changePassword_sameAsOld_rejected() {
+    void changePassword_sameAsOld_rejected() throws Exception {
         try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
             userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
 
@@ -411,5 +411,75 @@ class AccountSelfServiceTest {
                 .isInstanceOf(EveHelperException.class)
                 .extracting(e -> ((EveHelperException) e).getResultCode())
                 .isEqualTo(ResultCode.PARAM_ERROR);
+    }
+
+    // =================================================================
+    //  MIN-6: 守卫分支 + 失败路径断言补强
+    // =================================================================
+
+    @Test
+    @DisplayName("MIN-6: changePassword 未认证 → ACCESS_UNAUTHORIZED 且计数器不被 delete")
+    void changePassword_unauthenticated_rejected() throws Exception {
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(null);
+
+            assertThatThrownBy(() -> userApplicationService.changePassword(req))
+                    .isInstanceOf(EveHelperException.class)
+                    .satisfies(e -> assertThat(((EveHelperException) e).getResultCode())
+                            .isEqualTo(ResultCode.ACCESS_UNAUTHORIZED));
+
+            // 失败路径:计数器不被 delete（限流累积不受影响）
+            verify(cacheGateway, never()).delete(anyString());
+        }
+    }
+
+    @Test
+    @DisplayName("MIN-6: changePassword 错误旧密 → 计数器 increment 且不被 delete")
+    void changePassword_wrongOld_counterIncrementedNotDeleted() throws Exception {
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
+            when(cacheGateway.get(anyString())).thenReturn(null); // 无历史计数
+            SysUser user = new SysUser();
+            user.setId(USER_ID);
+            user.setPassword("$2a$10$storedhashsynthetic");
+            when(sysUserRepository.queryById(USER_ID)).thenReturn(user);
+            when(passwordEncoder.matches("OldPass123!", "$2a$10$storedhashsynthetic")).thenReturn(false);
+            when(cacheGateway.increment(anyString())).thenReturn(1L);
+
+            assertThatThrownBy(() -> userApplicationService.changePassword(req))
+                    .isInstanceOf(EveHelperException.class)
+                    .satisfies(e -> assertThat(((EveHelperException) e).getResultCode())
+                            .isEqualTo(ResultCode.PARAM_ERROR));
+
+            // 失败路径:计数器被 increment 但不被 delete
+            verify(cacheGateway).increment(anyString());
+            verify(cacheGateway, never()).delete(anyString());
+        }
+    }
+
+    @Test
+    @DisplayName("MIN-6: unbindCharacter characterId=null → PARAM_ERROR")
+    void unbindCharacter_nullCharacterId_paramError() {
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
+
+            assertThatThrownBy(() -> characterApplicationService.unbindCharacter(null))
+                    .isInstanceOf(EveHelperException.class)
+                    .satisfies(e -> assertThat(((EveHelperException) e).getResultCode())
+                            .isEqualTo(ResultCode.PARAM_ERROR));
+        }
+    }
+
+    @Test
+    @DisplayName("MIN-6: unbindCharacter 未认证 → ACCESS_UNAUTHORIZED")
+    void unbindCharacter_unauthenticated_rejected() {
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(null);
+
+            assertThatThrownBy(() -> characterApplicationService.unbindCharacter(1001))
+                    .isInstanceOf(EveHelperException.class)
+                    .satisfies(e -> assertThat(((EveHelperException) e).getResultCode())
+                            .isEqualTo(ResultCode.ACCESS_UNAUTHORIZED));
+        }
     }
 }

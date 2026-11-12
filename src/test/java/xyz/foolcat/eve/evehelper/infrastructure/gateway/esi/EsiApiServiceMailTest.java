@@ -401,9 +401,9 @@ class EsiApiServiceMailTest {
         // Arrange: 两个不同顺序的 names 列表应生成相同缓存键
         List<String> namesAB = List.of("Bravo", "Alpha");
         List<String> namesBA = List.of("Alpha", "Bravo");
-        // 排序后均为 "Alpha-Bravo",缓存键路径段 = "/universe/ids/Alpha-Bravo/"
-        String expectedKey = "esi:resp:" + DATASOURCE + ":pub:/universe/ids/Alpha-Bravo/:0";
-        when(esiResponseCache.cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/Alpha-Bravo/"), eq(0)))
+        // 排序后均为 "Alpha|Bravo",缓存键路径段 = "/universe/ids/Alpha|Bravo/"
+        String expectedKey = "esi:resp:" + DATASOURCE + ":pub:/universe/ids/Alpha|Bravo/:0";
+        when(esiResponseCache.cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/Alpha|Bravo/"), eq(0)))
                 .thenReturn(expectedKey);
         when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
         when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
@@ -423,7 +423,42 @@ class EsiApiServiceMailTest {
         esiApiService.resolveUniverseIds(namesBA);
 
         // Assert: 缓存键生成均使用排序后的路径段
-        verify(esiResponseCache, atLeast(2)).cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/Alpha-Bravo/"), eq(0));
+        verify(esiResponseCache, atLeast(2)).cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/Alpha|Bravo/"), eq(0));
+    }
+
+    @Test
+    @DisplayName("resolve 名称含连字符不碰撞（P2 encodeNames 分隔符修复）")
+    void resolve_namesWithHyphen_noCollision() {
+        // Arrange: 两组不同名称列表,排序后 joining("-") 会碰撞
+        //   组 A: ["Alpha-Beta", "Gamma"] → sorted: ["Alpha-Beta", "Gamma"]
+        //   组 B: ["Alpha", "Beta-Gamma"] → sorted: ["Alpha", "Beta-Gamma"]
+        // 用 "|" 分隔后: "Alpha-Beta|Gamma" ≠ "Alpha|Beta-Gamma"
+        List<String> groupA = List.of("Alpha-Beta", "Gamma");
+        List<String> groupB = List.of("Alpha", "Beta-Gamma");
+
+        String keyA = "esi:resp:" + DATASOURCE + ":pub:/universe/ids/Alpha-Beta|Gamma/:0";
+        String keyB = "esi:resp:" + DATASOURCE + ":pub:/universe/ids/Alpha|Beta-Gamma/:0";
+
+        when(esiResponseCache.cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/Alpha-Beta|Gamma/"), eq(0)))
+                .thenReturn(keyA);
+        when(esiResponseCache.cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/Alpha|Beta-Gamma/"), eq(0)))
+                .thenReturn(keyB);
+        when(esiResponseCache.getList(anyString(), any())).thenReturn(null);
+        when(esiResponseCache.tryClaim(anyString(), any())).thenReturn(true);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+        when(universeApi.queryUniverseIdsResponse(any(), eq(DATASOURCE), isNull()))
+                .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(buildName2IdResponse(List.of()))));
+        when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+        // Act
+        esiApiService.resolveUniverseIds(groupA);
+        esiApiService.resolveUniverseIds(groupB);
+
+        // Assert: 两组使用不同缓存键(不碰撞)
+        verify(esiResponseCache).cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/Alpha-Beta|Gamma/"), eq(0));
+        verify(esiResponseCache).cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/Alpha|Beta-Gamma/"), eq(0));
     }
 
     @Test
@@ -431,8 +466,8 @@ class EsiApiServiceMailTest {
     void resolve_mixedTypes_mapsAllGroups() {
         // Arrange: SDK 返回三种类型
         List<String> names = List.of("CharA", "CorpB", "AllyC");
-        String expectedKey = "esi:resp:" + DATASOURCE + ":pub:/universe/ids/AllyC-CharA-CorpB/:0";
-        when(esiResponseCache.cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/AllyC-CharA-CorpB/"), eq(0)))
+        String expectedKey = "esi:resp:" + DATASOURCE + ":pub:/universe/ids/AllyC|CharA|CorpB/:0";
+        when(esiResponseCache.cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/AllyC|CharA|CorpB/"), eq(0)))
                 .thenReturn(expectedKey);
         when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
         when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
@@ -476,8 +511,8 @@ class EsiApiServiceMailTest {
     void resolve_unknownName_resolvedFalse() {
         // Arrange: 请求 2 个名称,SDK 仅命中 1 个
         List<String> names = List.of("Known", "Unknown");
-        String expectedKey = "esi:resp:" + DATASOURCE + ":pub:/universe/ids/Known-Unknown/:0";
-        when(esiResponseCache.cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/Known-Unknown/"), eq(0)))
+        String expectedKey = "esi:resp:" + DATASOURCE + ":pub:/universe/ids/Known|Unknown/:0";
+        when(esiResponseCache.cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/Known|Unknown/"), eq(0)))
                 .thenReturn(expectedKey);
         when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
         when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);

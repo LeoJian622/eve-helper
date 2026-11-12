@@ -42,9 +42,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
-import static org.assertj.core.api.Assertions.assertThat;
+
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
+
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -67,7 +67,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *
  * <p>IT 范式源＝UserControllerAuthStatusIT：@SpringBootTest + @ActiveProfiles("test")
  * + @AutoConfigureMockMvc 完整过滤器链；@MockitoBean RbacAuthorizationManager
- * （lenient check→AuthorizationDecision(true)）；mockAuthenticated＝
+ * 条件式 mock（匿名请求拒绝、已认证请求放行）；mockAuthenticated＝
  * UsernamePasswordAuthenticationToken(userId,null,List.of(SimpleGrantedAuthority("ROLE_USER")))
  * 入 SecurityContextHolder；@AfterEach clearContext。</p>
  *

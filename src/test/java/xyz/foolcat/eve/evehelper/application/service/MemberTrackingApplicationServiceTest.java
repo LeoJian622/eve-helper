@@ -38,6 +38,7 @@ import static org.mockito.Mockito.when;
  * MemberTrackingInfo(T038 产物),编译失败即 RED 证据。
  *
  * @author Leojian
+ * @date 2026-11-13
  */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("US5 团员追踪应用服务测试")

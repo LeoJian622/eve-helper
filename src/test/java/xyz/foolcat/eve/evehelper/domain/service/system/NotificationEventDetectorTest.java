@@ -233,7 +233,12 @@ class NotificationEventDetectorTest {
         // Assert: 仅第一轮插入（第二轮条件解除→无建筑→提前返回）
         ArgumentCaptor<List<AppNotification>> captor = ArgumentCaptor.forClass(List.class);
         verify(appNotificationRepository, times(1)).insertBatch(captor.capture());
-        assertThat(captor.getValue()).hasSize(1);
+        List<AppNotification> rows = captor.getValue();
+        assertThat(rows).hasSize(1);
+        // T034-M1: 补字段断言（dedupKey/characterId/userId）
+        AppNotification row = rows.get(0);
+        assertThat(row.getDedupKey()).isEqualTo("FUEL_LOW:9001");
+        assertThat(row.getUserId()).isEqualTo(77);
     }
 
     // ─── 场景 4: industryComplete_notifiedExactlyOnce_acrossRounds ─

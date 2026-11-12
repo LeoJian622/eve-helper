@@ -2305,9 +2305,13 @@ public class EsiApiService implements EsiGateway {
 
     /**
      * names 集合确定性编码进缓存键:排序后按序拼接,保证"同组同键、异组异键"(顺序无关)。
+     * <p>
+     * P2: 分隔符从 "-" 改为 "|" 以防名称含连字符时碰撞
+     * (如 ["Alpha-Beta","Gamma"] ≠ ["Alpha","Beta-Gamma"])。
+     * EVE Online 名称不含 "|" 字符,故该分隔符安全。
      */
     private String encodeNames(List<String> names) {
-        String encoded = names.stream().sorted().collect(Collectors.joining("-"));
+        String encoded = names.stream().sorted().collect(Collectors.joining("|"));
         return "/universe/ids/" + encoded + "/";
     }
 
