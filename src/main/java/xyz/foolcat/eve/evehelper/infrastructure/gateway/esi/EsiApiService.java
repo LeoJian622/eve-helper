@@ -25,6 +25,7 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.MailDetailInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailHeaderPage;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailLabelsInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailRecipient;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MemberTrackingItem;
 import xyz.foolcat.eve.evehelper.domain.model.vo.RecipientResolution;
 import xyz.foolcat.eve.evehelper.domain.model.vo.SendMailCommand;
 import xyz.foolcat.eve.evehelper.domain.model.vo.SkillQueueItem;
@@ -2362,6 +2363,79 @@ public class EsiApiService implements EsiGateway {
         List<String> atBase = resp.getRolesAtBase() != null ? List.copyOf(Arrays.asList(resp.getRolesAtBase())) : List.of();
         List<String> atOther = resp.getRolesAtOther() != null ? List.copyOf(Arrays.asList(resp.getRolesAtOther())) : List.of();
         return new CharacterRolesInfo(atHq, atBase, atOther);
+    }
+
+    // ── 团员追踪(伴侣 APP T037) ──
+
+    @Override
+    public List<MemberTrackingItem> queryCorporationMemberTracking(Integer corporationId, String accessToken) {
+        return doQueryCorporationMemberTracking(corporationId, accessToken, false);
+    }
+
+    @Override
+    public List<MemberTrackingItem> queryCorporationMemberTracking(Integer corporationId, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationMemberTracking(corporationId, accessToken, forceRefresh);
+    }
+
+    private List<MemberTrackingItem> doQueryCorporationMemberTracking(Integer corporationId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            ResponseEntity<List<MemberTrackingResponse>> resp = callSdkMono(() -> corporationApi.queryCorporationMembersTrackingResponse(corporationId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            if (resp == null || resp.getBody() == null) {
+                return List.of();
+            }
+            return mapMemberTrackingList(resp.getBody());
+        }
+        String uri = "/corporations/" + corporationId + "/membertracking/";
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId, uri, 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<MemberTrackingItem> cached = esiResponseCache.getList(key, objectMapper.constructType(MemberTrackingItem.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached;
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<MemberTrackingItem> filled = awaitCachedList(key, objectMapper.constructType(MemberTrackingItem.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled;
+            }
+        }
+        try {
+            ResponseEntity<List<MemberTrackingResponse>> response = callSdkMono(() -> corporationApi.queryCorporationMembersTrackingResponse(corporationId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return List.of();
+            }
+            List<MemberTrackingItem> domain = mapMemberTrackingList(response.getBody());
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            esiResponseCache.put(key, domain, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private List<MemberTrackingItem> mapMemberTrackingList(List<MemberTrackingResponse> responses) {
+        if (responses == null || responses.isEmpty()) {
+            return List.of();
+        }
+        return responses.stream()
+                .map(r -> new MemberTrackingItem(
+                        r.getCharacterId(),
+                        r.getLocationId(),
+                        r.getShipTypeId(),
+                        r.getLogonDate(),
+                        r.getLogoffDate()
+                ))
+                .toList();
     }
 
 }

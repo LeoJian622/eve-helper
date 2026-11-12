@@ -453,6 +453,26 @@ public class CorporationApi {
     }
 
     /**
+     * 军团成员追踪职位(含响应头,T037 复制 T008/T010 模式)。
+     * <p>
+     * 只发 {@code Authorization} 头(无 language);URI 镜像裸变体。
+     * 用于缓存写时从响应头提取 TTL。
+     */
+    @Parameters({
+            @Parameter(name = "corporationId", description = "军团ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-军团成员追踪职位(含响应头)")
+    public Mono<ResponseEntity<List<MemberTrackingResponse>>> queryCorporationMembersTrackingResponse(Integer corporationId, String datasource, String accessesToken) {
+        return esiClient.get().uri("/corporations/{corporation_id}/membertracking/?datasource={datasource}", corporationId, datasource)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<List<MemberTrackingResponse>>() {}, "ESI 军团团员追踪"))
+                .timeout(EsiClientConstants.ESI_DATA_TIMEOUT);
+    }
+
+    /**
      * 军团成员角色,  需要授权人物拥有人事权限或者总监权限
      *
      * @param corporationId 军团ID

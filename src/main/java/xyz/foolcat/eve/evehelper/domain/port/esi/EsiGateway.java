@@ -22,6 +22,7 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailDetailInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailHeaderPage;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailLabelsInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MemberTrackingItem;
 import xyz.foolcat.eve.evehelper.domain.model.vo.RecipientResolution;
 import xyz.foolcat.eve.evehelper.domain.model.vo.SendMailCommand;
 import xyz.foolcat.eve.evehelper.domain.model.vo.SkillQueueItem;
@@ -577,4 +578,25 @@ public interface EsiGateway {
      * @return 角色军团权限
      */
     CharacterRolesInfo queryCharacterRoles(Integer characterId, String accessToken, boolean forceRefresh);
+
+    // ── 团员追踪(伴侣 APP T037) ──
+
+    /**
+     * 查询军团成员追踪信息(ESI /corporations/{id}/membertracking/,需授权)。
+     *
+     * @param corporationId 军团 ID
+     * @param accessToken   授权 Token
+     * @return 成员追踪列表(空军团返回空列表,查询失败抛 EsiAccessException)
+     */
+    List<MemberTrackingItem> queryCorporationMemberTracking(Integer corporationId, String accessToken);
+
+    /**
+     * 查询军团成员追踪信息(可选强制刷新)。
+     *
+     * @param corporationId 军团 ID
+     * @param accessToken   授权 Token
+     * @param forceRefresh  true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 成员追踪列表
+     */
+    List<MemberTrackingItem> queryCorporationMemberTracking(Integer corporationId, String accessToken, boolean forceRefresh);
 }
