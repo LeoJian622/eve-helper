@@ -78,4 +78,17 @@ public class EveAccountRepositoryImpl implements EveAccountRepository {
         );
     }
 
+    /**
+     * 按 userId + characterId 双条件删除绑定行（归属内建，他人行天然 0）。
+     * 基于 MyBatis-Plus QueryWrapper 参数化 WHERE，无 SQL 拼接。
+     */
+    @Override
+    public int deleteByUserIdAndCharacterId(Integer userId, Integer characterId) {
+        return eveAccountMapper.delete(
+                new QueryWrapper<EveAccountPO>()
+                        .eq("user_id", userId)
+                        .eq("character_id", characterId)
+        );
+    }
+
 }

@@ -34,4 +34,13 @@ public interface EveAccountRepository  {
      * @return 该军团下所有角色列表；未知军团返回空列表
      */
     List<EveAccount> listByCorpId(Integer corpId);
+
+    /**
+     * 按 userId + characterId 双条件删除绑定行（归属内建，他人行天然 0）。
+     *
+     * @param userId      用户 ID
+     * @param characterId 角色 ID
+     * @return 删除行数（0 = 不拥有或不存在）
+     */
+    int deleteByUserIdAndCharacterId(Integer userId, Integer characterId);
 }
