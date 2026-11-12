@@ -5,13 +5,16 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConstants;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiStatusUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 
@@ -52,6 +55,26 @@ public class CharacterApi {
                 .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
                 .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(CharacterPublicInfoResponse.class);
+    }
+
+    /**
+     * 查询人物公开信息(含响应头,供缓存 TTL 提取)。
+     * <p>022/T009 新增:与 {@link #queryCharacter} 同一 URI,改用 exchangeToMono 保留响应头。
+     *
+     * @param characterId 人物ID
+     * @param datasource  服务器数据源
+     * @return 含响应头的 ResponseEntity
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+    })
+    @Operation(summary = "ESI-人物详细公开信息(含响应头)")
+    public Mono<ResponseEntity<CharacterPublicInfoResponse>> queryCharacterResponse(Integer characterId, String datasource) {
+        return esiClient.get().uri("/characters/{character_id}/?datasource={datasource}", characterId, datasource)
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<CharacterPublicInfoResponse>() {}, "ESI 人物公开信息"))
+                .timeout(EsiClientConstants.ESI_DATA_TIMEOUT);
     }
 
     /**

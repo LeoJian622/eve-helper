@@ -5,9 +5,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterOnlineInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterPublicInfo;
@@ -27,6 +30,7 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.ForceRefreshL
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CharacterPublicInfoResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.OnlineStatusResponse;
 
+import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -39,7 +43,7 @@ import static org.mockito.Mockito.*;
  * 角色面板网关查询单元测试(T009)。
  * <p>
  * 纯单元测试,不依赖 Spring 上下文;mock SDK API、缓存组件与限流器,
- * 验证 publicInfo/online 的缓存段归属、缓存命中跳过 SDK、强刷限流与异常转换。
+ * 验证 publicInfo/online 的缓存段归属、缓存命中跳过 SDK、强刷限流、异常转换与缓存 TTL 写入。
  *
  * @author Leojan
  * date 2026-11-12
@@ -77,6 +81,7 @@ class EsiApiServiceCharacterPanelTest {
     private static final Integer USER_ID = 100;
     private static final String ACCESS_TOKEN = "Bearer test-token";
     private static final String DATASOURCE = "serenity";
+    private static final Duration EXPECTED_TTL = Duration.ofSeconds(300);
 
     @BeforeEach
     void setUp() {
@@ -99,22 +104,19 @@ class EsiApiServiceCharacterPanelTest {
     @Test
     @DisplayName("publicInfo 使用 pub 缓存段(userId=null),SDK 返回公开信息")
     void publicInfo_usesPubCacheSegment() {
-        // Arrange: 缓存未命中,SDK 返回公开信息
+        // Arrange: 缓存未命中,SDK 返回含响应头的公开信息
         String expectedKey = "esi:resp:" + DATASOURCE + ":pub:/characters/" + CHARACTER_ID + "/:0";
         when(esiResponseCache.cacheKey(eq(DATASOURCE), isNull(), eq("/characters/" + CHARACTER_ID + "/"), eq(0)))
                 .thenReturn(expectedKey);
         when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
         when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
 
-        CharacterPublicInfoResponse sdkResponse = new CharacterPublicInfoResponse();
-        sdkResponse.setName("Test Character");
-        sdkResponse.setCorporationId(1001);
-        sdkResponse.setAllianceId(2001);
-        sdkResponse.setBirthday(OffsetDateTime.parse("2020-01-01T00:00:00Z"));
-        sdkResponse.setSecurityStatus(1.5);
-
-        when(characterApi.queryCharacter(eq(CHARACTER_ID), eq(DATASOURCE)))
-                .thenReturn(Mono.just(sdkResponse));
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+        CharacterPublicInfoResponse sdkBody = buildPublicInfoResponse();
+        when(characterApi.queryCharacterResponse(eq(CHARACTER_ID), eq(DATASOURCE)))
+                .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(sdkBody)));
+        when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
 
         // Act
         CharacterPublicInfo result = esiApiService.queryCharacterPublicInfo(CHARACTER_ID);
@@ -126,7 +128,7 @@ class EsiApiServiceCharacterPanelTest {
         assertThat(result.name()).isEqualTo("Test Character");
         assertThat(result.corporationId()).isEqualTo(1001);
         assertThat(result.allianceId()).isEqualTo(2001);
-        verify(characterApi).queryCharacter(CHARACTER_ID, DATASOURCE);
+        verify(characterApi).queryCharacterResponse(CHARACTER_ID, DATASOURCE);
     }
 
     // ── online ──
@@ -155,7 +157,7 @@ class EsiApiServiceCharacterPanelTest {
             assertThat(result).isNotNull();
             assertThat(result.online()).isTrue();
             assertThat(result.lastLogin()).isEqualTo(OffsetDateTime.parse("2026-11-12T10:00:00Z"));
-            verify(locationApi, never()).queryCharacterOnline(anyInt(), anyString(), anyString());
+            verify(locationApi, never()).queryCharacterOnlineResponse(anyInt(), anyString(), anyString());
         }
     }
 
@@ -172,15 +174,18 @@ class EsiApiServiceCharacterPanelTest {
             when(forceRefreshLimiter.tryAcquire(eq(expectedKey), any(), eq(5))).thenReturn(true);
             when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
 
-            when(locationApi.queryCharacterOnline(eq(CHARACTER_ID), eq(DATASOURCE), eq(ACCESS_TOKEN)))
-                    .thenReturn(Mono.just(createOnlineResponse(false)));
+            HttpHeaders headers = new HttpHeaders();
+            headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+            when(locationApi.queryCharacterOnlineResponse(eq(CHARACTER_ID), eq(DATASOURCE), eq(ACCESS_TOKEN)))
+                    .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(createOnlineResponse(false))));
+            when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
 
             // Act
             CharacterOnlineInfo result = esiApiService.queryCharacterOnline(CHARACTER_ID, ACCESS_TOKEN, true);
 
             // Assert: 限流器被调用,SDK 被调用
             verify(forceRefreshLimiter).tryAcquire(eq(expectedKey), any(), eq(5));
-            verify(locationApi).queryCharacterOnline(CHARACTER_ID, DATASOURCE, ACCESS_TOKEN);
+            verify(locationApi).queryCharacterOnlineResponse(CHARACTER_ID, DATASOURCE, ACCESS_TOKEN);
             assertThat(result).isNotNull();
             assertThat(result.online()).isFalse();
         }
@@ -197,7 +202,7 @@ class EsiApiServiceCharacterPanelTest {
         when(esiResponseCache.getList(anyString(), any())).thenReturn(null);
         when(esiResponseCache.tryClaim(anyString(), any())).thenReturn(true);
 
-        when(characterApi.queryCharacter(eq(CHARACTER_ID), eq(DATASOURCE)))
+        when(characterApi.queryCharacterResponse(eq(CHARACTER_ID), eq(DATASOURCE)))
                 .thenThrow(new EsiException(ResultCode.ESI_AUTH_PERMISSION_LOW));
 
         // Act & Assert
@@ -206,7 +211,76 @@ class EsiApiServiceCharacterPanelTest {
                 .hasMessageContaining(EsiAccessException.MSG_PERMISSION_LOW);
     }
 
+    // ── 缓存写 TTL ──
+
+    @Test
+    @DisplayName("publicInfo 缓存写使用响应头提取的 TTL(非 null)")
+    void publicInfo_cacheWrite_usesHeaderTtl() {
+        // Arrange
+        String expectedKey = "esi:resp:" + DATASOURCE + ":pub:/characters/" + CHARACTER_ID + "/:0";
+        when(esiResponseCache.cacheKey(eq(DATASOURCE), isNull(), eq("/characters/" + CHARACTER_ID + "/"), eq(0)))
+                .thenReturn(expectedKey);
+        when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
+        when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+        CharacterPublicInfoResponse sdkBody = buildPublicInfoResponse();
+        when(characterApi.queryCharacterResponse(eq(CHARACTER_ID), eq(DATASOURCE)))
+                .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(sdkBody)));
+        when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+        // Act
+        esiApiService.queryCharacterPublicInfo(CHARACTER_ID);
+
+        // Assert: put 收到非 null TTL 且等于从响应头提取的值
+        ArgumentCaptor<Duration> ttlCaptor = ArgumentCaptor.forClass(Duration.class);
+        verify(esiResponseCache).put(eq(expectedKey), any(), ttlCaptor.capture());
+        assertThat(ttlCaptor.getValue()).isNotNull();
+        assertThat(ttlCaptor.getValue()).isEqualTo(EXPECTED_TTL);
+    }
+
+    @Test
+    @DisplayName("online 缓存写使用响应头提取的 TTL(非 null)")
+    void online_cacheWrite_usesHeaderTtl() {
+        // Arrange
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
+
+            String expectedKey = "esi:resp:" + DATASOURCE + ":" + USER_ID + ":/characters/" + CHARACTER_ID + "/online/:0";
+            when(esiResponseCache.cacheKey(eq(DATASOURCE), eq(USER_ID), eq("/characters/" + CHARACTER_ID + "/online/"), eq(0)))
+                    .thenReturn(expectedKey);
+            when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
+            when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+            when(locationApi.queryCharacterOnlineResponse(eq(CHARACTER_ID), eq(DATASOURCE), eq(ACCESS_TOKEN)))
+                    .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(createOnlineResponse(true))));
+            when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+            // Act
+            esiApiService.queryCharacterOnline(CHARACTER_ID, ACCESS_TOKEN);
+
+            // Assert: put 收到非 null TTL 且等于从响应头提取的值
+            ArgumentCaptor<Duration> ttlCaptor = ArgumentCaptor.forClass(Duration.class);
+            verify(esiResponseCache).put(eq(expectedKey), any(), ttlCaptor.capture());
+            assertThat(ttlCaptor.getValue()).isNotNull();
+            assertThat(ttlCaptor.getValue()).isEqualTo(EXPECTED_TTL);
+        }
+    }
+
     // ── helpers ──
+
+    private CharacterPublicInfoResponse buildPublicInfoResponse() {
+        CharacterPublicInfoResponse resp = new CharacterPublicInfoResponse();
+        resp.setName("Test Character");
+        resp.setCorporationId(1001);
+        resp.setAllianceId(2001);
+        resp.setBirthday(OffsetDateTime.parse("2020-01-01T00:00:00Z"));
+        resp.setSecurityStatus(1.5);
+        return resp;
+    }
 
     private OnlineStatusResponse createOnlineResponse(boolean online) {
         OnlineStatusResponse resp = new OnlineStatusResponse();

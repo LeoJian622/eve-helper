@@ -8,6 +8,7 @@ import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -1574,12 +1575,12 @@ public class EsiApiService implements EsiGateway {
             }
         }
         try {
-            CharacterPublicInfoResponse resp = callSdkMono(() -> characterApi.queryCharacter(characterId, EsiClientConfig.SERENITY))
-                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+            ResponseEntity<CharacterPublicInfoResponse> response = callSdkMono(() -> characterApi.queryCharacterResponse(characterId, EsiClientConfig.SERENITY))
                     .block();
-            if (resp == null) {
+            if (response == null || response.getBody() == null) {
                 return null;
             }
+            CharacterPublicInfoResponse resp = response.getBody();
             CharacterPublicInfo domain = new CharacterPublicInfo(
                     characterId,
                     resp.getName(),
@@ -1588,9 +1589,9 @@ public class EsiApiService implements EsiGateway {
                     resp.getBirthday(),
                     resp.getSecurityStatus()
             );
-            // SDK 未返回 ResponseEntity,无 headers → TTL null → put 内部跳过
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
             List<CharacterPublicInfo> wrapped = List.of(domain);
-            esiResponseCache.put(key, wrapped, null);
+            esiResponseCache.put(key, wrapped, ttl);
             return domain;
         } finally {
             if (claimed) {
@@ -1640,19 +1641,20 @@ public class EsiApiService implements EsiGateway {
             }
         }
         try {
-            OnlineStatusResponse resp = callSdkMono(() -> locationApi.queryCharacterOnline(characterId, EsiClientConfig.SERENITY, accessToken))
-                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+            ResponseEntity<OnlineStatusResponse> response = callSdkMono(() -> locationApi.queryCharacterOnlineResponse(characterId, EsiClientConfig.SERENITY, accessToken))
                     .block();
-            if (resp == null) {
+            if (response == null || response.getBody() == null) {
                 return null;
             }
+            OnlineStatusResponse resp = response.getBody();
             CharacterOnlineInfo domain = new CharacterOnlineInfo(
                     Boolean.TRUE.equals(resp.getOnline()),
                     resp.getLastLogin(),
                     resp.getLastLogout()
             );
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
             List<CharacterOnlineInfo> wrapped = List.of(domain);
-            esiResponseCache.put(key, wrapped, null);
+            esiResponseCache.put(key, wrapped, ttl);
             return domain;
         } finally {
             if (claimed) {
