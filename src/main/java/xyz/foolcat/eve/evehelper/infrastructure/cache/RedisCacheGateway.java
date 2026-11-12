@@ -9,6 +9,7 @@ import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -104,5 +105,20 @@ public class RedisCacheGateway implements CacheGateway {
         );
 
         return result != null && result == 1L;
+    }
+
+    @Override
+    public Long sAdd(String key, Object... values) {
+        return redisTemplate.opsForSet().add(key, values);
+    }
+
+    @Override
+    public Set<Object> sMembers(String key) {
+        return redisTemplate.opsForSet().members(key);
+    }
+
+    @Override
+    public Long sRemove(String key, Object... values) {
+        return redisTemplate.opsForSet().remove(key, values);
     }
 }

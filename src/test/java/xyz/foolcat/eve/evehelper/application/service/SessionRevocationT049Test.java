@@ -380,6 +380,39 @@ class SessionRevocationT049Test {
             }
             return false;
         }
+
+        @Override
+        public Long sAdd(String key, Object... values) {
+            Set<Object> set = (Set<Object>) store.computeIfAbsent(key, k -> ConcurrentHashMap.newKeySet());
+            long added = 0;
+            for (Object v : values) {
+                if (set.add(v)) {
+                    added++;
+                }
+            }
+            return added;
+        }
+
+        @Override
+        public Set<Object> sMembers(String key) {
+            Set<Object> set = (Set<Object>) store.get(key);
+            return set != null ? Set.copyOf(set) : Set.of();
+        }
+
+        @Override
+        public Long sRemove(String key, Object... values) {
+            Set<Object> set = (Set<Object>) store.get(key);
+            if (set == null) {
+                return 0L;
+            }
+            long removed = 0;
+            for (Object v : values) {
+                if (set.remove(v)) {
+                    removed++;
+                }
+            }
+            return removed;
+        }
     }
 
     /**
