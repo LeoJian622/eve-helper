@@ -16,6 +16,7 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.MailDetailInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailHeaderPage;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailLabelsInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailRecipient;
+import xyz.foolcat.eve.evehelper.domain.model.vo.RecipientResolution;
 import xyz.foolcat.eve.evehelper.domain.model.vo.SendMailCommand;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiAccessException;
@@ -32,8 +33,10 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCa
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.ForceRefreshLimiter;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.MailLabelsAndUnreadCountsResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.MailResponse;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.Name2IdResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.RequestedMailResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.NewMail;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.IdName;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.Label;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.Recipient;
 
@@ -360,6 +363,176 @@ class EsiApiServiceMailTest {
                 .hasMessageContaining(EsiAccessException.MSG_PERMISSION_LOW);
     }
 
+    // ── T018: universe/ids 精确名称解析 ──
+
+    @Test
+    @DisplayName("resolve 使用 pub 缓存段(userId=null),不查 UserUtil")
+    void resolve_pubCacheSegment_noUserContext() {
+        // Arrange: pub 段,缓存未命中,SDK 返回解析结果
+        List<String> names = List.of("TestChar");
+        String expectedKey = "esi:resp:" + DATASOURCE + ":pub:/universe/ids/TestChar/:0";
+        when(esiResponseCache.cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/TestChar/"), eq(0)))
+                .thenReturn(expectedKey);
+        when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
+        when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+        Name2IdResponse sdkBody = buildName2IdResponse(List.of(new IdNameEntry("TestChar", 12345, "character")));
+        when(universeApi.queryUniverseIdsResponse(eq(names), eq(DATASOURCE), isNull()))
+                .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(sdkBody)));
+        when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+        // Act
+        List<RecipientResolution> result = esiApiService.resolveUniverseIds(names);
+
+        // Assert: pub 段(userId=null)被使用,UserUtil 未被查询
+        verify(esiResponseCache).cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/TestChar/"), eq(0));
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).name()).isEqualTo("TestChar");
+        assertThat(result.get(0).id()).isEqualTo(12345);
+        assertThat(result.get(0).type()).isEqualTo("character");
+        assertThat(result.get(0).resolved()).isTrue();
+    }
+
+    @Test
+    @DisplayName("resolve 排序 names → 确定性缓存键(输入顺序无关)")
+    void resolve_sortedNames_deterministicCacheKey() {
+        // Arrange: 两个不同顺序的 names 列表应生成相同缓存键
+        List<String> namesAB = List.of("Bravo", "Alpha");
+        List<String> namesBA = List.of("Alpha", "Bravo");
+        // 排序后均为 "Alpha-Bravo",缓存键路径段 = "/universe/ids/Alpha-Bravo/"
+        String expectedKey = "esi:resp:" + DATASOURCE + ":pub:/universe/ids/Alpha-Bravo/:0";
+        when(esiResponseCache.cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/Alpha-Bravo/"), eq(0)))
+                .thenReturn(expectedKey);
+        when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
+        when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+        Name2IdResponse sdkBody = buildName2IdResponse(List.of(
+                new IdNameEntry("Alpha", 100, "character"),
+                new IdNameEntry("Bravo", 200, "corporation")
+        ));
+        when(universeApi.queryUniverseIdsResponse(any(), eq(DATASOURCE), isNull()))
+                .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(sdkBody)));
+        when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+        // Act: 两种输入顺序
+        esiApiService.resolveUniverseIds(namesAB);
+        esiApiService.resolveUniverseIds(namesBA);
+
+        // Assert: 缓存键生成均使用排序后的路径段
+        verify(esiResponseCache, atLeast(2)).cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/Alpha-Bravo/"), eq(0));
+    }
+
+    @Test
+    @DisplayName("resolve 混合类型(characters/corporations/alliances)全映射")
+    void resolve_mixedTypes_mapsAllGroups() {
+        // Arrange: SDK 返回三种类型
+        List<String> names = List.of("CharA", "CorpB", "AllyC");
+        String expectedKey = "esi:resp:" + DATASOURCE + ":pub:/universe/ids/AllyC-CharA-CorpB/:0";
+        when(esiResponseCache.cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/AllyC-CharA-CorpB/"), eq(0)))
+                .thenReturn(expectedKey);
+        when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
+        when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+        Name2IdResponse sdkBody = new Name2IdResponse();
+        IdName charA = new IdName(); charA.setId(100); charA.setName("CharA");
+        IdName corpB = new IdName(); corpB.setId(200); corpB.setName("CorpB");
+        IdName allyC = new IdName(); allyC.setId(300); allyC.setName("AllyC");
+        sdkBody.setCharacters(List.of(charA));
+        sdkBody.setCorporations(List.of(corpB));
+        sdkBody.setAlliances(List.of(allyC));
+        when(universeApi.queryUniverseIdsResponse(eq(names), eq(DATASOURCE), isNull()))
+                .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(sdkBody)));
+        when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+        // Act
+        List<RecipientResolution> result = esiApiService.resolveUniverseIds(names);
+
+        // Assert: 三种类型均被映射
+        assertThat(result).hasSize(3);
+        RecipientResolution charRes = result.stream().filter(r -> r.name().equals("CharA")).findFirst().orElseThrow();
+        assertThat(charRes.id()).isEqualTo(100);
+        assertThat(charRes.type()).isEqualTo("character");
+        assertThat(charRes.resolved()).isTrue();
+
+        RecipientResolution corpRes = result.stream().filter(r -> r.name().equals("CorpB")).findFirst().orElseThrow();
+        assertThat(corpRes.id()).isEqualTo(200);
+        assertThat(corpRes.type()).isEqualTo("corporation");
+        assertThat(corpRes.resolved()).isTrue();
+
+        RecipientResolution allyRes = result.stream().filter(r -> r.name().equals("AllyC")).findFirst().orElseThrow();
+        assertThat(allyRes.id()).isEqualTo(300);
+        assertThat(allyRes.type()).isEqualTo("alliance");
+        assertThat(allyRes.resolved()).isTrue();
+    }
+
+    @Test
+    @DisplayName("resolve 未命中名称 → resolved=false 条目(保持请求名全量返回)")
+    void resolve_unknownName_resolvedFalse() {
+        // Arrange: 请求 2 个名称,SDK 仅命中 1 个
+        List<String> names = List.of("Known", "Unknown");
+        String expectedKey = "esi:resp:" + DATASOURCE + ":pub:/universe/ids/Known-Unknown/:0";
+        when(esiResponseCache.cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/Known-Unknown/"), eq(0)))
+                .thenReturn(expectedKey);
+        when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
+        when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+        Name2IdResponse sdkBody = buildName2IdResponse(List.of(new IdNameEntry("Known", 999, "character")));
+        when(universeApi.queryUniverseIdsResponse(eq(names), eq(DATASOURCE), isNull()))
+                .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(sdkBody)));
+        when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+        // Act
+        List<RecipientResolution> result = esiApiService.resolveUniverseIds(names);
+
+        // Assert: 2 条,Known 已解析,Unknown resolved=false
+        assertThat(result).hasSize(2);
+        RecipientResolution known = result.stream().filter(r -> r.name().equals("Known")).findFirst().orElseThrow();
+        assertThat(known.resolved()).isTrue();
+        assertThat(known.id()).isEqualTo(999);
+
+        RecipientResolution unknown = result.stream().filter(r -> r.name().equals("Unknown")).findFirst().orElseThrow();
+        assertThat(unknown.resolved()).isFalse();
+        assertThat(unknown.id()).isNull();
+        assertThat(unknown.type()).isNull();
+    }
+
+    @Test
+    @DisplayName("resolve 缓存写使用响应头提取的 TTL(非 null)")
+    void resolve_cacheWrite_usesHeaderTtl() {
+        // Arrange
+        List<String> names = List.of("TestName");
+        String expectedKey = "esi:resp:" + DATASOURCE + ":pub:/universe/ids/TestName/:0";
+        when(esiResponseCache.cacheKey(eq(DATASOURCE), isNull(), eq("/universe/ids/TestName/"), eq(0)))
+                .thenReturn(expectedKey);
+        when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
+        when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
+
+        // extractor 被 mock,头设置仅为可读性
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.CACHE_CONTROL, "max-age=300");
+        Name2IdResponse sdkBody = buildName2IdResponse(List.of(new IdNameEntry("TestName", 555, "character")));
+        when(universeApi.queryUniverseIdsResponse(eq(names), eq(DATASOURCE), isNull()))
+                .thenReturn(Mono.just(ResponseEntity.ok().headers(headers).body(sdkBody)));
+        when(esiCacheTtlExtractor.extract(any(HttpHeaders.class))).thenReturn(EXPECTED_TTL);
+
+        // Act
+        esiApiService.resolveUniverseIds(names);
+
+        // Assert: put 收到非 null TTL 且等于从响应头提取的值
+        ArgumentCaptor<Duration> ttlCaptor = ArgumentCaptor.forClass(Duration.class);
+        verify(esiResponseCache).put(eq(expectedKey), any(), ttlCaptor.capture());
+        assertThat(ttlCaptor.getValue()).isNotNull();
+        assertThat(ttlCaptor.getValue()).isEqualTo(EXPECTED_TTL);
+    }
+
     // ── helpers ──
 
     private List<RequestedMailResponse> buildMailHeaders(int count) {
@@ -408,6 +581,22 @@ class EsiApiServiceMailTest {
         r.setRecipientId(CHARACTER_ID);
         r.setRecipientType("character");
         resp.setRecipients(List.of(r));
+        return resp;
+    }
+
+    private record IdNameEntry(String name, Integer id, String type) {}
+
+    private Name2IdResponse buildName2IdResponse(List<IdNameEntry> entries) {
+        Name2IdResponse resp = new Name2IdResponse();
+        List<IdName> characters = entries.stream().filter(e -> "character".equals(e.type))
+                .map(e -> { IdName n = new IdName(); n.setId(e.id); n.setName(e.name); return n; }).toList();
+        List<IdName> corporations = entries.stream().filter(e -> "corporation".equals(e.type))
+                .map(e -> { IdName n = new IdName(); n.setId(e.id); n.setName(e.name); return n; }).toList();
+        List<IdName> alliances = entries.stream().filter(e -> "alliance".equals(e.type))
+                .map(e -> { IdName n = new IdName(); n.setId(e.id); n.setName(e.name); return n; }).toList();
+        resp.setCharacters(characters.isEmpty() ? null : characters);
+        resp.setCorporations(corporations.isEmpty() ? null : corporations);
+        resp.setAlliances(alliances.isEmpty() ? null : alliances);
         return resp;
     }
 }

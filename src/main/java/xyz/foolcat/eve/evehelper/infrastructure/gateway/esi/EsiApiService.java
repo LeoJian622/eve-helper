@@ -24,6 +24,7 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.MailDetailInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailHeaderPage;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailLabelsInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailRecipient;
+import xyz.foolcat.eve.evehelper.domain.model.vo.RecipientResolution;
 import xyz.foolcat.eve.evehelper.domain.model.vo.SendMailCommand;
 import xyz.foolcat.eve.evehelper.domain.model.vo.SkillQueueItem;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
@@ -2228,6 +2229,72 @@ public class EsiApiService implements EsiGateway {
         return callSdkMono(() -> mailApi.addCharacterMail(characterId, EsiClientConfig.SERENITY, newMail, accessToken))
                 .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
                 .block();
+    }
+
+    // ── universe/ids 精确名称解析(伴侣 APP T018) ──
+
+    @Override
+    public List<RecipientResolution> resolveUniverseIds(List<String> names) {
+        // 公开数据:userId 段置 pub 全局共享(不查 UserUtil、不限流);names 排序确定编码进键
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), null,
+                encodeNames(names), 0);
+        List<RecipientResolution> cached = esiResponseCache.getList(key, objectMapper.constructType(RecipientResolution.class));
+        if (cached != null) {
+            return cached;
+        }
+        // 防穿透
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed) {
+            List<RecipientResolution> filled = awaitCachedList(key, objectMapper.constructType(RecipientResolution.class));
+            if (filled != null) {
+                return filled;
+            }
+        }
+        try {
+            ResponseEntity<Name2IdResponse> response = callSdkMono(() -> universeApi.queryUniverseIdsResponse(names, EsiClientConfig.SERENITY, null))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                // 全量未命中
+                return names.stream().map(n -> new RecipientResolution(n, null, null, false)).toList();
+            }
+            List<RecipientResolution> domain = mapRecipientResolutions(names, response.getBody());
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            esiResponseCache.put(key, domain, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private List<RecipientResolution> mapRecipientResolutions(List<String> requestedNames, Name2IdResponse resp) {
+        // 按分组收集已解析的 name→(id, type)
+        java.util.Map<String, RecipientResolution> resolved = new java.util.LinkedHashMap<>();
+        if (resp.getCharacters() != null) {
+            resp.getCharacters().forEach(n -> resolved.put(n.getName(),
+                    new RecipientResolution(n.getName(), n.getId(), "character", true)));
+        }
+        if (resp.getCorporations() != null) {
+            resp.getCorporations().forEach(n -> resolved.put(n.getName(),
+                    new RecipientResolution(n.getName(), n.getId(), "corporation", true)));
+        }
+        if (resp.getAlliances() != null) {
+            resp.getAlliances().forEach(n -> resolved.put(n.getName(),
+                    new RecipientResolution(n.getName(), n.getId(), "alliance", true)));
+        }
+        // 保持请求名全量返回,未命中项 resolved=false
+        return requestedNames.stream()
+                .map(name -> resolved.getOrDefault(name, new RecipientResolution(name, null, null, false)))
+                .toList();
+    }
+
+    /**
+     * names 集合确定性编码进缓存键:排序后按序拼接,保证"同组同键、异组异键"(顺序无关)。
+     */
+    private String encodeNames(List<String> names) {
+        String encoded = names.stream().sorted().collect(Collectors.joining("-"));
+        return "/universe/ids/" + encoded + "/";
     }
 
 }

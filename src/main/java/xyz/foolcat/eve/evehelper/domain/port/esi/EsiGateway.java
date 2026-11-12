@@ -21,6 +21,7 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailDetailInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailHeaderPage;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailLabelsInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.RecipientResolution;
 import xyz.foolcat.eve.evehelper.domain.model.vo.SendMailCommand;
 import xyz.foolcat.eve.evehelper.domain.model.vo.SkillQueueItem;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
@@ -539,4 +540,19 @@ public interface EsiGateway {
      * @return 新邮件 ID
      */
     Integer sendCharacterMail(Integer characterId, SendMailCommand command, String accessToken);
+
+    // ── universe/ids 精确名称解析(伴侣 APP T018) ──
+
+    /**
+     * 批量解析名称→ID(ESI POST /universe/ids/,公开无需授权)。
+     * <p>
+     * 公开数据:pub 段共享(userId=null)、不限流、无 forceRefresh。
+     * names 先排序再确定性编码进缓存键(顺序无关命中)。
+     * 响应按 characters/corporations/alliances 分组映射;
+     * 请求中未命中的名称返回 {@code resolved=false} 条目(保持请求名全量返回)。
+     *
+     * @param names 名称列表
+     * @return 解析结果(全量,含未命中项)
+     */
+    List<RecipientResolution> resolveUniverseIds(List<String> names);
 }
