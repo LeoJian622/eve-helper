@@ -6,15 +6,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.AppNotification;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
+import xyz.foolcat.eve.evehelper.domain.model.entity.system.IndustryJob;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterRolesInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.SkillQueueItem;
 import xyz.foolcat.eve.evehelper.domain.port.appws.AppNotificationPushGateway;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.repository.system.AppNotificationRepository;
 import xyz.foolcat.eve.evehelper.domain.repository.system.EveAccountRepository;
 import xyz.foolcat.eve.evehelper.domain.repository.system.StructureRepository;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.AppNotificationEventType;
 
 import java.time.OffsetDateTime;
@@ -44,6 +47,7 @@ public class AppNotificationDetectService {
     private final StructureRepository structureRepository;
     private final EsiGateway esiGateway;
     private final CacheGateway cacheGateway;
+    private final AuthorizeUtil authorizeUtil;
 
     /**
      * 势力铁壁 typeId（镜像 StructTask:42-47，QQ 类零 diff）
@@ -182,6 +186,167 @@ public class AppNotificationDetectService {
             }
         }
         return new ArrayList<>(permitted);
+    }
+
+    /**
+     * 检测工业订单完成事件并推送给绑定角色所属用户。
+     * <p>
+     * 流程：分布式锁（600s）→ 单一 now → listAll 逐角色 → authorizeInternal → token →
+     * queryCharacterIndustryJobs(includeCompleted=true) → 谓词过滤（24h 窗口）→
+     * 一次性去重（不限时间）→ insertBatch → pushIfOnline。
+     */
+    public void detectIndustryComplete() {
+        String lockKey = "app:notify:lock:INDUSTRY_COMPLETE";
+        String uuid = UUID.randomUUID().toString();
+
+        Boolean acquired = cacheGateway.setIfAbsent(lockKey, uuid, 600, TimeUnit.SECONDS);
+        if (!Boolean.TRUE.equals(acquired)) {
+            log.debug("工业检测锁未获取，跳过本次执行");
+            return;
+        }
+
+        try {
+            OffsetDateTime now = OffsetDateTime.now();
+            List<EveAccount> accounts = eveAccountRepository.listAll();
+            if (accounts == null) {
+                accounts = List.of();
+            }
+
+            for (EveAccount acc : accounts) {
+                try {
+                    EveAccount account = authorizeUtil.authorizeInternal(acc.getUserId(), acc.getCharacterId());
+                    String token = esiGateway.getAccessTokenWithExpiry(
+                            account.getCharacterId(), account.getUserId()).accessToken();
+
+                    List<IndustryJob> jobs = esiGateway.queryCharacterIndustryJobs(
+                            account.getCharacterId(), true, token).collectList().block();
+                    if (jobs == null) {
+                        jobs = List.of();
+                    }
+
+                    List<AppNotification> rows = new ArrayList<>();
+                    Date gmtCreate = new Date();
+                    String title = truncate(AppNotificationEventType.INDUSTRY_COMPLETE.getDescription(), 128);
+
+                    for (IndustryJob job : jobs) {
+                        if (job.getJobId() == null || job.getEndDate() == null) {
+                            continue;
+                        }
+
+                        boolean hit = ("active".equals(job.getStatus()) && !job.getEndDate().isAfter(now.plusHours(24)))
+                                || ("delivered".equals(job.getStatus()) && !job.getEndDate().isBefore(now.minusHours(24)));
+                        if (!hit) {
+                            continue;
+                        }
+
+                        String dedupKey = "INDUSTRY_COMPLETE:" + job.getJobId();
+                        if (appNotificationRepository.existsByDedupKey(dedupKey)) {
+                            continue;
+                        }
+
+                        AppNotification row = new AppNotification();
+                        row.setUserId(account.getUserId());
+                        row.setEventType(AppNotificationEventType.INDUSTRY_COMPLETE.name());
+                        row.setDedupKey(dedupKey);
+                        row.setCharacterId(account.getCharacterId());
+                        row.setCorpId(account.getCorpId());
+                        row.setTitle(title);
+                        row.setContent(truncate("工业订单 " + job.getJobId() + " 结束时间: " + job.getEndDate(), 512));
+                        row.setIsRead(false);
+                        row.setGmtCreate(gmtCreate);
+                        rows.add(row);
+                    }
+
+                    if (!rows.isEmpty()) {
+                        appNotificationRepository.insertBatch(rows);
+                        for (AppNotification row : rows) {
+                            pushIfOnline(row.getUserId(), row);
+                        }
+                    }
+                } catch (Exception e) {
+                    log.error("角色 {} 工业检测失败", acc.getCharacterId(), e);
+                }
+            }
+        } finally {
+            cacheGateway.compareAndDelete(lockKey, uuid);
+        }
+    }
+
+    /**
+     * 检测技能队列为空事件并推送给绑定角色所属用户。
+     * <p>
+     * 流程：分布式锁（600s）→ listAll 逐角色 → authorizeInternal → token →
+     * queryCharacterSkillQueue → 仅空队列触发 → 24h 去重 → insertBatch → pushIfOnline。
+     */
+    public void detectSkillQueueEmpty() {
+        String lockKey = "app:notify:lock:SKILL_QUEUE_EMPTY";
+        String uuid = UUID.randomUUID().toString();
+
+        Boolean acquired = cacheGateway.setIfAbsent(lockKey, uuid, 600, TimeUnit.SECONDS);
+        if (!Boolean.TRUE.equals(acquired)) {
+            log.debug("技能检测锁未获取，跳过本次执行");
+            return;
+        }
+
+        try {
+            List<EveAccount> accounts = eveAccountRepository.listAll();
+            if (accounts == null) {
+                accounts = List.of();
+            }
+
+            for (EveAccount acc : accounts) {
+                try {
+                    EveAccount account = authorizeUtil.authorizeInternal(acc.getUserId(), acc.getCharacterId());
+                    String token = esiGateway.getAccessTokenWithExpiry(
+                            account.getCharacterId(), account.getUserId()).accessToken();
+
+                    List<SkillQueueItem> queue = esiGateway.queryCharacterSkillQueue(
+                            account.getCharacterId(), token);
+
+                    if (queue == null || !queue.isEmpty()) {
+                        continue;
+                    }
+
+                    String dedupKey = "SKILL_QUEUE_EMPTY:" + account.getCharacterId();
+                    if (appNotificationRepository.existsByDedupKeyWithinHours(dedupKey, 24)) {
+                        continue;
+                    }
+
+                    AppNotification row = new AppNotification();
+                    row.setUserId(account.getUserId());
+                    row.setEventType(AppNotificationEventType.SKILL_QUEUE_EMPTY.name());
+                    row.setDedupKey(dedupKey);
+                    row.setCharacterId(account.getCharacterId());
+                    row.setCorpId(account.getCorpId());
+                    row.setTitle(truncate(AppNotificationEventType.SKILL_QUEUE_EMPTY.getDescription(), 128));
+                    row.setContent(truncate("角色 " + account.getCharacterName() + " 技能队列已空，请及时安排训练", 512));
+                    row.setIsRead(false);
+                    row.setGmtCreate(new Date());
+
+                    appNotificationRepository.insertBatch(List.of(row));
+                    pushIfOnline(account.getUserId(), row);
+                } catch (Exception e) {
+                    log.error("角色 {} 技能检测失败", acc.getCharacterId(), e);
+                }
+            }
+        } finally {
+            cacheGateway.compareAndDelete(lockKey, uuid);
+        }
+    }
+
+    /**
+     * 分批清理过期通知（30 天，每批 500 条），返回总删除数。
+     * <p>
+     * 无运行锁（非检测方法，分批删除幂等）。
+     */
+    public int cleanupExpired() {
+        int total = 0;
+        int deleted;
+        do {
+            deleted = appNotificationRepository.deleteExpired(30, 500);
+            total += deleted;
+        } while (deleted > 0);
+        return total;
     }
 
     // ─── 共用私有 helper（T032 复用） ─────────────────────

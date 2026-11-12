@@ -18,6 +18,7 @@ import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
 import xyz.foolcat.eve.evehelper.domain.repository.system.AppNotificationRepository;
 import xyz.foolcat.eve.evehelper.domain.repository.system.EveAccountRepository;
 import xyz.foolcat.eve.evehelper.domain.repository.system.StructureRepository;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 
 import java.text.ParseException;
 import java.time.OffsetDateTime;
@@ -52,6 +53,8 @@ class AppNotificationDetectServiceFuelTest {
     private EsiGateway esiGateway;
     @Mock
     private CacheGateway cacheGateway;
+    @Mock
+    private AuthorizeUtil authorizeUtil;
 
     private AppNotificationDetectService service;
 
@@ -69,7 +72,8 @@ class AppNotificationDetectServiceFuelTest {
                 eveAccountRepository,
                 structureRepository,
                 esiGateway,
-                cacheGateway
+                cacheGateway,
+                authorizeUtil
         );
 
         // accountA: userId 77, characterId 1001, corpId 500
