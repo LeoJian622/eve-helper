@@ -49,6 +49,7 @@ EVE Helper 项目文档中心。
 | [ESI响应缓存](knowledge/ESI响应缓存-esi-response-caching.md) | 响应头TTL命中跳过真调/key隔离(IDOR)/强刷限流/防并发穿透(SC-002)/API接口层forceRefresh参数 | 2026-08-21 |
 | [用户钱包余额聚合](knowledge/用户钱包余额聚合-wallet-balance-by-user.md) | 按用户横向聚合人物+军团余额(GET /wallet/balance)/身份服务内自取/军团多角色union by division/division防御/fail-open故障不可观测与调用放大等已知局限 | 2026-08-24 |
 | [ESI 授权详情 scopes](knowledge/ESI授权详情scopes-esi-auth-scopes.md) | 用户角色列表返回授权详情(null vs []语义)/组合式端口零侵入刷新锁/scp双格式fail-soft/突变检验证明用例判别力 | 2026-09-02 |
+| [伴侣APP后端](knowledge/伴侣APP后端-companion-api.md) | 六能力(面板/邮件/工业直查/团员追踪/通知/账号自助)+通知去重+WS ticket+改密失效+部署 | 2026-11-13 |
 
 ## 🚀 快速导航
 
