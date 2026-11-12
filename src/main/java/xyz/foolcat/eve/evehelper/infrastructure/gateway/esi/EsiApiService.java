@@ -18,6 +18,7 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAttributesInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterLocationInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterOnlineInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterPublicInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterRolesInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterSkillList;
 import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailDetailInfo;
@@ -2295,6 +2296,72 @@ public class EsiApiService implements EsiGateway {
     private String encodeNames(List<String> names) {
         String encoded = names.stream().sorted().collect(Collectors.joining("-"));
         return "/universe/ids/" + encoded + "/";
+    }
+
+    // ── 角色军团权限(伴侣 APP T029) ──
+
+    @Override
+    public CharacterRolesInfo queryCharacterRoles(Integer characterId, String accessToken) {
+        return doQueryCharacterRoles(characterId, accessToken, false);
+    }
+
+    @Override
+    public CharacterRolesInfo queryCharacterRoles(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterRoles(characterId, accessToken, forceRefresh);
+    }
+
+    private CharacterRolesInfo doQueryCharacterRoles(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            RoleResponse resp = callSdkMono(() -> characterApi.queryCharacterRoles(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            return mapRolesInfo(resp);
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/roles/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<CharacterRolesInfo> cached = esiResponseCache.getList(key, objectMapper.constructType(CharacterRolesInfo.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<CharacterRolesInfo> filled = awaitCachedList(key, objectMapper.constructType(CharacterRolesInfo.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<RoleResponse> response = callSdkMono(() -> characterApi.queryCharacterRolesResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            CharacterRolesInfo domain = mapRolesInfo(response.getBody());
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<CharacterRolesInfo> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private CharacterRolesInfo mapRolesInfo(RoleResponse resp) {
+        if (resp == null) {
+            return new CharacterRolesInfo(List.of(), List.of(), List.of());
+        }
+        List<String> atHq = resp.getRolesAtHq() != null ? List.copyOf(Arrays.asList(resp.getRolesAtHq())) : List.of();
+        List<String> atBase = resp.getRolesAtBase() != null ? List.copyOf(Arrays.asList(resp.getRolesAtBase())) : List.of();
+        List<String> atOther = resp.getRolesAtOther() != null ? List.copyOf(Arrays.asList(resp.getRolesAtOther())) : List.of();
+        return new CharacterRolesInfo(atHq, atBase, atOther);
     }
 
 }

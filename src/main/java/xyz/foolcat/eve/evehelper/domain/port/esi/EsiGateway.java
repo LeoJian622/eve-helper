@@ -16,6 +16,7 @@ import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAttributesInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterLocationInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterOnlineInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterPublicInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterRolesInfo;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterSkillList;
 import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
 import xyz.foolcat.eve.evehelper.domain.model.vo.MailDetailInfo;
@@ -555,4 +556,25 @@ public interface EsiGateway {
      * @return 解析结果(全量,含未命中项)
      */
     List<RecipientResolution> resolveUniverseIds(List<String> names);
+
+    // ── 角色军团权限(伴侣 APP T029) ──
+
+    /**
+     * 查询角色军团权限(ESI /characters/{id}/roles/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 角色军团权限(三集合 + 权限判定助手)
+     */
+    CharacterRolesInfo queryCharacterRoles(Integer characterId, String accessToken);
+
+    /**
+     * 查询角色军团权限(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 角色军团权限
+     */
+    CharacterRolesInfo queryCharacterRoles(Integer characterId, String accessToken, boolean forceRefresh);
 }

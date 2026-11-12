@@ -325,6 +325,29 @@ public class CharacterApi {
                 .bodyToMono(RoleResponse.class);
     }
 
+    /**
+     * 人物角色列表(含响应头,供缓存 TTL 提取)。
+     * <p>022/T029 新增:与 {@link #queryCharacterRoles} 同一 URI,改用 exchangeToMono 保留响应头。
+     *
+     * @param characterId   人物ID
+     * @param datasource    服务器数据源
+     * @param accessesToken 授权码
+     * @return 含响应头的 ResponseEntity
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-人物角色列表(含响应头)")
+    public Mono<ResponseEntity<RoleResponse>> queryCharacterRolesResponse(Integer characterId, String datasource, String accessesToken) {
+        return esiClient.get().uri("/characters/{character_id}/roles/?datasource={datasource}", characterId, datasource)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<RoleResponse>() {}, "ESI 角色军团权限"))
+                .timeout(EsiClientConstants.ESI_DATA_TIMEOUT);
+    }
+
 
 
     /**
