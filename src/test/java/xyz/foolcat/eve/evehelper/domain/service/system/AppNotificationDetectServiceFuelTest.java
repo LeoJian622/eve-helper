@@ -108,16 +108,21 @@ class AppNotificationDetectServiceFuelTest {
                 .thenReturn(true);
         when(eveAccountRepository.listAll()).thenReturn(List.of(accountA, accountB));
         when(structureRepository.selectFuelExpiresList(24, 500)).thenReturn(List.of(structure1));
+        // MIN-C: fanout 提升到循环外，先于去重检查执行
+        when(eveAccountRepository.listByCorpId(500)).thenReturn(List.of(accountA));
+        when(esiGateway.getAccessTokenWithExpiry(1001, 77))
+                .thenReturn(new CharacterAccessTokenResult("Bearer t", 1001, 1140L));
+        when(esiGateway.queryCharacterRoles(1001, "Bearer t"))
+                .thenReturn(new CharacterRolesInfo(List.of("Director"), List.of(), List.of()));
         // 全局去重：窗口内已存在
         when(appNotificationRepository.existsByDedupKeyWithinHours("FUEL_LOW:9001", 24)).thenReturn(true);
 
         // Act
         service.detectFuelLow();
 
-        // Assert: 整轮跳过，不插入、不推送、不查角色
+        // Assert: 去重跳过，不插入、不推送
         verify(appNotificationRepository, never()).insertBatch(any());
         verify(pushGateway, never()).pushToUser(any(), anyString());
-        verify(esiGateway, never()).queryCharacterRoles(anyInt(), anyString());
         verify(cacheGateway).compareAndDelete(eq("app:notify:lock:FUEL_LOW"), any());
     }
 
