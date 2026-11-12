@@ -198,7 +198,7 @@ class MailApplicationServiceTest {
 
         // SendMailRequest DTO 由 T019 创建;此处构造假设与 SendMailCommand 对齐
         SendMailRequest request = new SendMailRequest(
-                List.of(new SendMailRequest.RecipientItem(20001, "character")),
+                List.of(new SendMailRequest.Recipient(20001, "character")),
                 "Test Subject",
                 "Test body content"
         );
@@ -221,7 +221,7 @@ class MailApplicationServiceTest {
         MailApplicationService service = new MailApplicationService(authorizeUtil, esiGateway);
 
         SendMailRequest request = new SendMailRequest(
-                List.of(new SendMailRequest.RecipientItem(20001, "character")),
+                List.of(new SendMailRequest.Recipient(20001, "character")),
                 "Subject",
                 "Body"
         );
@@ -241,7 +241,7 @@ class MailApplicationServiceTest {
         MailApplicationService service = new MailApplicationService(authorizeUtil, esiGateway);
 
         SendMailRequest request = new SendMailRequest(
-                List.of(new SendMailRequest.RecipientItem(20001, "character")),
+                List.of(new SendMailRequest.Recipient(20001, "character")),
                 "Subject",
                 "Body"
         );
