@@ -186,6 +186,60 @@ class MailControllerTest {
     }
 
     // ---------------------------------------------------------------
+    //  labels — 成功响应
+    // ---------------------------------------------------------------
+
+    @Test
+    @DisplayName("labels 成功响应包含标签列表与总未读数")
+    void labels_response_containsLabelsAndTotalUnread() throws Exception {
+        // Arrange
+        MailLabelsInfo stubInfo = new MailLabelsInfo(
+                List.of(new MailLabelsInfo.MailLabel(1, "Inbox", 5L)),
+                5L
+        );
+        when(mailService.labels(CHARACTER_ID, false)).thenReturn(stubInfo);
+
+        // Act & Assert
+        mockMvc.perform(get("/mail/{characterId}/labels", CHARACTER_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("200"))
+                .andExpect(jsonPath("$.data.labels").isArray())
+                .andExpect(jsonPath("$.data.labels[0].labelId").value(1))
+                .andExpect(jsonPath("$.data.totalUnread").value(5));
+
+        verify(mailService).labels(CHARACTER_ID, false);
+    }
+
+    // ---------------------------------------------------------------
+    //  detail — 成功响应
+    // ---------------------------------------------------------------
+
+    @Test
+    @DisplayName("detail 成功响应包含邮件正文")
+    void detail_response_containsMailBody() throws Exception {
+        // Arrange
+        MailDetailInfo stubDetail = new MailDetailInfo(
+                MAIL_ID, 10001,
+                List.of(new MailRecipient(CHARACTER_ID, "character")),
+                "Test Subject",
+                OffsetDateTime.parse("2026-11-12T10:00:00Z"),
+                "<p>Hello World</p>",
+                false
+        );
+        when(mailService.detail(CHARACTER_ID, MAIL_ID, false)).thenReturn(stubDetail);
+
+        // Act & Assert
+        mockMvc.perform(get("/mail/{characterId}/{mailId}", CHARACTER_ID, MAIL_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("200"))
+                .andExpect(jsonPath("$.data.mailId").value(MAIL_ID))
+                .andExpect(jsonPath("$.data.subject").value("Test Subject"))
+                .andExpect(jsonPath("$.data.body").value("<p>Hello World</p>"));
+
+        verify(mailService).detail(CHARACTER_ID, MAIL_ID, false);
+    }
+
+    // ---------------------------------------------------------------
     //  send — 成功响应
     // ---------------------------------------------------------------
 
