@@ -23,6 +23,7 @@ import xyz.foolcat.eve.evehelper.domain.service.security.TokenService;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
 import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
+import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
@@ -134,7 +135,7 @@ public class UserApplicationService {
         }
 
         // 2. 限流检查（先 get 计数 ≥5 → RATE_LIMITED，检查不 increment）
-        String attemptKey = xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants.PWD_ATTEMPT_KEY_PREFIX + userId;
+        String attemptKey = GlobalConstants.PWD_ATTEMPT_KEY_PREFIX + userId;
         int attempts = getCurrentAttempts(attemptKey);
         if (attempts >= PWD_MAX_ATTEMPTS) {
             throw new EveHelperException(ResultCode.RATE_LIMITED);
@@ -167,10 +168,10 @@ public class UserApplicationService {
         sysUserRepository.insertOrUpdateSelective(update);
 
         // 7. 写纪元（7 天 TTL）
-        cacheGateway.set(xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants.REVOKE_EPOCH_KEY_PREFIX + userId, System.currentTimeMillis(), 7, TimeUnit.DAYS);
+        cacheGateway.set(GlobalConstants.REVOKE_EPOCH_KEY_PREFIX + userId, System.currentTimeMillis(), 7, TimeUnit.DAYS);
 
         // 8. 逐 sid 撤销 + 标记（markSessionRevoked 无条件调用，HIGH-1）
-        Set<Object> sids = cacheGateway.sMembers(xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants.REFRESH_USER_KEY_PREFIX + userId);
+        Set<Object> sids = cacheGateway.sMembers(GlobalConstants.REFRESH_USER_KEY_PREFIX + userId);
         if (sids != null) {
             for (Object sid : sids) {
                 String s = String.valueOf(sid);

@@ -308,9 +308,9 @@ sequenceDiagram
 3. 归属校验（`authorizeUtil.authorize(characterId)`）
 4. 系统同步角色守卫（`SYSTEM_SYNC_CHARACTER_ID` 不可解绑）
 5. 删除绑定（`eveAccountRepository.deleteByUserIdAndCharacterId`）
-6. 清理 accessToken 缓存（`cacheGateway.delete(ESI_ACCESS_TOKEN_KEY + userId + ":" + characterId)`）
+6. 清理 accessToken 缓存（`esiGateway.evictAccessTokenCache(userId, characterId)`）
 
-> ⚠️ **IMP-1 待办**：步骤 6 当前在应用层直接构造缓存键（`CharacterApplicationService:124`），已登记终审修复波待办——应委托 `EsiGateway.evictAccessTokenCache(userId, characterId)` 以消除跨层键耦合。当前代码如实如此，尚未改。
+> ✅ **IMP-1 已修**（终审修复波 0cd7c2e）：步骤 6 已委托 `EsiGateway.evictAccessTokenCache(userId, characterId)` 端口方法，缓存键格式仅基础设施层知晓，应用层零跨层耦合。
 
 ### 7.4 授权入口
 

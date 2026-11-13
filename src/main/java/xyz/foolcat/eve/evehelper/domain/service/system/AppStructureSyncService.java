@@ -114,12 +114,9 @@ public class AppStructureSyncService {
         // ④ 拉取:分页 stream 镜像 StructureService 范式
         Integer maxPage = esiGateway.queryCorporationStructuresMaxPage(corpId, selectedToken);
         // IMP-A: ESI 失败(maxPage==null) → 跳过同步且不清理（防瞬时失败误删）
+        // 生产真实失败由异常冒泡处理（见 EsiApiService callSdk），此 null 分支为防御性死代码
         if (maxPage == null) {
             log.info("军团建筑 ESI 拉取失败(maxPage=null),跳过且不清理 corpId={}", corpId);
-            return;
-        }
-        if (maxPage <= 0) {
-            log.info("军团建筑无分页数据,跳过 corpId={}", corpId);
             return;
         }
 

@@ -284,4 +284,32 @@ class MemberTrackingApplicationServiceTest {
             assertThat(tokenCaptor.getValue()).isEqualTo(ACCESS_TOKEN);
         }
     }
+
+    // ── MIN-E: 跨军团本地守卫 ──
+
+    @Test
+    @DisplayName("MIN-E: path corpId ≠ account.getCorpId() → 本地 PARAM_ERROR，不调 ESI")
+    void track_crossCorpId_localParamError() throws Exception {
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(USER_ID);
+
+            EveAccount account = new EveAccount();
+            account.setUserId(USER_ID);
+            account.setCharacterId(CHARACTER_ID);
+            account.setCorpId(CORP_ID); // account 属于 corp 500
+
+            when(authorizeUtil.authorize(CHARACTER_ID)).thenReturn(account);
+
+            Integer differentCorpId = 999; // path 传入不同 corpId
+
+            assertThatThrownBy(() -> service.track(differentCorpId, CHARACTER_ID, false))
+                    .isInstanceOf(EveHelperException.class)
+                    .satisfies(e -> assertThat(((EveHelperException) e).getResultCode())
+                            .isEqualTo(ResultCode.PARAM_ERROR));
+
+            // 本地守卫先于 ESI 直查：ESI 零调用
+            verify(esiGateway, never()).getAccessTokenWithExpiry(eq(CHARACTER_ID), eq(USER_ID));
+            verify(esiGateway, never()).queryCorporationMemberTracking(eq(differentCorpId), eq(ACCESS_TOKEN), eq(false));
+        }
+    }
 }

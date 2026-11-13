@@ -98,7 +98,7 @@ public class TokenService {
      * <p>用于改密全会话失效(T006/T041):经 userId 枚举该用户所有活跃 sid,
      * 逐一撤销。sAdd 后 expire 续期(TTL = refresh TTL)。</p>
      */
-    private static final String REFRESH_USER_PREFIX = "refresh_user:";
+    private static final String REFRESH_USER_PREFIX = GlobalConstants.REFRESH_USER_KEY_PREFIX;
 
     /**
      * 改密纪元标记键前缀(022 T006, 收敛至 GlobalConstants.REVOKE_EPOCH_KEY_PREFIX)。

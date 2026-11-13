@@ -270,6 +270,38 @@ class AppStructureSyncServiceTest {
         assertThat(keepIdsCaptor.getValue()).isEmpty();
     }
 
+    // ── MIN-R1: maxPage=0 → limit(0)→空集→清理（镜像 StructureService，守卫已删） ──
+
+    @Test
+    void emptyEsi_maxPageZero_cleansAllCorpRows() throws Exception {
+        // Arrange: ESI returns maxPage=0 (degenerate X-Pages:0, guard removed per MIN-R1)
+        EveAccount a = account(77, 1001, 500);
+        when(eveAccountRepository.listAll()).thenReturn(List.of(a));
+        when(cacheGateway.setIfAbsent(anyString(), anyString(), anyLong(), any(TimeUnit.class)))
+                .thenReturn(true);
+        when(eveAccountRepository.listByCorpId(500)).thenReturn(List.of(a));
+        when(authorizeUtil.authorizeInternal(77, 1001)).thenReturn(a);
+        when(esiGateway.getAccessTokenWithExpiry(1001, 77))
+                .thenReturn(new CharacterAccessTokenResult("Bearer t", 1001, 1140L));
+        when(esiGateway.queryCharacterRoles(1001, "Bearer t")).thenReturn(permittedRoles());
+        // maxPage=0: guard removed → Stream.limit(0) → empty structures → cleanup all
+        when(esiGateway.queryCorporationStructuresMaxPage(500, "Bearer t")).thenReturn(0);
+        when(structureRepository.removeStaleByCorporation(anyInt(), anyList())).thenReturn(0);
+
+        AppStructureSyncService service = buildService();
+
+        // Act
+        service.syncAllCorps();
+
+        // Assert: removeStaleByCorporation called with empty keepIds → clean all corp rows
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Long>> keepIdsCaptor = ArgumentCaptor.forClass(List.class);
+        verify(structureRepository).removeStaleByCorporation(eq(500), keepIdsCaptor.capture());
+        assertThat(keepIdsCaptor.getValue()).isEmpty();
+        // batchInsertOrUpdatePreserveOwner NOT called (no structures to insert)
+        verify(structureRepository, never()).batchInsertOrUpdatePreserveOwner(anyList());
+    }
+
     @Test
     void esiFailure_noCleanup() throws Exception {
         // Arrange: maxPage returns null (ESI failure)

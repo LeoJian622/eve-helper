@@ -345,4 +345,51 @@ class AppNotificationDetectServiceFuelTest {
         verify(eveAccountRepository, never()).listAll();
         verify(cacheGateway, never()).compareAndDelete(any(), any());
     }
+
+    // ─── MIN-C: fanout 每军团仅一次（多建筑不重复扇出） ───
+
+    @Test
+    @DisplayName("MIN-C: 同军团 N 个建筑 fanout 仅调用一次（listByCorpId/queryCharacterRoles times(1)）")
+    void fuel_multipleStructures_fanoutCalledOncePerCorp() throws ParseException {
+        // Arrange: 同军团 2 个建筑
+        Structure structure2 = new Structure();
+        structure2.setStructureId(9002L);
+        structure2.setTypeId(100L);
+        structure2.setName("T031TEST-Structure2");
+        structure2.setFuelExpires(OffsetDateTime.now().plusHours(12));
+
+        when(cacheGateway.setIfAbsent(eq("app:notify:lock:FUEL_LOW"), any(), eq(600L), eq(TimeUnit.SECONDS)))
+                .thenReturn(true);
+        when(eveAccountRepository.listAll()).thenReturn(List.of(accountA));
+        when(structureRepository.selectFuelExpiresList(24, 500)).thenReturn(List.of(structure1, structure2));
+        when(appNotificationRepository.existsByDedupKeyWithinHours(anyString(), eq(24))).thenReturn(false);
+
+        CharacterAccessTokenResult tokenA = new CharacterAccessTokenResult("Bearer t1", 1001, 1140L);
+        when(esiGateway.getAccessTokenWithExpiry(1001, 77)).thenReturn(tokenA);
+        CharacterRolesInfo rolesA = new CharacterRolesInfo(List.of("Director"), List.of(), List.of());
+        when(esiGateway.queryCharacterRoles(1001, "Bearer t1")).thenReturn(rolesA);
+        when(eveAccountRepository.listByCorpId(500)).thenReturn(List.of(accountA));
+
+        when(appNotificationRepository.insertBatch(any())).thenAnswer(invocation -> {
+            List<?> rows = invocation.getArgument(0);
+            for (int i = 0; i < rows.size(); i++) {
+                var row = rows.get(i);
+                if (row instanceof xyz.foolcat.eve.evehelper.domain.model.entity.system.AppNotification n) {
+                    n.setId(5000L + i);
+                }
+            }
+            return rows.size();
+        });
+        when(pushGateway.isOnline(77)).thenReturn(false);
+
+        // Act
+        service.detectFuelLow();
+
+        // Assert: fanout 路径每军团仅调用一次（非每建筑一次）
+        verify(eveAccountRepository, times(1)).listByCorpId(500);
+        verify(esiGateway, times(1)).getAccessTokenWithExpiry(1001, 77);
+        verify(esiGateway, times(1)).queryCharacterRoles(1001, "Bearer t1");
+        // 但 insertBatch 被调 2 次（每建筑一次）
+        verify(appNotificationRepository, times(2)).insertBatch(any());
+    }
 }

@@ -103,4 +103,34 @@ class JobControllerTest {
 
         verify(jobApplicationService).syncJobs("char", CHARACTER_ID, "complete", false);
     }
+
+    // ── MIN-B: current=0 → HTTP 400（@Min(1) 校验生效） ──
+
+    @Test
+    @DisplayName("MIN-B: current=0 → HTTP 400（@Min(1) 校验拦截，非 500）")
+    void getJobs_currentZero_returns400() throws Exception {
+        // Arrange: 使用 MethodValidationPostProcessor 手动织入 @Validated
+        JobController controller = new JobController(jobApplicationService, industryJobQueryService);
+
+        jakarta.validation.Validator validator = jakarta.validation.Validation
+                .buildDefaultValidatorFactory()
+                .getValidator();
+
+        org.springframework.validation.beanvalidation.MethodValidationPostProcessor postProcessor =
+                new org.springframework.validation.beanvalidation.MethodValidationPostProcessor();
+        postProcessor.setValidator(validator);
+        postProcessor.afterPropertiesSet();
+
+        Object proxy = postProcessor.postProcessAfterInitialization(controller, "jobController");
+
+        MockMvc validatedMockMvc = MockMvcBuilders
+                .standaloneSetup(proxy)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+
+        // Act & Assert: current=0 应触发 @Min(1) 校验 → 400 BAD_REQUEST
+        validatedMockMvc.perform(get("/job/{type}/{id}", "char", CHARACTER_ID)
+                        .param("current", "0"))
+                .andExpect(status().isBadRequest());
+    }
 }

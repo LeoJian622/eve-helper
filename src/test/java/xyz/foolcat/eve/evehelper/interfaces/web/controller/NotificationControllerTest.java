@@ -12,6 +12,7 @@ import xyz.foolcat.eve.evehelper.application.dto.response.NotificationItem;
 import xyz.foolcat.eve.evehelper.application.dto.response.UnreadCountResponse;
 import xyz.foolcat.eve.evehelper.application.dto.response.WsTicketResponse;
 import xyz.foolcat.eve.evehelper.application.service.NotificationApplicationService;
+import xyz.foolcat.eve.evehelper.interfaces.web.advice.GlobalExceptionHandler;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageQuery;
 import xyz.foolcat.eve.evehelper.shared.kernel.base.PageResult;
 
@@ -133,5 +134,35 @@ class NotificationControllerTest {
                 .andExpect(jsonPath("$.data.expiresInSeconds").value(30));
 
         verify(notificationService).createWsTicket();
+    }
+
+    // ── MIN-B: current=0 → HTTP 400（@Min(1) 校验生效） ──
+
+    @Test
+    @DisplayName("MIN-B: current=0 → HTTP 400（@Min(1) 校验拦截，非 500）")
+    void page_currentZero_returns400() throws Exception {
+        // Arrange: 使用 MethodValidationPostProcessor 手动织入 @Validated
+        NotificationController controller = new NotificationController(notificationService);
+
+        jakarta.validation.Validator validator = jakarta.validation.Validation
+                .buildDefaultValidatorFactory()
+                .getValidator();
+
+        org.springframework.validation.beanvalidation.MethodValidationPostProcessor postProcessor =
+                new org.springframework.validation.beanvalidation.MethodValidationPostProcessor();
+        postProcessor.setValidator(validator);
+        postProcessor.afterPropertiesSet();
+
+        Object proxy = postProcessor.postProcessAfterInitialization(controller, "notificationController");
+
+        MockMvc validatedMockMvc = MockMvcBuilders
+                .standaloneSetup(proxy)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+
+        // Act & Assert: current=0 应触发 @Min(1) 校验 → 400 BAD_REQUEST
+        validatedMockMvc.perform(get("/notification")
+                        .param("current", "0"))
+                .andExpect(status().isBadRequest());
     }
 }

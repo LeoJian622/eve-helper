@@ -241,4 +241,28 @@ class EsiApiServiceMemberTrackingTest {
                     .hasMessageContaining(EsiAccessException.MSG_PERMISSION_LOW);
         }
     }
+
+    // ── MIN-G1: 空成员列表缓存命中（015 约定：空列表是合法缓存值） ──
+
+    @Test
+    @DisplayName("MIN-G1: 缓存返回空列表 → 命中缓存，不调 ESI 真调")
+    void tracking_emptyListCacheHit_noRealCall() {
+        try (MockedStatic<UserUtil> userUtilMock = mockStatic(UserUtil.class)) {
+            userUtilMock.when(UserUtil::getUserId).thenReturn(42);
+
+            String expectedKey = "esi:resp:" + DATASOURCE + ":42:/corporations/" + CORPORATION_ID + "/membertracking/:0";
+            when(esiResponseCache.cacheKey(eq(DATASOURCE), eq(42), eq("/corporations/" + CORPORATION_ID + "/membertracking/"), eq(0)))
+                    .thenReturn(expectedKey);
+            // 缓存返回空列表（非 null）→ 应命中
+            when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(List.of());
+
+            // Act
+            List<MemberTrackingItem> result = esiApiService.queryCorporationMemberTracking(CORPORATION_ID, ACCESS_TOKEN);
+
+            // Assert: 返回空列表，ESI 真调从未发生
+            assertThat(result).isEmpty();
+            verify(corporationApi, never()).queryCorporationMembersTrackingResponse(anyInt(), anyString(), anyString());
+            verify(esiResponseCache, never()).put(anyString(), any(), any(Duration.class));
+        }
+    }
 }

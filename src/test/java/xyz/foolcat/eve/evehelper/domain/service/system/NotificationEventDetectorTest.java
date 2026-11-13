@@ -239,6 +239,7 @@ class NotificationEventDetectorTest {
         AppNotification row = rows.get(0);
         assertThat(row.getDedupKey()).isEqualTo("FUEL_LOW:9001");
         assertThat(row.getUserId()).isEqualTo(77);
+        assertThat(row.getCharacterId()).isNull(); // FUEL_LOW 事件 characterId 恒为 null
     }
 
     // ─── 场景 4: industryComplete_notifiedExactlyOnce_acrossRounds ─
