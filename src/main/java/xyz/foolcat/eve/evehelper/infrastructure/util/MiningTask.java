@@ -2,7 +2,6 @@ package xyz.foolcat.eve.evehelper.infrastructure.util;
 
 
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONObject;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +18,8 @@ import xyz.foolcat.eve.evehelper.domain.service.system.StructureService;
 import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConfig;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.IndustryApi;
-import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotUtil;
-import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.WebSocket;
+import xyz.foolcat.eve.evehelper.infrastructure.external.qqbot.QQBotIntegrationProperties;
+import xyz.foolcat.eve.evehelper.infrastructure.external.qqbot.QQBotMessenger;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 
@@ -53,7 +52,9 @@ public class MiningTask {
 
     private final StructureService structureService;
 
-    private final WebSocket webSocket;
+    private final QQBotMessenger qqBotMessenger;
+
+    private final QQBotIntegrationProperties qqBotProperties;
 
     private final InvuniquenamesService invuniquenamesService;
 
@@ -81,8 +82,7 @@ public class MiningTask {
         String messages = requestMiningExtractable(eveAccount.getCorpId(), 1,accessToken);
         if (StrUtil.isNotEmpty(messages)) {
             log.debug("messages: {}", messages);
-            JSONObject group = BotUtil.generateMessage(null, 741565463L, BotUtil.MESSAGE_TYPE_GROUP, messages,false);
-            webSocket.sendOneMessage("napcat", group.toJSONString(4));
+            qqBotMessenger.sendGroupMessage(qqBotProperties.getMiningGroupOpenid(), messages);
         }
     }
 
@@ -107,8 +107,7 @@ public class MiningTask {
         String messages = requestMiningExtractable(eveAccount.getCorpId(), 7,accessToken);
         if (StrUtil.isNotEmpty(messages)) {
             log.debug("messages: {}", messages);
-            JSONObject group = BotUtil.generateMessage(null, 741565463L, BotUtil.MESSAGE_TYPE_GROUP, messages,false);
-            webSocket.sendOneMessage("napcat", group.toJSONString(4));
+            qqBotMessenger.sendGroupMessage(qqBotProperties.getMiningGroupOpenid(), messages);
         }
     }
 

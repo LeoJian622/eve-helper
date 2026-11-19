@@ -1,15 +1,14 @@
 package xyz.foolcat.eve.evehelper.infrastructure.util;
 
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONObject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.Structure;
 import xyz.foolcat.eve.evehelper.domain.service.system.StructureService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotUtil;
-import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.WebSocket;
+import xyz.foolcat.eve.evehelper.infrastructure.external.qqbot.QQBotIntegrationProperties;
+import xyz.foolcat.eve.evehelper.infrastructure.external.qqbot.QQBotMessenger;
 
 import java.text.ParseException;
 import java.time.OffsetDateTime;
@@ -34,7 +33,9 @@ public class StructTask {
 
     private final StructureService structureService;
 
-    private final WebSocket webSocket;
+    private final QQBotMessenger qqBotMessenger;
+
+    private final QQBotIntegrationProperties qqBotProperties;
 
     /**
      * 势力铁壁typeId
@@ -87,7 +88,6 @@ public class StructTask {
         if (StrUtil.isEmpty(message)) {
             message = "燃料充足，建筑击毁报告不可用！";
         }
-        JSONObject group = BotUtil.generateMessage(null, 41772910L, BotUtil.MESSAGE_TYPE_GROUP, message,false);
-        webSocket.sendOneMessage("napcat", group.toJSONString(4));
+        qqBotMessenger.sendGroupMessage(qqBotProperties.getNotificationGroupOpenid(), message);
     }
 }

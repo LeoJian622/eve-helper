@@ -21,6 +21,5 @@ interfaces/
 
 - 处理HTTP请求和响应
 - 实现RESTful API
-- 处理WebSocket连接
 - 提供用户界面
-- 数据验证和转换 
+- 数据验证和转换

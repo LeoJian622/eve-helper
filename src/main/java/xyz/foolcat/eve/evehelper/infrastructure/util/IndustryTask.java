@@ -1,16 +1,14 @@
 package xyz.foolcat.eve.evehelper.infrastructure.util;
 
 import cn.hutool.core.util.StrUtil;
-import cn.hutool.json.JSONObject;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.IndustryJob;
 import xyz.foolcat.eve.evehelper.domain.service.system.IndustryJobService;
-import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.BotUtil;
-import xyz.foolcat.eve.evehelper.infrastructure.external.onebot.WebSocket;
+import xyz.foolcat.eve.evehelper.infrastructure.external.qqbot.QQBotIntegrationProperties;
+import xyz.foolcat.eve.evehelper.infrastructure.external.qqbot.QQBotMessenger;
 
 import java.text.ParseException;
 import java.time.OffsetDateTime;
@@ -34,7 +32,9 @@ public class IndustryTask {
 
     private final IndustryJobService industryJobService;
 
-    private final WebSocket webSocket;
+    private final QQBotMessenger qqBotMessenger;
+
+    private final QQBotIntegrationProperties qqBotProperties;
 
     @Scheduled(fixedDelay = 5 * 60 * 1000)
     public void updateIndustryJobs() {
@@ -51,22 +51,22 @@ public class IndustryTask {
     @Scheduled(cron = "0 0 8-18,20-23 ? * 0,6 ")
     public void noticeJobComplete0() {
         List<IndustryJob> industryJobs = industryJobService.selectByCorpIdAndStatus(98061457, IndustryJob.STATUS_DELIVERED);
-        JSONObject group = queryCompeleteAfterHour(industryJobs, 0);
-        if (!group.isEmpty()) {
-            webSocket.sendOneMessage("napcat", group.toJSONString(4));
-        }
+        qqBotMessenger.sendGroupMessage(
+                qqBotProperties.getNotificationGroupOpenid(),
+                queryCompeleteAfterHour(industryJobs, 0)
+        );
     }
 
     @Scheduled(cron = "0 0 19 * * ? ")
     public void noticeJobComplete24() {
         List<IndustryJob> industryJobs = industryJobService.selectByCorpIdAndStatus(98061457, IndustryJob.STATUS_DELIVERED);
-        JSONObject group = queryCompeleteAfterHour(industryJobs, 24);
-        if (!group.isEmpty()) {
-            webSocket.sendOneMessage("napcat", group.toJSONString(4));
-        }
+        qqBotMessenger.sendGroupMessage(
+                qqBotProperties.getNotificationGroupOpenid(),
+                queryCompeleteAfterHour(industryJobs, 24)
+        );
     }
 
-    private static @NotNull JSONObject queryCompeleteAfterHour(List<IndustryJob> industryJobs, Integer hour) {
+    private static String queryCompeleteAfterHour(List<IndustryJob> industryJobs, Integer hour) {
         String message = industryJobs.stream()
                 .filter(industryJob ->
                         industryJob.getStatus().equals(IndustryJob.STATUS_ACTIVE) && industryJob.getEndDate().isBefore(OffsetDateTime.now(ZoneId.of("+0")).plusHours(hour))
@@ -74,10 +74,9 @@ public class IndustryTask {
                 .map(industryJob -> industryJob.getProductType() + " * " + industryJob.getRuns() + ",完成时间预计为：" + industryJob.getEndDate().atZoneSameInstant(ZoneOffset.ofHours(8)).format(DateTimeFormatter.ofPattern("MM-dd HH:mm")))
                 .collect(Collectors.joining("\n"));
         if (StrUtil.isEmpty(message)){
-            return new JSONObject();
+            return null;
         }
-        message = "已完成或预计24小时内完成：\n" + message;
-        return BotUtil.generateMessage(null, 41772910L, BotUtil.MESSAGE_TYPE_GROUP, message,false);
+        return "已完成或预计24小时内完成：\n" + message;
     }
 
 }

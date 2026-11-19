@@ -6,11 +6,15 @@ EVE Online 玩家的市场与资产分析工具。读取角色/军团的订单�
 - **技术栈**: Java 17 · Spring Boot 3.5.14 · MyBatis Plus · MySQL · Redis
 - **架构**: 领域驱动设计（DDD 五层），依赖规则 `Interfaces → Application → Domain ← Infrastructure`
 - **数据来源**: EVE Online ESI (EVE Swagger Interface)，OAuth2 Authorization Code + PKCE
+- **机器人**: QQ Bot API v2，支持群聊/C2C 指令与定时群通知
 - **服务器**: 支持宁静（Tranquility）与晨曦（Serenity）
 
 ### 快速开始
 
 前置依赖：JDK 17、Maven、MySQL（需 `eve` 与 `eve_helper` 两个库）、Redis。
+
+项目依赖 `cc.starcube.qqbot:qqbot-spring-boot-starter:0.1.0-SNAPSHOT`。首次构建前需先在
+QQBot SDK 项目执行 `mvn install`，后续发布正式版本时将依赖版本替换为发布版本。
 
 ```bash
 # 1. 配置环境变量（参考模板，切勿提交实际配置）
