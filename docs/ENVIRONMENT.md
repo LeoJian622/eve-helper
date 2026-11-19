@@ -155,14 +155,30 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 - **用途**: 用于保护JWT签名私钥
 - **安全提示**: 同 KEYSTORE_PASSWORD
 
-### OneBot 配置
+### QQ Bot 配置
 
-#### ONEBOT_WEBSOCKET_SECRET
-- **描述**: OneBot WebSocket 接入鉴权密钥
-- **类型**: String
-- **默认值**: 空(未设置则不校验)
-- **示例**: `your_websocket_secret`
-- **必需**: 否(生产环境建议设置)
+#### QQBOT_APP_ID / QQBOT_CLIENT_SECRET
+- **描述**: QQ 开放平台机器人应用凭据
+- **默认值**: 空
+- **必需**: 启用机器人时必须
+- **安全提示**: 只通过环境变量或密钥管理服务注入，禁止写入源码和日志
+
+#### QQBOT_GATEWAY_ENABLED
+- **描述**: 是否连接 QQ Bot Gateway 接收事件
+- **默认值**: `false`
+- **生产值**: `true`
+
+#### QQBOT_GATEWAY_INTENTS
+- **描述**: Gateway 订阅事件位图；群聊和 C2C 消息使用 `GROUP_AND_C2C_EVENT`
+- **默认值**: `33554432`
+
+#### QQBOT_ADMIN_OPENIDS
+- **描述**: 可执行 `.admAddType`、`.struct` 等管理命令的用户 OpenID
+- **格式**: 多个 OpenID 使用英文逗号分隔
+
+#### QQBOT_NOTIFICATION_GROUP_OPENID / QQBOT_MINING_GROUP_OPENID
+- **描述**: 建筑/工业通知群与卫星矿通知群的群 OpenID
+- **默认值**: 空；为空时定时通知安全跳过
 
 ## 📚 配置示例
 
@@ -187,6 +203,15 @@ REDIS_PASSWORD=dev_redis_pass
 # JWT密钥库配置
 KEYSTORE_PASSWORD=dev_keystore_pass
 KEY_PASSWORD=dev_key_pass
+
+# QQ Bot 配置
+QQBOT_APP_ID=your_app_id
+QQBOT_CLIENT_SECRET=your_client_secret
+QQBOT_GATEWAY_ENABLED=true
+QQBOT_GATEWAY_INTENTS=33554432
+QQBOT_ADMIN_OPENIDS=admin_openid_1,admin_openid_2
+QQBOT_NOTIFICATION_GROUP_OPENID=notification_group_openid
+QQBOT_MINING_GROUP_OPENID=mining_group_openid
 ```
 
 ### 测试环境配置

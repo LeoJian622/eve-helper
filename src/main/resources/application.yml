@@ -147,10 +147,20 @@ eve:
         # 角色 ESI accessToken 查询端点开关。该端点交出可直接冒用的 bearer 凭证,
         # 仅供内部调试/运维排查,生产必须保持 false;需要排查时临时开启并及时关闭。
         enabled: ${ACCESS_TOKEN_ENDPOINT_ENABLED:false}
+    qqbot:
+      admin-openids: ${QQBOT_ADMIN_OPENIDS:}
+      notification-group-openid: ${QQBOT_NOTIFICATION_GROUP_OPENID:}
+      mining-group-openid: ${QQBOT_MINING_GROUP_OPENID:}
 
-onebot:
-  websocket:
-    secret: ${ONEBOT_WEBSOCKET_SECRET:}
+qqbot:
+  app-id: ${QQBOT_APP_ID:}
+  client-secret: ${QQBOT_CLIENT_SECRET:}
+  gateway:
+    enabled: ${QQBOT_GATEWAY_ENABLED:false}
+    intents: ${QQBOT_GATEWAY_INTENTS:33554432}
+    shard-id: 0
+    shard-count: 1
+
 # springdoc-openapi项目配置
 springdoc:
   swagger-ui:

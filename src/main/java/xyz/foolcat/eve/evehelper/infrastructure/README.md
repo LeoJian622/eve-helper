@@ -21,7 +21,7 @@ infrastructure/
 │   └── InitPermissionRolesCache.java  # 权限角色缓存初始化
 ├── external/        # 外部服务集成
 │   ├── esi/         # EVE ESI API(OAuth2 PKCE,30+ API 类)
-│   └── onebot/      # OneBot 协议集成
+│   └── qqbot/       # QQ Bot API v2 集成
 ├── persistence/     # 持久化实现
 │   ├── entity/      # PO(数据库实体)
 │   ├── mapper/      # MyBatis 映射器
@@ -43,7 +43,7 @@ infrastructure/
 ## 职责
 
 - 实现数据持久化(PO + MyBatis Plus + 仓储实现)
-- 集成外部服务(ESI API、OneBot)
+- 集成外部服务(ESI API、QQ Bot API v2)
 - 实现领域层出站端口(EsiGateway、CacheGateway)
 - 提供技术基础设施配置(数据源、安全、缓存、异步、定时任务)
 

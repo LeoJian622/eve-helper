@@ -105,7 +105,7 @@ eve-helper/
 │   │   │   │   ├── config/           # 多数据源、Security、MyBatis 配置
 │   │   │   │   ├── external/         # 外部服务集成
 │   │   │   │   │   ├── esi/          # EVE ESI API
-│   │   │   │   │   └── onebot/       # OneBot协议
+│   │   │   │   │   └── qqbot/        # QQ Bot API v2
 │   │   │   │   ├── persistence/      # 数据持久化 (PO + mapper + 仓储实现)
 │   │   │   │   └── util/             # 定时任务
 │   │   │   ├── interfaces/           # 接口层 - 对外接口
