@@ -48,10 +48,10 @@
 
 - **Gateway 接入**：通过 `qqbot-spring-boot-starter` 建立官方 WebSocket Gateway 连接，
   `EveQQBotEventHandler` 接收群 @ 消息，`QQBotMessageDispatcher` 完成指令分发：
-  - `.jita` — Jita 市场价格查询
-  - `.tax` — 税率查询
-  - `.struct` — 建筑燃料查询（仅限 `QQBOT_ADMIN_OPENIDS` 中的管理员）
-  - `.admAddType` — 管理员添加物品类型（仅限 `QQBOT_ADMIN_OPENIDS` 中的管理员）
+  - `/jita` — Jita 市场价格查询
+  - `/tax` — 税率查询
+  - `/struct` — 建筑燃料查询（仅限 `QQBOT_ADMIN_OPENIDS` 中的管理员）
+  - `/admAddType` — 管理员添加物品类型（仅限 `QQBOT_ADMIN_OPENIDS` 中的管理员）
 - **定时任务通知**（4 个 Task）：
   - `StructTask`：每小时更新建筑信息；每日 18/22 点向 QQ 群 OpenID 通知 **24 小时内燃料耗尽**的建筑
   - `IndustryTask`：每 5 分钟检查工业项目；分时段向 QQ 群 OpenID 推送**项目完成**通知

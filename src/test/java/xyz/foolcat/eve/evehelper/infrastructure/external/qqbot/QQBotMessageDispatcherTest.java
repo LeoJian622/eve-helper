@@ -17,16 +17,18 @@ import static org.mockito.Mockito.verify;
 class QQBotMessageDispatcherTest {
 
     private InvTypesService invTypesService;
+    private WalletJournalService walletJournalService;
     private QQBotIntegrationProperties properties;
     private QQBotMessageDispatcher dispatcher;
 
     @BeforeEach
     void setUp() {
         invTypesService = mock(InvTypesService.class);
+        walletJournalService = mock(WalletJournalService.class);
         properties = new QQBotIntegrationProperties();
         dispatcher = new QQBotMessageDispatcher(
                 invTypesService,
-                mock(WalletJournalService.class),
+                walletJournalService,
                 mock(StructureService.class),
                 mock(AuthorizeUtil.class),
                 properties
@@ -35,7 +37,7 @@ class QQBotMessageDispatcherTest {
 
     @Test
     void rejectsAdminCommandForUnknownOpenid() {
-        QQBotMessageEvent event = groupEvent("unknown-openid", ".admAddType 34");
+        QQBotMessageEvent event = groupEvent("unknown-openid", "/admAddType 34");
 
         assertThat(dispatcher.dispatch(event)).contains("没有权限");
         verify(invTypesService, never()).updateTypeByTypeId(34);
@@ -44,10 +46,32 @@ class QQBotMessageDispatcherTest {
     @Test
     void allowsAdminCommandForConfiguredOpenid() {
         properties.setAdminOpenids(Set.of("admin-openid"));
-        QQBotMessageEvent event = groupEvent("admin-openid", ".admAddType 34");
+        QQBotMessageEvent event = groupEvent("admin-openid", "/admAddType 34");
 
         assertThat(dispatcher.dispatch(event)).contains("添加ID：34失败");
         verify(invTypesService).updateTypeByTypeId(34);
+    }
+
+    @Test
+    void acceptsQqBotCommandWithoutArguments() {
+        QQBotMessageEvent event = groupEvent("unknown-openid", "/struct");
+
+        assertThat(dispatcher.dispatch(event)).contains("垫下：母鸡呀");
+    }
+
+    @Test
+    void returnsQqBotUsageWhenTaxArgumentsAreMissing() {
+        QQBotMessageEvent event = groupEvent("member-openid", "/tax");
+
+        assertThat(dispatcher.dispatch(event))
+                .contains("参数为：/tax 军团税 现有税 年月(202411)");
+    }
+
+    @Test
+    void ignoresLegacyDotCommands() {
+        QQBotMessageEvent event = groupEvent("member-openid", ".tax a b c");
+
+        assertThat(dispatcher.dispatch(event)).isEmpty();
     }
 
     @Test

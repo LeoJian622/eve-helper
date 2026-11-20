@@ -26,7 +26,7 @@ class QQBotMessengerTest {
     @Test
     void groupReplyIncludesIncomingMessageId() {
         QQBotMessageEvent event = new QQBotMessageEvent(
-                "incoming-group-message", "member-openid", "group-openid", ".tax a b c",
+                "incoming-group-message", "member-openid", "group-openid", "/tax a b c",
                 QQBotMessageEvent.Scene.GROUP
         );
 

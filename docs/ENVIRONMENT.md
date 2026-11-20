@@ -173,7 +173,7 @@ mvn spring-boot:run -Dspring-boot.run.profiles=dev
 - **默认值**: `33554432`
 
 #### QQBOT_ADMIN_OPENIDS
-- **描述**: 可执行 `.admAddType`、`.struct` 等管理命令的用户 OpenID
+- **描述**: 可执行 `/admAddType`、`/struct` 等 QQBot 管理指令的用户 OpenID
 - **格式**: 多个 OpenID 使用英文逗号分隔
 
 #### QQBOT_NOTIFICATION_GROUP_OPENID / QQBOT_MINING_GROUP_OPENID

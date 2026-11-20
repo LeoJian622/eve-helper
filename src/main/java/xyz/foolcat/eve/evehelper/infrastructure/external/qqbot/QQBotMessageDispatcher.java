@@ -34,7 +34,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class QQBotMessageDispatcher {
 
-    private static final Pattern COMMAND_PATTERN = Pattern.compile("(^\\.[a-zA-Z]+)\\s+(.*)");
+    private static final Pattern COMMAND_PATTERN =
+            Pattern.compile("^\\s*/([a-zA-Z][a-zA-Z0-9]*)(?:\\s+(.*?))?\\s*$");
 
     private final InvTypesService invTypesService;
     private final WalletJournalService walletJournalService;
@@ -50,10 +51,10 @@ public class QQBotMessageDispatcher {
         Matcher commandMatcher = COMMAND_PATTERN.matcher(event.content());
         if (commandMatcher.matches()) {
             return Optional.ofNullable(switch (commandMatcher.group(1)) {
-                case ".jita" -> queryJitaPrice(commandMatcher);
-                case ".admAddType" -> addInvTypes(event, commandMatcher);
-                case ".tax" -> queryTax(commandMatcher);
-                case ".struct" -> queryStructure(event);
+                case "jita" -> queryJitaPrice(commandMatcher.group(2));
+                case "admAddType" -> addInvTypes(event, commandMatcher.group(2));
+                case "tax" -> queryTax(commandMatcher.group(2));
+                case "struct" -> queryStructure(event);
                 default -> null;
             });
         }
@@ -87,19 +88,34 @@ public class QQBotMessageDispatcher {
         return StrUtil.isEmpty(message) ? "燃料充足，建筑击毁报告不可用！" : message;
     }
 
-    private String addInvTypes(QQBotMessageEvent event, Matcher commandMatcher) {
+    private String addInvTypes(QQBotMessageEvent event, String argument) {
         if (!properties.isAdmin(event.authorOpenid())) {
             return "没有权限";
         }
-        InvTypes invTypes = invTypesService.updateTypeByTypeId(Integer.parseInt(commandMatcher.group(2)));
+        if (StrUtil.isBlank(argument)) {
+            return "参数为：/admAddType 物品ID";
+        }
+        int typeId;
+        try {
+            typeId = Integer.parseInt(argument.trim());
+        } catch (NumberFormatException e) {
+            return "物品ID必须是数字";
+        }
+        InvTypes invTypes = invTypesService.updateTypeByTypeId(typeId);
         if (invTypes != null) {
             return "添加物品：" + invTypes.getName() + "成功";
         }
-        return "添加ID：" + commandMatcher.group(2) + "失败";
+        return "添加ID：" + typeId + "失败";
     }
 
-    private String queryJitaPrice(Matcher commandMatcher) {
-        InvTypes invTypes = invTypesService.selectOneByName(commandMatcher.group(2));
+    private String queryJitaPrice(String itemName) {
+        if (StrUtil.isBlank(itemName)) {
+            return "参数为：/jita 物品名称";
+        }
+        InvTypes invTypes = invTypesService.selectOneByName(itemName.trim());
+        if (invTypes == null) {
+            return "未找到物品：" + itemName.trim();
+        }
         WebClient request = WebClient.builder().build();
         JSONObject price = request.get()
                 .uri("https://www.ceve-market.org/api/market/region/{reg}/type/{id}.json", 10000002, invTypes.getTypeId())
@@ -119,10 +135,13 @@ public class QQBotMessageDispatcher {
                         buyMax.add(sellMin).divide(BigDecimal.valueOf(2), RoundingMode.HALF_UP));
     }
 
-    private String queryTax(Matcher commandMatcher) {
-        String[] arg = commandMatcher.group(2).split(" ");
+    private String queryTax(String argument) {
+        if (StrUtil.isBlank(argument)) {
+            return "参数为：/tax 军团税 现有税 年月(202411)";
+        }
+        String[] arg = argument.trim().split("\\s+");
         if (arg.length != 3) {
-            return "参数为：军团税 现有税 年月(202411)";
+            return "参数为：/tax 军团税 现有税 年月(202411)";
         }
         try {
             List<TaxReturnResult> taxReturnResults = walletJournalService.countBoundsReturn(arg[0], arg[1], arg[2]);
