@@ -54,9 +54,9 @@
             <artifactId>reactor-netty-http</artifactId>
         </dependency>
         <dependency>
-            <groupId>cc.starcube.qqbot</groupId>
+            <groupId>io.github.leojian622</groupId>
             <artifactId>qqbot-spring-boot-starter</artifactId>
-            <version>0.1.0-SNAPSHOT</version>
+            <version>0.1.2</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>

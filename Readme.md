@@ -13,8 +13,8 @@ EVE Online 玩家的市场与资产分析工具。读取角色/军团的订单�
 
 前置依赖：JDK 17、Maven、MySQL（需 `eve` 与 `eve_helper` 两个库）、Redis。
 
-项目依赖 `cc.starcube.qqbot:qqbot-spring-boot-starter:0.1.0-SNAPSHOT`。首次构建前需先在
-QQBot SDK 项目执行 `mvn install`，后续发布正式版本时将依赖版本替换为发布版本。
+项目依赖 `io.github.leojian622:qqbot-spring-boot-starter:0.1.2`。首次构建时会从 Maven Central 下载。
+无需在本地先安装 SDK。
 
 ```bash
 # 1. 配置环境变量（参考模板，切勿提交实际配置）

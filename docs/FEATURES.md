@@ -1,7 +1,7 @@
 # EVE Helper 功能清单
 
 > 全项目功能盘点，按业务域整理。
-> 依据：14 个 REST 控制器、33 个 ESI API 集成类、4 个定时任务、OneBot 分发器及 `specs/` 特性档案。
+> 依据：14 个 REST 控制器、33 个 ESI API 集成类、4 个定时任务、QQ Bot API v2 事件分发器及 `specs/` 特性档案。
 > 生成日期：2026-11-11（基于 `springboot3.0` 分支，021 合并后）。
 
 ## 1. 账户与安全
@@ -44,17 +44,18 @@
 - **市场分组树**：`GET /market/group/{parent}`（基于 eve 静态数据库）
 - **市场订单**：`MarketOrderService` + 专用异步线程池同步订单数据，支撑 Jita 价格查询
 
-## 7. QQ 机器人（OneBot）与主动通知
+## 7. QQ 机器人（QQ Bot API v2）与主动通知
 
-- **WebSocket 接入**：`/websocket/onebot/**`，`BotDispatcher` 指令分发：
+- **Gateway 接入**：通过 `qqbot-spring-boot-starter` 建立官方 WebSocket Gateway 连接，
+  `EveQQBotEventHandler` 接收群 @ 消息，`QQBotMessageDispatcher` 完成指令分发：
   - `.jita` — Jita 市场价格查询
   - `.tax` — 税率查询
-  - `.struct` — 建筑查询（限定授权 QQ 用户）
-  - `.admAddType` — 管理员添加物品类型
+  - `.struct` — 建筑燃料查询（仅限 `QQBOT_ADMIN_OPENIDS` 中的管理员）
+  - `.admAddType` — 管理员添加物品类型（仅限 `QQBOT_ADMIN_OPENIDS` 中的管理员）
 - **定时任务通知**（4 个 Task）：
-  - `StructTask`：每小时更新建筑信息；每日 18/22 点通知 **24 小时内燃料耗尽**的建筑
-  - `IndustryTask`：每 5 分钟检查工业项目；分时段推送**项目完成**通知
-  - `MiningTask`：每日/每周一 19 点通知**卫星矿可开采时间**
+  - `StructTask`：每小时更新建筑信息；每日 18/22 点向 QQ 群 OpenID 通知 **24 小时内燃料耗尽**的建筑
+  - `IndustryTask`：每 5 分钟检查工业项目；分时段向 QQ 群 OpenID 推送**项目完成**通知
+  - `MiningTask`：每日/每周一 19 点向 QQ 群 OpenID 通知**卫星矿可开采时间**
   - `WalletTask`：每 15 天更新钱包记录
 
 ## 8. 平台级能力（横切）
