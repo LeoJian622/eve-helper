@@ -204,8 +204,10 @@ public class UserApplicationService {
             try {
                 return Integer.parseInt(attemptsObj.toString());
             } catch (NumberFormatException e) {
-                // MIN-3: 脱敏告警（镜像 LoginRateLimiterService:84-86）
-                log.warn("[SECURITY_ALERT] pwd attempt 计数解析失败, fail-closed→0: key={}", key);
+                // MIN-3: 脱敏告警（镜像 LoginRateLimiterService:84-86）。
+                // 术语更正：解析失败返回 0 是 fail-open（按 0 次尝试放行），非 fail-closed；
+                // 镜像 LoginRateLimiterService 现状，行为零变更。
+                log.warn("[SECURITY_ALERT] pwd attempt 计数解析失败, fail-open→0(按 0 次尝试放行): key={}", key);
                 return 0;
             }
         }

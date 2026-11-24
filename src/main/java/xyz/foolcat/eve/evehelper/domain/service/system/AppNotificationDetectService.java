@@ -21,6 +21,7 @@ import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.AppNotificationEventType;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -31,7 +32,8 @@ import java.util.stream.Collectors;
  * <p>
  * 负责检测建筑燃料不足、工业完成、技能队列空等事件，并通过权限扇出推送给有权用户。
  * <p>
- * 本类仅实现 detectFuelLow() 及其共用私有 helper（T032 将追加工业/技能/清理方法）。
+ * 已实现 detectFuelLow()、detectIndustryComplete()、detectSkillQueueEmpty()、
+ * cleanupExpired() 四方法及共用私有 helper（MIN-1：类级描述与实现对齐）。
  *
  * @author Leojian
  * date 2026-11-13
@@ -156,7 +158,8 @@ public class AppNotificationDetectService {
         if (fuelExpires == null) {
             content = name + " 燃料已耗尽";
         } else {
-            long hours = ChronoUnit.HOURS.between(OffsetDateTime.now(), fuelExpires);
+            // MIN-10:显式 UTC(对齐 QQ IndustryTask:72);比较为 instant 级,与默认区 now() 语义等价
+            long hours = ChronoUnit.HOURS.between(OffsetDateTime.now(ZoneOffset.UTC), fuelExpires);
             content = name + " 将在" + hours + "小时后燃料耗尽";
         }
         return truncate(content, 512);
@@ -206,7 +209,8 @@ public class AppNotificationDetectService {
         }
 
         try {
-            OffsetDateTime now = OffsetDateTime.now();
+            // MIN-10:显式 UTC(对齐 QQ IndustryTask:72);谓词 isAfter/isBefore 为 instant 级,语义不变
+            OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
             List<EveAccount> accounts = eveAccountRepository.listAll();
             if (accounts == null) {
                 accounts = List.of();

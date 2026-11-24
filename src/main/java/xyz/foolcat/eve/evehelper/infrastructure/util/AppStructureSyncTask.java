@@ -30,7 +30,7 @@ public class AppStructureSyncTask {
         try {
             appStructureSyncService.syncAllCorps();
         } catch (Exception e) {
-            log.error("【建筑】APP 定时同步失败:{}", e.getMessage());
+            log.error("【建筑】APP 定时同步失败", e);
         }
     }
 }

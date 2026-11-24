@@ -258,11 +258,14 @@ public class TokenService {
         // delete 返回 Boolean(可为 null)。此处必须用 Boolean.TRUE.equals ——
         // 拆箱进 boolean 会在 Redis 异常时 NPE,而该 NPE 发生在拉黑之前,
         // 将导致整个登出 500 且 access token 也没拉黑
+        // MIN-2:删除前读取 userId(refresh_token:{uuid} -> userId),供撤销成功后剪枝 refresh_user 反向索引
+        Object userIdObj = cacheGateway.get(REFRESH_TOKEN_PREFIX + refreshTokenObj);
         Boolean revoked = cacheGateway.delete(REFRESH_TOKEN_PREFIX + refreshTokenObj);
         cacheGateway.delete(REFRESH_OWNER_PREFIX + refreshTokenObj);
 
         if (Boolean.TRUE.equals(revoked)) {
             cacheGateway.delete(indexKey);
+            pruneUserSessionIndex(userIdObj, sessionId);
             log.info("登出撤销 Refresh Token: sid={}, refreshToken={}",
                     SensitiveDataMasker.maskToken(sessionId),
                     SensitiveDataMasker.maskToken(refreshTokenObj.toString()));
@@ -290,6 +293,26 @@ public class TokenService {
         log.warn("登出与刷新并发:索引已被轮换重写,继续撤销轮换后的 token: sid={}",
                 SensitiveDataMasker.maskToken(sessionId));
         return revokeRefreshTokenBySession(sessionId);
+    }
+
+    /**
+     * MIN-2:撤销成功后剪枝用户→会话反向索引({@code refresh_user:<userId>})。
+     *
+     * <p>该集合生成时只 sAdd+expire,若撤销不剪枝,已死 sid 滞留至 TTL(最长 7 天),
+     * 改密全会话失效(T006/T041)会枚举到死会话做无效撤销。登出与改密两条撤销路径
+     * 均经 {@link #revokeRefreshTokenBySession} 收敛到本剪枝。</p>
+     *
+     * <p>userId 读不到(token 恰在读取前过期/被并发抢占)时跳过剪枝,交由集合 TTL 兜底,
+     * 不阻断登出主流程(与 revokeRefreshTokenBySession 的可用性优先一致)。</p>
+     *
+     * @param userIdObj refresh_token 键存储的用户 ID(可能为 null)
+     * @param sessionId 已撤销的会话标识
+     */
+    private void pruneUserSessionIndex(Object userIdObj, String sessionId) {
+        if (userIdObj == null) {
+            return;
+        }
+        cacheGateway.sRemove(REFRESH_USER_PREFIX + userIdObj, sessionId);
     }
 
     /**

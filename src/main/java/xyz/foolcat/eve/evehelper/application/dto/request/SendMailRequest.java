@@ -34,12 +34,14 @@ public record SendMailRequest(
      * 收件人条目。
      *
      * @param recipientId   收件人 ID(@NotNull)
-     * @param recipientType 收件人类型枚举(character/corporation/alliance/mailing_list)
+     * @param recipientType 收件人类型枚举(character/corporation/alliance/mailing_list);
+     *                      MIN-4:@Pattern 对 null 放行,须 @NotNull 兜底,否则 null 穿透到 ESI 才 400
      */
     public record Recipient(
             @NotNull
             Integer recipientId,
 
+            @NotNull
             @Pattern(regexp = "character|corporation|alliance|mailing_list")
             String recipientType
     ) {

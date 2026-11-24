@@ -31,7 +31,7 @@ public class AppNotificationTask {
         try {
             detectService.detectFuelLow();
         } catch (Exception e) {
-            log.error("【通知】燃料检测失败：{}", e.getMessage());
+            log.error("【通知】燃料检测失败", e);
         }
     }
 
@@ -45,7 +45,7 @@ public class AppNotificationTask {
         try {
             detectService.detectIndustryComplete();
         } catch (Exception e) {
-            log.error("【通知】工业检测失败：{}", e.getMessage());
+            log.error("【通知】工业检测失败", e);
         }
     }
 
@@ -58,7 +58,7 @@ public class AppNotificationTask {
         try {
             detectService.detectSkillQueueEmpty();
         } catch (Exception e) {
-            log.error("【通知】技能队列检测失败：{}", e.getMessage());
+            log.error("【通知】技能队列检测失败", e);
         }
     }
 
@@ -71,7 +71,7 @@ public class AppNotificationTask {
         try {
             detectService.cleanupExpired();
         } catch (Exception e) {
-            log.error("【通知】过期清理失败：{}", e.getMessage());
+            log.error("【通知】过期清理失败", e);
         }
     }
 }

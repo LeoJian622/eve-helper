@@ -25,6 +25,7 @@ import java.util.stream.IntStream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -138,6 +139,29 @@ class MailControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonBody))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("send 校验拒绝 null recipientType(MIN-4:@Pattern 对 null 放行,须 @NotNull 兜底)")
+    void send_validation_rejectsNullRecipientType() throws Exception {
+        // Arrange — recipientType 缺省(null):@Pattern 不校验 null,
+        // 若无 @NotNull 会穿透到 ESI 才 400(浪费外部调用且错误语义滞后)
+        String jsonBody = """
+                {
+                  "recipients": [{"recipientId": 20001}],
+                  "subject": "Valid Subject",
+                  "body": "Valid body"
+                }
+                """;
+
+        // Act & Assert — @NotNull 触发校验失败 → 400 + PARAM_ERROR,不触达应用服务/ESI
+        mockMvc.perform(post("/mail/{characterId}/send", CHARACTER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("SYS00400"));
+
+        verify(mailService, never()).send(any(), any());
     }
 
     // ---------------------------------------------------------------
