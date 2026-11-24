@@ -322,8 +322,32 @@ CREATE TABLE IF NOT EXISTS app_notification (
   gmt_modified  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
   PRIMARY KEY (id),
   KEY idx_user_created (user_id, gmt_create),
-  KEY idx_dedup (dedup_key, gmt_create)
+  KEY idx_dedup (dedup_key, gmt_create),
+  KEY idx_gmt_create (gmt_create)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='APP通知表(022)';
+
+-- ---------------------------------------------------------------------
+-- 8a-2. app_notification 补 idx_gmt_create (P6 MIN-7)
+--   deleteExpired 按 gmt_create < cutoff 批量清理需要独立索引;
+--   复合索引最左前缀不含 gmt_create,无法服务该谓词。
+--   幂等: 用 information_schema 判是否存在,不存在才 CREATE
+--   (覆盖测试库等已按旧版建表的环境;与 8a 新建表定义保持同步)
+-- ---------------------------------------------------------------------
+SET @idx_exists := (
+  SELECT COUNT(*)
+  FROM information_schema.STATISTICS
+  WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'app_notification'
+    AND INDEX_NAME = 'idx_gmt_create'
+);
+
+SET @ddl := IF(@idx_exists = 0,
+  'CREATE INDEX idx_gmt_create ON app_notification (gmt_create)',
+  'SELECT ''idx_gmt_create already exists, skip'' AS info');
+
+PREPARE stmt FROM @ddl;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- ---------------------------------------------------------------------
 -- 8b. 022 特性: 伴侣 APP 端点 RBAC 权限 (18 端点)

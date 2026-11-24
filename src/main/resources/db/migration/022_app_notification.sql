@@ -14,5 +14,9 @@ CREATE TABLE IF NOT EXISTS app_notification (
   gmt_modified  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
   PRIMARY KEY (id),
   KEY idx_user_created (user_id, gmt_create),
-  KEY idx_dedup (dedup_key, gmt_create)
+  KEY idx_dedup (dedup_key, gmt_create),
+  KEY idx_gmt_create (gmt_create)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='APP通知表(022)';
+-- idx_gmt_create: deleteExpired 按 gmt_create < cutoff 批量清理的独立索引(P6 MIN-7)。
+-- 复合索引 idx_user_created/idx_dedup 最左前缀不含 gmt_create,无法服务该谓词。
+-- 已建表环境(如测试库)须另执行 deploy_all_pending.sql 8a-2 幂等补索引段。
