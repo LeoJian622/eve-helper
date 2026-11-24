@@ -206,16 +206,17 @@ class EsiApiServiceCharacterPanelTest {
     // ── 异常转换 ──
 
     @Test
-    @DisplayName("SDK EsiException → 转换为 EsiAccessException")
+    @DisplayName("SDK 异步 EsiException → 转换为 EsiAccessException(IMP-1)")
     void sdkError_convertedToAccessException() {
-        // Arrange: SDK 抛出 EsiException(403 权限不足)
+        // Arrange: SDK 真实错误路径是异步 Mono.error(EsiStatusUtil.dataError()),
+        // 非同步 throw —— 异步 stub 钉住生产可达分支(IMP-1)
         when(esiResponseCache.cacheKey(anyString(), any(), anyString(), anyInt()))
                 .thenReturn("dummy-key");
         when(esiResponseCache.getList(anyString(), any())).thenReturn(null);
         when(esiResponseCache.tryClaim(anyString(), any())).thenReturn(true);
 
         when(characterApi.queryCharacterResponse(eq(CHARACTER_ID), eq(DATASOURCE)))
-                .thenThrow(new EsiException(ResultCode.ESI_AUTH_PERMISSION_LOW));
+                .thenReturn(Mono.error(new EsiException(ResultCode.ESI_AUTH_PERMISSION_LOW)));
 
         // Act & Assert
         assertThatThrownBy(() -> esiApiService.queryCharacterPublicInfo(CHARACTER_ID))

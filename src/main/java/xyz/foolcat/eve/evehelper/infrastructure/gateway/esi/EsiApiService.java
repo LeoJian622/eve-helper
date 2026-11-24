@@ -1563,10 +1563,16 @@ public class EsiApiService implements EsiGateway {
 
     /**
      * 包裹 SDK 调用(Mono 返回类型),捕获 EsiException 并转换为 EsiAccessException。
+     * <p>
+     * IMP-1:SDK 真实错误是异步 {@code Mono.error(EsiException)}({@code EsiStatusUtil.dataError()} /
+     * {@code handleResponseWithHeaders}),仅同步 catch 无法覆盖,流内错误经 {@code block()}
+     * 原样泄漏 infra 异常。故与列表路径 {@code doListWithClaim} 一致,补 {@code onErrorMap}。
+     * 同步 catch 仅处理 {@code sdkCall.get()} 装配期抛出的异常,与流内 onErrorMap 互斥,不会双重包装。
      */
     private <T> Mono<T> callSdkMono(Supplier<Mono<T>> sdkCall) {
         try {
-            return sdkCall.get();
+            return sdkCall.get()
+                    .onErrorMap(EsiException.class, this::convertToAccessException);
         } catch (EsiException e) {
             throw convertToAccessException(e);
         }

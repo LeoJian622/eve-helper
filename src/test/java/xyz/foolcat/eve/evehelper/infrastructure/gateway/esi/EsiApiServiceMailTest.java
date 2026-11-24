@@ -348,14 +348,15 @@ class EsiApiServiceMailTest {
     }
 
     @Test
-    @DisplayName("send SDK EsiException(permissionLow) → 转换为 EsiAccessException")
+    @DisplayName("send SDK 异步 EsiException(permissionLow) → 转换为 EsiAccessException(IMP-1)")
     void send_sdkError_convertedToAccessException() {
-        // Arrange: SDK 抛出 EsiException(403 权限不足)
+        // Arrange: SDK 真实错误路径是异步 Mono.error(EsiStatusUtil.dataError()),
+        // 非同步 throw —— 异步 stub 钉住生产可达分支(IMP-1)
         SendMailCommand command = new SendMailCommand(
                 List.of(new MailRecipient(12345, "character")),
                 "Subject", "Body");
         when(mailApi.addCharacterMail(eq(CHARACTER_ID), eq(DATASOURCE), any(NewMail.class), eq(ACCESS_TOKEN)))
-                .thenThrow(new EsiException(ResultCode.ESI_AUTH_PERMISSION_LOW));
+                .thenReturn(Mono.error(new EsiException(ResultCode.ESI_AUTH_PERMISSION_LOW)));
 
         // Act & Assert
         assertThatThrownBy(() -> esiApiService.sendCharacterMail(CHARACTER_ID, command, ACCESS_TOKEN))

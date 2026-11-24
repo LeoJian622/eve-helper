@@ -231,9 +231,10 @@ class EsiApiServiceMemberTrackingTest {
             when(esiResponseCache.getList(eq(expectedKey), any())).thenReturn(null);
             when(esiResponseCache.tryClaim(eq(expectedKey), any())).thenReturn(true);
 
-            // SDK 抛 EsiException(ESI_AUTH_PERMISSION_LOW),callSdkMono 捕获后转换
+            // SDK 真实错误路径是异步 Mono.error(EsiStatusUtil.dataError()),非同步 throw;
+            // callSdkMono 须经 onErrorMap 转换(IMP-1:异步 stub 钉住生产可达分支)
             when(corporationApi.queryCorporationMembersTrackingResponse(eq(CORPORATION_ID), eq(DATASOURCE), eq(ACCESS_TOKEN)))
-                    .thenThrow(new EsiException(ResultCode.ESI_AUTH_PERMISSION_LOW));
+                    .thenReturn(Mono.error(new EsiException(ResultCode.ESI_AUTH_PERMISSION_LOW)));
 
             // Act & Assert
             assertThatThrownBy(() -> esiApiService.queryCorporationMemberTracking(CORPORATION_ID, ACCESS_TOKEN))
