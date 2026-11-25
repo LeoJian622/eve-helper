@@ -89,6 +89,16 @@ public class StructureRepositoryImpl implements StructureRepository {
     }
 
     @Override
+    public int batchInsertOrUpdatePreserveOwner(List<Structure> list) {
+        return structureMapper.batchInsertOrUpdatePreserveOwner(structurePoConverter.domain2Po(list));
+    }
+
+    @Override
+    public int removeStaleByCorporation(Integer corporationId, List<Long> keepIds) {
+        return structureMapper.removeStaleByCorporation(corporationId, keepIds);
+    }
+
+    @Override
     public PageResult<StructureListItemDTO> selectStructuresWithNames(StructurePageCriteria criteria, Long userId) {
         IPage<StructureListItemDTO> page = new Page<>(criteria.getCurrent(), criteria.getSize());
         StructurePageCriteria.SortField sortField = criteria.getSortField();

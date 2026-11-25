@@ -489,7 +489,11 @@ class LogoutRevokesRefreshTokenTest {
 
         @Override
         public Boolean expire(String key, long ttl, TimeUnit timeUnit) {
-            throw new UnsupportedOperationException("T048 测试未预期 expire 调用");
+            if (store.containsKey(key)) {
+                ttlSeconds.put(key, timeUnit.toSeconds(ttl));
+                return true;
+            }
+            return false;
         }
 
         @Override
@@ -516,6 +520,39 @@ class LogoutRevokesRefreshTokenTest {
                 return true;
             }
             return false;
+        }
+
+        @Override
+        public Long sAdd(String key, Object... values) {
+            Set<Object> set = (Set<Object>) store.computeIfAbsent(key, k -> ConcurrentHashMap.newKeySet());
+            long added = 0;
+            for (Object v : values) {
+                if (set.add(v)) {
+                    added++;
+                }
+            }
+            return added;
+        }
+
+        @Override
+        public Set<Object> sMembers(String key) {
+            Set<Object> set = (Set<Object>) store.get(key);
+            return set != null ? Set.copyOf(set) : Set.of();
+        }
+
+        @Override
+        public Long sRemove(String key, Object... values) {
+            Set<Object> set = (Set<Object>) store.get(key);
+            if (set == null) {
+                return 0L;
+            }
+            long removed = 0;
+            for (Object v : values) {
+                if (set.remove(v)) {
+                    removed++;
+                }
+            }
+            return removed;
         }
     }
 }

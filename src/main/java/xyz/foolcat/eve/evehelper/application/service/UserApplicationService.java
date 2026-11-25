@@ -9,14 +9,21 @@ import org.springframework.transaction.annotation.Transactional;
 import xyz.foolcat.eve.evehelper.application.assembler.system.EveAccountAssembler;
 import xyz.foolcat.eve.evehelper.application.assembler.system.SysUserAssembler;
 import xyz.foolcat.eve.evehelper.application.dto.UserAccountDTO;
+import xyz.foolcat.eve.evehelper.application.dto.request.ChangePasswordRequest;
 import xyz.foolcat.eve.evehelper.application.dto.response.UserDTO;
 import xyz.foolcat.eve.evehelper.application.security.AccessGuard;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
+import xyz.foolcat.eve.evehelper.domain.port.appws.AppNotificationPushGateway;
+import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
+import xyz.foolcat.eve.evehelper.domain.repository.system.SysUserRepository;
+import xyz.foolcat.eve.evehelper.domain.service.security.TokenService;
 import xyz.foolcat.eve.evehelper.domain.service.system.EveAccountService;
 import xyz.foolcat.eve.evehelper.domain.service.system.SysUserService;
+import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
+import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
@@ -24,6 +31,7 @@ import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -69,6 +77,20 @@ public class UserApplicationService {
 
     private final AccessGuard accessGuard;
 
+    private final SysUserRepository sysUserRepository;
+
+    private final CacheGateway cacheGateway;
+
+    private final TokenService tokenService;
+
+    private final AppNotificationPushGateway pushGateway;
+
+    /** 改密失败限流：最大尝试次数 */
+    private static final int PWD_MAX_ATTEMPTS = 5;
+
+    /** 改密失败限流：锁定分钟数 */
+    private static final long PWD_LOCK_MINUTES = 30;
+
     public UserApplicationService(EveAccountService eveAccountService,
                                   EsiGateway esiApiService,
                                   EveAccountAssembler eveAccountAssembler,
@@ -76,7 +98,11 @@ public class UserApplicationService {
                                   SysUserAssembler userAssembler,
                                   PasswordEncoder passwordEncoder,
                                   @Qualifier("esiAuthStatusExecutor") Executor esiAuthStatusExecutor,
-                                  AccessGuard accessGuard) {
+                                  AccessGuard accessGuard,
+                                  SysUserRepository sysUserRepository,
+                                  CacheGateway cacheGateway,
+                                  TokenService tokenService,
+                                  AppNotificationPushGateway pushGateway) {
         this.eveAccountService = eveAccountService;
         this.esiApiService = esiApiService;
         this.eveAccountAssembler = eveAccountAssembler;
@@ -85,6 +111,106 @@ public class UserApplicationService {
         this.passwordEncoder = passwordEncoder;
         this.esiAuthStatusExecutor = esiAuthStatusExecutor;
         this.accessGuard = accessGuard;
+        this.sysUserRepository = sysUserRepository;
+        this.cacheGateway = cacheGateway;
+        this.tokenService = tokenService;
+        this.pushGateway = pushGateway;
+    }
+
+    /**
+     * 修改密码（T041，R10 全会话失效链路）。
+     * <p>
+     * 流程：限流检查 → 验旧密 → 新旧相同拒绝 → 更新密码 → 写纪元 → 逐 sid 撤销+标记 → WS 关闭 → 清计数。
+     * <p>
+     * <b>必须覆盖类级 readOnly=true</b>：否则只读连接拒写。
+     *
+     * @param request 改密请求（旧密码 + 新密码）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void changePassword(ChangePasswordRequest request) {
+        // 1. 认证守卫
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);
+        }
+
+        // 2. 限流检查（先 get 计数 ≥5 → RATE_LIMITED，检查不 increment）
+        String attemptKey = GlobalConstants.PWD_ATTEMPT_KEY_PREFIX + userId;
+        int attempts = getCurrentAttempts(attemptKey);
+        if (attempts >= PWD_MAX_ATTEMPTS) {
+            throw new EveHelperException(ResultCode.RATE_LIMITED);
+        }
+
+        // 3. 查询用户
+        SysUser user = sysUserRepository.queryById(userId);
+        if (user == null) {
+            throw new EveHelperException(ResultCode.USER_ACCOUNT_NOT_EXIST);
+        }
+
+        // 4. 验旧密（失败 increment + expire）
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            Long newCount = cacheGateway.increment(attemptKey);
+            if (newCount != null && newCount == 1L) {
+                cacheGateway.expire(attemptKey, PWD_LOCK_MINUTES, TimeUnit.MINUTES);
+            }
+            throw new EveHelperException(ResultCode.PARAM_ERROR);
+        }
+
+        // 5. 新旧相同拒绝（不 increment）
+        if (request.getNewPassword().equals(request.getOldPassword())) {
+            throw new EveHelperException(ResultCode.PARAM_ERROR);
+        }
+
+        // 6. 更新密码
+        SysUser update = new SysUser();
+        update.setId(userId);
+        update.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        sysUserRepository.insertOrUpdateSelective(update);
+
+        // 7. 写纪元（7 天 TTL）
+        cacheGateway.set(GlobalConstants.REVOKE_EPOCH_KEY_PREFIX + userId, System.currentTimeMillis(), 7, TimeUnit.DAYS);
+
+        // 8. 逐 sid 撤销 + 标记（markSessionRevoked 无条件调用，HIGH-1）
+        Set<Object> sids = cacheGateway.sMembers(GlobalConstants.REFRESH_USER_KEY_PREFIX + userId);
+        if (sids != null) {
+            for (Object sid : sids) {
+                String s = String.valueOf(sid);
+                tokenService.revokeRefreshTokenBySession(s);
+                tokenService.markSessionRevoked(s);
+            }
+        }
+
+        // 9. WS 会话关闭
+        pushGateway.closeUserSessions(userId);
+
+        // 10. 清除计数
+        cacheGateway.delete(attemptKey);
+    }
+
+    /**
+     * 解析改密失败计数（仿 LoginRateLimiterService.getCurrentAttempts）。
+     * null → 0；Integer/Long/toString 兼容解析。
+     */
+    private int getCurrentAttempts(String key) {
+        Object attemptsObj = cacheGateway.get(key);
+        if (attemptsObj == null) {
+            return 0;
+        }
+        if (attemptsObj instanceof Integer number) {
+            return number;
+        } else if (attemptsObj instanceof Long number) {
+            return number.intValue();
+        } else {
+            try {
+                return Integer.parseInt(attemptsObj.toString());
+            } catch (NumberFormatException e) {
+                // MIN-3: 脱敏告警（镜像 LoginRateLimiterService:84-86）。
+                // 术语更正：解析失败返回 0 是 fail-open（按 0 次尝试放行），非 fail-closed；
+                // 镜像 LoginRateLimiterService 现状，行为零变更。
+                log.warn("[SECURITY_ALERT] pwd attempt 计数解析失败, fail-open→0(按 0 次尝试放行): key={}", key);
+                return 0;
+            }
+        }
     }
 
     /**

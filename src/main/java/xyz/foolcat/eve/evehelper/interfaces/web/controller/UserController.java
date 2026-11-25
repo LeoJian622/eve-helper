@@ -3,11 +3,14 @@ package xyz.foolcat.eve.evehelper.interfaces.web.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.*;
 import xyz.foolcat.eve.evehelper.application.dto.UserAccountDTO;
+import xyz.foolcat.eve.evehelper.application.dto.request.ChangePasswordRequest;
 import xyz.foolcat.eve.evehelper.application.dto.response.UserDTO;
+import xyz.foolcat.eve.evehelper.application.service.CharacterApplicationService;
 import xyz.foolcat.eve.evehelper.application.service.UserApplicationService;
 import xyz.foolcat.eve.evehelper.shared.result.Result;
 
@@ -25,6 +28,22 @@ import java.util.List;
 public class UserController {
 
     private final UserApplicationService userApplicationService;
+
+    private final CharacterApplicationService characterApplicationService;
+
+    @Operation(summary = "用户服务-修改密码")
+    @PutMapping("/password")
+    public Result<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        userApplicationService.changePassword(request);
+        return Result.success();
+    }
+
+    @Operation(summary = "用户服务-解绑角色")
+    @DeleteMapping("/characters/{characterId}")
+    public Result<Void> unbindCharacter(@PathVariable Integer characterId) {
+        characterApplicationService.unbindCharacter(characterId);
+        return Result.success();
+    }
 
     @Operation(summary = "用户服务-用户注册")
     @Parameter(name = "user", description = "用户对象",required = true)

@@ -5,11 +5,14 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConstants;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiStatusUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.CurrentShipResponse;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.LocationResponse;
@@ -76,6 +79,52 @@ public class LocationApi {
     }
 
     /**
+     * 人物在线状态(含响应头,供缓存 TTL 提取)。
+     * <p>022/T009 新增:与 {@link #queryCharacterOnline} 同一 URI,改用 exchangeToMono 保留响应头。
+     *
+     * @param characterId   人物ID
+     * @param datasource    服务器数据源
+     * @param accessesToken 授权Token
+     * @return 含响应头的 ResponseEntity
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-人物在线状态(含响应头)")
+    public Mono<ResponseEntity<OnlineStatusResponse>> queryCharacterOnlineResponse(Integer characterId, String datasource, String accessesToken) {
+        return esiClient.get().uri("/characters/{character_id}/online/?datasource={datasource}", characterId, datasource)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<OnlineStatusResponse>() {}, "ESI 人物在线状态"))
+                .timeout(EsiClientConstants.ESI_DATA_TIMEOUT);
+    }
+
+    /**
+     * 人物当前位置(含响应头,供缓存 TTL 提取)。
+     * <p>022/T010 新增:与 {@link #queryCharacterLocation} 同一 URI,改用 exchangeToMono 保留响应头。
+     *
+     * @param characterId   人物ID
+     * @param datasource    服务器数据源
+     * @param accessesToken 授权Token
+     * @return 含响应头的 ResponseEntity
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-人物当前位置(含响应头)")
+    public Mono<ResponseEntity<LocationResponse>> queryCharacterLocationResponse(Integer characterId, String datasource, String accessesToken) {
+        return esiClient.get().uri("/characters/{character_id}/location/?datasource={datasource}", characterId, datasource)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<LocationResponse>() {}, "ESI 人物当前位置"))
+                .timeout(EsiClientConstants.ESI_DATA_TIMEOUT);
+    }
+
+    /**
      * 人物当前所在舰船信息
      *
      * @param characterId 人物ID
@@ -96,5 +145,28 @@ public class LocationApi {
                 .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
                 .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToMono(CurrentShipResponse.class);
+    }
+
+    /**
+     * 人物当前所在舰船信息(含响应头,供缓存 TTL 提取)。
+     * <p>022/T010 新增:与 {@link #queryCharacterShip} 同一 URI,改用 exchangeToMono 保留响应头。
+     *
+     * @param characterId   人物ID
+     * @param datasource    服务器数据源
+     * @param accessesToken 授权Token
+     * @return 含响应头的 ResponseEntity
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-人物当前所在舰船信息(含响应头)")
+    public Mono<ResponseEntity<CurrentShipResponse>> queryCharacterShipResponse(Integer characterId, String datasource, String accessesToken) {
+        return esiClient.get().uri("/characters/{character_id}/ship/?datasource={datasource}", characterId, datasource)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<CurrentShipResponse>() {}, "ESI 人物当前舰船"))
+                .timeout(EsiClientConstants.ESI_DATA_TIMEOUT);
     }
 }

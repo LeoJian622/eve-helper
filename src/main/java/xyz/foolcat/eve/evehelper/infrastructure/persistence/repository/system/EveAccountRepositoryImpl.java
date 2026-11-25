@@ -5,8 +5,10 @@ import org.springframework.stereotype.Repository;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.EveAccount;
 import xyz.foolcat.eve.evehelper.domain.repository.system.EveAccountRepository;
 import xyz.foolcat.eve.evehelper.infrastructure.assembler.persistence.EveAccountPoConverter;
+import xyz.foolcat.eve.evehelper.infrastructure.persistence.entity.system.EveAccountPO;
 import xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.EveAccountMapper;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import java.util.List;
 
 /**
@@ -56,5 +58,37 @@ public class EveAccountRepositoryImpl implements EveAccountRepository {
         return eveAccountPoConverter.po2Domain(eveAccountMapper.queryAccountList(userId));
     }
 
+    /**
+     * 查询全部绑定角色（检测遍历用）。
+     * 基于 MyBatis-Plus BaseMapper.selectList(null) 遍历全表。
+     */
+    @Override
+    public List<EveAccount> listAll() {
+        return eveAccountPoConverter.po2Domain(eveAccountMapper.selectList(null));
+    }
+
+    /**
+     * 按军团 ID 查询绑定角色（燃料扇出 / 同步选角用）。
+     * 基于 MyBatis-Plus QueryWrapper 参数化查询，无 SQL 拼接。
+     */
+    @Override
+    public List<EveAccount> listByCorpId(Integer corpId) {
+        return eveAccountPoConverter.po2Domain(
+                eveAccountMapper.selectList(new QueryWrapper<EveAccountPO>().eq("corp_id", corpId))
+        );
+    }
+
+    /**
+     * 按 userId + characterId 双条件删除绑定行（归属内建，他人行天然 0）。
+     * 基于 MyBatis-Plus QueryWrapper 参数化 WHERE，无 SQL 拼接。
+     */
+    @Override
+    public int deleteByUserIdAndCharacterId(Integer userId, Integer characterId) {
+        return eveAccountMapper.delete(
+                new QueryWrapper<EveAccountPO>()
+                        .eq("user_id", userId)
+                        .eq("character_id", characterId)
+        );
+    }
 
 }

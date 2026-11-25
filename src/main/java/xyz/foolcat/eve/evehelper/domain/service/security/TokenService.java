@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import xyz.foolcat.eve.evehelper.shared.kernel.config.JwtTokenProperties;
+import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.SysUser;
 import xyz.foolcat.eve.evehelper.domain.model.vo.TokenResult;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
@@ -82,6 +83,27 @@ public class TokenService {
      */
     private static final String SESSION_REVOKED_PREFIX = "session_revoked:";
 
+    /**
+     * 会话创建时刻索引:{@code refresh_iat:<sid> -> <毫秒时间戳>}(022 T005)。
+     *
+     * <p>登录新建 sid 时以 {@code setIfAbsent} 写入,轮换沿用旧 sid 时不覆盖原值
+     * (T006 refresh 路径以「会话创建时间 vs 改密纪元」判定,轮换若刷新会破坏 fail-closed)。
+     * TTL = refresh TTL,随后 {@code expire} 续期。</p>
+     */
+    private static final String REFRESH_IAT_PREFIX = "refresh_iat:";
+
+    /**
+     * 用户→会话反向索引:{@code refresh_user:<userId> -> Set<sid>}(022 T005)。
+     *
+     * <p>用于改密全会话失效(T006/T041):经 userId 枚举该用户所有活跃 sid,
+     * 逐一撤销。sAdd 后 expire 续期(TTL = refresh TTL)。</p>
+     */
+    private static final String REFRESH_USER_PREFIX = GlobalConstants.REFRESH_USER_KEY_PREFIX;
+
+    /**
+     * 改密纪元标记键前缀(022 T006, 收敛至 GlobalConstants.REVOKE_EPOCH_KEY_PREFIX)。
+     */
+    private static final String REVOKE_EPOCH_PREFIX = GlobalConstants.REVOKE_EPOCH_KEY_PREFIX;
 
 
     /**
@@ -122,6 +144,15 @@ public class TokenService {
             // 反向指针:供轮换时由 refresh token 反查 sid(刷新请求不带 access token)
             cacheGateway.set(REFRESH_OWNER_PREFIX + refreshToken, sessionId, refreshTtl, TimeUnit.SECONDS);
 
+            // 022 T005:会话创建时刻索引(setIfAbsent —— 轮换沿用旧 sid 时不覆盖原值,
+            // T006 refresh 路径以「会话创建时间 vs 改密纪元」判定,轮换若刷新会破坏 fail-closed)
+            cacheGateway.setIfAbsent(REFRESH_IAT_PREFIX + sessionId,
+                    System.currentTimeMillis(), refreshTtl, TimeUnit.SECONDS);
+            cacheGateway.expire(REFRESH_IAT_PREFIX + sessionId, refreshTtl, TimeUnit.SECONDS);
+
+            // 022 T005:用户→会话反向索引(供改密全会话失效枚举)
+            cacheGateway.sAdd(REFRESH_USER_PREFIX + user.getId(), sessionId);
+            cacheGateway.expire(REFRESH_USER_PREFIX + user.getId(), refreshTtl, TimeUnit.SECONDS);
 
             return new TokenResult(
                     SecurityConstant.JWT_PREFIX + accessToken,
@@ -157,6 +188,7 @@ public class TokenService {
                 .claim(SecurityConstant.USER_NAME_KEY, user.getUsername())
                 .claim(SecurityConstant.JWT_AUTHORITIES_KEY, safeAuthorities)
                 .claim(SecurityConstant.SESSION_ID_KEY, sessionId)
+                .issueTime(new Date())
                 .expirationTime(new Date(System.currentTimeMillis() + expirationTime))
                 .build();
 
@@ -226,11 +258,14 @@ public class TokenService {
         // delete 返回 Boolean(可为 null)。此处必须用 Boolean.TRUE.equals ——
         // 拆箱进 boolean 会在 Redis 异常时 NPE,而该 NPE 发生在拉黑之前,
         // 将导致整个登出 500 且 access token 也没拉黑
+        // MIN-2:删除前读取 userId(refresh_token:{uuid} -> userId),供撤销成功后剪枝 refresh_user 反向索引
+        Object userIdObj = cacheGateway.get(REFRESH_TOKEN_PREFIX + refreshTokenObj);
         Boolean revoked = cacheGateway.delete(REFRESH_TOKEN_PREFIX + refreshTokenObj);
         cacheGateway.delete(REFRESH_OWNER_PREFIX + refreshTokenObj);
 
         if (Boolean.TRUE.equals(revoked)) {
             cacheGateway.delete(indexKey);
+            pruneUserSessionIndex(userIdObj, sessionId);
             log.info("登出撤销 Refresh Token: sid={}, refreshToken={}",
                     SensitiveDataMasker.maskToken(sessionId),
                     SensitiveDataMasker.maskToken(refreshTokenObj.toString()));
@@ -258,6 +293,26 @@ public class TokenService {
         log.warn("登出与刷新并发:索引已被轮换重写,继续撤销轮换后的 token: sid={}",
                 SensitiveDataMasker.maskToken(sessionId));
         return revokeRefreshTokenBySession(sessionId);
+    }
+
+    /**
+     * MIN-2:撤销成功后剪枝用户→会话反向索引({@code refresh_user:<userId>})。
+     *
+     * <p>该集合生成时只 sAdd+expire,若撤销不剪枝,已死 sid 滞留至 TTL(最长 7 天),
+     * 改密全会话失效(T006/T041)会枚举到死会话做无效撤销。登出与改密两条撤销路径
+     * 均经 {@link #revokeRefreshTokenBySession} 收敛到本剪枝。</p>
+     *
+     * <p>userId 读不到(token 恰在读取前过期/被并发抢占)时跳过剪枝,交由集合 TTL 兜底,
+     * 不阻断登出主流程(与 revokeRefreshTokenBySession 的可用性优先一致)。</p>
+     *
+     * @param userIdObj refresh_token 键存储的用户 ID(可能为 null)
+     * @param sessionId 已撤销的会话标识
+     */
+    private void pruneUserSessionIndex(Object userIdObj, String sessionId) {
+        if (userIdObj == null) {
+            return;
+        }
+        cacheGateway.sRemove(REFRESH_USER_PREFIX + userIdObj, sessionId);
     }
 
     /**
@@ -383,6 +438,25 @@ public class TokenService {
             throw new IllegalArgumentException("Refresh Token无效或已过期");
         }
 
+        // 022 T006:改密纪元强制校验(fail-closed)。
+        // 判定逻辑与 JwtAuthorizationTokenFilter 逐字一致(互相引用):
+        //   epoch == null → 放行(含无 iat 旧 token,部署兼容)
+        //   epoch != null && (iat == null || iat <= epoch) → 拒绝
+        // iat 来源:refresh_iat:<sid>(T005 写入的会话创建毫秒)。
+        // iat 秒精度:JWT iat 为秒级 NumericDate,转毫秒后相对毫秒纪元只会偏小,
+        // 只会过度拒绝(fail-closed 安全方向),不得引入任何容差/放宽逻辑。
+        Object epochObj = cacheGateway.get(REVOKE_EPOCH_PREFIX + user.getId());
+        if (epochObj != null) {
+            Object iatObj = cacheGateway.get(REFRESH_IAT_PREFIX + sessionId);
+            Long iat = (iatObj != null) ? Long.parseLong(iatObj.toString()) : null;
+            long epoch = Long.parseLong(epochObj.toString());
+            if (iat == null || iat <= epoch) {
+                log.warn("改密纪元校验拒绝: userId={}, iat={}, epoch={}",
+                        user.getId(), iat, epoch);
+                throw new IllegalArgumentException("Refresh Token无效或已过期");
+            }
+        }
+
         // 生成新的Token对(包含新的Refresh Token),并重写会话索引
         return generateTokenPair(user, authorities, sessionId);
     }
@@ -399,11 +473,13 @@ public class TokenService {
     public ParsedAccessToken parseAccessToken(String token) throws ParseException {
         SignedJWT signedJWT = SignedJWT.parse(token);
         JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+        Date issueTime = claimsSet.getIssueTime();
         return new ParsedAccessToken(
                 claimsSet.getJWTID(),
                 claimsSet.getExpirationTime(),
                 claimsSet.getClaim(SecurityConstant.USER_ID_KEY),
-                claimsSet.getStringClaim(SecurityConstant.SESSION_ID_KEY));
+                claimsSet.getStringClaim(SecurityConstant.SESSION_ID_KEY),
+                issueTime != null ? issueTime.getTime() : null);
     }
 
     /**
@@ -413,8 +489,9 @@ public class TokenService {
      * @param expirationTime 过期时间
      * @param userIdClaim    用户ID声明
      * @param sessionId      会话标识({@code sid});改造前签发的 token 为 null(007 T048)
+     * @param iat            签发时刻(毫秒时间戳);改造前签发的 token 为 null(022 T005)
      */
-    public record ParsedAccessToken(String jti, Date expirationTime, Object userIdClaim, String sessionId) {
+    public record ParsedAccessToken(String jti, Date expirationTime, Object userIdClaim, String sessionId, Long iat) {
     }
 }
 

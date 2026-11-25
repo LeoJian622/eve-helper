@@ -118,6 +118,6 @@ mvn package -DskipTests
 - 业务代码变更须走统一 Spec-First 流程(不分级、无例外);技术栈本身不可变更
 
 <!-- SPECKIT START -->
-当前 feature: `021-esi-auth-scopes`(用户角色列表接口返回 ESI 已授权权限 scopes:运行时解析 accessToken、无 DDL)
-实现计划: [specs/021-esi-auth-scopes/plan.md](specs/021-esi-auth-scopes/plan.md)
+当前 feature: `022-companion-api`(伴侣 APP 后端支撑端点:角色面板/邮件收发/工业直查/团员追踪/APP 通知通道/账号自助;直查架构+通知表+新 WS 通道)
+实现计划: [specs/022-companion-api/plan.md](specs/022-companion-api/plan.md)
 <!-- SPECKIT END -->

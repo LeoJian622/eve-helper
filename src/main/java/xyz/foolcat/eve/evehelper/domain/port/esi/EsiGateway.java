@@ -12,7 +12,20 @@ import xyz.foolcat.eve.evehelper.domain.model.entity.system.UniverseName;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletJournal;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.WalletTransaction;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAttributesInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterLocationInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterOnlineInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterPublicInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterRolesInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterSkillList;
 import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MailDetailInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MailHeaderPage;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MailLabelsInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MemberTrackingItem;
+import xyz.foolcat.eve.evehelper.domain.model.vo.RecipientResolution;
+import xyz.foolcat.eve.evehelper.domain.model.vo.SendMailCommand;
+import xyz.foolcat.eve.evehelper.domain.model.vo.SkillQueueItem;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 
@@ -30,6 +43,18 @@ import java.util.List;
  * @author Leojan
  */
 public interface EsiGateway {
+
+    /**
+     * 驱逐指定角色的 accessToken 缓存（IMP-1，封装不变量修复）。
+     * <p>
+     * 缓存键格式仅本层知晓，上层不得自行拼装。本方法委托实现方内部
+     * {@code accessTokenKey(userId, characterId)} 构造键并删除。
+     * 未命中时实现方打 [SECURITY_ALERT] 告警（仅 userId/characterId，不落 token）。
+     *
+     * @param userId      用户 ID
+     * @param characterId 角色 ID
+     */
+    void evictAccessTokenCache(Integer userId, Integer characterId);
 
     /**
      * 获取 ESI 授权 accessToken(按角色 ID 或认证码)。
@@ -309,4 +334,294 @@ public interface EsiGateway {
      * @return 各分账余额列表(1..7,但 ESI 仅返回有数据的分账)
      */
     List<WalletDivisionBalance> queryCorporationWalletBalances(Integer corporationId, String accessToken);
+
+    // ── 角色面板(伴侣 APP) ──
+
+    /**
+     * 查询角色公开信息(ESI /characters/{id}/,无需授权)。
+     *
+     * @param characterId 角色 ID
+     * @return 角色公开信息
+     */
+    CharacterPublicInfo queryCharacterPublicInfo(Integer characterId);
+
+    /**
+     * 查询角色公开信息(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 角色公开信息
+     */
+    CharacterPublicInfo queryCharacterPublicInfo(Integer characterId, boolean forceRefresh);
+
+    /**
+     * 查询角色在线状态(ESI /characters/{id}/online/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 角色在线状态
+     */
+    CharacterOnlineInfo queryCharacterOnline(Integer characterId, String accessToken);
+
+    /**
+     * 查询角色在线状态(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 角色在线状态
+     */
+    CharacterOnlineInfo queryCharacterOnline(Integer characterId, String accessToken, boolean forceRefresh);
+
+    /**
+     * 查询角色当前位置(ESI /characters/{id}/location/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 角色当前位置
+     */
+    CharacterLocationInfo queryCharacterLocation(Integer characterId, String accessToken);
+
+    /**
+     * 查询角色当前位置(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 角色当前位置
+     */
+    CharacterLocationInfo queryCharacterLocation(Integer characterId, String accessToken, boolean forceRefresh);
+
+    /**
+     * 查询角色当前舰船类型 ID(ESI /characters/{id}/ship/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 舰船类型 ID
+     */
+    Integer queryCharacterShipTypeId(Integer characterId, String accessToken);
+
+    /**
+     * 查询角色当前舰船类型 ID(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 舰船类型 ID
+     */
+    Integer queryCharacterShipTypeId(Integer characterId, String accessToken, boolean forceRefresh);
+
+    /**
+     * 查询角色技能列表(ESI /characters/{id}/skills/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 角色技能列表
+     */
+    CharacterSkillList queryCharacterSkills(Integer characterId, String accessToken);
+
+    /**
+     * 查询角色技能列表(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 角色技能列表
+     */
+    CharacterSkillList queryCharacterSkills(Integer characterId, String accessToken, boolean forceRefresh);
+
+    /**
+     * 查询角色属性(ESI /characters/{id}/attributes/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 角色属性
+     */
+    CharacterAttributesInfo queryCharacterAttributes(Integer characterId, String accessToken);
+
+    /**
+     * 查询角色属性(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 角色属性
+     */
+    CharacterAttributesInfo queryCharacterAttributes(Integer characterId, String accessToken, boolean forceRefresh);
+
+    /**
+     * 查询角色技能队列(ESI /characters/{id}/skillqueue/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 技能队列(空队列返回空列表,查询失败抛 EsiAccessException)
+     */
+    List<SkillQueueItem> queryCharacterSkillQueue(Integer characterId, String accessToken);
+
+    /**
+     * 查询角色技能队列(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 技能队列(空队列返回空列表,查询失败抛 EsiAccessException)
+     */
+    List<SkillQueueItem> queryCharacterSkillQueue(Integer characterId, String accessToken, boolean forceRefresh);
+
+    // ── 邮件读侧(伴侣 APP T016) ──
+
+    /**
+     * 查询角色邮件标题(ESI /characters/{id}/mail/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param lastMailId  游标(返回该 ID 之前的邮件);首页传 null
+     * @param accessToken 授权 Token
+     * @return 邮件标题分页(含 nextLastMailId 游标)
+     */
+    MailHeaderPage queryCharacterMailHeaders(Integer characterId, Integer lastMailId, String accessToken);
+
+    /**
+     * 查询角色邮件标题(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param lastMailId   游标;首页传 null
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 邮件标题分页
+     */
+    MailHeaderPage queryCharacterMailHeaders(Integer characterId, Integer lastMailId, String accessToken, boolean forceRefresh);
+
+    /**
+     * 查询角色邮件详情(ESI /characters/{id}/mail/{mailId}/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param mailId      邮件 ID
+     * @param accessToken 授权 Token
+     * @return 邮件详情
+     */
+    MailDetailInfo queryCharacterMail(Integer characterId, Integer mailId, String accessToken);
+
+    /**
+     * 查询角色邮件详情(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param mailId       邮件 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 邮件详情
+     */
+    MailDetailInfo queryCharacterMail(Integer characterId, Integer mailId, String accessToken, boolean forceRefresh);
+
+    /**
+     * 查询角色邮件标签(ESI /characters/{id}/mail/labels/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 邮件标签与未读数
+     */
+    MailLabelsInfo queryCharacterMailLabels(Integer characterId, String accessToken);
+
+    /**
+     * 查询角色邮件标签(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 邮件标签与未读数
+     */
+    MailLabelsInfo queryCharacterMailLabels(Integer characterId, String accessToken, boolean forceRefresh);
+
+    // ── 邮件写侧(伴侣 APP T017) ──
+
+    /**
+     * 标记角色邮件为已读/未读(ESI PUT /characters/{id}/mail/{mailId}/,需授权)。
+     * <p>写操作不做响应缓存、无 forceRefresh。
+     *
+     * @param characterId 角色 ID
+     * @param mailId      邮件 ID
+     * @param read        true=已读,false=未读
+     * @param accessToken 授权 Token
+     */
+    void markCharacterMailRead(Integer characterId, Integer mailId, boolean read, String accessToken);
+
+    /**
+     * 发送角色邮件(ESI POST /characters/{id}/mail/,需授权)。
+     * <p>写操作不做响应缓存、无 forceRefresh。
+     *
+     * @param characterId 角色 ID
+     * @param command     发送命令(收件人、主题、正文)
+     * @param accessToken 授权 Token
+     * @return 新邮件 ID
+     */
+    Integer sendCharacterMail(Integer characterId, SendMailCommand command, String accessToken);
+
+    // ── universe/ids 精确名称解析(伴侣 APP T018) ──
+
+    /**
+     * 批量解析名称→ID(ESI POST /universe/ids/,公开无需授权)。
+     * <p>
+     * 公开数据:pub 段共享(userId=null)、不限流、无 forceRefresh。
+     * names 先排序再确定性编码进缓存键(顺序无关命中)。
+     * 响应按 characters/corporations/alliances 分组映射;
+     * 请求中未命中的名称返回 {@code resolved=false} 条目(保持请求名全量返回)。
+     *
+     * @param names 名称列表
+     * @return 解析结果(全量,含未命中项)
+     */
+    List<RecipientResolution> resolveUniverseIds(List<String> names);
+
+    // ── 角色军团权限(伴侣 APP T029) ──
+
+    /**
+     * 查询角色军团权限(ESI /characters/{id}/roles/,需授权)。
+     *
+     * @param characterId 角色 ID
+     * @param accessToken 授权 Token
+     * @return 角色军团权限(三集合 + 权限判定助手)
+     */
+    CharacterRolesInfo queryCharacterRoles(Integer characterId, String accessToken);
+
+    /**
+     * 查询角色军团权限(可选强制刷新)。
+     *
+     * @param characterId  角色 ID
+     * @param accessToken  授权 Token
+     * @param forceRefresh true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 角色军团权限
+     */
+    CharacterRolesInfo queryCharacterRoles(Integer characterId, String accessToken, boolean forceRefresh);
+
+    // ── 团员追踪(伴侣 APP T037) ──
+
+    /**
+     * 查询军团成员追踪信息(ESI /corporations/{id}/membertracking/,需授权)。
+     *
+     * @param corporationId 军团 ID
+     * @param accessToken   授权 Token
+     * @return 成员追踪列表(空军团返回空列表,查询失败抛 EsiAccessException)
+     */
+    List<MemberTrackingItem> queryCorporationMemberTracking(Integer corporationId, String accessToken);
+
+    /**
+     * 查询军团成员追踪信息(可选强制刷新)。
+     *
+     * @param corporationId 军团 ID
+     * @param accessToken   授权 Token
+     * @param forceRefresh  true 时忽略缓存真调(受强刷限流);false 默认走缓存
+     * @return 成员追踪列表
+     */
+    List<MemberTrackingItem> queryCorporationMemberTracking(Integer corporationId, String accessToken, boolean forceRefresh);
+
+    // ── 授权入口(伴侣 APP T043) ──
+
+    /**
+     * 构建 ESI OAuth 授权 URL(T043)。
+     * <p>
+     * server null/空 = 部署默认 datasource；
+     * server 非空且与部署 datasource 不一致时抛 EveHelperException(PARAM_ERROR)。
+     *
+     * @param server 服务器数据源标识
+     * @return 授权 URL
+     */
+    String buildAuthorizeUrl(String server);
 }

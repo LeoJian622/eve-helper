@@ -2,6 +2,7 @@ package xyz.foolcat.eve.evehelper.domain.port.cache;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -90,4 +91,30 @@ public interface CacheGateway {
      * @return true 表示值匹配并已删除；false 表示值不匹配或键不存在
      */
     Boolean compareAndDelete(String key, Object expectedValue);
+
+    /**
+     * 向集合添加一个或多个元素。
+     *
+     * @param key    集合键
+     * @param values 要添加的元素
+     * @return 新增元素数量(不包含已存在的元素)
+     */
+    Long sAdd(String key, Object... values);
+
+    /**
+     * 获取集合的全部成员。
+     *
+     * @param key 集合键
+     * @return 集合成员,键不存在返回空集合
+     */
+    Set<Object> sMembers(String key);
+
+    /**
+     * 从集合移除一个或多个元素。
+     *
+     * @param key    集合键
+     * @param values 要移除的元素
+     * @return 实际移除的元素数量
+     */
+    Long sRemove(String key, Object... values);
 }

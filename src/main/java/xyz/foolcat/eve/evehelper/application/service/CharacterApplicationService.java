@@ -5,8 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import xyz.foolcat.eve.evehelper.application.dto.response.AuthorizeUrlResponse;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiGateway;
+import xyz.foolcat.eve.evehelper.domain.repository.system.EveAccountRepository;
+import xyz.foolcat.eve.evehelper.domain.util.AuthorizeUtil;
+import xyz.foolcat.eve.evehelper.domain.util.UserUtil;
+import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
 import xyz.foolcat.eve.evehelper.shared.result.ResultCode;
 
@@ -24,6 +29,10 @@ import java.text.ParseException;
 public class CharacterApplicationService {
 
     private final EsiGateway esiApiService;
+
+    private final AuthorizeUtil authorizeUtil;
+
+    private final EveAccountRepository eveAccountRepository;
 
     /**
      * 使用授权 code 绑定角色到当前用户。
@@ -84,5 +93,41 @@ public class CharacterApplicationService {
             log.error("角色AccessToken解析失败: userId={}, characterId={}", userId, characterId, e);
             throw new EveHelperException("角色AccessToken获取失败", e);
         }
+    }
+
+    /**
+     * 解绑角色（T042）。
+     * <p>
+     * 流程：参数守卫 → 归属校验 → 系统同步角色守卫 → 删除绑定 → 清理 accessToken 缓存。
+     *
+     * @param characterId 角色 ID
+     */
+    public void unbindCharacter(Integer characterId) {
+        if (characterId == null || characterId <= 0) {
+            throw new EveHelperException(ResultCode.PARAM_ERROR);
+        }
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            throw new EveHelperException(ResultCode.ACCESS_UNAUTHORIZED);
+        }
+        // 归属校验：authorizeUtil.authorize 内部验证该角色属于当前用户
+        authorizeUtil.authorize(characterId);
+        // 系统同步角色守卫
+        if (characterId.equals(GlobalConstants.SYSTEM_SYNC_CHARACTER_ID)) {
+            throw new EveHelperException(ResultCode.PARAM_ERROR);
+        }
+        eveAccountRepository.deleteByUserIdAndCharacterId(userId, characterId);
+        // IMP-1: 委托 EsiGateway 端口驱逐缓存，不在应用层重建键格式
+        esiApiService.evictAccessTokenCache(userId, characterId);
+    }
+
+    /**
+     * 获取 ESI OAuth 授权 URL（T043）。
+     *
+     * @param server 服务器数据源（null/空/与部署 datasource 一致 → 放行；不一致 → PARAM_ERROR）
+     * @return 含 authorizeUrl 与 state 的响应
+     */
+    public AuthorizeUrlResponse getAuthorizeUrl(String server) {
+        return new AuthorizeUrlResponse(esiApiService.buildAuthorizeUrl(server), "eve-helper");
     }
 }

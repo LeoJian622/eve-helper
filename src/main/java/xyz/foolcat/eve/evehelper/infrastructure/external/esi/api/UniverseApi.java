@@ -390,6 +390,28 @@ public class UniverseApi {
     }
 
     /**
+     * 解析名称的ID(含响应头,022/T018)。
+     *
+     * <p>POST 含头入口:body 为 {@link Name2IdResponse}。公开数据,无 Authorization 头。
+     * 4xx/5xx 分支复刻 {@link PageTotalApi#queryMaxPage} 先例。</p>
+     */
+    @Parameters({
+            @Parameter(name = "names", description = "名称", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "language", description = "语言", required = true),
+    })
+    @Operation(summary = "ESI-解析名称的ID(含响应头)")
+    public Mono<ResponseEntity<Name2IdResponse>> queryUniverseIdsResponse(List<String> names, String datasource, String language) {
+        return esiClient.post().uri("/universe/ids/?datasource={datasource}&language={language}",
+                        datasource, language)
+                .header(HttpHeaders.ACCEPT_LANGUAGE, language)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Mono.just(names), List.class)
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<Name2IdResponse>() {}, "ESI 名称→ID 解析")).timeout(EsiClientConstants.ESI_DATA_TIMEOUT);
+    }
+
+    /**
      * 行星详情
      *
      * @param planetId   行星ID

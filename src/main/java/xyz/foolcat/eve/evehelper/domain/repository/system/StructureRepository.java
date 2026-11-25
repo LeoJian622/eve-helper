@@ -29,6 +29,29 @@ public interface StructureRepository {
 
     int batchInsertOrUpdate(List<Structure> list);
 
+    /**
+     * 批量插入或更新建筑，但 ON DUPLICATE KEY UPDATE 时保留既有 user_id（不翻转归属）。
+     * <p>
+     * INSERT 仍写入传入的 userId（新行落属主），仅 UPDATE 子句跳过 user_id，
+     * 防止 APP 同步覆盖 QQ 系统行归属（IMP-A, FR-018 数据层击穿修复）。
+     *
+     * @param list 建筑列表
+     * @return 受影响行数
+     */
+    int batchInsertOrUpdatePreserveOwner(List<Structure> list);
+
+    /**
+     * 按军团维度清理 stale 建筑行（不在 keepIds 中的行全部删除）。
+     * <p>
+     * 无 user 过滤（与 selectFuelExpiresList 同口径），keepIds 空/null 时删该军团全部行。
+     * ESI 失败（maxPage==null）时不得调用本方法（防瞬时失败误删）。
+     *
+     * @param corporationId 军团 ID
+     * @param keepIds       本次 ESI 拉取到的建筑 ID 列表；空/null → 删该军团全部行
+     * @return 删除行数
+     */
+    int removeStaleByCorporation(Integer corporationId, List<Long> keepIds);
+
     Structure selectByStructureId(Long structureId);
 
     /**

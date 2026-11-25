@@ -31,6 +31,11 @@ public interface StructureMapper extends BaseMapper<StructurePO> {
 
     int batchInsertOrUpdate(List<StructurePO> list);
 
+    int batchInsertOrUpdatePreserveOwner(List<StructurePO> list);
+
+    int removeStaleByCorporation(@Param("corporationId") Integer corporationId,
+                                 @Param("keepIds") List<Long> keepIds);
+
     int removeBatchByIds(List<Long> ids);
 
     /**

@@ -36,7 +36,9 @@ public enum ResultCode implements IResultCode, Serializable {
 
     PARAM_ERROR("SYS00400", "用户请求参数错误"),
     RESOURCE_NOT_FOUND("SYS00401", "请求资源不存在"),
-    PARAM_IS_NULL("SYS00410", "请求必填参数为空");
+    PARAM_IS_NULL("SYS00410", "请求必填参数为空"),
+
+    RATE_LIMITED("SYS00429", "操作过于频繁，请稍后再试");
 
     @Override
     public String getCode() {

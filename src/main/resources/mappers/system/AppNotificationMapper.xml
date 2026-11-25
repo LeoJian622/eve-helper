@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="xyz.foolcat.eve.evehelper.infrastructure.persistence.mapper.system.AppNotificationMapper">
+
+    <!-- 批量插入：省略 id（自增主键）、gmt_create/gmt_modified（DB DEFAULT CURRENT_TIMESTAMP） -->
+    <insert id="insertBatch" parameterType="map" useGeneratedKeys="true" keyProperty="list.id">
+        INSERT INTO app_notification
+        (user_id, event_type, dedup_key, character_id, corp_id, title, content, is_read)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.userId,jdbcType=INTEGER},
+             #{item.eventType,jdbcType=VARCHAR},
+             #{item.dedupKey,jdbcType=VARCHAR},
+             #{item.characterId,jdbcType=INTEGER},
+             #{item.corpId,jdbcType=INTEGER},
+             #{item.title,jdbcType=VARCHAR},
+             #{item.content,jdbcType=VARCHAR},
+             #{item.isRead,jdbcType=TINYINT})
+        </foreach>
+    </insert>
+
+    <!-- 分批删除过期：cutoff 由 Java 计算传入，LIMIT 控制每批上限 -->
+    <delete id="deleteExpired" parameterType="map">
+        DELETE FROM app_notification
+        WHERE gmt_create &lt; #{cutoff,jdbcType=TIMESTAMP}
+        LIMIT #{batchSize,jdbcType=INTEGER}
+    </delete>
+
+</mapper>

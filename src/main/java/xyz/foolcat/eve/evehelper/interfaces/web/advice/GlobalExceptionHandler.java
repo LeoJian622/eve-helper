@@ -208,6 +208,10 @@ public class GlobalExceptionHandler {
         if ("ESI00403".equals(code)) {
             return HttpStatus.FORBIDDEN;
         }
+        // T041:改密限流(429)映射为 HTTP 429
+        if (ResultCode.RATE_LIMITED.getCode().equals(code)) {
+            return HttpStatus.TOO_MANY_REQUESTS;
+        }
         return HttpStatus.BAD_REQUEST;
     }
 

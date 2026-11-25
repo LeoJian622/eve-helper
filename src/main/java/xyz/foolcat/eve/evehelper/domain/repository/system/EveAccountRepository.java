@@ -19,4 +19,28 @@ public interface EveAccountRepository  {
     EveAccount getAccount(Integer userId, Integer characterId);
 
     List<EveAccount> getAccountList(Integer userId);
+
+    /**
+     * 查询全部绑定角色（检测遍历用）。
+     *
+     * @return 所有 eve_account 行对应的领域实体列表
+     */
+    List<EveAccount> listAll();
+
+    /**
+     * 按军团 ID 查询绑定角色（燃料扇出 / 同步选角用）。
+     *
+     * @param corpId 军团 ID
+     * @return 该军团下所有角色列表；未知军团返回空列表
+     */
+    List<EveAccount> listByCorpId(Integer corpId);
+
+    /**
+     * 按 userId + characterId 双条件删除绑定行（归属内建，他人行天然 0）。
+     *
+     * @param userId      用户 ID
+     * @param characterId 角色 ID
+     * @return 删除行数（0 = 不拥有或不存在）
+     */
+    int deleteByUserIdAndCharacterId(Integer userId, Integer characterId);
 }

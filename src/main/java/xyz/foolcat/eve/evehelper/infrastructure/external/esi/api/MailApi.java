@@ -5,12 +5,15 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiClientConstants;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.EsiStatusUtil;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.NewLabel;
@@ -267,6 +270,68 @@ public class MailApi {
                 .onStatus(HttpStatusCode::is4xxClientError, EsiStatusUtil.dataError())
                 .onStatus(HttpStatusCode::is5xxServerError, EsiStatusUtil.dataError())
                 .bodyToFlux(MailListResponse.class);
+    }
+
+    // ── Response 变体(含响应头,022/T016) ──
+
+    /**
+     * 符合查询条件的50个最新邮件标题(含响应头,022/T016)。
+     *
+     * <p>同 {@link #queryCharacterMails}:一次取出含响应头 {@link ResponseEntity},
+     * 供包裹层解析缓存 TTL。4xx/5xx 分支复刻 {@link PageTotalApi#queryMaxPage} 先例。</p>
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "labels", description = "标签ID", required = true),
+            @Parameter(name = "lastMailId", description = "最新的邮件ID", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-符合查询条件的50个最新邮件标题(含响应头)")
+    public Mono<ResponseEntity<List<RequestedMailResponse>>> queryCharacterMailsResponse(Integer characterId, String datasource, List<Integer> labels, Integer lastMailId, String accessesToken) {
+        return esiClient.get().uri("/characters/{character_id}/mail/?datasource={datasource}&labels={labels}&last_mail_id={last_mail_id}", characterId, datasource, labels, lastMailId)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<List<RequestedMailResponse>>() {}, "ESI 人物邮件标题")).timeout(EsiClientConstants.ESI_DATA_TIMEOUT);
+    }
+
+    /**
+     * 邮件详情(含响应头,022/T016)。
+     *
+     * <p>同 {@link #queryCharacterMail}:一次取出含响应头 {@link ResponseEntity},
+     * 供包裹层解析缓存 TTL。4xx/5xx 分支复刻 {@link PageTotalApi#queryMaxPage} 先例。</p>
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "mailId", description = "邮件ID", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-邮件详情(含响应头)")
+    public Mono<ResponseEntity<MailResponse>> queryCharacterMailResponse(Integer characterId, String datasource, Integer mailId, String accessesToken) {
+        return esiClient.get().uri("/characters/{character_id}/mail/{mail_id}/?datasource={datasource}", characterId, mailId, datasource)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<MailResponse>() {}, "ESI 邮件详情")).timeout(EsiClientConstants.ESI_DATA_TIMEOUT);
+    }
+
+    /**
+     * 邮件标签(含响应头,022/T016)。
+     *
+     * <p>同 {@link #queryCharacterMailLabels}:一次取出含响应头 {@link ResponseEntity},
+     * 供包裹层解析缓存 TTL。4xx/5xx 分支复刻 {@link PageTotalApi#queryMaxPage} 先例。</p>
+     */
+    @Parameters({
+            @Parameter(name = "characterId", description = "人物ID", required = true),
+            @Parameter(name = "datasource", description = "服务器数据源", required = true),
+            @Parameter(name = "accessesToken", description = "授权Token", required = true),
+    })
+    @Operation(summary = "ESI-邮件标签(含响应头)")
+    public Mono<ResponseEntity<MailLabelsAndUnreadCountsResponse>> queryCharacterMailLabelsResponse(Integer characterId, String datasource, String accessesToken) {
+        return esiClient.get().uri("/characters/{character_id}/mail/labels/?datasource={datasource}", characterId, datasource)
+                .header(HttpHeaders.AUTHORIZATION, accessesToken)
+                .exchangeToMono(response -> EsiStatusUtil.handleResponseWithHeaders(
+                        response, new ParameterizedTypeReference<MailLabelsAndUnreadCountsResponse>() {}, "ESI 邮件标签")).timeout(EsiClientConstants.ESI_DATA_TIMEOUT);
     }
 
 }

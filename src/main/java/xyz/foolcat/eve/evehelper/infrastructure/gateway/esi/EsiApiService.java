@@ -8,12 +8,27 @@ import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import xyz.foolcat.eve.evehelper.domain.model.entity.system.*;
 import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAccessTokenResult;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterAttributesInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterLocationInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterOnlineInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterPublicInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterRolesInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.CharacterSkillList;
 import xyz.foolcat.eve.evehelper.domain.model.vo.EsiAuthorizationDetail;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MailDetailInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MailHeaderPage;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MailLabelsInfo;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MailRecipient;
+import xyz.foolcat.eve.evehelper.domain.model.vo.MemberTrackingItem;
+import xyz.foolcat.eve.evehelper.domain.model.vo.RecipientResolution;
+import xyz.foolcat.eve.evehelper.domain.model.vo.SendMailCommand;
+import xyz.foolcat.eve.evehelper.domain.model.vo.SkillQueueItem;
 import xyz.foolcat.eve.evehelper.domain.model.vo.WalletDivisionBalance;
 import xyz.foolcat.eve.evehelper.domain.port.cache.CacheGateway;
 import xyz.foolcat.eve.evehelper.domain.port.esi.EsiAccessException;
@@ -28,11 +43,13 @@ import xyz.foolcat.eve.evehelper.infrastructure.external.esi.ResultCode;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.api.*;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.AuthorizeOAuth;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.GrantType;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.auth.SsoScopes;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiCacheTtlExtractor;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCache;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.EsiResponseCacheProperties;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.cache.ForceRefreshLimiter;
 import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.*;
+import xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.send.NewMail;
 import xyz.foolcat.eve.evehelper.shared.kernel.constants.GlobalConstants;
 import xyz.foolcat.eve.evehelper.shared.kernel.enums.EsiAuthStatus;
 import xyz.foolcat.eve.evehelper.shared.kernel.exception.EveHelperException;
@@ -83,6 +100,12 @@ public class EsiApiService implements EsiGateway {
     private final IndustryApi industryApi;
 
     private final WalletApi walletApi;
+
+    private final LocationApi locationApi;
+
+    private final SkillApi skillApi;
+
+    private final MailApi mailApi;
 
     private final EsiAssetsConverter esiAssetsConverter;
 
@@ -309,6 +332,17 @@ public class EsiApiService implements EsiGateway {
      */
     private String accessTokenKey(Integer userId, Integer characterId) {
         return GlobalConstants.ESI_ACCESS_TOKEN_KEY + userId + ":" + characterId;
+    }
+
+    // ── IMP-1: accessToken 缓存驱逐（封装不变量修复） ──
+
+    @Override
+    public void evictAccessTokenCache(Integer userId, Integer characterId) {
+        String key = accessTokenKey(userId, characterId);
+        Boolean result = cacheGateway.delete(key);
+        if (!Boolean.TRUE.equals(result)) {
+            log.warn("[SECURITY_ALERT] accessToken 驱逐未命中 userId={}, characterId={}", userId, characterId);
+        }
     }
 
     /**
@@ -1529,13 +1563,908 @@ public class EsiApiService implements EsiGateway {
 
     /**
      * 包裹 SDK 调用(Mono 返回类型),捕获 EsiException 并转换为 EsiAccessException。
+     * <p>
+     * IMP-1:SDK 真实错误是异步 {@code Mono.error(EsiException)}({@code EsiStatusUtil.dataError()} /
+     * {@code handleResponseWithHeaders}),仅同步 catch 无法覆盖,流内错误经 {@code block()}
+     * 原样泄漏 infra 异常。故与列表路径 {@code doListWithClaim} 一致,补 {@code onErrorMap}。
+     * 同步 catch 仅处理 {@code sdkCall.get()} 装配期抛出的异常,与流内 onErrorMap 互斥,不会双重包装。
      */
     private <T> Mono<T> callSdkMono(Supplier<Mono<T>> sdkCall) {
         try {
-            return sdkCall.get();
+            return sdkCall.get()
+                    .onErrorMap(EsiException.class, this::convertToAccessException);
         } catch (EsiException e) {
             throw convertToAccessException(e);
         }
+    }
+
+    // ── 角色面板(伴侣 APP T009) ──
+
+    @Override
+    public CharacterPublicInfo queryCharacterPublicInfo(Integer characterId) {
+        return doQueryCharacterPublicInfo(characterId, false);
+    }
+
+    @Override
+    public CharacterPublicInfo queryCharacterPublicInfo(Integer characterId, boolean forceRefresh) {
+        return doQueryCharacterPublicInfo(characterId, forceRefresh);
+    }
+
+    private CharacterPublicInfo doQueryCharacterPublicInfo(Integer characterId, boolean forceRefresh) {
+        // 公开数据:userId 段置 pub 全局共享(不查 UserUtil)
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), null,
+                "/characters/" + characterId + "/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<CharacterPublicInfo> cached = esiResponseCache.getList(key, objectMapper.constructType(CharacterPublicInfo.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<CharacterPublicInfo> filled = awaitCachedList(key, objectMapper.constructType(CharacterPublicInfo.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<CharacterPublicInfoResponse> response = callSdkMono(() -> characterApi.queryCharacterResponse(characterId, EsiClientConfig.SERENITY))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            CharacterPublicInfoResponse resp = response.getBody();
+            CharacterPublicInfo domain = new CharacterPublicInfo(
+                    characterId,
+                    resp.getName(),
+                    resp.getCorporationId(),
+                    resp.getAllianceId(),
+                    resp.getBirthday(),
+                    resp.getSecurityStatus()
+            );
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<CharacterPublicInfo> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    @Override
+    public CharacterOnlineInfo queryCharacterOnline(Integer characterId, String accessToken) {
+        return doQueryCharacterOnline(characterId, accessToken, false);
+    }
+
+    @Override
+    public CharacterOnlineInfo queryCharacterOnline(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterOnline(characterId, accessToken, forceRefresh);
+    }
+
+    private CharacterOnlineInfo doQueryCharacterOnline(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            OnlineStatusResponse resp = callSdkMono(() -> locationApi.queryCharacterOnline(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            return resp == null ? null : new CharacterOnlineInfo(
+                    Boolean.TRUE.equals(resp.getOnline()),
+                    resp.getLastLogin(),
+                    resp.getLastLogout()
+            );
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/online/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<CharacterOnlineInfo> cached = esiResponseCache.getList(key, objectMapper.constructType(CharacterOnlineInfo.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        // 防穿透
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<CharacterOnlineInfo> filled = awaitCachedList(key, objectMapper.constructType(CharacterOnlineInfo.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<OnlineStatusResponse> response = callSdkMono(() -> locationApi.queryCharacterOnlineResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            OnlineStatusResponse resp = response.getBody();
+            CharacterOnlineInfo domain = new CharacterOnlineInfo(
+                    Boolean.TRUE.equals(resp.getOnline()),
+                    resp.getLastLogin(),
+                    resp.getLastLogout()
+            );
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<CharacterOnlineInfo> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    // ── 位置 + 舰船(伴侣 APP T010) ──
+
+    @Override
+    public CharacterLocationInfo queryCharacterLocation(Integer characterId, String accessToken) {
+        return doQueryCharacterLocation(characterId, accessToken, false);
+    }
+
+    @Override
+    public CharacterLocationInfo queryCharacterLocation(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterLocation(characterId, accessToken, forceRefresh);
+    }
+
+    private CharacterLocationInfo doQueryCharacterLocation(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            LocationResponse resp = callSdkMono(() -> locationApi.queryCharacterLocation(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            return resp == null ? null : new CharacterLocationInfo(
+                    resp.getSolarSystemId(),
+                    resp.getStationId(),
+                    resp.getStructureId()
+            );
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/location/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<CharacterLocationInfo> cached = esiResponseCache.getList(key, objectMapper.constructType(CharacterLocationInfo.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        // 防穿透
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<CharacterLocationInfo> filled = awaitCachedList(key, objectMapper.constructType(CharacterLocationInfo.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<LocationResponse> response = callSdkMono(() -> locationApi.queryCharacterLocationResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            LocationResponse resp = response.getBody();
+            CharacterLocationInfo domain = new CharacterLocationInfo(
+                    resp.getSolarSystemId(),
+                    resp.getStationId(),
+                    resp.getStructureId()
+            );
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<CharacterLocationInfo> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    @Override
+    public Integer queryCharacterShipTypeId(Integer characterId, String accessToken) {
+        return doQueryCharacterShipTypeId(characterId, accessToken, false);
+    }
+
+    @Override
+    public Integer queryCharacterShipTypeId(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterShipTypeId(characterId, accessToken, forceRefresh);
+    }
+
+    private Integer doQueryCharacterShipTypeId(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            CurrentShipResponse resp = callSdkMono(() -> locationApi.queryCharacterShip(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            return resp == null ? null : resp.getShipTypeId();
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/ship/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<Integer> cached = esiResponseCache.getList(key, objectMapper.constructType(Integer.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        // 防穿透
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<Integer> filled = awaitCachedList(key, objectMapper.constructType(Integer.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<CurrentShipResponse> response = callSdkMono(() -> locationApi.queryCharacterShipResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            Integer shipTypeId = response.getBody().getShipTypeId();
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<Integer> wrapped = List.of(shipTypeId);
+            esiResponseCache.put(key, wrapped, ttl);
+            return shipTypeId;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    // ── 技能列表 + 属性 + 技能队列(伴侣 APP T011) ──
+
+    @Override
+    public CharacterSkillList queryCharacterSkills(Integer characterId, String accessToken) {
+        return doQueryCharacterSkills(characterId, accessToken, false);
+    }
+
+    @Override
+    public CharacterSkillList queryCharacterSkills(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterSkills(characterId, accessToken, forceRefresh);
+    }
+
+    private CharacterSkillList doQueryCharacterSkills(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            CharacterSkillResponse resp = callSdkMono(() -> skillApi.queryCharactersSkills(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            return resp == null ? null : mapSkillList(resp);
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/skills/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<CharacterSkillList> cached = esiResponseCache.getList(key, objectMapper.constructType(CharacterSkillList.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<CharacterSkillList> filled = awaitCachedList(key, objectMapper.constructType(CharacterSkillList.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<CharacterSkillResponse> response = callSdkMono(() -> skillApi.queryCharactersSkillsResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            CharacterSkillList domain = mapSkillList(response.getBody());
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<CharacterSkillList> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private CharacterSkillList mapSkillList(CharacterSkillResponse resp) {
+        List<CharacterSkillList.SkillItem> items = resp.getSkills() == null ? List.of()
+                : resp.getSkills().stream().map(s -> new CharacterSkillList.SkillItem(
+                        s.getSkillId(),
+                        s.getTrainedSkillLevel(),
+                        s.getActiveSkillLevel(),
+                        s.getSkillpointsInSkill()
+                )).toList();
+        return new CharacterSkillList(resp.getTotalSp(), resp.getUnallocatedSp(), items);
+    }
+
+    @Override
+    public CharacterAttributesInfo queryCharacterAttributes(Integer characterId, String accessToken) {
+        return doQueryCharacterAttributes(characterId, accessToken, false);
+    }
+
+    @Override
+    public CharacterAttributesInfo queryCharacterAttributes(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterAttributes(characterId, accessToken, forceRefresh);
+    }
+
+    private CharacterAttributesInfo doQueryCharacterAttributes(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            CharacterAttributesResponse resp = callSdkMono(() -> skillApi.queryCharactersAttributes(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            return resp == null ? null : mapAttributes(resp);
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/attributes/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<CharacterAttributesInfo> cached = esiResponseCache.getList(key, objectMapper.constructType(CharacterAttributesInfo.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<CharacterAttributesInfo> filled = awaitCachedList(key, objectMapper.constructType(CharacterAttributesInfo.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<CharacterAttributesResponse> response = callSdkMono(() -> skillApi.queryCharactersAttributesResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            CharacterAttributesInfo domain = mapAttributes(response.getBody());
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<CharacterAttributesInfo> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private CharacterAttributesInfo mapAttributes(CharacterAttributesResponse resp) {
+        return new CharacterAttributesInfo(
+                resp.getIntelligence(),
+                resp.getMemory(),
+                resp.getCharisma(),
+                resp.getPerception(),
+                resp.getWillpower(),
+                resp.getBonusRemaps()
+        );
+    }
+
+    @Override
+    public List<SkillQueueItem> queryCharacterSkillQueue(Integer characterId, String accessToken) {
+        return doQueryCharacterSkillQueue(characterId, accessToken, false);
+    }
+
+    @Override
+    public List<SkillQueueItem> queryCharacterSkillQueue(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterSkillQueue(characterId, accessToken, forceRefresh);
+    }
+
+    private List<SkillQueueItem> doQueryCharacterSkillQueue(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            List<SkillQueueResponse> body = callSdkMono(() -> skillApi.queryCharactersSkillqueueResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .map(ResponseEntity::getBody)
+                    .block();
+            return body == null ? List.of() : body.stream().map(this::mapSkillQueueItem).toList();
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/skillqueue/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<SkillQueueItem> cached = esiResponseCache.getList(key, objectMapper.constructType(SkillQueueItem.class));
+            if (cached != null) {
+                return cached;
+            }
+        }
+        // 防穿透
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<SkillQueueItem> filled = awaitCachedList(key, objectMapper.constructType(SkillQueueItem.class));
+            if (filled != null) {
+                return filled;
+            }
+        }
+        try {
+            ResponseEntity<List<SkillQueueResponse>> response = callSdkMono(() -> skillApi.queryCharactersSkillqueueResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null) {
+                return null;
+            }
+            // 空 body → 空列表回填(015 约定,与查询失败可区分——失败抛 EsiAccessException)
+            List<SkillQueueItem> domain = response.getBody() == null || response.getBody().isEmpty()
+                    ? List.of()
+                    : response.getBody().stream().map(this::mapSkillQueueItem).toList();
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            esiResponseCache.put(key, domain, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private SkillQueueItem mapSkillQueueItem(SkillQueueResponse resp) {
+        return new SkillQueueItem(
+                resp.getSkillId(),
+                resp.getFinishedLevel(),
+                resp.getTrainingStartSp() == null ? null : resp.getTrainingStartSp().longValue(),
+                resp.getLevelEndSp() == null ? null : resp.getLevelEndSp().longValue(),
+                resp.getStartDate(),
+                resp.getFinishDate(),
+                resp.getQueuePosition()
+        );
+    }
+
+    // ── 邮件读侧(伴侣 APP T016) ──
+
+    @Override
+    public MailHeaderPage queryCharacterMailHeaders(Integer characterId, Integer lastMailId, String accessToken) {
+        return doQueryCharacterMailHeaders(characterId, lastMailId, accessToken, false);
+    }
+
+    @Override
+    public MailHeaderPage queryCharacterMailHeaders(Integer characterId, Integer lastMailId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterMailHeaders(characterId, lastMailId, accessToken, forceRefresh);
+    }
+
+    private MailHeaderPage doQueryCharacterMailHeaders(Integer characterId, Integer lastMailId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            List<RequestedMailResponse> body = callSdkMono(() -> mailApi.queryCharacterMailsResponse(characterId, EsiClientConfig.SERENITY, null, lastMailId, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .map(ResponseEntity::getBody)
+                    .block();
+            return body == null ? null : mapMailHeaderPage(body);
+        }
+        // lastMailId 编入键 page 段(仿工业列表)
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/mail/?last_mail_id=" + lastMailId, 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<MailHeaderPage> cached = esiResponseCache.getList(key, objectMapper.constructType(MailHeaderPage.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        // 防穿透
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<MailHeaderPage> filled = awaitCachedList(key, objectMapper.constructType(MailHeaderPage.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<List<RequestedMailResponse>> response = callSdkMono(() -> mailApi.queryCharacterMailsResponse(characterId, EsiClientConfig.SERENITY, null, lastMailId, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            MailHeaderPage domain = mapMailHeaderPage(response.getBody());
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<MailHeaderPage> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private MailHeaderPage mapMailHeaderPage(List<RequestedMailResponse> mails) {
+        List<MailHeaderPage.MailHeaderItem> items = mails.stream()
+                .map(m -> new MailHeaderPage.MailHeaderItem(
+                        m.getMailId(),
+                        m.getFrom(),
+                        m.getSubject(),
+                        m.getTimestamp(),
+                        m.getIsRead(),
+                        m.getLabels()
+                ))
+                .toList();
+        // 满 50 条 → nextLastMailId = 最后一条 mailId;不足 → null(无下一页)
+        Integer nextLastMailId = items.size() >= 50 ? items.get(items.size() - 1).mailId() : null;
+        return new MailHeaderPage(items, nextLastMailId);
+    }
+
+    @Override
+    public MailDetailInfo queryCharacterMail(Integer characterId, Integer mailId, String accessToken) {
+        return doQueryCharacterMail(characterId, mailId, accessToken, false);
+    }
+
+    @Override
+    public MailDetailInfo queryCharacterMail(Integer characterId, Integer mailId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterMail(characterId, mailId, accessToken, forceRefresh);
+    }
+
+    private MailDetailInfo doQueryCharacterMail(Integer characterId, Integer mailId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            MailResponse resp = callSdkMono(() -> mailApi.queryCharacterMail(characterId, EsiClientConfig.SERENITY, mailId, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            return resp == null ? null : mapMailDetail(mailId, resp);
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/mail/" + mailId + "/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<MailDetailInfo> cached = esiResponseCache.getList(key, objectMapper.constructType(MailDetailInfo.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<MailDetailInfo> filled = awaitCachedList(key, objectMapper.constructType(MailDetailInfo.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<MailResponse> response = callSdkMono(() -> mailApi.queryCharacterMailResponse(characterId, EsiClientConfig.SERENITY, mailId, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            MailDetailInfo domain = mapMailDetail(mailId, response.getBody());
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<MailDetailInfo> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private MailDetailInfo mapMailDetail(Integer mailId, MailResponse resp) {
+        List<MailRecipient> recipients = resp.getRecipients() == null ? List.of()
+                : resp.getRecipients().stream()
+                        .map(r -> new MailRecipient(r.getRecipientId(), r.getRecipientType()))
+                        .toList();
+        return new MailDetailInfo(
+                mailId,
+                resp.getFrom(),
+                recipients,
+                resp.getSubject(),
+                resp.getTimestamp(),
+                resp.getBody(),
+                resp.getRead()
+        );
+    }
+
+    @Override
+    public MailLabelsInfo queryCharacterMailLabels(Integer characterId, String accessToken) {
+        return doQueryCharacterMailLabels(characterId, accessToken, false);
+    }
+
+    @Override
+    public MailLabelsInfo queryCharacterMailLabels(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterMailLabels(characterId, accessToken, forceRefresh);
+    }
+
+    private MailLabelsInfo doQueryCharacterMailLabels(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            MailLabelsAndUnreadCountsResponse resp = callSdkMono(() -> mailApi.queryCharacterMailLabels(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            return resp == null ? null : mapMailLabels(resp);
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/mail/labels/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<MailLabelsInfo> cached = esiResponseCache.getList(key, objectMapper.constructType(MailLabelsInfo.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<MailLabelsInfo> filled = awaitCachedList(key, objectMapper.constructType(MailLabelsInfo.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<MailLabelsAndUnreadCountsResponse> response = callSdkMono(() -> mailApi.queryCharacterMailLabelsResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            MailLabelsInfo domain = mapMailLabels(response.getBody());
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<MailLabelsInfo> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private MailLabelsInfo mapMailLabels(MailLabelsAndUnreadCountsResponse resp) {
+        List<MailLabelsInfo.MailLabel> labels = resp.getLabels() == null ? List.of()
+                : resp.getLabels().stream()
+                        .map(l -> new MailLabelsInfo.MailLabel(
+                                l.getLabelId(),
+                                l.getName(),
+                                l.getUnreadCount() == null ? null : l.getUnreadCount().longValue()
+                        ))
+                        .toList();
+        Long totalUnread = resp.getTotalUnreadCount() == null ? null : resp.getTotalUnreadCount().longValue();
+        return new MailLabelsInfo(labels, totalUnread);
+    }
+
+    // ── 邮件写侧(伴侣 APP T017) ──
+
+    @Override
+    public void markCharacterMailRead(Integer characterId, Integer mailId, boolean read, String accessToken) {
+        // 写操作:直穿 SDK,不缓存、不限流
+        callSdkMono(() -> mailApi.updateCharacterMail(characterId, EsiClientConfig.SERENITY, mailId, null, read, accessToken))
+                .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                .block();
+    }
+
+    @Override
+    public Integer sendCharacterMail(Integer characterId, SendMailCommand command, String accessToken) {
+        // 写操作:直穿 SDK,不缓存、不限流
+        NewMail newMail = new NewMail();
+        newMail.setSubject(command.subject());
+        newMail.setBody(command.body());
+        List<xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.Recipient> sdkRecipients = command.recipients().stream()
+                .map(r -> {
+                    xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.Recipient sdkR = new xyz.foolcat.eve.evehelper.infrastructure.external.esi.model.sub.Recipient();
+                    sdkR.setRecipientId(r.recipientId());
+                    sdkR.setRecipientType(r.recipientType());
+                    return sdkR;
+                })
+                .toList();
+        newMail.setRecipients(sdkRecipients);
+        return callSdkMono(() -> mailApi.addCharacterMail(characterId, EsiClientConfig.SERENITY, newMail, accessToken))
+                .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                .block();
+    }
+
+    // ── universe/ids 精确名称解析(伴侣 APP T018) ──
+
+    @Override
+    public List<RecipientResolution> resolveUniverseIds(List<String> names) {
+        // 公开数据:userId 段置 pub 全局共享(不查 UserUtil、不限流);names 排序确定编码进键
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), null,
+                encodeNames(names), 0);
+        List<RecipientResolution> cached = esiResponseCache.getList(key, objectMapper.constructType(RecipientResolution.class));
+        if (cached != null) {
+            return cached;
+        }
+        // 防穿透
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed) {
+            List<RecipientResolution> filled = awaitCachedList(key, objectMapper.constructType(RecipientResolution.class));
+            if (filled != null) {
+                return filled;
+            }
+        }
+        try {
+            ResponseEntity<Name2IdResponse> response = callSdkMono(() -> universeApi.queryUniverseIdsResponse(names, EsiClientConfig.SERENITY, null))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                // 全量未命中
+                return names.stream().map(n -> new RecipientResolution(n, null, null, false)).toList();
+            }
+            List<RecipientResolution> domain = mapRecipientResolutions(names, response.getBody());
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            esiResponseCache.put(key, domain, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private List<RecipientResolution> mapRecipientResolutions(List<String> requestedNames, Name2IdResponse resp) {
+        // 按分组收集已解析的 name→(id, type)
+        java.util.Map<String, RecipientResolution> resolved = new java.util.LinkedHashMap<>();
+        if (resp.getCharacters() != null) {
+            resp.getCharacters().forEach(n -> resolved.put(n.getName(),
+                    new RecipientResolution(n.getName(), n.getId(), "character", true)));
+        }
+        if (resp.getCorporations() != null) {
+            resp.getCorporations().forEach(n -> resolved.put(n.getName(),
+                    new RecipientResolution(n.getName(), n.getId(), "corporation", true)));
+        }
+        if (resp.getAlliances() != null) {
+            resp.getAlliances().forEach(n -> resolved.put(n.getName(),
+                    new RecipientResolution(n.getName(), n.getId(), "alliance", true)));
+        }
+        // 保持请求名全量返回,未命中项 resolved=false
+        return requestedNames.stream()
+                .map(name -> resolved.getOrDefault(name, new RecipientResolution(name, null, null, false)))
+                .toList();
+    }
+
+    /**
+     * names 集合确定性编码进缓存键:排序后按序拼接,保证"同组同键、异组异键"(顺序无关)。
+     * <p>
+     * P2: 分隔符从 "-" 改为 "|" 以防名称含连字符时碰撞
+     * (如 ["Alpha-Beta","Gamma"] ≠ ["Alpha","Beta-Gamma"])。
+     * EVE Online 名称不含 "|" 字符,故该分隔符安全。
+     */
+    private String encodeNames(List<String> names) {
+        String encoded = names.stream().sorted().collect(Collectors.joining("|"));
+        return "/universe/ids/" + encoded + "/";
+    }
+
+    // ── 角色军团权限(伴侣 APP T029) ──
+
+    @Override
+    public CharacterRolesInfo queryCharacterRoles(Integer characterId, String accessToken) {
+        return doQueryCharacterRoles(characterId, accessToken, false);
+    }
+
+    @Override
+    public CharacterRolesInfo queryCharacterRoles(Integer characterId, String accessToken, boolean forceRefresh) {
+        return doQueryCharacterRoles(characterId, accessToken, forceRefresh);
+    }
+
+    private CharacterRolesInfo doQueryCharacterRoles(Integer characterId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            RoleResponse resp = callSdkMono(() -> characterApi.queryCharacterRoles(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            return mapRolesInfo(resp);
+        }
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId,
+                "/characters/" + characterId + "/roles/", 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<CharacterRolesInfo> cached = esiResponseCache.getList(key, objectMapper.constructType(CharacterRolesInfo.class));
+            if (cached != null && !cached.isEmpty()) {
+                return cached.get(0);
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<CharacterRolesInfo> filled = awaitCachedList(key, objectMapper.constructType(CharacterRolesInfo.class));
+            if (filled != null && !filled.isEmpty()) {
+                return filled.get(0);
+            }
+        }
+        try {
+            ResponseEntity<RoleResponse> response = callSdkMono(() -> characterApi.queryCharacterRolesResponse(characterId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return null;
+            }
+            CharacterRolesInfo domain = mapRolesInfo(response.getBody());
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            List<CharacterRolesInfo> wrapped = List.of(domain);
+            esiResponseCache.put(key, wrapped, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private CharacterRolesInfo mapRolesInfo(RoleResponse resp) {
+        if (resp == null) {
+            return new CharacterRolesInfo(List.of(), List.of(), List.of());
+        }
+        List<String> atHq = resp.getRolesAtHq() != null ? List.copyOf(Arrays.asList(resp.getRolesAtHq())) : List.of();
+        List<String> atBase = resp.getRolesAtBase() != null ? List.copyOf(Arrays.asList(resp.getRolesAtBase())) : List.of();
+        List<String> atOther = resp.getRolesAtOther() != null ? List.copyOf(Arrays.asList(resp.getRolesAtOther())) : List.of();
+        return new CharacterRolesInfo(atHq, atBase, atOther);
+    }
+
+    // ── 团员追踪(伴侣 APP T037) ──
+
+    @Override
+    public List<MemberTrackingItem> queryCorporationMemberTracking(Integer corporationId, String accessToken) {
+        return doQueryCorporationMemberTracking(corporationId, accessToken, false);
+    }
+
+    @Override
+    public List<MemberTrackingItem> queryCorporationMemberTracking(Integer corporationId, String accessToken, boolean forceRefresh) {
+        return doQueryCorporationMemberTracking(corporationId, accessToken, forceRefresh);
+    }
+
+    private List<MemberTrackingItem> doQueryCorporationMemberTracking(Integer corporationId, String accessToken, boolean forceRefresh) {
+        Integer userId = UserUtil.getUserId();
+        if (userId == null || userId <= 0) {
+            // 未认证/无上下文:不缓存,直接真调(安全优先)
+            ResponseEntity<List<MemberTrackingResponse>> resp = callSdkMono(() -> corporationApi.queryCorporationMembersTrackingResponse(corporationId, EsiClientConfig.SERENITY, accessToken))
+                    .timeout(EsiClientConstants.ESI_DATA_TIMEOUT)
+                    .block();
+            if (resp == null || resp.getBody() == null) {
+                return List.of();
+            }
+            return mapMemberTrackingList(resp.getBody());
+        }
+        String uri = "/corporations/" + corporationId + "/membertracking/";
+        String key = esiResponseCache.cacheKey(esiResponseCacheProperties.getDatasource(), userId, uri, 0);
+        boolean forceGranted = forceRefresh && forceRefreshLimiter.tryAcquire(key, forceRefreshWindow(), forceRefreshLimit());
+        if (!forceGranted) {
+            List<MemberTrackingItem> cached = esiResponseCache.getList(key, objectMapper.constructType(MemberTrackingItem.class));
+            if (cached != null) {
+                return cached;
+            }
+        }
+        // 防穿透:持锁承担真调回填,未抢锁有界轮询复用回填,超时 fail-open 真调
+        boolean claimed = esiResponseCache.tryClaim(key, CLAIM_TTL);
+        if (!claimed && !forceGranted) {
+            List<MemberTrackingItem> filled = awaitCachedList(key, objectMapper.constructType(MemberTrackingItem.class));
+            if (filled != null) {
+                return filled;
+            }
+        }
+        try {
+            ResponseEntity<List<MemberTrackingResponse>> response = callSdkMono(() -> corporationApi.queryCorporationMembersTrackingResponse(corporationId, EsiClientConfig.SERENITY, accessToken))
+                    .block();
+            if (response == null || response.getBody() == null) {
+                return List.of();
+            }
+            List<MemberTrackingItem> domain = mapMemberTrackingList(response.getBody());
+            Duration ttl = esiCacheTtlExtractor.extract(response.getHeaders());
+            esiResponseCache.put(key, domain, ttl);
+            return domain;
+        } finally {
+            if (claimed) {
+                esiResponseCache.releaseClaim(key);
+            }
+        }
+    }
+
+    private List<MemberTrackingItem> mapMemberTrackingList(List<MemberTrackingResponse> responses) {
+        if (responses == null || responses.isEmpty()) {
+            return List.of();
+        }
+        return responses.stream()
+                .map(r -> new MemberTrackingItem(
+                        r.getCharacterId(),
+                        r.getLocationId(),
+                        r.getShipTypeId(),
+                        r.getLogonDate(),
+                        r.getLogoffDate()
+                ))
+                .toList();
+    }
+
+    // ── 授权入口(伴侣 APP T043) ──
+
+    @Override
+    public String buildAuthorizeUrl(String server) {
+        return authorizeOAuth.authorizeUrlForServer(server, SsoScopes.ALL);
     }
 
 }

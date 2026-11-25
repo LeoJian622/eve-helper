@@ -43,7 +43,8 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.authorizeHttpRequests(requests -> requests.requestMatchers("/swagger-ui.html"
                         , "/swagger-ui/**"
-                        , "/v3/api-docs/**").permitAll()).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                        , "/v3/api-docs/**"
+                        , "/websocket/app").permitAll()).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .anyRequest()
                         .access(authorizationManager))
